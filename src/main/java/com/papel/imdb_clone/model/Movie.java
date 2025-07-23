@@ -5,26 +5,20 @@ import com.papel.imdb_clone.enums.Genre;
 import java.util.*;
 
 public class Movie extends Content {
-    private final int year;
     private final int duration;
     private final Director director;
     private final List<Actor> actors;
+    private double imdbRating;
 
-    public Movie(String title, Date year, Genre genre, String director, Map<Integer, Integer> userRatings, int duration, List<Actor> actors) {
-        super();
+    public Movie(String title, Date year, Genre genre, Director director, int duration, List<Actor> actors) {
+        super(title, year, genre);
         this.duration = duration;
-        this.actors = actors;
-        this.title = title;
-        this.year = year;
-        this.genre = genre;
         this.director = director;
-        this.userRatings = new HashMap<>();
+        this.actors = new ArrayList<>(actors);
+        this.imdbRating = 0.0;
     }
 
 
-    public int getYear() {
-        return year;
-    }
 
     public int getDuration() {
         return duration;
@@ -122,7 +116,7 @@ public class Movie extends Content {
         return "Movie{" +
                 "id=" + getId() +
                 ", title='" + getTitle() + '\'' +
-                ", year=" + year +
+                ", year=" + getYear() +
                 ", genre=" + getGenre() +
                 ", duration=" + duration +
                 ", director=" + (director != null ? director.getFullName() : "Unknown") +
