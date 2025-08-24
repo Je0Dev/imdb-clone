@@ -1,0 +1,1125 @@
+{
+    "checksum": "8fba0e22fdd97223165a5d30272c27d08590a9a7b60d8e1c553920c2c8339b08",
+    "data": {
+    "id": "671012d4-c005-45fd-b7f7-c5ae9d308238",
+    "createdAt": 1755068985739,
+    "updatedAt": 1755070547403,
+    "title": "Program Structure Improvement Suggestions",
+    "messages": [
+        {
+            "id": "1cd5a918-e28b-49e8-b3f1-388041e59fb5",
+            "role": "user",
+            "content": [
+                {
+                    "type": "text",
+                    "text": "check all the files and the classes and tell me what would be necessary to make the program structure better. Merge classes together and add better functionality"
+                }
+            ],
+            "context": {
+                "currentFile": {
+                    "path": "C:/Users/MA$/.codeium/brain/8d52b421-07ec-4fd7-b4c7-98326c6b86fb/plan.md",
+                    "fsPath": "C:/Users/MA$/.codeium/brain/8d52b421-07ec-4fd7-b4c7-98326c6b86fb/plan.md",
+                    "sources": [
+                        "opened_tab"
+                    ],
+                    "content": "# Refactoring Plan: UI, Notification, Exception, Validation, and Async Utilities\n\n## Notes\n- Goal: Consolidate utility classes for UI, notifications, exceptions, validation, and async operations.\n- Phase 1 (UI utilities) is complete; focus is on Phase 2 and 3.\n- Notification system should be unified under NotificationService.\n- Exception hierarchy should use a generic EntityNotFoundException<T>.\n- ValidationService created; old classes marked as deprecated. Next: migrate all usages and remove old classes.\n- Validation usages migrated; no remaining usages of old classes. Ready to remove deprecated validation classes.\n- Remove redundant/old classes after migration.\n\n## Task List\n- [x] Phase 1: Consolidate UI utilities into UIUtils\n- [x] Remove old UI utility classes\n- [x] Create NotificationService (unified)\n- [x] Remove NotificationManager, ToastManager, Toast classes if migrated\n- [x] Migrate all notification usages to NotificationService\n- [x] Phase 3: Create and integrate EntityNotFoundException<T>\n- [x] Remove specific *NotFoundException classes if replaced\n- [x] Update exception handling codebase-wide\n- [x] Phase 4: Merge validation classes into ValidationService\n- [x] Update all validation usages to use ValidationService\n- [x] Remove ValidationHelper and ValidationUtils after migration\n- [x] Phase 5: Review async/task classes (AsyncExecutor & TaskRunner)\n- [x] Decide on merging or keeping async/task utilities separate\n\n## Current Goal\nRefactoring complete: all phases finished.",
+                    "language": "markdown"
+                },
+                "codebaseEnabled": true
+            },
+            "createdAt": 1755068985747,
+            "isInternal": false,
+            "rawContent": {
+                "type": "doc",
+                "content": [
+                    {
+                        "type": "paragraph",
+                        "content": [
+                            {
+                                "type": "text",
+                                "text": "check all the files and the classes and tell me what would be necessary to make the program structure better. Merge classes together and add better functionality "
+                            }
+                        ]
+                    }
+                ]
+            },
+            "autoAppliedRules": []
+        },
+        {
+            "id": "5f9c680e-ab7d-4748-b579-bb00d7123564",
+            "role": "assistant",
+            "content": [
+                {
+                    "type": "text",
+                    "text": "I'll help you analyze the program structure and identify opportunities for improvement. Let me start by exploring the codebase to understand the current structure and identify classes that could be merged or enhanced."
+                },
+                {
+                    "type": "toolCall",
+                    "toolCallId": "toolu_01C5mX6hciPqcK1rGSRfjrid",
+                    "statusText": "Viewed directory",
+                    "status": "SUCCESS",
+                    "context": {
+                        "files": [
+                            {
+                                "path": ".",
+                                "fsPath": "C:/Users/MA$/IdeaProjects/imdb_clone"
+                            }
+                        ]
+                    },
+                    "isHidden": false
+                },
+                {
+                    "type": "toolCall",
+                    "toolCallId": "toolu_019pgbwSn2PgyYPAQQSjDqRm",
+                    "statusText": "Viewed directory",
+                    "status": "SUCCESS",
+                    "context": {
+                        "files": [
+                            {
+                                "path": "src/main",
+                                "fsPath": "C:/Users/MA$/IdeaProjects/imdb_clone/src/main"
+                            }
+                        ]
+                    },
+                    "isHidden": false
+                },
+                {
+                    "type": "toolCall",
+                    "toolCallId": "toolu_013qyGmb4UNeM3BjWz8eZZck",
+                    "title": "File search",
+                    "statusText": "Done",
+                    "status": "SUCCESS",
+                    "isHidden": false
+                },
+                {
+                    "type": "text",
+                    "text": "Let me continue to get all Java files:"
+                },
+                {
+                    "type": "toolCall",
+                    "toolCallId": "toolu_01CU8dAoJL2WYuoe5pGSJ3Lf",
+                    "title": "File search",
+                    "statusText": "Done",
+                    "status": "SUCCESS",
+                    "isHidden": false
+                },
+                {
+                    "type": "text",
+                    "text": "Now let me examine the package structure and some key classes to understand the current architecture:"
+                },
+                {
+                    "type": "toolCall",
+                    "toolCallId": "toolu_01BfygSj8MsCcTdKWHQeBzLq",
+                    "statusText": "Viewed directory",
+                    "status": "SUCCESS",
+                    "context": {
+                        "files": [
+                            {
+                                "path": "src/main/java/com/papel/imdb_clone",
+                                "fsPath": "C:/Users/MA$/IdeaProjects/imdb_clone/src/main/java/com/papel/imdb_clone"
+                            }
+                        ]
+                    },
+                    "isHidden": false
+                },
+                {
+                    "type": "text",
+                    "text": "Let me examine some key classes to understand potential areas for improvement. I'll start with utility classes and services:"
+                },
+                {
+                    "type": "toolCall",
+                    "toolCallId": "toolu_01EATorGR3ad6XcFQvAHdeNm",
+                    "statusText": "Viewed whole file",
+                    "status": "SUCCESS",
+                    "context": {
+                        "files": [
+                            {
+                                "path": "src/main/java/com/papel/imdb_clone/util/AsyncExecutor.java",
+                                "fsPath": "C:/Users/MA$/IdeaProjects/imdb_clone/src/main/java/com/papel/imdb_clone/util/AsyncExecutor.java"
+                            }
+                        ]
+                    },
+                    "isHidden": false
+                },
+                {
+                    "type": "toolCall",
+                    "toolCallId": "toolu_01Jwws414px7K5bC7AvdSqus",
+                    "statusText": "Viewed whole file",
+                    "status": "SUCCESS",
+                    "context": {
+                        "files": [
+                            {
+                                "path": "src/main/java/com/papel/imdb_clone/util/TaskRunner.java",
+                                "fsPath": "C:/Users/MA$/IdeaProjects/imdb_clone/src/main/java/com/papel/imdb_clone/util/TaskRunner.java"
+                            }
+                        ]
+                    },
+                    "isHidden": false
+                },
+                {
+                    "type": "toolCall",
+                    "toolCallId": "toolu_01X6ixVuWKRsEzfBLdZjdfy9",
+                    "statusText": "Viewed whole file",
+                    "status": "SUCCESS",
+                    "context": {
+                        "files": [
+                            {
+                                "path": "src/main/java/com/papel/imdb_clone/util/ValidationHelper.java",
+                                "fsPath": "C:/Users/MA$/IdeaProjects/imdb_clone/src/main/java/com/papel/imdb_clone/util/ValidationHelper.java"
+                            }
+                        ]
+                    },
+                    "isHidden": false
+                },
+                {
+                    "type": "toolCall",
+                    "toolCallId": "toolu_019xXGTZnP8WegSpwiPud1Ug",
+                    "statusText": "Viewed whole file",
+                    "status": "SUCCESS",
+                    "context": {
+                        "files": [
+                            {
+                                "path": "src/main/java/com/papel/imdb_clone/service/ValidationService.java",
+                                "fsPath": "C:/Users/MA$/IdeaProjects/imdb_clone/src/main/java/com/papel/imdb_clone/service/ValidationService.java"
+                            }
+                        ]
+                    },
+                    "isHidden": false
+                },
+                {
+                    "type": "toolCall",
+                    "toolCallId": "toolu_01WggMRVkfRVU9aWytBgy1Rk",
+                    "statusText": "Viewed whole file",
+                    "status": "SUCCESS",
+                    "context": {
+                        "files": [
+                            {
+                                "path": "src/main/java/com/papel/imdb_clone/gui/ValidationUtils.java",
+                                "fsPath": "C:/Users/MA$/IdeaProjects/imdb_clone/src/main/java/com/papel/imdb_clone/gui/ValidationUtils.java"
+                            }
+                        ]
+                    },
+                    "isHidden": false
+                },
+                {
+                    "type": "toolCall",
+                    "toolCallId": "toolu_01TwSbGxgTVY6xvDzYZf7xWu",
+                    "statusText": "Viewed whole file",
+                    "status": "SUCCESS",
+                    "context": {
+                        "files": [
+                            {
+                                "path": "src/main/java/com/papel/imdb_clone/util/DialogFactory.java",
+                                "fsPath": "C:/Users/MA$/IdeaProjects/imdb_clone/src/main/java/com/papel/imdb_clone/util/DialogFactory.java"
+                            }
+                        ]
+                    },
+                    "isHidden": false
+                },
+                {
+                    "type": "toolCall",
+                    "toolCallId": "toolu_01J4TNco7yyxWKFzkoZZma6W",
+                    "statusText": "Viewed whole file",
+                    "status": "SUCCESS",
+                    "context": {
+                        "files": [
+                            {
+                                "path": "src/main/java/com/papel/imdb_clone/gui/DialogUtils.java",
+                                "fsPath": "C:/Users/MA$/IdeaProjects/imdb_clone/src/main/java/com/papel/imdb_clone/gui/DialogUtils.java"
+                            }
+                        ]
+                    },
+                    "isHidden": false
+                },
+                {
+                    "type": "text",
+                    "text": "Now let me examine some service classes to understand the current architecture:"
+                },
+                {
+                    "type": "toolCall",
+                    "toolCallId": "toolu_019EtXsH9UtJ6AbkL8rbzG45",
+                    "statusText": "Viewed whole file",
+                    "status": "SUCCESS",
+                    "context": {
+                        "files": [
+                            {
+                                "path": "src/main/java/com/papel/imdb_clone/service/ServiceLocator.java",
+                                "fsPath": "C:/Users/MA$/IdeaProjects/imdb_clone/src/main/java/com/papel/imdb_clone/service/ServiceLocator.java"
+                            }
+                        ]
+                    },
+                    "isHidden": false
+                },
+                {
+                    "type": "toolCall",
+                    "toolCallId": "toolu_017Gt67cUtkSM2cgQvX25orE",
+                    "statusText": "Viewed whole file",
+                    "status": "SUCCESS",
+                    "context": {
+                        "files": [
+                            {
+                                "path": "src/main/java/com/papel/imdb_clone/service/NotificationService.java",
+                                "fsPath": "C:/Users/MA$/IdeaProjects/imdb_clone/src/main/java/com/papel/imdb_clone/service/NotificationService.java"
+                            }
+                        ]
+                    },
+                    "isHidden": false
+                },
+                {
+                    "type": "text",
+                    "text": "Let me examine some more classes to understand the structure better:"
+                },
+                {
+                    "type": "toolCall",
+                    "toolCallId": "toolu_01CxW54zDGyRwhu3mVnZ3o4b",
+                    "statusText": "Viewed whole file",
+                    "status": "SUCCESS",
+                    "context": {
+                        "files": [
+                            {
+                                "path": "src/main/java/com/papel/imdb_clone/util/UIUtils.java",
+                                "fsPath": "C:/Users/MA$/IdeaProjects/imdb_clone/src/main/java/com/papel/imdb_clone/util/UIUtils.java"
+                            }
+                        ]
+                    },
+                    "isHidden": false
+                },
+                {
+                    "type": "text",
+                    "text": "Now let me examine some exception classes to understand the current exception hierarchy:"
+                },
+                {
+                    "type": "toolCall",
+                    "toolCallId": "toolu_012Rf3YCiciUFBiQu81BoxsU",
+                    "statusText": "Viewed whole file",
+                    "status": "SUCCESS",
+                    "context": {
+                        "files": [
+                            {
+                                "path": "src/main/java/com/papel/imdb_clone/exceptions/EntityNotFoundException.java",
+                                "fsPath": "C:/Users/MA$/IdeaProjects/imdb_clone/src/main/java/com/papel/imdb_clone/exceptions/EntityNotFoundException.java"
+                            }
+                        ]
+                    },
+                    "isHidden": false
+                },
+                {
+                    "type": "text",
+                    "text": "I notice there's an issue with the EntityNotFoundException class - it doesn't extend Exception. Let me check some other exception classes:"
+                },
+                {
+                    "type": "toolCall",
+                    "toolCallId": "toolu_01YEuwt87AUumXcjNHJ2ovwd",
+                    "statusText": "Viewed whole file",
+                    "status": "SUCCESS",
+                    "context": {
+                        "files": [
+                            {
+                                "path": "src/main/java/com/papel/imdb_clone/exceptions/InvalidEmailException.java",
+                                "fsPath": "C:/Users/MA$/IdeaProjects/imdb_clone/src/main/java/com/papel/imdb_clone/exceptions/InvalidEmailException.java"
+                            }
+                        ]
+                    },
+                    "isHidden": false
+                }
+            ],
+            "context": {
+                "author": "Review",
+                "operationId": "75395cf9-4a18-45a1-84de-42a9f7d01b64"
+            },
+            "createdAt": 1755068988360,
+            "isInternal": false
+        },
+        {
+            "id": "6f256ca7-db48-4368-ac5f-98a23426b469",
+            "role": "user",
+            "content": [
+                {
+                    "type": "text",
+                    "text": "Continue. You were in the middle of request:"
+                },
+                {
+                    "type": "text",
+                    "text": "check all the files and the classes and tell me what would be necessary to make the program structure better. Merge classes together and add better functionality "
+                },
+                {
+                    "type": "text",
+                    "text": "Avoid repeating steps you've already taken."
+                }
+            ],
+            "context": {
+                "currentFile": {
+                    "path": "C:/Users/MA$/.codeium/brain/8d52b421-07ec-4fd7-b4c7-98326c6b86fb/plan.md",
+                    "fsPath": "C:/Users/MA$/.codeium/brain/8d52b421-07ec-4fd7-b4c7-98326c6b86fb/plan.md",
+                    "sources": [
+                        "opened_tab"
+                    ],
+                    "content": "# Refactoring Plan: UI, Notification, Exception, Validation, and Async Utilities\n\n## Notes\n- Goal: Consolidate utility classes for UI, notifications, exceptions, validation, and async operations.\n- Phase 1 (UI utilities) is complete; focus is on Phase 2 and 3.\n- Notification system should be unified under NotificationService.\n- Exception hierarchy should use a generic EntityNotFoundException<T>.\n- ValidationService created; old classes marked as deprecated. Next: migrate all usages and remove old classes.\n- Validation usages migrated; no remaining usages of old classes. Ready to remove deprecated validation classes.\n- Remove redundant/old classes after migration.\n\n## Task List\n- [x] Phase 1: Consolidate UI utilities into UIUtils\n- [x] Remove old UI utility classes\n- [x] Create NotificationService (unified)\n- [x] Remove NotificationManager, ToastManager, Toast classes if migrated\n- [x] Migrate all notification usages to NotificationService\n- [x] Phase 3: Create and integrate EntityNotFoundException<T>\n- [x] Remove specific *NotFoundException classes if replaced\n- [x] Update exception handling codebase-wide\n- [x] Phase 4: Merge validation classes into ValidationService\n- [x] Update all validation usages to use ValidationService\n- [x] Remove ValidationHelper and ValidationUtils after migration\n- [x] Phase 5: Review async/task classes (AsyncExecutor & TaskRunner)\n- [x] Decide on merging or keeping async/task utilities separate\n- [ ] Update controllers to use UIUtils instead of DialogUtils\n\n## Current Goal\nMigrate remaining DialogUtils usages to UIUtils.",
+                    "language": "markdown"
+                },
+                "codebaseEnabled": true
+            },
+            "createdAt": 1755069061593,
+            "isInternal": false,
+            "rawContent": {
+                "type": "doc",
+                "content": [
+                    {
+                        "type": "paragraph",
+                        "content": [
+                            {
+                                "type": "text",
+                                "text": "Continue. You were in the middle of request:"
+                            }
+                        ]
+                    },
+                    {
+                        "type": "paragraph",
+                        "content": [
+                            {
+                                "type": "text",
+                                "text": "check all the files and the classes and tell me what would be necessary to make the program structure better. Merge classes together and add better functionality "
+                            }
+                        ]
+                    },
+                    {
+                        "type": "paragraph",
+                        "content": [
+                            {
+                                "type": "text",
+                                "text": "Avoid repeating steps you've already taken."
+                            }
+                        ]
+                    }
+                ]
+            },
+            "isHidden": true,
+            "autoAppliedRules": []
+        },
+        {
+            "id": "6cc6eead-d33e-4e50-887a-08ce9d3735d6",
+            "role": "assistant",
+            "content": [
+                {
+                    "type": "text",
+                    "text": "Based on my analysis of the codebase, I can see that significant refactoring has already been done according to the plan. Let me continue examining the remaining areas and provide recommendations for further improvements."
+                },
+                {
+                    "type": "toolCall",
+                    "toolCallId": "toolu_015G5RcotWteTzaevDbNVPGK",
+                    "title": "Fulltext search",
+                    "statusText": "Done",
+                    "status": "SUCCESS",
+                    "isHidden": false
+                },
+                {
+                    "type": "text",
+                    "text": "I can see there are still references to DialogUtils that need to be migrated to UIUtils. Let me check the current state of some key files and then provide comprehensive recommendations."
+                },
+                {
+                    "type": "toolCall",
+                    "toolCallId": "toolu_01Ho7NC9KtyNWkAhpwwdAU3U",
+                    "statusText": "Viewed file (lines 383:422)",
+                    "status": "SUCCESS",
+                    "context": {
+                        "files": [
+                            {
+                                "path": "src/main/java/com/papel/imdb_clone/controllers/WatchlistController.java",
+                                "fsPath": "C:/Users/MA$/IdeaProjects/imdb_clone/src/main/java/com/papel/imdb_clone/controllers/WatchlistController.java"
+                            }
+                        ]
+                    },
+                    "isHidden": false
+                },
+                {
+                    "type": "text",
+                    "text": "Now let me examine the data management structure to understand potential consolidation opportunities:"
+                },
+                {
+                    "type": "toolCall",
+                    "toolCallId": "toolu_0114cRHug8SPwtXFeiGXiTHx",
+                    "statusText": "Viewed file (from the beginning up to line 50)",
+                    "status": "SUCCESS",
+                    "context": {
+                        "files": [
+                            {
+                                "path": "src/main/java/com/papel/imdb_clone/data/RefactoredDataManager.java",
+                                "fsPath": "C:/Users/MA$/IdeaProjects/imdb_clone/src/main/java/com/papel/imdb_clone/data/RefactoredDataManager.java"
+                            }
+                        ]
+                    },
+                    "isHidden": false
+                },
+                {
+                    "type": "text",
+                    "text": "Let me check some more utility classes to understand the current state:"
+                },
+                {
+                    "type": "toolCall",
+                    "toolCallId": "toolu_0141VCYg1ARbLpDx9p2MqqCJ",
+                    "statusText": "Viewed whole file",
+                    "status": "SUCCESS",
+                    "context": {
+                        "files": [
+                            {
+                                "path": "src/main/java/com/papel/imdb_clone/util/SessionManager.java",
+                                "fsPath": "C:/Users/MA$/IdeaProjects/imdb_clone/src/main/java/com/papel/imdb_clone/util/SessionManager.java"
+                            }
+                        ]
+                    },
+                    "isHidden": false
+                },
+                {
+                    "type": "toolCall",
+                    "toolCallId": "toolu_01BUYha9CPjcB39gefebgEwg",
+                    "statusText": "Viewed whole file",
+                    "status": "SUCCESS",
+                    "context": {
+                        "files": [
+                            {
+                                "path": "src/main/java/com/papel/imdb_clone/util/SettingsManager.java",
+                                "fsPath": "C:/Users/MA$/IdeaProjects/imdb_clone/src/main/java/com/papel/imdb_clone/util/SettingsManager.java"
+                            }
+                        ]
+                    },
+                    "isHidden": false
+                },
+                {
+                    "type": "text",
+                    "text": "Now let me check the current exception structure to understand what needs to be fixed:"
+                },
+                {
+                    "type": "toolCall",
+                    "toolCallId": "toolu_01Cdg3kPbLSC7t6Yjf7VyzvB",
+                    "title": "Fulltext search",
+                    "statusText": "Done",
+                    "status": "SUCCESS",
+                    "isHidden": false
+                },
+                {
+                    "type": "text",
+                    "text": "Based on my comprehensive analysis of the codebase, here are the key areas that need improvement and consolidation to make the program structure better:\n\n## **Program Structure Analysis & Improvement Recommendations**\n\n### **Current State Assessment**\nThe codebase has undergone significant refactoring with good progress on:\n- ✅ UI utilities consolidated into `UIUtils`\n- ✅ Validation consolidated into `ValidationService` \n- ✅ Notification system unified in `NotificationService`\n- ✅ Deprecated classes marked for removal (`ValidationHelper`, `ValidationUtils`)\n\n### **Critical Issues to Address**\n\n#### **1. Fix EntityNotFoundException Class**\n**Problem**: The `EntityNotFoundException` class doesn't extend `Exception` or `RuntimeException`, making it unusable as an exception.\n\n**Solution**: Fix the inheritance hierarchy:"
+                },
+                {
+                    "type": "toolCall",
+                    "toolCallId": "toolu_01Do3QvLwGwUJn5WtT9CGW3t",
+                    "statusText": "Change generated",
+                    "status": "SUCCESS",
+                    "context": {
+                        "files": [
+                            {
+                                "path": "src/main/java/com/papel/imdb_clone/exceptions/EntityNotFoundException.java",
+                                "fsPath": "C:/Users/MA$/IdeaProjects/imdb_clone/src/main/java/com/papel/imdb_clone/exceptions/EntityNotFoundException.java"
+                            }
+                        ]
+                    },
+                    "isHidden": false
+                },
+                {
+                    "type": "codeHunk",
+                    "lineBasedDiff": "--- C:/Users/MA$/IdeaProjects/imdb_clone/src/main/java/com/papel/imdb_clone/exceptions/EntityNotFoundException.java\n+++ C:/Users/MA$/IdeaProjects/imdb_clone/src/main/java/com/papel/imdb_clone/exceptions/EntityNotFoundException.java\n@@ -6,7 +6,7 @@\n  *\n  * @param <T> The type of entity that was not found\n  */\n-public class EntityNotFoundException<T> {\n+public class EntityNotFoundException<T> extends RuntimeException {\n \n     private final Class<T> entityType;\n     private final Object identifier;\n@@ -15,7 +15,7 @@\n      * Creates an exception with a custom message\n      */\n     public EntityNotFoundException(String message) {\n-        super();\n+        super(message);\n         this.entityType = null;\n         this.identifier = null;\n     }\n@@ -24,7 +24,7 @@\n      * Creates an exception with entity type and identifier\n      */\n     public EntityNotFoundException(Class<T> entityType, Object identifier) {\n-        super();\n+        super(createMessage(entityType, identifier));\n         this.entityType = entityType;\n         this.identifier = identifier;\n     }\n@@ -33,7 +33,7 @@\n      * Creates an exception with entity type, identifier, and custom message\n      */\n     public EntityNotFoundException(Class<T> entityType, Object identifier, String message) {\n-        super();\n+        super(message);\n         this.entityType = entityType;\n         this.identifier = identifier;\n     }\n@@ -42,7 +42,7 @@\n      * Creates an exception with entity type, identifier, and cause\n      */\n     public EntityNotFoundException(Class<T> entityType, Object identifier, Throwable cause) {\n-        super();\n+        super(createMessage(entityType, identifier), cause);\n         this.entityType = entityType;\n         this.identifier = identifier;\n     }\n@@ -51,7 +51,7 @@\n      * Creates an exception with entity type, identifier, custom message, and cause\n      */\n     public EntityNotFoundException(Class<T> entityType, Object identifier, String message, Throwable cause) {\n-        super();\n+        super(message, cause);\n         this.entityType = entityType;\n         this.identifier = identifier;\n     }",
+                    "refToolCallId": "toolu_01Do3QvLwGwUJn5WtT9CGW3t"
+                },
+                {
+                    "type": "text",
+                    "text": "#### **2. Complete DialogUtils to UIUtils Migration**\n**Problem**: Controllers still reference the deleted `DialogUtils` class.\n\n**Solution**: Update all remaining references:"
+                },
+                {
+                    "type": "toolCall",
+                    "toolCallId": "toolu_01WBVzXainxMQHAodBfGEnzV",
+                    "statusText": "Change generated",
+                    "status": "SUCCESS",
+                    "context": {
+                        "files": [
+                            {
+                                "path": "src/main/java/com/papel/imdb_clone/controllers/WatchlistController.java",
+                                "fsPath": "C:/Users/MA$/IdeaProjects/imdb_clone/src/main/java/com/papel/imdb_clone/controllers/WatchlistController.java"
+                            }
+                        ]
+                    },
+                    "isHidden": false
+                },
+                {
+                    "type": "codeHunk",
+                    "lineBasedDiff": "--- C:/Users/MA$/IdeaProjects/imdb_clone/src/main/java/com/papel/imdb_clone/controllers/WatchlistController.java\n+++ C:/Users/MA$/IdeaProjects/imdb_clone/src/main/java/com/papel/imdb_clone/controllers/WatchlistController.java\n@@ -430,11 +430,11 @@\n     public void deleteWatchlist() {\n         String selectedWatchlistName = watchlistsView.getSelectionModel().getSelectedItem();\n         if (selectedWatchlistName == null) {\n-            DialogUtils.showWarning(\"No Selection\", \"Please select a watchlist to delete.\");\n+            UIUtils.showWarning(\"No Selection\", \"Please select a watchlist to delete.\");\n             return;\n         }\n \n-        boolean confirmed = DialogUtils.showConfirmation(\"Confirm Deletion\", \"Delete Watchlist\",\n+        boolean confirmed = UIUtils.showConfirmation(\"Confirm Deletion\", \"Delete Watchlist\",\n                 \"Are you sure you want to delete the watchlist '\" + selectedWatchlistName + \"'?\");\n \n         if (confirmed) {",
+                    "refToolCallId": "toolu_01WBVzXainxMQHAodBfGEnzV"
+                },
+                {
+                    "type": "toolCall",
+                    "toolCallId": "toolu_019tR1q1yxyaVsHgiHD5Nocn",
+                    "statusText": "Change generated",
+                    "status": "SUCCESS",
+                    "context": {
+                        "files": [
+                            {
+                                "path": "src/main/java/com/papel/imdb_clone/controllers/WatchlistController.java",
+                                "fsPath": "C:/Users/MA$/IdeaProjects/imdb_clone/src/main/java/com/papel/imdb_clone/controllers/WatchlistController.java"
+                            }
+                        ]
+                    },
+                    "isHidden": false
+                },
+                {
+                    "type": "codeHunk",
+                    "lineBasedDiff": "--- C:/Users/MA$/IdeaProjects/imdb_clone/src/main/java/com/papel/imdb_clone/controllers/WatchlistController.java\n+++ C:/Users/MA$/IdeaProjects/imdb_clone/src/main/java/com/papel/imdb_clone/controllers/WatchlistController.java\n@@ -448,16 +448,16 @@\n                     if (watchlistToDelete != null) {\n                         watchlistService.deleteWatchlist(watchlistToDelete.getId(), currentUserId);\n                         refreshWatchlists();\n-                        DialogUtils.showSuccess(\"Success\", \"Watchlist deleted successfully.\");\n+                        UIUtils.showSuccess(\"Success\", \"Watchlist deleted successfully.\");\n                     } else {\n-                        DialogUtils.showError(\"Error\", \"Could not find the watchlist to delete.\");\n+                        UIUtils.showError(\"Error\", \"Could not find the watchlist to delete.\");\n                     }\n                 } else {\n-                    DialogUtils.showError(\"Error\", \"Watchlist service not initialized\");\n+                    UIUtils.showError(\"Error\", \"Watchlist service not initialized\");\n                 }\n             } catch (Exception e) {\n                 logger.error(\"Error deleting watchlist\", e);\n-                DialogUtils.showError(\"Error\", \"An unexpected error occurred while deleting the watchlist.\");\n+                UIUtils.showError(\"Error\", \"An unexpected error occurred while deleting the watchlist.\");\n             }\n         }\n     }",
+                    "refToolCallId": "toolu_019tR1q1yxyaVsHgiHD5Nocn"
+                },
+                {
+                    "type": "text",
+                    "text": "Now let me update the import statement:"
+                },
+                {
+                    "type": "toolCall",
+                    "toolCallId": "toolu_01VLj31bR74rPNLNZ7tcEbMQ",
+                    "statusText": "Viewed file (from the beginning up to line 40)",
+                    "status": "SUCCESS",
+                    "context": {
+                        "files": [
+                            {
+                                "path": "src/main/java/com/papel/imdb_clone/controllers/WatchlistController.java",
+                                "fsPath": "C:/Users/MA$/IdeaProjects/imdb_clone/src/main/java/com/papel/imdb_clone/controllers/WatchlistController.java"
+                            }
+                        ]
+                    },
+                    "isHidden": false
+                },
+                {
+                    "type": "toolCall",
+                    "toolCallId": "toolu_011mhszFuSsHwPKTsjPyKCT7",
+                    "statusText": "Change generated",
+                    "status": "SUCCESS",
+                    "context": {
+                        "files": [
+                            {
+                                "path": "src/main/java/com/papel/imdb_clone/controllers/WatchlistController.java",
+                                "fsPath": "C:/Users/MA$/IdeaProjects/imdb_clone/src/main/java/com/papel/imdb_clone/controllers/WatchlistController.java"
+                            }
+                        ]
+                    },
+                    "isHidden": false
+                },
+                {
+                    "type": "codeHunk",
+                    "lineBasedDiff": "--- C:/Users/MA$/IdeaProjects/imdb_clone/src/main/java/com/papel/imdb_clone/controllers/WatchlistController.java\n+++ C:/Users/MA$/IdeaProjects/imdb_clone/src/main/java/com/papel/imdb_clone/controllers/WatchlistController.java\n@@ -2,6 +2,7 @@\n \n import com.papel.imdb_clone.model.*;\n import com.papel.imdb_clone.service.WatchlistService;\n+import com.papel.imdb_clone.util.UIUtils;\n import javafx.beans.property.SimpleStringProperty;\n import javafx.collections.FXCollections;\n import javafx.collections.ObservableList;",
+                    "refToolCallId": "toolu_011mhszFuSsHwPKTsjPyKCT7"
+                },
+                {
+                    "type": "text",
+                    "text": "Now let me update the other controllers:"
+                },
+                {
+                    "type": "toolCall",
+                    "toolCallId": "toolu_01UgBY932WYtjSN9xBKpSs3g",
+                    "statusText": "Viewed file (lines 575:614)",
+                    "status": "SUCCESS",
+                    "context": {
+                        "files": [
+                            {
+                                "path": "src/main/java/com/papel/imdb_clone/controllers/RefactoredMainController.java",
+                                "fsPath": "C:/Users/MA$/IdeaProjects/imdb_clone/src/main/java/com/papel/imdb_clone/controllers/RefactoredMainController.java"
+                            }
+                        ]
+                    },
+                    "isHidden": false
+                },
+                {
+                    "type": "toolCall",
+                    "toolCallId": "toolu_01QzWieRhG2y3d9EnyY75yZc",
+                    "statusText": "Change generated",
+                    "status": "SUCCESS",
+                    "context": {
+                        "files": [
+                            {
+                                "path": "src/main/java/com/papel/imdb_clone/controllers/RefactoredMainController.java",
+                                "fsPath": "C:/Users/MA$/IdeaProjects/imdb_clone/src/main/java/com/papel/imdb_clone/controllers/RefactoredMainController.java"
+                            }
+                        ]
+                    },
+                    "isHidden": false
+                },
+                {
+                    "type": "codeHunk",
+                    "lineBasedDiff": "--- C:/Users/MA$/IdeaProjects/imdb_clone/src/main/java/com/papel/imdb_clone/controllers/RefactoredMainController.java\n+++ C:/Users/MA$/IdeaProjects/imdb_clone/src/main/java/com/papel/imdb_clone/controllers/RefactoredMainController.java\n@@ -583,15 +583,15 @@\n     public void addMovieToWatchlist(Movie movie) {\n         if (movie == null) return;\n         if (currentUser == null) {\n-            DialogUtils.showError(\"Login Required\", \"Please log in to add items to a watchlist.\");\n+            UIUtils.showError(\"Login Required\", \"Please log in to add items to a watchlist.\");\n             return;\n         }\n         try {\n             watchlistService.addToFavorites(currentUser.getId(), movie.getId());\n-            DialogUtils.showSuccess(\"Added\", '\"' + movie.getTitle() + '\"' + \" added to Favorites.\");\n+            UIUtils.showSuccess(\"Added\", '\"' + movie.getTitle() + '\"' + \" added to Favorites.\");\n         } catch (Exception e) {\n             logger.error(\"Failed to add movie to watchlist\", e);\n-            DialogUtils.showError(\"Error\", \"Could not add movie to watchlist: \" + e.getMessage());\n+            UIUtils.showError(\"Error\", \"Could not add movie to watchlist: \" + e.getMessage());\n         }\n     }\n ",
+                    "refToolCallId": "toolu_01QzWieRhG2y3d9EnyY75yZc"
+                },
+                {
+                    "type": "toolCall",
+                    "toolCallId": "toolu_019JmYgmSoY6YaG27PcfNzw4",
+                    "statusText": "Change generated",
+                    "status": "SUCCESS",
+                    "context": {
+                        "files": [
+                            {
+                                "path": "src/main/java/com/papel/imdb_clone/controllers/RefactoredMainController.java",
+                                "fsPath": "C:/Users/MA$/IdeaProjects/imdb_clone/src/main/java/com/papel/imdb_clone/controllers/RefactoredMainController.java"
+                            }
+                        ]
+                    },
+                    "isHidden": false
+                },
+                {
+                    "type": "codeHunk",
+                    "lineBasedDiff": "--- C:/Users/MA$/IdeaProjects/imdb_clone/src/main/java/com/papel/imdb_clone/controllers/RefactoredMainController.java\n+++ C:/Users/MA$/IdeaProjects/imdb_clone/src/main/java/com/papel/imdb_clone/controllers/RefactoredMainController.java\n@@ -601,15 +601,15 @@\n     public void addSeriesToWatchlist(Series series) {\n         if (series == null) return;\n         if (currentUser == null) {\n-            DialogUtils.showError(\"Login Required\", \"Please log in to add items to a watchlist.\");\n+            UIUtils.showError(\"Login Required\", \"Please log in to add items to a watchlist.\");\n             return;\n         }\n         try {\n             watchlistService.addToFavorites(currentUser.getId(), series.getId());\n-            DialogUtils.showSuccess(\"Added\", '\"' + series.getTitle() + '\"' + \" added to Favorites.\");\n+            UIUtils.showSuccess(\"Added\", '\"' + series.getTitle() + '\"' + \" added to Favorites.\");\n         } catch (Exception e) {\n             logger.error(\"Failed to add series to watchlist\", e);\n-            DialogUtils.showError(\"Error\", \"Could not add series to watchlist: \" + e.getMessage());\n+            UIUtils.showError(\"Error\", \"Could not add series to watchlist: \" + e.getMessage());\n         }\n     }\n ",
+                    "refToolCallId": "toolu_019JmYgmSoY6YaG27PcfNzw4"
+                },
+                {
+                    "type": "text",
+                    "text": "Let me find and update the remaining DialogUtils references:"
+                },
+                {
+                    "type": "toolCall",
+                    "toolCallId": "toolu_018Hdt9V6broqjxY3a2TUoUQ",
+                    "title": "Fulltext search",
+                    "statusText": "Done",
+                    "status": "SUCCESS",
+                    "isHidden": false
+                },
+                {
+                    "type": "text",
+                    "text": "Let me update the remaining references systematically. First, let me check the imports in RefactoredMainController:"
+                },
+                {
+                    "type": "toolCall",
+                    "toolCallId": "toolu_01BWY4LNuBwAxqQJjJ68yjwi",
+                    "statusText": "Viewed file (from the beginning up to line 40)",
+                    "status": "SUCCESS",
+                    "context": {
+                        "files": [
+                            {
+                                "path": "src/main/java/com/papel/imdb_clone/controllers/RefactoredMainController.java",
+                                "fsPath": "C:/Users/MA$/IdeaProjects/imdb_clone/src/main/java/com/papel/imdb_clone/controllers/RefactoredMainController.java"
+                            }
+                        ]
+                    },
+                    "isHidden": false
+                },
+                {
+                    "type": "toolCall",
+                    "toolCallId": "toolu_01N4GbkL9eWwhASmKpo6z3Xc",
+                    "statusText": "Change generated",
+                    "status": "SUCCESS",
+                    "context": {
+                        "files": [
+                            {
+                                "path": "src/main/java/com/papel/imdb_clone/controllers/RefactoredMainController.java",
+                                "fsPath": "C:/Users/MA$/IdeaProjects/imdb_clone/src/main/java/com/papel/imdb_clone/controllers/RefactoredMainController.java"
+                            }
+                        ]
+                    },
+                    "isHidden": false
+                },
+                {
+                    "type": "codeHunk",
+                    "lineBasedDiff": "--- C:/Users/MA$/IdeaProjects/imdb_clone/src/main/java/com/papel/imdb_clone/controllers/RefactoredMainController.java\n+++ C:/Users/MA$/IdeaProjects/imdb_clone/src/main/java/com/papel/imdb_clone/controllers/RefactoredMainController.java\n@@ -15,6 +15,7 @@\n import com.papel.imdb_clone.service.ServiceLocator;\n import com.papel.imdb_clone.service.WatchlistService;\n import com.papel.imdb_clone.util.SettingsManager;\n+import com.papel.imdb_clone.util.UIUtils;\n import javafx.application.Platform;\n import javafx.beans.property.SimpleIntegerProperty;\n import javafx.beans.property.SimpleStringProperty;",
+                    "refToolCallId": "toolu_01N4GbkL9eWwhASmKpo6z3Xc"
+                },
+                {
+                    "type": "codePatch",
+                    "diffs": [
+                        {
+                            "path": "src/main/java/com/papel/imdb_clone/exceptions/EntityNotFoundException.java",
+                            "fsPath": "C:/Users/MA$/IdeaProjects/imdb_clone/src/main/java/com/papel/imdb_clone/exceptions/EntityNotFoundException.java",
+                            "patch": "@@ -282,20 +282,45 @@\n ption%3CT%3E\n+ extends RuntimeException\n  %7B%0D%0A\n-\n %0D%0A    pr\n@@ -522,32 +522,39 @@\n %0D%0A        super(\n+message\n );%0D%0A        this\n@@ -779,32 +779,69 @@\n %0D%0A        super(\n+createMessage(entityType, identifier)\n );%0D%0A        this\n@@ -1111,32 +1111,39 @@\n %0D%0A        super(\n+message\n );%0D%0A        this\n@@ -1405,32 +1405,76 @@\n %0D%0A        super(\n+createMessage(entityType, identifier), cause\n );%0D%0A        this\n@@ -1754,32 +1754,32 @@\n wable cause) %7B%0D%0A\n-\n         super();\n@@ -1776,16 +1776,30 @@\n   super(\n+message, cause\n );%0D%0A    \n",
+                            "isNew": false,
+                            "isApplied": true,
+                            "isUnread": true,
+                            "timestamp": 1755069351304
+                        },
+                        {
+                            "path": "src/main/java/com/papel/imdb_clone/controllers/WatchlistController.java",
+                            "fsPath": "C:/Users/MA$/IdeaProjects/imdb_clone/src/main/java/com/papel/imdb_clone/controllers/WatchlistController.java",
+                            "patch": "@@ -127,16 +127,58 @@\n ervice;%0A\n+import com.papel.imdb_clone.util.UIUtils;%0A\n import j\n@@ -18555,38 +18555,34 @@\n ) %7B%0A            \n-Dialog\n+UI\n Utils.showWarnin\n@@ -18699,22 +18699,18 @@\n irmed = \n-Dialog\n+UI\n Utils.sh\n@@ -19447,38 +19447,34 @@\n                 \n-Dialog\n+UI\n Utils.showSucces\n@@ -19567,38 +19567,34 @@\n                 \n-Dialog\n+UI\n Utils.showError(\n@@ -19705,38 +19705,34 @@\n                 \n-Dialog\n+UI\n Utils.showError(\n@@ -19909,22 +19909,18 @@\n         \n-Dialog\n+UI\n Utils.sh\n",
+                            "isNew": false,
+                            "isApplied": true,
+                            "isUnread": true,
+                            "timestamp": 1755069369545
+                        },
+                        {
+                            "path": "src/main/java/com/papel/imdb_clone/controllers/RefactoredMainController.java",
+                            "fsPath": "C:/Users/MA$/IdeaProjects/imdb_clone/src/main/java/com/papel/imdb_clone/controllers/RefactoredMainController.java",
+                            "patch": "@@ -663,24 +663,66 @@\n ngsManager;%0A\n+import com.papel.imdb_clone.util.UIUtils;%0A\n import javaf\n@@ -21527,38 +21527,34 @@\n ) %7B%0A            \n-Dialog\n+UI\n Utils.showError(\n@@ -21747,38 +21747,34 @@\n ));%0A            \n-Dialog\n+UI\n Utils.showSucces\n@@ -21941,38 +21941,34 @@\n e);%0A            \n-Dialog\n+UI\n Utils.showError(\n@@ -22261,38 +22261,34 @@\n ) %7B%0A            \n-Dialog\n+UI\n Utils.showError(\n@@ -22482,38 +22482,34 @@\n ));%0A            \n-Dialog\n+UI\n Utils.showSucces\n@@ -22678,38 +22678,34 @@\n e);%0A            \n-Dialog\n+UI\n Utils.showError(\n",
+                            "isNew": false,
+                            "isApplied": true,
+                            "isUnread": true,
+                            "timestamp": 1755069395060
+                        }
+                    ]
+                }
+            ],
+            "context": {
+                "author": "Review",
+                "operationId": "4bcdba37-afbe-4fcc-93ea-295e269c17cf"
+            },
+            "createdAt": 1755069303861,
+            "isInternal": false
+        },
+        {
+            "id": "e1962b80-bb25-4724-9e79-5ac0aa51c375",
+            "role": "user",
+            "content": [
+                {
+                    "type": "text",
+                    "text": "tell me what other files i could combine from all the folder"
+                }
+            ],
+            "context": {
+                "currentFile": {
+                    "path": "C:/Users/MA$/.codeium/brain/91eea500-5290-4c28-b146-898a304b66f7/plan.md",
+                    "fsPath": "C:/Users/MA$/.codeium/brain/91eea500-5290-4c28-b146-898a304b66f7/plan.md",
+                    "sources": [
+                        "opened_tab"
+                    ],
+                    "content": "# Project Refactoring Plan\n\n## Notes\n- User wants to reduce project complexity by combining related files/controllers.\n- Phase 1: Combine LoginController and RegisterController into AuthController; combine SeriesController and SeriesDetailsController.\n- Phase 2: Refactor large controllers (ForumController, MovieController, WatchlistController) into smaller, focused ones.\n- User requested to combine exception and service folders as well.\n- The 'service' folder exists (not 'services').\n\n## Task List\n- [ ] Phase 1: Immediate Consolidation\n  - [x] Merge LoginController and RegisterController into AuthController\n  - [ ] Combine SeriesController and SeriesDetailsController\n- [ ] Phase 2: Refactor Large Controllers\n  - [ ] Break down ForumController into smaller controllers\n  - [ ] Break down MovieController into smaller controllers\n  - [ ] Break down WatchlistController into smaller controllers\n- [ ] Combine exception and service folders\n\n## Current Goal\nBegin Phase 1: combine Series controllers",
+                    "language": "markdown"
+                },
+                "codebaseEnabled": true
+            },
+            "createdAt": 1755070063510,
+            "isInternal": false,
+            "rawContent": {
+                "type": "doc",
+                "content": [
+                    {
+                        "type": "paragraph",
+                        "content": [
+                            {
+                                "type": "text",
+                                "text": "tell me what other files i could combine from all the folder"
+                            }
+                        ]
+                    }
+                ]
+            },
+            "autoAppliedRules": []
+        },
+        {
+            "id": "b7146c12-6f18-48bf-826c-755d297dadba",
+            "role": "assistant",
+            "content": [
+                {
+                    "type": "text",
+                    "text": "I'll help you identify files that can be combined to improve your program structure. Let me first understand what you'd like me to review and then analyze the codebase for consolidation opportunities.\n\n## What would you like me to review?\n\nBased on your request, I understand you want me to analyze the entire codebase to identify files that can be combined. Let me examine the current structure and provide recommendations."
+                },
+                {
+                    "type": "toolCall",
+                    "toolCallId": "toolu_016nrsWNgXYczWzgrDFCtrKa",
+                    "statusText": "Viewed directory",
+                    "status": "SUCCESS",
+                    "context": {
+                        "files": [
+                            {
+                                "path": "src/main/java/com/papel/imdb_clone",
+                                "fsPath": "C:/Users/MA$/IdeaProjects/imdb_clone/src/main/java/com/papel/imdb_clone"
+                            }
+                        ]
+                    },
+                    "isHidden": false
+                },
+                {
+                    "type": "text",
+                    "text": "Let me examine some key files to understand their current functionality and identify consolidation opportunities:"
+                },
+                {
+                    "type": "toolCall",
+                    "toolCallId": "toolu_01DmAa5xj7GaFJsKDiNRLRu8",
+                    "statusText": "Viewed whole file",
+                    "status": "SUCCESS",
+                    "context": {
+                        "files": [
+                            {
+                                "path": "src/main/java/com/papel/imdb_clone/util/DialogFactory.java",
+                                "fsPath": "C:/Users/MA$/IdeaProjects/imdb_clone/src/main/java/com/papel/imdb_clone/util/DialogFactory.java"
+                            }
+                        ]
+                    },
+                    "isHidden": false
+                },
+                {
+                    "type": "toolCall",
+                    "toolCallId": "toolu_01K1Pb4pNvJHbZc3YjHaUwra",
+                    "statusText": "Viewed whole file",
+                    "status": "SUCCESS",
+                    "context": {
+                        "files": [
+                            {
+                                "path": "src/main/java/com/papel/imdb_clone/util/TimeUtils.java",
+                                "fsPath": "C:/Users/MA$/IdeaProjects/imdb_clone/src/main/java/com/papel/imdb_clone/util/TimeUtils.java"
+                            }
+                        ]
+                    },
+                    "isHidden": false
+                },
+                {
+                    "type": "toolCall",
+                    "toolCallId": "toolu_01HnpNVUxLZWFxfAUouJ976Q",
+                    "statusText": "Viewed directory",
+                    "status": "SUCCESS",
+                    "context": {
+                        "files": [
+                            {
+                                "path": "src/main/java/com/papel/imdb_clone/service/data",
+                                "fsPath": "C:/Users/MA$/IdeaProjects/imdb_clone/src/main/java/com/papel/imdb_clone/service/data"
+                            }
+                        ]
+                    },
+                    "isHidden": false
+                },
+                {
+                    "type": "toolCall",
+                    "toolCallId": "toolu_0184jxEfzT8wZZJd3XHKivvr",
+                    "statusText": "Viewed whole file",
+                    "status": "SUCCESS",
+                    "context": {
+                        "files": [
+                            {
+                                "path": "src/main/java/com/papel/imdb_clone/service/data/DataLoaderService.java",
+                                "fsPath": "C:/Users/MA$/IdeaProjects/imdb_clone/src/main/java/com/papel/imdb_clone/service/data/DataLoaderService.java"
+                            }
+                        ]
+                    },
+                    "isHidden": false
+                },
+                {
+                    "type": "toolCall",
+                    "toolCallId": "toolu_01QbbuYZtU2ARGcky3NeJodB",
+                    "statusText": "Viewed file (from the beginning up to line 50)",
+                    "status": "SUCCESS",
+                    "context": {
+                        "files": [
+                            {
+                                "path": "src/main/java/com/papel/imdb_clone/controllers/LoginController.java",
+                                "fsPath": "C:/Users/MA$/IdeaProjects/imdb_clone/src/main/java/com/papel/imdb_clone/controllers/LoginController.java"
+                            }
+                        ]
+                    },
+                    "isHidden": false
+                },
+                {
+                    "type": "toolCall",
+                    "toolCallId": "toolu_01RwWNoQjr8VMhzQJgq7yzwh",
+                    "statusText": "Viewed file (from the beginning up to line 50)",
+                    "status": "SUCCESS",
+                    "context": {
+                        "files": [
+                            {
+                                "path": "src/main/java/com/papel/imdb_clone/controllers/RegisterController.java",
+                                "fsPath": "C:/Users/MA$/IdeaProjects/imdb_clone/src/main/java/com/papel/imdb_clone/controllers/RegisterController.java"
+                            }
+                        ]
+                    },
+                    "isHidden": false
+                },
+                {
+                    "type": "text",
+                    "text": "Now let me examine some exception classes to understand the consolidation opportunities:"
+                },
+                {
+                    "type": "toolCall",
+                    "toolCallId": "toolu_0124zTU5zmJMN7ukoRb9gGkK",
+                    "statusText": "Viewed whole file",
+                    "status": "SUCCESS",
+                    "context": {
+                        "files": [
+                            {
+                                "path": "src/main/java/com/papel/imdb_clone/exceptions/InvalidEmailException.java",
+                                "fsPath": "C:/Users/MA$/IdeaProjects/imdb_clone/src/main/java/com/papel/imdb_clone/exceptions/InvalidEmailException.java"
+                            }
+                        ]
+                    },
+                    "isHidden": false
+                },
+                {
+                    "type": "toolCall",
+                    "toolCallId": "toolu_0131SYTpT41gg5cDMXrb4w9m",
+                    "statusText": "Viewed whole file",
+                    "status": "SUCCESS",
+                    "context": {
+                        "files": [
+                            {
+                                "path": "src/main/java/com/papel/imdb_clone/exceptions/InvalidRatingException.java",
+                                "fsPath": "C:/Users/MA$/IdeaProjects/imdb_clone/src/main/java/com/papel/imdb_clone/exceptions/InvalidRatingException.java"
+                            }
+                        ]
+                    },
+                    "isHidden": false
+                },
+                {
+                    "type": "toolCall",
+                    "toolCallId": "toolu_01PWxq52xFjZ2i4gPVzwCFSK",
+                    "statusText": "Viewed whole file",
+                    "status": "SUCCESS",
+                    "context": {
+                        "files": [
+                            {
+                                "path": "src/main/java/com/papel/imdb_clone/exceptions/DataValidationException.java",
+                                "fsPath": "C:/Users/MA$/IdeaProjects/imdb_clone/src/main/java/com/papel/imdb_clone/exceptions/DataValidationException.java"
+                            }
+                        ]
+                    },
+                    "isHidden": false
+                },
+                {
+                    "type": "text",
+                    "text": "Let me check some service classes to understand their relationships:"
+                },
+                {
+                    "type": "toolCall",
+                    "toolCallId": "toolu_01HGR6Fuw2BuUnNGaBEXeEcE",
+                    "statusText": "Viewed file (from the beginning up to line 50)",
+                    "status": "SUCCESS",
+                    "context": {
+                        "files": [
+                            {
+                                "path": "src/main/java/com/papel/imdb_clone/service/ActorService.java",
+                                "fsPath": "C:/Users/MA$/IdeaProjects/imdb_clone/src/main/java/com/papel/imdb_clone/service/ActorService.java"
+                            }
+                        ]
+                    },
+                    "isHidden": false
+                },
+                {
+                    "type": "toolCall",
+                    "toolCallId": "toolu_01LfySxJEtvK36sQB1snU2aF",
+                    "statusText": "Viewed file (from the beginning up to line 50)",
+                    "status": "SUCCESS",
+                    "context": {
+                        "files": [
+                            {
+                                "path": "src/main/java/com/papel/imdb_clone/service/DirectorService.java",
+                                "fsPath": "C:/Users/MA$/IdeaProjects/imdb_clone/src/main/java/com/papel/imdb_clone/service/DirectorService.java"
+                            }
+                        ]
+                    },
+                    "isHidden": false
+                },
+                {
+                    "type": "text",
+                    "text": "Now let me check the controllers to see which ones can be combined:"
+                },
+                {
+                    "type": "toolCall",
+                    "toolCallId": "toolu_01CGb8JD4xGkVCnopwsYzFbQ",
+                    "statusText": "Viewed file (from the beginning up to line 50)",
+                    "status": "SUCCESS",
+                    "context": {
+                        "files": [
+                            {
+                                "path": "src/main/java/com/papel/imdb_clone/controllers/SeriesController.java",
+                                "fsPath": "C:/Users/MA$/IdeaProjects/imdb_clone/src/main/java/com/papel/imdb_clone/controllers/SeriesController.java"
+                            }
+                        ]
+                    },
+                    "isHidden": false
+                },
+                {
+                    "type": "toolCall",
+                    "toolCallId": "toolu_01AwAkV8nYjAmAwTowMiRT2w",
+                    "statusText": "Viewed file (from the beginning up to line 50)",
+                    "status": "SUCCESS",
+                    "context": {
+                        "files": [
+                            {
+                                "path": "src/main/java/com/papel/imdb_clone/controllers/SeriesDetailsController.java",
+                                "fsPath": "C:/Users/MA$/IdeaProjects/imdb_clone/src/main/java/com/papel/imdb_clone/controllers/SeriesDetailsController.java"
+                            }
+                        ]
+                    },
+                    "isHidden": false
+                },
+                {
+                    "type": "text",
+                    "text": "Based on my comprehensive analysis of the codebase, here are the **key files that can be combined** to improve the program structure:\n\n## **🔍 Code Review: Files Ready for Consolidation**\n\n### **✅ Strengths of Current Structure**\n- Good separation of concerns with service layer\n- Proper use of design patterns (Service Locator, Singleton)\n- Already consolidated UI utilities into `UIUtils`\n- Validation consolidated into `ValidationService`\n\n### **🚨 Critical Issues & Consolidation Opportunities**\n\n## **1. UTILITY CLASSES - High Priority Consolidation**\n\n### **A. Dialog/UI Related Classes → Merge into `UIUtils`**\n```\n📁 util/\n├── DialogFactory.java ❌ (REDUNDANT - merge into UIUtils)\n├── UIUtils.java ✅ (KEEP as main utility)\n└── TimeUtils.java ❌ (SMALL - merge into UIUtils)\n```\n\n**Recommendation**: Merge `DialogFactory` and `TimeUtils` into `UIUtils` to create one comprehensive UI utility class.\n\n### **B. Session/Settings Management → Create `ApplicationStateManager`**\n```\n📁 util/\n├── SessionManager.java ❌ (merge)\n├── SettingsManager.java ❌ (merge)\n└── ApplicationStateManager.java ✅ (NEW - combined class)\n```\n\n## **2. EXCEPTION CLASSES - High Priority Consolidation**\n\n### **Create Unified Exception Hierarchy**\n```\n📁 exceptions/\n├── InvalidEmailException.java ❌ (merge)\n├── InvalidRatingException.java ❌ (merge)\n├── InvalidGenreException.java ❌ (merge)\n├── DataValidationException.java ❌ (merge)\n├── DuplicateContentException.java ❌ (merge)\n├── DuplicateUsernameException.java ❌ (merge)\n├── UserAlreadyExistsException.java ❌ (merge)\n└── ValidationException.java ✅ (NEW - unified validation exception)\n```\n\n**All simple validation exceptions can be replaced with a single `ValidationException` class.**\n\n## **3. SERVICE CLASSES - Medium Priority**\n\n### **A. Celebrity Services → Create `CelebrityService`**\n```\n📁 service/\n├── ActorService.java ❌ (merge - nearly identical code)\n├── DirectorService.java ❌ (merge - nearly identical code)\n└── CelebrityService.java ✅ (NEW - handles both actors & directors)\n```\n\n### **B. Data Loading Services → Consolidate**\n```\n📁 service/data/\n├── DataLoaderService.java ❌ (interface - keep)\n├── FileDataLoaderService.java ❌ (implementation)\n└── SeriesDataLoader.java ❌ (merge into FileDataLoaderService)\n```\n\n## **4. CONTROLLER CLASSES - As Per Your Plan**\n\n### **A. Authentication Controllers → `AuthController` (ALREADY DONE ✅)**\n```\n📁 controllers/\n├── LoginController.java ❌ (should be merged)\n├── RegisterController.java ❌ (should be merged)\n└── AuthController.java ✅ (EXISTS - complete the merge)\n```\n\n### **B. Series Controllers → `SeriesManagementController`**\n```\n📁 controllers/\n├── SeriesController.java ❌ (merge)\n├── SeriesDetailsController.java ❌ (merge)\n└── SeriesManagementController.java ✅ (EXISTS - complete the merge)\n```\n\n## **5. REPOSITORY LAYER - Low Priority**\nThe repository interfaces are well-designed and should remain separate for maintainability.\n\n---\n\n## **🎯 Immediate Action Plan**\n\n### **Phase 1: Critical Consolidations (Do First)**\n\n1. **Fix EntityNotFoundException inheritance** ✅ (DONE)\n2. **Complete DialogUtils → UIUtils migration** ✅ (IN PROGRESS)\n3. **Merge DialogFactory into UIUtils**\n4. **Create unified ValidationException**\n5. **Complete AuthController consolidation**\n\n### **Phase 2: Service Layer Consolidations**\n\n1. **Merge ActorService + DirectorService → CelebrityService**\n2. **Consolidate data loading services**\n3. **Complete Series controller consolidation**\n\n### **Phase 3: Final Cleanup**\n\n1. **Merge SessionManager + SettingsManager**\n2. **Add TimeUtils to UIUtils**\n3. **Remove deprecated classes**\n\nWould you like me to proceed with implementing any of these consolidations? I recommend starting with **Phase 1** items as they provide the most immediate benefit and fix existing issues."
+                }
+            ],
+            "context": {
+                "author": "Review",
+                "operationId": "5a056291-38f0-47f7-952d-5e5eb83b8ec8"
+            },
+            "createdAt": 1755070547402,
+            "isInternal": false
+        }
+    ],
+    "isAgent": false,
+    "isNameGenerated": true,
+    "isCustomAgent": true,
+    "customAgent": {
+        "id": "f83edcb4-57ff-4600-81bd-361662ea8c8e",
+        "name": "Review",
+        "commandName": "review",
+        "command": "You are a Code Review agent. Your primary task is to assist users by reviewing their code and providing constructive feedback. Follow these steps to ensure an effective and thorough review:\n\n1. **Understand the User's Request**:\n    - Always begin by clarifying the requirements for the review with the user. For example:\n        - \"What would you like me to review?\"\n            - uncommitted changes in the directory\n            - diff with main branch (IMPORTANT: in this case review only changes unique to the current branch, do not include changes that are already in main, use git diff with range like <base-branch>...HEAD to achive it)\n            - certain commit (ask user to select a commit from the 5 recent commits in the branch)\n            - certain file(s) (ask user to send them in the next message, ignore currenly open file)\n            - specific piece of code. Ask user to send it in the next message, if it's not sent in the prev message directly\n        - \"Are there specific areas or concerns you'd like me to focus on (e.g., performance, readability, bugs)?\"\n    - If the user provides incomplete or unclear information, ask clarifying questions to gather the necessary context.\n2. **Perform the Code Review**:\n    - Once you have the code and context, analyze it thoroughly. Focus on the following key aspects during the review:\n\n        **a. Functionality**:\n\n        - Does the code work as intended? Are there any bugs or logical errors?\n        - Are edge cases and error handling properly addressed?\n\n        **b. Readability and Maintainability**:\n\n        - Is the code easy to read and understand?\n        - Are variable names, function names, and comments clear and descriptive?\n        - Is the code modular and well-organized?\n\n        **c. Performance**:\n\n        - Is the code efficient? Are there any unnecessary computations or bottlenecks?\n        - Are there opportunities to optimize the code for better performance?\n\n        **d. Security**:\n\n        - Are there any potential security vulnerabilities (e.g., SQL injection, unsafe input handling)?\n        - Is sensitive data handled securely?\n\n        **e. Adherence to Best Practices**:\n\n        - Does the code follow language-specific best practices and conventions?\n        - Are there any anti-patterns or bad practices that should be avoided?\n\n        **f. Testing**:\n\n        - Are there sufficient tests for the code (e.g., unit tests, integration tests)?\n        - Do the tests cover edge cases and potential failure points?\n\n        **g. Documentation**:\n\n        - Is the code adequately documented (e.g., docstrings, inline comments)?\n        - Are there clear instructions for how to use or run the code?\n3. **Provide Feedback**:\n    - Summarize your findings in a clear and constructive manner. Highlight both strengths and areas for improvement.\n    - For each issue or suggestion, explain why it matters and, if possible, provide examples or recommendations for improvement.\n    - If the code is excellent and requires no changes, acknowledge this and provide positive feedback.\n4. **Iterate if Needed**:\n    - If the user has follow-up questions or requests further clarification, respond accordingly.\n    - If the user provides updated code after making changes, review it again as needed.\n\nYour goal is to help the user improve their code while maintaining a positive and collaborative tone. Always be specific, actionable, and constructive in your feedback.",
+        "codeLens": true,
+        "repair": true,
+        "rag": true,
+        "creationDate": "2025-08-01T12:17:13.836319Z",
+        "lastModifiedDate": "2025-08-01T12:17:13.836319Z",
+        "tools": [
+            {
+                "id": "str_replace_editor",
+                "name": "File Editor",
+                "description": "Allows viewing, creating, and editing files with features like text replacement in existing files, inserting text at specific lines, and reverting edits",
+                "author": "ZENCODER_BACKEND",
+                "icon": "iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAACXBIWXMAABYlAAAWJQFJUiTwAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAANqSURBVHgB7Zs/b9NAGMaf91poCKQSUju0UydWkPIFykYprcRYMbCVFVH20J1/K526saLSCiQG8gGoVFYWOjUDSNAmRGlp7uXOaoRjxfHZ8bl27d+CfLapnp8v9vnuNVBQUJBnCBHg5alKS7aqUmJebd5QLRXBuAaiCmKCwQ3w2Mbkh/Z7WCS0gOa90jy6XIsz7DCYxbpNCaEEHC1MrBHRChLGpgRhemBzobR6HuE1RLJ2tFBeggWMeoC68ksqfM3dxowmCbwVELsYQ6ONcnN662cTI9K8W/rit89GTxg3Ooqw6t6UoMbJJXo0vdU++N/ahm3OegLilBD4E3CuPmjG3XYy7g2fHHH/HAIFMFHVvS2B7fMK3yNOCYECiNF39cdJWH0umxKXhOCnAPGse7OtbnhICXFICO4Bnt//eXd/L6NKMB4HpJlRJKRPgBpfIAJRJaROAAPfEBGCfIKQpE7A8alYj9oLlIHQL2ipEzD9qX3QORUPmLiOBDAbCieMlqD+eWpy7LB3BxMuxFNgFAoByDmFAOScQgByTiEAOSf7AlzvDXqyFiHJvACGeKmDO9P0TBsISSrfBcJwNkUeeZ6yuAcg5xQCkHNyLyDzTwE3unhDV61cvozNK+86+ybnXJgeoKbGaiz5M4Frf0/4e2ux9NDkvAshwAkPfuZuk8ybJhIyL2BQ+B4mEjItYFj4HlqCU9jlQ2YFmITvwRK+vSCTAsKE16hjD/32ZU5A+PDYl5Je++3PlICI4W9f/+g/JsiMABvhNZkQYCu8JliAZ6n6x/JUIjXCPWyG1xiUyXGrv6WdmADb4TXBRVJEfT2g3O0vm7NFEuE1gQIk95esSMgqLJNUeE2gACFQ72uQWPmzXJ6FJZIMrwkU0BGd3b4bIaHSPe2+sSUhyfAao3J552VC4rm3XdcNO6WzY2hcjaGAUv8d/U5vcmwc4TXGX4wcLU6sqYWHkT+YGPYt0OHixGNivAr+P+IJrzEeCE3uHL9QukKvvHjRpbd+9XxqNudm0PlxhteEGglWdjob+quNKGtwbiRRa1C7knNr2Hlxh9eEnhTtLUXpslQmWSXCDDPPCk9RtR/OGh4Gr+Ex6LcTc+A+7Knw9+MMr4n03aAtft0pzQmhJzYxp6+2GoTV1T3jqyDaq2x36igoKIibf1tovo7P+7AmAAAAAElFTkSuQmCC",
+                "tools": [
+                    "str_replace_editor"
+                ],
+                "status": {}
+            },
+            {
+                "id": "web_search",
+                "name": "Web Search",
+                "description": "Search the web for up-to-date technical information like latest releases, security advisories, migration guides, benchmarks, and community insights",
+                "author": "ZENCODER_MCP_BACKEND",
+                "icon": "iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAACXBIWXMAABYlAAAWJQFJUiTwAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAl9SURBVHgB7Vs/UxxHFn/ds8uMFhahqlNgRThZh6cqPoBQcFXHImEuFIlxAqF0JedC+eGTQkisC4xC65BAV3WBuA+wVUpvE3MJBLoqy8xq2WF2+vm9WRZmembn3y6yyuanUtVOT/dM9+v3fu9PDwCXuMQlfs8QcIHo1Ku1LjgzHsgv6LIGgFUJ4rNgHwV4KFAcgBRNid5BCcyGtWs34SNh5AL4MF+hBeOsUOoOCFGFAkASCoJomFDeumhhjEwA/sKVWhECZmCEUABNgfh88rXzEi4AQwvgohaug7XCKBmr49vtAxghCgsAF/5QtV2bFi7uZR4joGGA3Gwbleb17f/bLLwuqIcSmR8yPoO0wSlXN3k8jACFBPDhT5UbXtnbEBqhpbxps7rT2Yy7Zc9bK7TFK5ARo9QGCTnRqZs1VfK+j1s87zAK8TwyKGHxDP8e9YkbRxzwKtosPlOu+p69DAyJXAI4mqvcdUFs6eyuQBxKIVcndzqrgGo2eI+FkrT4PrgPIjQg/OB7J6WJdX42vyN0T0DVBXeL5wRDILMAeOeFUI/0dt7xk9L40vhOu3E0Z97VNcMx5GPICKdLfRHObZsWaXmte/zsk9LxEgqMaBfPaRhNyCQAtnkXYSNyg1R0cud4/YyQhGbHdP96Dju9/m/qKyG8SNIC/9422JM7znqcqbjobnxYqNyAAkgVALM9E14kqNHsOm73O4Z8BTnRMTrPdS1gb9G/jOUL6uN1vY13NFfIiVQB+K5OJ7w4UpPyVvCSyet6AZbmnUaJIcFxnBG8jhMCz9GkuUJOJAqAVV/382zz+uLfLUCVorXZ8ITKW1AQBhh74WdBTd9dnzQ1TuC5BrUlCxIF4Kt+AMzEjjEesUFLWTN6v8khYngmPfb1Zw1MhqoVWZhjOJshc4GotqRhoADibFoCkpq1Z/W+SkGojcLiPRgW2jMQRUQApluZZeFo757JowUDBSBkfIjLbsees0JSliIcyhog9mBI6GYgUYU4hucQ55YZebQgNhRmv8pBRtLAfjjahrZtda03ofGlidvDxurMK3HPrXjtWpbki4MnNiVIQawGOOAuBa9V0B5P4YejXbVtutbfwn2hOYpEhb0BvSTEI2Pd1oZCtRG3eD1S5JoEZECsAARg6AVSivhwFHo2F7rWSKkoOP6gosiBNtlIxEfhs81zKwmxFpqHwjuQARETiKg/vaD6unObf74jtzhWVis0kdSH+3H9aZlLiFLTQMM2S+ah0LSjH8EppWroYZWkXQOFNdqEWlpFiVLjPUqNH7PG+SbjWttBUkQoL6V5o5Le0IVuaEe5NNX/7YeqAGvEsi89IDvEwXboawbiDLLvQAX8z+26YNetUD8yo8AY4Uuuty2DM/V+XWF8l23c6c2NTOZoXjSC8YjsrSWfAJRQN6hIeXZNDB8hklNyWfWrQeit5aoLDANWdym/GURuVFih+OHcJRMPfJH2yCgHKBGyM9qVgRKMmwiOiAP8qWjkKwTaScxOIbTOUalZYkQDiMVuBNXPI9tNegBpy0RQW53yxAIct6uWqWq0YzVkWwZRJXtlzZoQWuDCAqOQtkWCPqDfVFeAA2Z/2ulmR3OxFAwlckLHkU2rfG5SBuAEpCAigEg+T8QFSZuqLejUBfJ/5os9GBJ2ffC7IrjStqF7zjHEX6kpcmo2OKri48eAHzvkRO6a4EdHgFPi4pBh+6cKoEiRYZQgN/otL4S5gjhkc9T9I872qG6+DPJApyQXkgoblJS8CdrmKPKAj4mIBhAbhyZvUYSWMB6YwcMt7V9VY/IiIgCF4ciJwtPErEsXmNk1Ul3Pp4SIACiX/2/wmstMFL5uDaq66gkLyJPU6OtTQinaUGpQMqQ31zj1/bluvSoJ+TIcjanDIJVIJUeuAbg4NXXkHi9T7nGLQt2b9LZpvx3gLf3ep/f/c3K38wwKIDbj0IktMiEOURE2jbLRwC7SpPBh/x5Xg6/udtZgRKCTn0WQ3e+IbKZSuu7Tch7nFUSsG9TL0jrYS5BpPGKtoExPLz8NfV7Xhz1v/h2E90OGxTOmaebf2fWxR5ADsRrAWR5XXqAgKGbfExKbqKhsJo0DrgV4Ja9VgYotMrpI4p1HpFlrUABUK3xS3XH/mqnvoBtHc1ao9NSLqrCRpRiSBT0zMjYnX7cjX34c1a1l3s1Qf4HvSTWfSgl71VedPW5r1cs3KVl7QFniV9EXGH+hZ7+AFAwUQJwWcOmpfQKHZokEI9WdpIJIJgSqTUFQMPYjnBJdrxvsKyVuX/tXZz/uMT/92ZqWEt+IwBjCe2/syufXXrx/DwkYGAr7hxPacTUXP+BKxeZd46NwjvroCd9waQoKQAnR0tt6ux9aCCQtnsH3uA+wlpxjSjrHy5CCxFzAkDLx/I1DXlZHp+w81k9omAfYI3D5SlF+rxc3BsbqEr8MN4hnSYvvg/sgmUh4aPjAJg6lpJv+mf+8+ZwmenZI4gdGcxar7tnk/XrcHDRJBc9NQsLh1Z3OOuQEmdU0Bq49MJ5mHcv8QOXHMy9A8/lj6pi0Dnz+FvN1xop+OhTRFipLF8kkSTNuBq+v7X54m3Eo9MkxgOm0MRkKImCfuGJVV3FdCH50GPN1B3ziyFQQ4XJ4WeBq5AYJgQ5RH57tdMzXHQW+3NgPXth3rFnIiNbieEh7yNWmak/mipC16zSJZCLf+zAnmF17i91m3NcdnqtyRWY0o9Ck6cBkFjJCue79cIv4X9qYXCUxdn9lwCXdHPxzQooZxrrWQ10LOJjS+SIJxAH/0Z59/3jRmk4b5/dBsayNLR4IJaF3RIYb/L1A5kGUPAU9xyD8tAhThjv2oxb/75fHxO0rL+LdIS/ePUEun0+fvw72r+46n0MKCn8qy2dxpmeuBF1kBjQpmlxPO7Y+uju2CJ74IXJD4DOJ5acTp57B5welblGs8UBPmEgAT0kADyAFQ38sXUgbIDkXYPxcN5/Q5O7DEJBCLE/sdP6R1Gdkn8vzF5so1b08Hz4PygX6oAIMnTtiPhLVkCaEkZ0L8E5S5LfEJMkhcJaafFwuEESvsCK+Rs01xoGzRVb7yDsQn7Xmra8GjbvgP5kxa12QM5QLUCyANT4f7P/JTO8QVX47yAR0nKbIX5K9T4vTaJEFQwt4yyUxb8x6wZlfXCrNGKQJFyqAXwt5hPDpH40VQK8uKL7W28kcnuhtv0kBMOKEQCYTKY78ZgXA6AuBuYJJkiLDzJ/uX+ISl/h94Be4RqBgAJF5JwAAAABJRU5ErkJggg==",
+                "tools": [
+                    "web_search"
+                ],
+                "status": {}
+            },
+            {
+                "id": "RequirementsTool",
+                "name": "Gather Requirements",
+                "description": "Asks clarifying questions to fully understand user needs before starting a task, ensuring precise and efficient solutions",
+                "author": "ZENCODER_CLIENT",
+                "icon": "iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAACXBIWXMAABYlAAAWJQFJUiTwAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAASaSURBVHgB7Zu9cttGEMd3jxQJ06KsIiysSpVfwA8QpchMRMkctXJjp5HqWOkt97EnrdhEVdRmJFkuUkR+AE96N05lFcqMMwRNUSRxm1vI8AAwyTuAh5FM4leQwAHEYf+43fvgAiAnJ2eWQbAMNb6ptvvtTQK4jwj3wQIS4C0SHSy8ujwCy1gV4OP3lSVvzttDwLuQAQR0VigWtm8fdt6DJQRYJEvjGb62N/D2zlUrA0tYE6C1Wn6QpfEBXIfjtTfBEqlcgP3c7bsrhKh8nHw/FzHjld8e94rzz2uH/7owAefKrUpzcks9qfX4savYgMod5Ou08SGxAO66swIePQXEsc2wWxSNmiVfPW9A1Rk4f407h+OD+mgmFSKRC6hmvqNk/0Vn/BWViZ585EoXFW197BqI+NRddbYgAcYC8IVVBca+Vxq0dz42KkswIexuA+UCxj9A2PIflPHpBvgBTqkbLiMCFwUcCBBvoABn0pPrqgkmUj8tROLZwqvOUbdevncJ+HBYfFCP9ufqcfdUdy0zAerlo3CEl4BnvSJuh32c/bQ0uPW7AMq0J+C675xcPAiXXQVK2ovUrR5Qd26+oQvCWhcY1r3FjWdqh+D2+rjNNwgZEQgfL6/92XnPdbPRnwsRqmXpruiuqY8BQnwbvQk4HhXd+Ub46XATlQhvwRKE8EYZ1OwVbz8cV7ey5iBS6EXvfRhF3QkIFAlkRRTabob9U31ZH7erznXsUY5Hkh9RsI/yHmjQtwAJkebfUQEPbiidQifS6ghQ2wvpBVC+FN6tWZyI2IbjECTE6mToayQXAGacXACYcXIBYMbJBYAZRzsXSEprtaJmj94Ts1Ujc66WvArNT/MMa9hvAeht2TbevywveYF8ApaxLoBapZ2HjJCIbbCMdQEIxIssFkX8JTjCJljGegzIbi0gG/JuEKaN0LqgiStOnQBBDDKNGdZjwHWTNAblMQBmnHwuAJZJOhfIaow/tK6NxUW3192YK8HprT+6/3DZtc8Fshrjx7nYcJbd3sXfSobf+j165+c5wA2ZC2Qxxg/DxiujOcFiOSgjCY/4+9rnAlmN8QOGGf+J1/wx1XOBUcaruPPszsnlPm9PbS8w3vjebrA/lQKYGs9MnQBJjGdunADtNedRa630oVUvv+PtJL9NajyjF4CifznbTFMdhiTaBcJFtbmstvdNRUhjPKMVgJBifXQnUwHUQGIxvGsiQlrjGa0AiBhpARUPss0HJvFTvGicCJMYz2gFkBRNdpIgrbwDMIqFk+6+kv1H+OI+aN+tlyK5ipMaz2gFEAJOo3cCmzYyQMcxSgQC3A1EsGE8o02U9BOV+85hOFcoixcXhtGqO4958hIvR4Rf1RB6AyY03r+WyUn+zImTpGNwzqCfNleAs6zEGCVCnDTGM8bp8q218o6atFh7USHAZD1AJ0Ja4xnjgdDCy8vnnK0JljFZD+CYgAK/U13kf/FjkxjPJBoJVl92m34arOW/vkzWAzjzWxBFRJjUeCb1W2O89EUo+dW4u0S0JFK+L0T+SFO8MF0S+/CDs6x6psfcO5mkw+fk5OSM439mq0xXi3gaPgAAAABJRU5ErkJggg==",
+                "tools": [
+                    "RequirementsTool"
+                ],
+                "status": {}
+            },
+            {
+                "id": "ExecuteShellCommand",
+                "name": "Execute Shell Command",
+                "description": "Run shell commands within the project's root directory",
+                "author": "ZENCODER_CLIENT",
+                "icon": "iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAACXBIWXMAABYlAAAWJQFJUiTwAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAP1SURBVHgB7ZoxUxNBFMff27tIVOJYmAIqq/gB/AI2zCgw9GLh2MTa8QMAH4AZWlJhIfYMoDM2fAE+gGmkIgXOyBCQRHL7fC+C3h2BvQsb2Az7a5Jdbsnuf9+73Z39A3g8Ho/H47mtIFwBmnlUOuocTEegniDBGCGNS70CHIMBoIEa8omEu6CwDlrXg0KwfX/t1y70SV8CHE3cG49CPYcIT8EBNMB6GKpaP0LkFuDw+d2XhLoKiCVwCYImR0Zt9MvxpzzNcgnQfFHkgUMVXIagVvrcqmV9PLMA3ZlX9P7c7yFsK8It/ltDKVWXuqvk5GUczdwbDzrRaIRBiYgqEcCsAjr3vkGNi1kjIZMAkvM6jD7Gw5445BRyyG3mCznbHE7yxBBJZP5PSelbQb3KMhEKMtApJHNeBs+v4rc3PXhB+lDgvsig/1WyGNGJnsvS3iiAzD4/NJ1oxDP/YLNdB0cocl+Q+xSvkxVqj5dpU1ujAFEYJZY6DdhwYebTSJ84MrfjdXc7R9OmduYUUFCJFwOAVXAUjsyteDkCemJsY3oANCYE4FBzJvTTyEoUL3MaGHekZgFOt7dnRBQ0wVFabZWYHEVkQYAU7TA67FV/OFV8fTB15+fB5Mh3+Q5DglEATB1syhesrZponndFD/nrY/6+chMilL8m+0aA46Y2uSPgQpAexos3JUJe7AlA6l26ahhEsCbAg83WCofBm3S96yLYiwAYThGsCiAMmwjWBRAuEWEJHGMgAnT/MfIqlIIr9sExBiKAhLqEfLqe9xQL4BjWBbho8JISf1PDLawKMGyDF0KwRL+D77YDvXS6jc7DDh9/50c3Wh/gCliLgO5Z4BzmmY+dIfLy2MaqMrCzQOawP9cuOzZWFatnAe7QDl+P7efK+dN2kBP5HRurirV3wOmAVyAn/bazxcA2QsOCFwBuOV4AuOV4AUwPECQvG/b4ihocZW8i2Tc+kdu5HR4WSoVgFHJiFkAMSTGKWlfAUSKMErfBGrFhamNOAYTkfZsejAPMBuIaSdaY7zGNAgSA3+JlPoE9A0fhY/VsssKCAMfh8Xq8LMYD8QuBY0if0td47ULSL9ALowDlNWimjQd8Equ2JkvOvAtakyOVrnUvhngHy7Y8Qu2OWkh7cE7oZNmFSJA+nBAspz1Mv0OVySqX3SYnbizoYZPjfYICWkUM6wEFzYivzwdpk5NPzSsRaj2mST3r5VblVFjMauPJZ5ScKlZ5xG4bJRFqpY0BGCXP6OnLc4B+fYt9maVly3mnoKtp+9xNIW7VdqAWytdhlo4jQoyEnINKNiBU4ci4Hrs84i7PeEP2KMfhfX7b/3DWt+TxeDwej8dd/gBP3cjdQfST7wAAAABJRU5ErkJggg==",
+                "tools": [
+                    "ExecuteShellCommand"
+                ],
+                "status": {}
+            },
+            {
+                "id": "fetch_webpage",
+                "name": "Fetch Webpage Content",
+                "description": "Retrieve webpage content from a specific URL",
+                "author": "ZENCODER_MCP_BACKEND",
+                "icon": "iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAACXBIWXMAABYlAAAWJQFJUiTwAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAQTSURBVHgB7Zq/ThtBEMZn9s7BAYwo4gIqKvMAeQEapAQQfUgRpXHqKA8APAASLa5IEdIjIJHS8AI8QNyEChdECsIQ7Ni3kxkC5O4w7Nm+PZ/gfg2+5RZ2vv036/0AMjIyMjIyMh4rCH1Ai88K5+3TBQ/UNBJMENKklCvACbCABqrJTyQ8AoVV0Lrq5JyDke3fR9AjPQlwPjs86bl6GRGeQwrQADuuqyq9CNG1AGcvnr4i1GVALECaIKjzyKiMfr343E21rgSov8xz4FCGNENQKXxpVKK+HlmAy55X9OHW/0M4UIT7/LuaUqoqZf3Myfs4XxyedNreqIdOgYhKHsCSArq13qDGtagjIZIAMue1633yD3viIaeQh9xed0Mubs7muGOIZGT+n5LStpx6HaUjFESgnQvOeQmel+J3gw5ekDbkuC0S9E0hi+G19HKU+kYBpPf5pYVAJe75sb1mFVJCntuC3CZ/mexQx7xNm+oaBfBcL7DVacBaHD1/Np9/czr/5Nfp3NAP+Qx9Im3ikXngL3vaPl8w1TNPAQUl/6MDsAUxoIlWeAUd549T/HkdYoBH5r7/2QOaNtYxvQAaAwLwUItr6E/5Po9DDMhO5H/maWDMSM0CXKW313jk1CGlNJoq0DmKKAYBQjRd7wweEEYBMHSwKVpKcuKg+C3YNgKcNNXpegQ8NDIB4JFjVYBek524k6T7sCpAKNnZjBKMvCPvxp0k3YXdKYAUSHBMItwE74MATsAidgUg9T5cdJcInYIXeBteBYtYFWBsr7HJIbwNl3cKtFOZ1P33N+xhfRe4SwQz9oMXEtkGuxchmeCFxPKA6CIkF7yQaCJkFiHZ4IXEM8G7RUg+eGEgqfC1CLzHH/J12smgghdcGBBXAW/CgMkOQ/DIefQCWFsDLnN70OtXp7p+OOSvu1dGdxsfwQLWRoDvKNwvVo/E9qZA6CjcDzaPxEYBCIKXDcd8RQ1R4KOw7PPQJ5InRD0SH88G24ZAxm+wra0Bg9jnCzlntCWGmS4wTwExJPnIa12ClOKhF7gN1og1Ux3zFEAI3rdpOw6wOBDXSLDEfI9pFMAB/O5/5hV5BlIKb7tLwYIYBLhwL3b8z2I8EL8QpAxpU/gar5kL+gU6YRSguA31sPGAV+ZyY66QmrWgMTdUurTu+RDvYDEuj1CzrVbDHpwWtTbSMBKkDS2CjbCH6Y+rIlnlotvkxI0FHWxynCcooC1Et+qQU/f4+tymTU5+at6JUOsJTWqmk1uVp8JaVBtPd0bJ+XyZI063URKhUti1YJS8pqMvLwX06lvsySwtKeeTnC6H7XODQtyqTUetFpMwS/sRIYZcnoNKEhAq8chIxi6PeMQ9XpMc5cId4dX+Z2p9SxkZGRkZGRnp5S+lzdnY4AK96gAAAABJRU5ErkJggg==",
+                "tools": [
+                    "fetch_webpage"
+                ],
+                "status": {}
+            }
+        ],
+        "author": "39399e8c-7f6a-40ff-a6eb-da4ede91e4ac",
+        "isSharedWithOrganization": false,
+        "email": "giorgos_M000@hotmail.com"
+    },
+    "isUnitTestsAgent": false,
+    "isE2EAgent": false,
+    "isQnaAgent": false,
+    "isRepoInfoAgent": false,
+    "isClaudeCode": false,
+    "isZencoderCli": false,
+    "autoApply": true,
+    "model": "default"
+}
+}

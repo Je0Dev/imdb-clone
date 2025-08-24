@@ -1,0 +1,21 @@
+# Format: Title,Year,Genre,Duration,Director,Rating,Actors
+The Shawshank Redemption,1994,DRAMA,142,Frank Darabont,9.3,Tim Robbins;Morgan Freeman
+The Godfather,1972,CRIME,175,Francis Ford Coppola,9.2,Marlon Brando;Al Pacino
+The Dark Knight,2008,ACTION,152,Christopher Nolan,9.0,Christian Bale;Heath Ledger
+Inception,2010,SCI-FI,148,Christopher Nolan,8.8,Leonardo DiCaprio;Joseph Gordon-Levitt
+Pulp Fiction,1994,CRIME,154,Quentin Tarantino,8.9,John Travolta;Samuel L. Jackson
+Interstellar,2014,SCI-FI,169,Christopher Nolan,8.6,Matthew McConaughey;Anne Hathaway
+Parasite,2019,DRAMA,132,Bong Joon Ho,8.6,Kang-ho Song;Lee Sun-kyun
+Whiplash,2014,DRAMA,107,Damien Chazelle,8.5,Miles Teller;J.K. Simmons
+Everything Everywhere All at Once,2022,ACTION,139,"Daniel Kwan; Daniel Scheinert",8.1,Michelle Yeoh;Ke Huy Quan
+Top Gun: Maverick,2022,ACTION,130,Joseph Kosinski,8.3,Tom Miles;Jennifer Connelly
+Dune,2021,SCI-FI,155,Denis Villeneuve,8.0,Timothée Chalamet;Rebecca Ferguson
+Spider-Man: No Way Home,2021,ACTION,148,Jon Watts,8.2,Tom Holland;Zendaya
+Nomadland,2020,DRAMA,114,Chloé Zhao,7.4,Frances McDormand;David Strathairn
+Joker,2019,CRIME,122,Todd Phillips,8.4,Joaquin Phoenix;Robert De Niro
+Avengers: Endgame,2019,ACTION,181,"Anthony Russo; Joe Russo",8.4,Robert Downey Jr.;Chris Evans
+Get Out,2017,HORROR,104,Jordan Peele,7.7,Daniel Kaluuya;Allison Williams
+La La Land,2016,MUSICAL,128,Damien Chazelle,8.0,Ryan Gosling;Emma Stone
+Mad Max: Fury Road,2015,ACTION,120,George Miller,8.1,Tom Hardy;Charlize Theron
+The Grand Budapest Hotel,2014,COMEDY,99,Wes Anderson,8.1,Ralph Fiennes;F. Murray Abraham
+Gravity,2013,SCI-FI,91,Alfonso Cuarón,7.7,Sandra Bullock;George Clooney

@@ -1,0 +1,170 @@
+package com.papel.imdb_clone.repository.impl;
+
+import com.papel.imdb_clone.exceptions.DuplicateEntryException;
+import com.papel.imdb_clone.model.Series;
+import com.papel.imdb_clone.repository.SeriesRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
+
+/**
+ * In-memory implementation of SeriesRepository.
+ * Thread-safe implementation using CopyOnWriteArrayList and ReentrantReadWriteLock.
+ */
+public abstract class InMemorySeriesRepository implements SeriesRepository {
+    private static final Logger logger = LoggerFactory.getLogger(InMemorySeriesRepository.class);
+
+    private final List<Series> seriesList = new CopyOnWriteArrayList<>();
+    private final AtomicInteger nextId = new AtomicInteger(1);
+    private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
+
+    @Override
+    public Optional<Series> findById(int id) {
+        lock.readLock().lock();
+        try {
+            return seriesList.stream()
+                    .filter(series -> series.getId() == id)
+                    .findFirst();
+        } finally {
+            lock.readLock().unlock();
+        }
+    }
+
+    @Override
+    public Optional<Series> findByTitle(String title) {
+        if (title == null) return Optional.empty();
+
+        lock.readLock().lock();
+        try {
+            return seriesList.stream()
+                    .filter(series -> title.equals(series.getTitle()))
+                    .findFirst();
+        } finally {
+            lock.readLock().unlock();
+        }
+    }
+
+    @Override
+    public List<Series> findAll() {
+        lock.readLock().lock();
+        try {
+            return new ArrayList<>(seriesList);
+        } finally {
+            lock.readLock().unlock();
+        }
+    }
+
+    @Override
+    public Series save(Series series) {
+        if (series == null) {
+            throw new IllegalArgumentException("Series cannot be null");
+        }
+
+        lock.writeLock().lock();
+        try {
+            if (series.getId() == 0) {
+                // New series - check for duplicate title
+                if (existsByTitle(series.getTitle())) {
+                    throw new DuplicateEntryException("Series already exists: " + series.getTitle());
+                }
+                series.setId(nextId.getAndIncrement());
+                seriesList.add(series);
+                logger.debug("Created new series: {} with ID: {}", series.getTitle(), series.getId());
+            } else {
+                // Existing series - update
+                Optional<Series> existing = findById(series.getId());
+                if (existing.isPresent()) {
+                    // Check if title is being changed to an existing one
+                    if (!existing.get().getTitle().equals(series.getTitle()) &&
+                            existsByTitle(series.getTitle())) {
+                        throw new DuplicateEntryException("Series title already exists: " + series.getTitle());
+                    }
+                    seriesList.remove(existing.get());
+                    seriesList.add(series);
+                    logger.debug("Updated series: {} with ID: {}", series.getTitle(), series.getId());
+                } else {
+                    throw new IllegalArgumentException("Series with ID " + series.getId() + " not found");
+                }
+            }
+            return series;
+        } finally {
+            lock.writeLock().unlock();
+        }
+    }
+
+    @Override
+    public boolean deleteById(int id) {
+        lock.writeLock().lock();
+        try {
+            Optional<Series> existing = findById(id);
+            if (existing.isPresent()) {
+                seriesList.remove(existing.get());
+                logger.debug("Deleted series with ID: {}", id);
+                return true;
+            }
+            return false;
+        } finally {
+            lock.writeLock().unlock();
+        }
+    }
+
+    @Override
+    public boolean existsByTitle(String title) {
+        if (title == null) return false;
+
+        lock.readLock().lock();
+        try {
+            return seriesList.stream()
+                    .anyMatch(series -> title.equals(series.getTitle()));
+        } finally {
+            lock.readLock().unlock();
+        }
+    }
+
+    @Override
+    public long count() {
+        return seriesList.size();
+    }
+
+
+    /**
+     * Adds a series directly to the repository (used by data loaders).
+     *
+     * @param series The series to add
+     */
+    public void addSeries(Series series) {
+        if (series == null) return;
+
+        lock.writeLock().lock();
+        try {
+            if (series.getId() > 0) {
+                nextId.getAndUpdate(current -> Math.max(current, series.getId() + 1));
+            } else {
+                series.setId(nextId.getAndIncrement());
+            }
+            seriesList.add(series);
+        } finally {
+            lock.writeLock().unlock();
+        }
+    }
+
+    /**
+     * Clears all series (used for testing or data reloading).
+     */
+    public void clear() {
+        lock.writeLock().lock();
+        try {
+            seriesList.clear();
+            nextId.set(1);
+            logger.debug("Cleared all series");
+        } finally {
+            lock.writeLock().unlock();
+        }
+    }
+}

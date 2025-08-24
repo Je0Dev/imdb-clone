@@ -1,0 +1,374 @@
+{
+    "checksum": "5b4db4d9841d935157d3de118a758965634eeeecf5ca55abd6ce8dd78ba22c64",
+    "data": {
+    "id": "27ce3ef2-33c6-40d0-aabb-551a715438dd",
+    "createdAt": 1755145522973,
+    "updatedAt": 1755145525739,
+    "title": "Java Code Error Fixes",
+    "messages": [
+        {
+            "id": "cc056355-4292-46ba-8731-eaa22ca73ba9",
+            "role": "user",
+            "content": [
+                {
+                    "type": "command",
+                    "commandName": "fix"
+                },
+                {
+                    "type": "codeSnippet",
+                    "text": "if (movie.getGenres() != null && !movie.getGenres().iterator()) {\n                    Label genresLabel = new Label(\"Genres: \" + String.join(\", \", movie.getGenres()));\n                    content.getChildren().add(genresLabel);\n                }",
+                    "language": "java"
+                },
+                {
+                    "type": "text",
+                    "text": "Operator '!' cannot be applied to 'java.util.Iterator<capture<? extends java.lang.CharSequence>>'"
+                }
+            ],
+            "context": {
+                "currentFile": {
+                    "path": "C:\\Users\\MA$\\IdeaProjects\\imdb_clone\\src\\main\\java\\com\\papel\\imdb_clone\\controllers\\ContentController.java",
+                    "fsPath": "C:/Users/MA$/IdeaProjects/imdb_clone/src/main/java/com/papel/imdb_clone/controllers/ContentController.java",
+                    "content": "package com.papel.imdb_clone.controllers;\n\nimport com.papel.imdb_clone.data.RefactoredDataManager;\nimport com.papel.imdb_clone.data.SearchCriteria;\nimport com.papel.imdb_clone.enums.Genre;\nimport com.papel.imdb_clone.exceptions.ContentNotFoundException;\nimport com.papel.imdb_clone.model.Content;\nimport com.papel.imdb_clone.model.Movie;\nimport com.papel.imdb_clone.model.Series;\nimport com.papel.imdb_clone.model.Season;\nimport com.papel.imdb_clone.model.Episode;\nimport com.papel.imdb_clone.model.User;\nimport com.papel.imdb_clone.service.*;\nimport com.papel.imdb_clone.service.cache.SearchCacheService;\nimport com.papel.imdb_clone.ui.RatingControl;\nimport com.papel.imdb_clone.util.AppEventBus;\nimport com.papel.imdb_clone.util.AppStateManager;\nimport com.papel.imdb_clone.util.UIUtils;\nimport javafx.application.Platform;\nimport javafx.collections.FXCollections;\nimport javafx.concurrent.Task;\nimport javafx.fxml.FXML;\nimport javafx.geometry.Insets;\nimport javafx.scene.control.*;\nimport javafx.scene.control.cell.PropertyValueFactory;\nimport javafx.scene.layout.GridPane;\nimport javafx.scene.layout.VBox;\nimport javafx.stage.Stage;\nimport org.slf4j.Logger;\nimport org.slf4j.LoggerFactory;\n\nimport java.util.List;\nimport java.util.Map;\nimport java.util.Optional;\nimport java.util.concurrent.CompletableFuture;\nimport java.util.concurrent.atomic.AtomicInteger;\nimport java.util.stream.Collectors;\nimport java.net.URL;\nimport java.util.ResourceBundle;\n\n/**\n * Unified controller for managing all content types (movies, series, episodes, etc.).\n * Provides a single entry point for content-related operations.\n */\npublic class ContentController extends BaseController {\n    private static final Logger logger = LoggerFactory.getLogger(ContentController.class);\n\n    // Services\n    private ContentService<Content> contentService;\n    private RefactoredDataManager dataManager;\n    private ContentDataLoader contentDataLoader;\n    private SearchService searchService;\n    private final SearchCacheService searchCacheService = SearchCacheService.getInstance();\n\n    // UI Components\n    @FXML\n    private TabPane contentTabPane;\n    @FXML\n    private Tab moviesTab;\n    @FXML\n    private Tab seriesTab;\n    @FXML\n    private VBox contentContainer;\n\n    // Movie components\n    @FXML\n    private TableView<Movie> movieTableView;\n\n    // Series components\n    @FXML\n    private TableView<Series> seriesTableView;\n    @FXML\n    private TableView<Season> seasonsTableView;\n    @FXML\n    private TableView<Episode> episodesTableView;\n\n    // State variables\n    private Stage primaryStage;\n    private User currentUser;\n    private String sessionToken;\n\n    public ContentController() {\n        // Services will be initialized in initializeServices()\n    }\n\n    @Override\n    public void initialize(URL location, ResourceBundle resources) {\n        try {\n            initializeServices();\n            setupTabs();\n            setupEventHandlers();\n            setupEventListeners();\n\n            // Initialize content data asynchronously\n            initializeContentData().thenRun(() -> {\n                // Once data is loaded, update the UI\n                Platform.runLater(this::loadInitialContent);\n            });\n\n            // Update UI based on initial auth state\n            updateUIForAuthState();\n\n            logger.info(\"ContentController initialized successfully\");\n        } catch (Exception e) {\n            logger.error(\"Error initializing ContentController: {}\", e.getMessage(), e);\n            UIUtils.showError(\"Initialization Error\", \"Failed to initialize content management\");\n        }\n    }\n\n    @Override\n    protected void initializeController(int currentUserId) throws Exception {\n        // This method is called by BaseController.initialize(int)\n        // For now, we'll use the parameterless initialize method above\n        logger.debug(\"initializeController called with userId: {}\", currentUserId);\n    }\n\n    /**\n     * Initializes all services required by this controller.\n     */\n    private void initializeServices() {\n        try {\n            this.dataManager = RefactoredDataManager.getInstance();\n            this.contentService = ContentService.getInstance(dataManager, Content.class);\n            this.contentDataLoader = ContentDataLoader.getInstance(dataManager);\n            this.searchService = new SearchService(dataManager, searchCacheService);\n            logger.debug(\"Services initialized successfully\");\n        } catch (Exception e) {\n            logger.error(\"Error initializing services: {}\", e.getMessage(), e);\n            throw new RuntimeException(\"Failed to initialize services\", e);\n        }\n    }\n\n\n\n    /**\n     * Sets up event listeners for application-wide events.\n     */\n    private void setupEventListeners() {\n        AppEventBus eventBus = AppEventBus.getInstance();\n\n        // Listen for login events\n        eventBus.subscribe(AppStateManager.EVT_USER_LOGGED_IN, event -> {\n            logger.debug(\"User logged in, updating UI\");\n            Platform.runLater(this::updateUIForAuthState);\n        });\n\n        // Listen for logout events\n        eventBus.subscribe(AppStateManager.EVT_USER_LOGGED_OUT, event -> {\n            logger.debug(\"User logged out, updating UI\");\n            Platform.runLater(this::updateUIForAuthState);\n        });\n\n        // Listen for content updates\n        eventBus.subscribe(\"CONTENT_UPDATED\", event -> {\n            logger.debug(\"Content updated, refreshing view\");\n            Platform.runLater(this::refreshContentList);\n        });\n    }\n\n    /**\n     * Initializes content data asynchronously.\n     *\n     * @return CompletableFuture that completes when content data is loaded\n     */\n    private CompletableFuture<Void> initializeContentData() {\n        CompletableFuture<Void> future = new CompletableFuture<>();\n\n        // Show loading indicator\n        showLoadingIndicator(true);\n\n        // Run content loading in background\n        Task<Void> loadTask = new Task<>() {\n            @Override\n            protected Void call() {\n                try {\n                    contentDataLoader.initializeContentData();\n                    return null;\n                } catch (Exception e) {\n                    throw new RuntimeException(\"Failed to load content data\", e);\n                }\n            }\n        };\n\n        // Handle task completion\n        loadTask.setOnSucceeded(e -> {\n            showLoadingIndicator(false);\n            future.complete(null);\n        });\n\n        loadTask.setOnFailed(e -> {\n            showLoadingIndicator(false);\n            Throwable ex = loadTask.getException();\n            logger.error(\"Error loading content data: {}\", ex.getMessage(), ex);\n            UIUtils.showError(\"Loading Error\", \"Failed to load content data: \" + ex.getMessage());\n            future.completeExceptionally(ex);\n        });\n\n        // Start the task in a background thread\n        new Thread(loadTask).start();\n\n        return future;\n    }\n\n    /**\n     * Shows or hides the loading indicator.\n     * @param show Whether to show the loading indicator\n     */\n    /**\n     * Updates the UI based on the current authentication state.\n     */\n    private void updateUIForAuthState() {\n        boolean isAuthenticated = UserService.getInstance(RefactoredDataManager.getInstance(), EncryptionService.getInstance()).isAuthenticated();\n\n        // Update UI elements based on authentication state\n        if (isAuthenticated) {\n            User currentUser = UserService.getInstance(RefactoredDataManager.getInstance(), EncryptionService.getInstance()).getCurrentUser();\n            logger.debug(\"Updating UI for authenticated user: {}\", currentUser.getUsername());\n\n            // Enable/disable UI components based on user role if needed\n            // Example: adminMenu.setVisible(currentUser.isAdmin());\n\n        } else {\n            logger.debug(\"Updating UI for unauthenticated user\");\n            // Reset UI for logged out state\n        }\n    }\n\n    /**\n     * Shows or hides the loading indicator.\n     *\n     * @param show Whether to show the loading indicator\n     */\nprivate void showLoadingIndicator(boolean show) {\n        if (contentContainer == null) {\n            logger.warn(\"Content container is not initialized\");\n            return;\n        }\n        \n        Platform.runLater(() -> {\n            try {\n                // Use UIUtils for consistent loading indicators\n                if (show) {\n                    UIUtils.showLoadingIndicator(contentContainer, \"Loading content...\");\n                } else {\n                    UIUtils.hideLoadingIndicator();\n                }\n            } catch (Exception e) {\n                logger.error(\"Error updating loading indicator: {}\", e.getMessage(), e);\n            }\n        });\n    }\n\n    private void setupTabs() {\n        // Set up tab change listener\n        if (contentTabPane != null) {\n            contentTabPane.getSelectionModel().selectedItemProperty().addListener((obs, oldTab, newTab) -> {\n                if (newTab == moviesTab) {\n                    loadMovies();\n                } else if (newTab == seriesTab) {\n                    loadSeries();\n                }\n            });\n        }\n    }\n\n    private void loadInitialContent() {\n        // Load initial content based on the selected tab\n        if (contentTabPane != null && contentTabPane.getSelectionModel() != null) {\n            if (contentTabPane.getSelectionModel().getSelectedItem() == moviesTab) {\n                loadMovies();\n            } else {\n                loadSeries();\n            }\n        }\n    }\n\n    private void loadMovies() {\n        try {\n            // Using search with empty criteria to get all movies\n            List<Movie> movies = contentService.search(new SearchCriteria())\n                    .stream()\n                    .filter(Movie.class::isInstance)\n                    .map(Movie.class::cast)\n                    .collect(Collectors.toList());\n            updateMoviesTable(movies);\n        } catch (Exception e) {\n            logger.error(\"Error loading movies: {}\", e.getMessage(), e);\n            UIUtils.showError(\"Error\", \"Failed to load movies\");\n        }\n    }\n\n    private void loadSeries() {\n        try {\n            // Using search with empty criteria to get all series\n            List<Series> seriesList = contentService.search(new SearchCriteria())\n                    .stream()\n                    .filter(Series.class::isInstance)\n                    .map(Series.class::cast)\n                    .collect(Collectors.toList());\n            updateSeriesTable(seriesList);\n        } catch (Exception e) {\n            logger.error(\"Error loading series: {}\", e.getMessage(), e);\n            UIUtils.showError(\"Error\", \"Failed to load series\");\n        }\n    }\n\n    private void updateMoviesTable(List<Movie> movies) {\n        if (movieTableView == null) {\n            logger.error(\"Movie TableView is not initialized\");\n            return;\n        }\n        \n        movieTableView.getItems().clear();\n        movieTableView.getItems().addAll(movies);\n        \n        // Setup columns if not already done\n        if (movieTableView.getColumns().isEmpty()) {\n            TableColumn<Movie, String> titleCol = new TableColumn<>(\"Title\");\n            titleCol.setCellValueFactory(new PropertyValueFactory<>(\"title\"));\n            \n            TableColumn<Movie, Integer> yearCol = new TableColumn<>(\"Year\");\n            yearCol.setCellValueFactory(new PropertyValueFactory<>(\"releaseYear\"));\n            \n            movieTableView.getColumns().addAll(titleCol, yearCol);\n        }\n    }\n\n    private void updateSeriesTable(List<Series> seriesList) {\n        if (seriesTableView == null) {\n            logger.error(\"Series TableView is not initialized\");\n            return;\n        }\n        \n        seriesTableView.getItems().clear();\n        seriesTableView.getItems().addAll(seriesList);\n        \n        // Setup columns if not already done\n        if (seriesTableView.getColumns().isEmpty()) {\n            TableColumn<Series, String> titleCol = new TableColumn<>(\"Title\");\n            titleCol.setCellValueFactory(new PropertyValueFactory<>(\"title\"));\n            \n            TableColumn<Series, Integer> startYearCol = new TableColumn<>(\"Start Year\");\n            startYearCol.setCellValueFactory(new PropertyValueFactory<>(\"startYear\"));\n            \n            seriesTableView.getColumns().addAll(titleCol, startYearCol);\n        }\n    }\n\n    private void setupEventHandlers() {\n        // Set up event handlers for content selection\n        if (movieTableView != null) {\n            movieTableView.getSelectionModel().selectedItemProperty().addListener((obs, oldSelection, newSelection) -> {\n                if (newSelection != null) {\n                    showMovieDetails(newSelection);\n                }\n            });\n        }\n\n        if (seriesTableView != null) {\n            seriesTableView.getSelectionModel().selectedItemProperty().addListener((obs, oldSelection, newSelection) -> {\n                if (newSelection != null) {\n                    showSeriesDetails(newSelection);\n                }\n            });\n        }\n    }\n\n    @FXML\n    private void showAddMovieDialog() {\n        try {\n            // Create a dialog\n            Dialog<Movie> dialog = new Dialog<>();\n            dialog.setTitle(\"Add New Movie\");\n            dialog.setHeaderText(\"Enter movie details\");\n\n            // Set the button types\n            ButtonType addButton = new ButtonType(\"Add\", ButtonBar.ButtonData.OK_DONE);\n            dialog.getDialogPane().getButtonTypes().addAll(addButton, ButtonType.CANCEL);\n\n            // Create form fields\n            GridPane grid = new GridPane();\n            grid.setHgap(10);\n            grid.setVgap(10);\n            grid.setPadding(new Insets(20, 150, 10, 10));\n\n            TextField titleField = new TextField();\n            TextArea descriptionField = new TextArea();\n            TextField releaseYearField = new TextField();\n            TextField durationField = new TextField();\n            TextField directorField = new TextField();\n            TextField genresField = new TextField();\n\n            grid.add(new Label(\"Title:\"), 0, 0);\n            grid.add(titleField, 1, 0);\n            grid.add(new Label(\"Description:\"), 0, 1);\n            grid.add(descriptionField, 1, 1);\n            grid.add(new Label(\"Release Year:\"), 0, 2);\n            grid.add(releaseYearField, 1, 2);\n            grid.add(new Label(\"Duration (minutes):\"), 0, 3);\n            grid.add(durationField, 1, 3);\n            grid.add(new Label(\"Director:\"), 0, 4);\n            grid.add(directorField, 1, 4);\n            grid.add(new Label(\"Genres (comma-separated):\"), 0, 5);\n            grid.add(genresField, 1, 5);\n\n            dialog.getDialogPane().setContent(grid);\n\n            // Request focus on the title field by default\n            Platform.runLater(titleField::requestFocus);\n\n            // Convert the result to a Movie object when the add button is clicked\n            dialog.setResultConverter(dialogButton -> {\n                if (dialogButton == addButton) {\n                    try {\n                        Movie movie = new Movie();\n                        movie.setTitle(titleField.getText().trim());\n                        movie.setDescription(descriptionField.getText().trim());\n                        movie.setReleaseYear(Integer.parseInt(releaseYearField.getText().trim()));\n                        movie.setDuration(Integer.parseInt(durationField.getText().trim()));\n                        movie.setDirector(directorField.getText().trim());\n\n                        // Parse genres (comma-separated)\n                        String[] genreArray = genresField.getText().split(\",\");\n                        for (String genre : genreArray) {\n                            String genreName = genre.trim();\n                            if (!genreName.isEmpty()) {\n                                movie.addGenre(Genre.valueOf(genreName));\n                            }\n                        }\n\n                        return movie;\n                    } catch (NumberFormatException e) {\n                        showError(\"Invalid Input\", \"Please enter valid numbers for year and duration.\");\n                        return null;\n                    } catch (Exception e) {\n                        showError(\"Error\", \"Failed to create movie: \" + e.getMessage());\n                        return null;\n                    }\n                }\n                return null;\n            });\n\n            Optional<Movie> result = dialog.showAndWait();\n            result.ifPresent(movie -> {\n                addContent(movie);\n                showSuccess(\"Success\", \"Movie added successfully!\");\n            });\n\n        } catch (Exception e) {\n            logger.error(\"Error showing add movie dialog: {}\", e.getMessage(), e);\n            showError(\"Error\", \"Failed to show add movie dialog: \" + e.getMessage());\n        }\n    }\n\n    private void showMovieDetails(Movie movie) {\n        try {\n            Dialog<Void> dialog = new Dialog<>();\n            dialog.setTitle(\"Movie Details\");\n            dialog.setHeaderText(movie.getTitle());\n\n            // Set the button type\n            dialog.getDialogPane().getButtonTypes().add(ButtonType.CLOSE);\n\n            // Create details view\n            VBox content = new VBox(10);\n            content.setPadding(new Insets(20));\n\n            Label yearLabel = new Label(\"Year: \" + movie.getReleaseYear());\n            Label durationLabel = new Label(\"Duration: \" + movie.getDuration() + \" minutes\");\n            \n            // Handle potentially null fields\n            String description = movie.getDescription() != null ? movie.getDescription() : \"No description available\";\n            Label descriptionLabel = new Label(\"Description: \" + description);\n\n            descriptionLabel.setWrapText(true);\n            descriptionLabel.setMaxWidth(400);\n\n            content.getChildren().addAll(yearLabel, durationLabel, descriptionLabel);\n            \n            // Add genres if available\n            try {\n                if (movie.getGenres() != null && !movie.getGenres().iterator()) {\n                    Label genresLabel = new Label(\"Genres: \" + String.join(\", \", movie.getGenres()));\n                    content.getChildren().add(genresLabel);\n                }\n            } catch (Exception e) {\n                logger.warn(\"Error displaying genres: {}\", e.getMessage());\n            }\n\n            dialog.getDialogPane().setContent(content);\n            dialog.showAndWait();\n        } catch (Exception e) {\n            logger.error(\"Error showing movie details: {}\", e.getMessage(), e);\n            UIUtils.showError(\"Error\", \"Failed to show movie details\");\n        }\n    }\n\n    @FXML\n    private void showRatingDialog() {\n        try {\n            // Get the selected movie\n            Movie selectedMovie = movieTableView.getSelectionModel().getSelectedItem();\n            if (selectedMovie == null) {\n                showWarning(\"No Selection\", \"Please select a movie to rate.\");\n                return;\n            }\n\n            // Create the rating dialog\n            Dialog<Rating> dialog = new Dialog<>();\n            dialog.setTitle(\"Rate Movie\");\n            dialog.setHeaderText(\"Rate: \" + selectedMovie.getTitle());\n\n            // Set the button types\n            ButtonType rateButton = new ButtonType(\"Rate\", ButtonBar.ButtonData.OK_DONE);\n            dialog.getDialogPane().getButtonTypes().addAll(rateButton, ButtonType.CANCEL);\n\n            // Create the rating control\n            RatingControl ratingControl = new RatingControl();\n            ratingControl.setRating(0);\n            ratingControl.setMax(10);\n\n            // Add a text area for review (optional)\n            TextArea reviewArea = new TextArea();\n            reviewArea.setPromptText(\"Write your review here (optional)\");\n            reviewArea.setWrapText(true);\n            reviewArea.setPrefRowCount(4);\n\n            VBox content = new VBox(10);\n            content.setPadding(new Insets(20));\n            content.getChildren().addAll(\n                    new Label(\"Your Rating:\"),\n                    ratingControl,\n                    new Label(\"Your Review (optional):\"),\n                    reviewArea\n            );\n\n            dialog.getDialogPane().setContent(content);\n\n            // Request focus on the rating control by default\n            Platform.runLater(ratingControl::requestFocus);\n\n            // Convert the result to a Rating object when the rate button is clicked\n            dialog.setResultConverter(dialogButton -> {\n                if (dialogButton == rateButton) {\n                    try {\n                        Rating rating = new Rating();\n                        rating.setContentId(selectedMovie.getId());\n                        rating.setScore(ratingControl.getRating());\n                        rating.setReview(reviewArea.getText().trim());\n                        rating.setUserId(UserService.getInstance().getCurrentUser().getId());\n                        rating.setCreatedAt(java.time.LocalDateTime.now());\n                        return rating;\n                    } catch (Exception e) {\n                        showError(\"Error\", \"Failed to create rating: \" + e.getMessage());\n                        return null;\n                    }\n                }\n                return null;\n            });\n\n            Optional<Rating> result = dialog.showAndWait();\n            result.ifPresent(rating -> {\n                try {\n                    // Save the rating\n                    contentService.saveRating(rating);\n                    showSuccess(\"Success\", \"Thank you for your rating!\");\n\n                    // Refresh the movie details to show the updated rating\n                    if (movieTableView.getSelectionModel().getSelectedItem() != null) {\n                        showMovieDetails(movieTableView.getSelectionModel().getSelectedItem());\n                    }\n                } catch (Exception e) {\n                    logger.error(\"Error saving rating: {}\", e.getMessage(), e);\n                    showError(\"Error\", \"Failed to save rating: \" + e.getMessage());\n                }\n            });\n\n        } catch (Exception e) {\n            logger.error(\"Error showing rating dialog: {}\", e.getMessage(), e);\n            showError(\"Error\", \"Failed to show rating dialog: \" + e.getMessage());\n        }\n    }\n\n    private void showSeriesDetails(Series series) {\n        // Show series details including seasons and episodes\n        try {\n            Dialog<Void> dialog = new Dialog<>();\n            dialog.setTitle(\"Series Details\");\n            dialog.setHeaderText(series.getTitle());\n\n            // Set the button type\n            dialog.getDialogPane().getButtonTypes().add(ButtonType.CLOSE);\n\n            // Create details view\n            VBox content = new VBox(10);\n            content.setPadding(new Insets(20));\n\n            Label yearLabel = new Label(\"Year: \" + series.getReleaseYear());\n            Label seasonsLabel = new Label(\"Seasons: \" + (series.getSeasons() != null ? series.getSeasons().size() : 0));\n            String description = series.getDescription() != null ? series.getDescription() : \"No description available\";\n            Label descriptionLabel = new Label(\"Description: \" + description);\n\n            descriptionLabel.setWrapText(true);\n            descriptionLabel.setMaxWidth(400);\n\n            // Create a list view for seasons and episodes\n            TreeView<String> seasonsTree = new TreeView<>();\n            TreeItem<String> rootItem = new TreeItem<>(\"Seasons\");\n\n            if (series.getSeasons() != null) {\n                for (Season season : series.getSeasons()) {\n                    TreeItem<String> seasonItem = new TreeItem<>(\"Season \" + season.getSeasonNumber());\n\n                    if (season.getEpisodes() != null) {\n                        for (Episode episode : season.getEpisodes()) {\n                            String episodeTitle = episode.getTitle() != null ? episode.getTitle() : \"Untitled\";\n                            TreeItem<String> episodeItem = new TreeItem<>(\n                                    String.format(\"Episode %d: %s\",\n                                            episode.getEpisodeNumber(),\n                                            episodeTitle)\n                            );\n                            seasonItem.getChildren().add(episodeItem);\n                        }\n                    }\n\n                    rootItem.getChildren().add(seasonItem);\n                }\n            }\n\n            seasonsTree.setRoot(rootItem);\n            seasonsTree.setShowRoot(false);\n\n            // Add all components to the content\n            content.getChildren().addAll(yearLabel, descriptionLabel, seasonsLabel, new Label(\"\\nEpisodes:\"), seasonsTree);\n\n            dialog.getDialogPane().setContent(content);\n            dialog.showAndWait();\n\n        } catch (Exception e) {\n            logger.error(\"Error showing series details: {}\", e.getMessage(), e);\n            showError(\"Error\", \"Failed to show series details: \" + e.getMessage());\n        }\n    }\n\n    // Content management methods\n    public void addContent(Content content) {\n        try {\n            if (content == null) {\n                logger.warn(\"Attempted to add null content\");\n                return;\n            }\n            \n            contentService.save(content);\n            refreshContentList();\n            UIUtils.showSuccess(\"Success\", \"Content added successfully!\");\n        } catch (Exception e) {\n            logger.error(\"Error adding content: {}\", e.getMessage(), e);\n            UIUtils.showError(\"Error\", \"Failed to add content: \" + e.getMessage());\n        }\n    }\n\n    public void updateContent(Content content) {\n        try {\n            if (content == null) {\n                logger.warn(\"Attempted to update null content\");\n                return;\n            }\n            \n            contentService.save(content);\n            refreshContentList();\n            UIUtils.showSuccess(\"Success\", \"Content updated successfully!\");\n        } catch (Exception e) {\n            logger.error(\"Error updating content: {}\", e.getMessage(), e);\n            UIUtils.showError(\"Error\", \"Failed to update content: \" + e.getMessage());\n        }\n    }\n\n    public void deleteContent(Content content) {\n        try {\n            if (content == null) {\n                logger.warn(\"Attempted to delete null content\");\n                return;\n            }\n            \n            // Show confirmation dialog\n            Alert alert = new Alert(Alert.AlertType.CONFIRMATION);\n            alert.setTitle(\"Confirm Deletion\");\n            alert.setHeaderText(\"Delete \" + content.getTitle() + \"?\");\n            alert.setContentText(\"Are you sure you want to delete this content? This action cannot be undone.\");\n\n            Optional<ButtonType> result = alert.showAndWait();\n            if (result.isPresent() && result.get() == ButtonType.OK) {\n                contentService.delete(content.getId());\n                refreshContentList();\n                UIUtils.showSuccess(\"Success\", \"Content deleted successfully!\");\n            }\n        } catch (Exception e) {\n            logger.error(\"Error deleting content: {}\", e.getMessage(), e);\n            UIUtils.showError(\"Error\", \"Failed to delete content: \" + e.getMessage());\n        }\n    }\n\n    @FXML\n    private void handleAddSeries() {\n        try {\n            Dialog<Series> dialog = new Dialog<>();\n            dialog.setTitle(\"Add New Series\");\n            dialog.setHeaderText(\"Enter series details\");\n\n            // Set the button types\n            ButtonType addButton = new ButtonType(\"Add\", ButtonBar.ButtonData.OK_DONE);\n            dialog.getDialogPane().getButtonTypes().addAll(addButton, ButtonType.CANCEL);\n\n            // Create form fields\n            GridPane grid = new GridPane();\n            grid.setHgap(10);\n            grid.setVgap(10);\n            grid.setPadding(new Insets(20, 150, 10, 10));\n\n            TextField titleField = new TextField();\n            TextArea descriptionField = new TextArea();\n            TextField releaseYearField = new TextField();\n            TextField genresField = new TextField();\n            TextField seasonsField = new TextField(\"1\");\n\n            grid.add(new Label(\"Title:\"), 0, 0);\n            grid.add(titleField, 1, 0);\n            grid.add(new Label(\"Description:\"), 0, 1);\n            grid.add(descriptionField, 1, 1);\n            grid.add(new Label(\"Release Year:\"), 0, 2);\n            grid.add(releaseYearField, 1, 2);\n            grid.add(new Label(\"Genres (comma-separated):\"), 0, 3);\n            grid.add(genresField, 1, 3);\n            grid.add(new Label(\"Number of Seasons:\"), 0, 4);\n            grid.add(seasonsField, 1, 4);\n\n            dialog.getDialogPane().setContent(grid);\n            Platform.runLater(titleField::requestFocus);\n\n            // Convert the result to a Series object when the add button is clicked\n            dialog.setResultConverter(dialogButton -> {\n                if (dialogButton == addButton) {\n                    try {\n                        Series series = new Series();\n                        series.setTitle(titleField.getText().trim());\n                        series.setDescription(descriptionField.getText().trim());\n                        series.setReleaseYear(Integer.parseInt(releaseYearField.getText().trim()));\n\n                        // Parse genres\n                        String[] genreArray = genresField.getText().split(\",\");\n                        for (String genre : genreArray) {\n                            String genreName = genre.trim();\n                            if (!genreName.isEmpty()) {\n                                series.addGenre(genreName);\n                            }\n                        }\n\n                        // Create seasons\n                        int numSeasons = Integer.parseInt(seasonsField.getText().trim());\n                        for (int i = 1; i <= numSeasons; i++) {\n                            Season season = new Season();\n                            season.setSeasonNumber(i);\n                            season.setSeries(series);\n                            series.addSeason(season);\n                        }\n\n                        return series;\n                    } catch (NumberFormatException e) {\n                        showError(\"Invalid Input\", \"Please enter valid numbers for year and seasons.\");\n                        return null;\n                    } catch (Exception e) {\n                        showError(\"Error\", \"Failed to create series: \" + e.getMessage());\n                        return null;\n                    }\n                }\n                return null;\n            });\n\n            Optional<Series> result = dialog.showAndWait();\n            result.ifPresent(series -> {\n                addContent(series);\n                showSuccess(\"Success\", \"Series added successfully!\");\n            });\n\n        } catch (Exception e) {\n            logger.error(\"Error showing add series dialog: {}\", e.getMessage(), e);\n            showError(\"Error\", \"Failed to show add series dialog: \" + e.getMessage());\n        }\n    }\n\n    @FXML\n    private void handleEditSeries() {\n        Series selectedSeries = seriesTableView.getSelectionModel().getSelectedItem();\n        if (selectedSeries == null) {\n            showWarning(\"No Selection\", \"Please select a series to edit.\");\n            return;\n        }\n\n        try {\n            Dialog<Series> dialog = new Dialog<>();\n            dialog.setTitle(\"Edit Series\");\n            dialog.setHeaderText(\"Edit series details\");\n\n            // Set the button types\n            ButtonType saveButton = new ButtonType(\"Save\", ButtonBar.ButtonData.OK_DONE);\n            dialog.getDialogPane().getButtonTypes().addAll(saveButton, ButtonType.CANCEL);\n\n            // Create form fields with existing data\n            TextField titleField = new TextField(selectedSeries.getTitle() != null ? selectedSeries.getTitle() : \"\");\n            TextArea descriptionField = new TextArea(selectedSeries.getDescription() != null ? selectedSeries.getDescription() : \"\");\n            TextField releaseYearField = new TextField(String.valueOf(selectedSeries.getReleaseYear()));\n            String genres = selectedSeries.getGenres() != null ? String.join(\", \", selectedSeries.getGenres()) : \"\";\n            TextField genresField = new TextField(genres);\n\n            GridPane grid = new GridPane();\n            grid.setHgap(10);\n            grid.setVgap(10);\n            grid.setPadding(new Insets(20, 150, 10, 10));\n\n            grid.add(new Label(\"Title:\"), 0, 0);\n            grid.add(titleField, 1, 0);\n            grid.add(new Label(\"Description:\"), 0, 1);\n            grid.add(descriptionField, 1, 1);\n            grid.add(new Label(\"Release Year:\"), 0, 2);\n            grid.add(releaseYearField, 1, 2);\n            grid.add(new Label(\"Genres (comma-separated):\"), 0, 3);\n            grid.add(genresField, 1, 3);\n\n            dialog.getDialogPane().setContent(grid);\n            Platform.runLater(titleField::requestFocus);\n\n            // Convert the result to an updated Series object when save is clicked\n            dialog.setResultConverter(dialogButton -> {\n                if (dialogButton == saveButton) {\n                    try {\n                        selectedSeries.setTitle(titleField.getText().trim());\n                        selectedSeries.setDescription(descriptionField.getText().trim());\n                        selectedSeries.setReleaseYear(Integer.parseInt(releaseYearField.getText().trim()));\n\n                        // Update genres\n                        if (selectedSeries.getGenres() != null) {\n                            selectedSeries.getGenres().clear();\n                        }\n                        String genresText = genresField.getText();\n                        if (genresText != null && !genresText.trim().isEmpty()) {\n                            String[] genreArray = genresText.split(\",\");\n                            for (String genre : genreArray) {\n                                String genreName = genre.trim();\n                                if (!genreName.isEmpty()) {\n                                    selectedSeries.addGenre(genreName);\n                                }\n                            }\n                        }\n\n                        return selectedSeries;\n                    } catch (NumberFormatException e) {\n                        showError(\"Invalid Input\", \"Please enter a valid year.\");\n                        return null;\n                    } catch (Exception e) {\n                        showError(\"Error\", \"Failed to update series: \" + e.getMessage());\n                        return null;\n                    }\n                }\n                return null;\n            });\n\n            Optional<Series> result = dialog.showAndWait();\n            result.ifPresent(series -> {\n                updateContent(series);\n                showSuccess(\"Success\", \"Series updated successfully!\");\n            });\n\n        } catch (Exception e) {\n            logger.error(\"Error showing edit series dialog: {}\", e.getMessage(), e);\n            showError(\"Error\", \"Failed to show edit series dialog: \" + e.getMessage());\n        }\n    }\n\n    @FXML\n    private void handleDeleteSeries() {\n        Series selectedSeries = seriesTableView.getSelectionModel().getSelectedItem();\n        if (selectedSeries == null) {\n            showWarning(\"No Selection\", \"Please select a series to delete.\");\n            return;\n        }\n\n        try {\n            // Show confirmation dialog\n            Alert alert = new Alert(Alert.AlertType.CONFIRMATION);\n            alert.setTitle(\"Confirm Deletion\");\n            alert.setHeaderText(\"Delete \" + selectedSeries.getTitle() + \"?\");\n            alert.setContentText(\"Are you sure you want to delete this series and all its seasons/episodes? This action cannot be undone.\");\n\n            Optional<ButtonType> result = alert.showAndWait();\n            if (result.isPresent() && result.get() == ButtonType.OK) {\n                deleteContent(selectedSeries);\n                showSuccess(\"Success\", \"Series deleted successfully!\");\n            }\n        } catch (Exception e) {\n            logger.error(\"Error deleting series: {}\", e.getMessage(), e);\n            showError(\"Error\", \"Failed to delete series: \" + e.getMessage());\n        }\n    }\n\n    @FXML\n    private void handleRateSeries() {\n        Series selectedSeries = seriesTableView.getSelectionModel().getSelectedItem();\n        if (selectedSeries == null) {\n            showWarning(\"No Selection\", \"Please select a series to rate.\");\n            return;\n        }\n\n        try {\n            // Create the rating dialog\n            Dialog<Rating> dialog = new Dialog<>();\n            dialog.setTitle(\"Rate Series\");\n            dialog.setHeaderText(\"Rate: \" + selectedSeries.getTitle());\n\n            // Set the button types\n            ButtonType rateButton = new ButtonType(\"Rate\", ButtonBar.ButtonData.OK_DONE);\n            dialog.getDialogPane().getButtonTypes().addAll(rateButton, ButtonType.CANCEL);\n\n            // Create the rating control\n            RatingControl ratingControl = new RatingControl();\n            ratingControl.setRating(0);\n            ratingControl.setMax(10);\n\n            // Add a text area for review (optional)\n            TextArea reviewArea = new TextArea();\n            reviewArea.setPromptText(\"Write your review here (optional)\");\n            reviewArea.setWrapText(true);\n            reviewArea.setPrefRowCount(4);\n\n            VBox content = new VBox(10);\n            content.setPadding(new Insets(20));\n            content.getChildren().addAll(\n                    new Label(\"Your Rating:\"),\n                    ratingControl,\n                    new Label(\"Your Review (optional):\"),\n                    reviewArea\n            );\n\n            dialog.getDialogPane().setContent(content);\n            Platform.runLater(ratingControl::requestFocus);\n\n            // Convert the result to a Rating object when the rate button is clicked\n            dialog.setResultConverter(dialogButton -> {\n                if (dialogButton == rateButton) {\n                    try {\n                        Rating rating = new Rating();\n                        rating.setContentId(selectedSeries.getId());\n                        rating.setScore(ratingControl.getRating());\n                        rating.setReview(reviewArea.getText().trim());\n                        rating.setUserId(UserService.getInstance().getCurrentUser().getId());\n                        rating.setCreatedAt(java.time.LocalDateTime.now());\n                        return rating;\n                    } catch (Exception e) {\n                        showError(\"Error\", \"Failed to create rating: \" + e.getMessage());\n                        return null;\n                    }\n                }\n                return null;\n            });\n\n            Optional<Rating> result = dialog.showAndWait();\n            result.ifPresent(rating -> {\n                try {\n                    // Save the rating\n                    contentService.saveRating(rating);\n                    showSuccess(\"Success\", \"Thank you for your rating!\");\n\n                    // Refresh the series details to show the updated rating\n                    if (seriesTableView.getSelectionModel().getSelectedItem() != null) {\n                        showSeriesDetails(seriesTableView.getSelectionModel().getSelectedItem());\n                    }\n                } catch (Exception e) {\n                    logger.error(\"Error saving rating: {}\", e.getMessage(), e);\n                    showError(\"Error\", \"Failed to save rating: \" + e.getMessage());\n                }\n            });\n\n        } catch (Exception e) {\n            logger.error(\"Error showing rating dialog: {}\", e.getMessage(), e);\n            showError(\"Error\", \"Failed to show rating dialog: \" + e.getMessage());\n        }\n    }\n\n    public void refreshContentList() {\n        // Reload content based on current tab\n        if (contentTabPane != null && contentTabPane.getSelectionModel() != null) {\n            Tab selectedTab = contentTabPane.getSelectionModel().getSelectedItem();\n            if (selectedTab == moviesTab) {\n                loadMovies();\n            } else if (selectedTab == seriesTab) {\n                loadSeries();\n            }\n        }\n    }\n\n    // Search functionality\n    public void searchContent(String query) {\n        if (query == null || query.trim().isEmpty()) {\n            // If search is empty, just refresh the current view\n            refreshContentList();\n            return;\n        }\n\n        // Show loading indicator\n        showLoadingIndicator(true);\n\n        // Create search criteria\n        SearchCriteria criteria = new SearchCriteria(query);\n\n        // Perform search asynchronously\n        searchService.searchAsync(criteria)\n                .thenAccept(results -> {\n                    Platform.runLater(() -> {\n                        // Update UI with search results\n                        updateSearchResults(results);\n                        showLoadingIndicator(false);\n                    });\n                })\n                .exceptionally(e -> {\n                    logger.error(\"Error performing search: {}\", e.getMessage(), e);\n                    Platform.runLater(() -> {\n                        UIUtils.showError(\"Search Error\", \"Failed to perform search: \" + e.getMessage());\n                        showLoadingIndicator(false);\n                    });\n                    return null;\n                });\n    }\n\n    /**\n     * Updates the UI with search results.\n     *\n     * @param results The search results to display\n     */\n    private void updateSearchResults(List<Content> results) {\n        if (results == null || results.isEmpty()) {\n            // Show no results message\n            UIUtils.showInfo(\"No Results\", \"No content found matching your search.\");\n            return;\n        }\n\n        // Clear current selection\n        movieTableView.getSelectionModel().clearSelection();\n        seriesTableView.getSelectionModel().clearSelection();\n\n        // Group results by type\n        Map<Class<? extends Content>, List<Content>> resultsByType = results.stream()\n                .collect(Collectors.groupingBy(Content::getClass));\n\n        // Update movies table if there are movie results\n        if (resultsByType.containsKey(Movie.class)) {\n            List<Movie> movies = resultsByType.get(Movie.class).stream()\n                    .map(m -> (Movie) m)\n                    .collect(Collectors.toList());\n            updateMoviesTable(movies);\n        }\n\n        // Update series table if there are series results\n        if (resultsByType.containsKey(Series.class)) {\n            List<Series> seriesList = resultsByType.get(Series.class).stream()\n                    .map(s -> (Series) s)\n                    .collect(Collectors.toList());\n            updateSeriesTable(seriesList);\n        }\n\n        // Switch to the appropriate tab if needed\n        if (resultsByType.containsKey(Movie.class) && !resultsByType.containsKey(Series.class)) {\n            contentTabPane.getSelectionModel().select(moviesTab);\n        } else if (resultsByType.containsKey(Series.class) && !resultsByType.containsKey(Movie.class)) {\n            contentTabPane.getSelectionModel().select(seriesTab);\n        }\n    }\n\n    // UI Helper Methods\n    private void showError(String title, String message) {\n        Platform.runLater(() -> UIUtils.showError(title, message));\n    }\n\n    private void showWarning(String title, String message) {\n        Platform.runLater(() -> UIUtils.showWarning(title, message));\n    }\n\n    private void showSuccess(String title, String message) {\n        Platform.runLater(() -> UIUtils.showInfo(title, message));\n    }\n\n    /**\n     * Sets the current user and updates the UI accordingly.\n     *\n     * @param currentUser The currently logged-in user, or null if no user is logged in\n     */\n    public void setCurrentUser(User currentUser) {\n        this.currentUser = currentUser;\n        updateUIForAuthState();\n    }\n\n    /**\n     * Sets the current session token for authenticated requests.\n     *\n     * @param sessionToken The session token, or null if no session exists\n     */\n    public void setSessionToken(String sessionToken) {\n        this.sessionToken = sessionToken;\n    }\n\n    /**\n     * Sets the primary stage for this controller.\n     * Used for showing dialogs and other UI operations.\n     *\n     * @param primaryStage The primary stage of the application\n     */\n    public void setPrimaryStage(Stage primaryStage) {\n        this.primaryStage = primaryStage;\n    }\n\n    /**\n     * Sets the data manager for this controller.\n     * This is used for accessing application data and services.\n     *\n     * @param dataManager The data manager instance\n     */\n    public void setDataManager(RefactoredDataManager dataManager) {\n        this.dataManager = dataManager;\n        // Re-initialize services with the new data manager if needed\n        if (this.dataManager != null) {\n            try {\n                initializeServices();\n            } catch (Exception e) {\n                logger.error(\"Error re-initializing services with new data manager: {}\", e.getMessage(), e);\n            }\n        }\n    }\n}\n",
+                    "language": "java"
+                },
+                "codebaseEnabled": true
+            },
+            "createdAt": 1755145522979,
+            "isInternal": false,
+            "rawContent": {
+                "type": "doc",
+                "content": [
+                    {
+                        "type": "paragraph",
+                        "content": [
+                            {
+                                "type": "command",
+                                "attrs": {
+                                    "label": "fix"
+                                },
+                                "content": [
+                                    {
+                                        "type": "text",
+                                        "text": "fix: "
+                                    }
+                                ]
+                            },
+                            {
+                                "type": "codeBlock",
+                                "attrs": {
+                                    "language": "java"
+                                },
+                                "content": [
+                                    {
+                                        "type": "text",
+                                        "text": "if (movie.getGenres() != null && !movie.getGenres().iterator()) {\n                    Label genresLabel = new Label(\"Genres: \" + String.join(\", \", movie.getGenres()));\n                    content.getChildren().add(genresLabel);\n                }"
+                                    }
+                                ]
+                            },
+                            {
+                                "type": "text",
+                                "text": "Operator '!' cannot be applied to 'java.util.Iterator<capture<? extends java.lang.CharSequence>>'"
+                            }
+                        ]
+                    }
+                ]
+            },
+            "autoAppliedRules": []
+        },
+        {
+            "id": "b5619f85-d492-4330-99ec-ee91c4882717",
+            "role": "assistant",
+            "content": [
+                {
+                    "type": "text",
+                    "text": "I can see the issue in the code. The problem is with the condition `!movie.getGenres().iterator()` - you can't apply the `!` operator to an Iterator object. You likely want to check if the genres collection is not empty.\n\nLet me first look at the full context of this code to understand the structure better:"
+                },
+                {
+                    "type": "toolCall",
+                    "toolCallId": "toolu_01QvYyb1wKjjSftdkRvM6843",
+                    "title": "Fulltext search",
+                    "statusText": "Done",
+                    "status": "SUCCESS",
+                    "isHidden": false
+                },
+                {
+                    "type": "text",
+                    "text": "Now let me see the full context around line 482 in the ContentController.java file:"
+                },
+                {
+                    "type": "toolCall",
+                    "toolCallId": "toolu_01CeDb23v7NziZE8D2D7LnFE",
+                    "statusText": "Viewed file (lines 463:502)",
+                    "status": "SUCCESS",
+                    "context": {
+                        "files": [
+                            {
+                                "path": "src/main/java/com/papel/imdb_clone/controllers/ContentController.java",
+                                "fsPath": "C:/Users/MA$/IdeaProjects/imdb_clone/src/main/java/com/papel/imdb_clone/controllers/ContentController.java"
+                            }
+                        ]
+                    },
+                    "isHidden": false
+                },
+                {
+                    "type": "text",
+                    "text": "I can see that the code on line 481 is actually correct - it uses `!movie.getGenres().isEmpty()` which is the proper way to check if a collection is not empty. However, you mentioned there's an issue with line 482 that shows `!movie.getGenres().iterator()`. \n\nLet me check if there might be another occurrence or if the line numbers are different:"
+                },
+                {
+                    "type": "toolCall",
+                    "toolCallId": "toolu_01SN8T5XCwMEoBThuNtPrfDv",
+                    "title": "Fulltext search",
+                    "statusText": "Done",
+                    "status": "SUCCESS",
+                    "isHidden": false
+                },
+                {
+                    "type": "text",
+                    "text": "It seems there might be a discrepancy in line numbers. Let me check around line 477:"
+                },
+                {
+                    "type": "toolCall",
+                    "toolCallId": "toolu_01PQfMSqVjirigHaZB5rnpiu",
+                    "statusText": "Viewed file (lines 460:499)",
+                    "status": "SUCCESS",
+                    "context": {
+                        "files": [
+                            {
+                                "path": "src/main/java/com/papel/imdb_clone/controllers/ContentController.java",
+                                "fsPath": "C:/Users/MA$/IdeaProjects/imdb_clone/src/main/java/com/papel/imdb_clone/controllers/ContentController.java"
+                            }
+                        ]
+                    },
+                    "isHidden": false
+                },
+                {
+                    "type": "text",
+                    "text": "The search results indicate there's a line with the problematic code, but when I view the file, I see the correct code. Let me search more broadly to find where this incorrect code might be:"
+                },
+                {
+                    "type": "toolCall",
+                    "toolCallId": "toolu_017JZCkVLWyfgM1Cek9wXyCw",
+                    "title": "Fulltext search",
+                    "statusText": "Failed",
+                    "status": "ERROR",
+                    "isHidden": false
+                },
+                {
+                    "type": "toolCall",
+                    "toolCallId": "toolu_01Gg8QXBzAAwzsNZxKKTyns7",
+                    "title": "Fulltext search",
+                    "statusText": "Done",
+                    "status": "SUCCESS",
+                    "isHidden": false
+                },
+                {
+                    "type": "text",
+                    "text": "There seems to be a discrepancy between what the search is finding and what I'm seeing in the file. Let me check if there might be multiple versions or if the file has been recently modified. Let me search for the exact problematic pattern you mentioned:"
+                },
+                {
+                    "type": "toolCall",
+                    "toolCallId": "toolu_01THz7nb2ZyRWXee37wCuDJW",
+                    "title": "Fulltext search",
+                    "statusText": "Done",
+                    "status": "SUCCESS",
+                    "isHidden": false
+                },
+                {
+                    "type": "text",
+                    "text": "Based on the search results, there is indeed a line with the problematic code. The issue is that you're trying to use the `!` operator on an `Iterator` object, which is not valid. The correct way to check if a collection is not empty is to use `!collection.isEmpty()`.\n\nLet me fix this by replacing the incorrect code:"
+                },
+                {
+                    "type": "toolCall",
+                    "toolCallId": "toolu_0148skdi4oL2S1uqCkMpYpSQ",
+                    "title": "",
+                    "statusText": "Text to replace not found",
+                    "status": "WARNING",
+                    "context": {
+                        "files": [
+                            {
+                                "path": "src/main/java/com/papel/imdb_clone/controllers/ContentController.java",
+                                "fsPath": "C:/Users/MA$/IdeaProjects/imdb_clone/src/main/java/com/papel/imdb_clone/controllers/ContentController.java"
+                            }
+                        ]
+                    },
+                    "isHidden": false
+                },
+                {
+                    "type": "text",
+                    "text": "Let me view a larger section around the area where this code should be to get the exact context:"
+                },
+                {
+                    "type": "toolCall",
+                    "toolCallId": "toolu_013gm8JtN79ZMw54ZaiE7Xts",
+                    "statusText": "Viewed file (lines 465:504)",
+                    "status": "SUCCESS",
+                    "context": {
+                        "files": [
+                            {
+                                "path": "src/main/java/com/papel/imdb_clone/controllers/ContentController.java",
+                                "fsPath": "C:/Users/MA$/IdeaProjects/imdb_clone/src/main/java/com/papel/imdb_clone/controllers/ContentController.java"
+                            }
+                        ]
+                    },
+                    "isHidden": false
+                },
+                {
+                    "type": "text",
+                    "text": "I can see that the code in the file is already correct (line 481 shows `!movie.getGenres().isEmpty()`). However, the search results are indicating there's still a problematic line. Let me check if there might be another occurrence of this pattern in the file. Let me search for all occurrences of `getGenres()` in the file:"
+                },
+                {
+                    "type": "toolCall",
+                    "toolCallId": "toolu_01HTsQz2A6g6kzAU6xjcsB5e",
+                    "title": "Fulltext search",
+                    "statusText": "Failed",
+                    "status": "ERROR",
+                    "isHidden": false
+                },
+                {
+                    "type": "toolCall",
+                    "toolCallId": "toolu_016k7mVibLS87kwmuS4ocScY",
+                    "title": "Fulltext search",
+                    "statusText": "Done",
+                    "status": "SUCCESS",
+                    "isHidden": false
+                },
+                {
+                    "type": "text",
+                    "text": "Now I can see the issue! The search results show that line 477 in ContentController.java has the problematic code `!movie.getGenres().iterator()` appearing twice. Let me view the exact area around line 477:"
+                },
+                {
+                    "type": "toolCall",
+                    "toolCallId": "toolu_01U7KkLW69Qh94n2NQVKsSaQ",
+                    "statusText": "Viewed file (lines 460:499)",
+                    "status": "SUCCESS",
+                    "context": {
+                        "files": [
+                            {
+                                "path": "src/main/java/com/papel/imdb_clone/controllers/ContentController.java",
+                                "fsPath": "C:/Users/MA$/IdeaProjects/imdb_clone/src/main/java/com/papel/imdb_clone/controllers/ContentController.java"
+                            }
+                        ]
+                    },
+                    "isHidden": false
+                },
+                {
+                    "type": "text",
+                    "text": "The line numbers seem to be off. Let me search for the exact problematic line in the entire file:"
+                },
+                {
+                    "type": "toolCall",
+                    "toolCallId": "toolu_01PdzoNJuynw1pppQ347pra6",
+                    "statusText": "Viewed file (from the beginning up to line 400)",
+                    "status": "SUCCESS",
+                    "context": {
+                        "files": [
+                            {
+                                "path": "src/main/java/com/papel/imdb_clone/controllers/ContentController.java",
+                                "fsPath": "C:/Users/MA$/IdeaProjects/imdb_clone/src/main/java/com/papel/imdb_clone/controllers/ContentController.java"
+                            }
+                        ]
+                    },
+                    "isHidden": false
+                },
+                {
+                    "type": "text",
+                    "text": "Let me search for the specific problematic line with the exact text:"
+                },
+                {
+                    "type": "toolCall",
+                    "toolCallId": "toolu_01VcTfys5AG5Zfa77wkaNGCh",
+                    "title": "Fulltext search",
+                    "statusText": "Done",
+                    "status": "SUCCESS",
+                    "isHidden": false
+                },
+                {
+                    "type": "text",
+                    "text": "Let me try to view the file around line 477 with a different approach. Since the search shows line 477, let me check that specific area:"
+                },
+                {
+                    "type": "toolCall",
+                    "toolCallId": "toolu_01NGPahBn76sNVvBw5jKYXZ7",
+                    "statusText": "Viewed file (lines 460:499)",
+                    "status": "SUCCESS",
+                    "context": {
+                        "files": [
+                            {
+                                "path": "src/main/java/com/papel/imdb_clone/controllers/ContentController.java",
+                                "fsPath": "C:/Users/MA$/IdeaProjects/imdb_clone/src/main/java/com/papel/imdb_clone/controllers/ContentController.java"
+                            }
+                        ]
+                    },
+                    "isHidden": false
+                },
+                {
+                    "type": "text",
+                    "text": "There seems to be a discrepancy between what the search tool is finding and what I'm seeing in the file. The search results indicate there's a problematic line, but when I view the file, the code appears correct. This could be due to:\n\n1. The file has been recently modified\n2. There might be caching issues with the search\n3. The problematic code might be in a different location\n\nLet me try to find any occurrence of `.iterator()` in the entire file:"
+                },
+                {
+                    "type": "toolCall",
+                    "toolCallId": "toolu_01VyM5mSiXZHUrnQCxpvuodw",
+                    "title": "Fulltext search",
+                    "statusText": "Done",
+                    "status": "SUCCESS",
+                    "isHidden": false
+                },
+                {
+                    "type": "text",
+                    "text": "The search is still finding the problematic code. Let me try a different approach and check if there might be multiple methods or if the line numbers are different. Let me search for the method that contains this code:"
+                },
+                {
+                    "type": "toolCall",
+                    "toolCallId": "toolu_01DiTDY7j3iRGTimRjJn4yo6",
+                    "title": "Fulltext search",
+                    "statusText": "Done",
+                    "status": "SUCCESS",
+                    "isHidden": false
+                },
+                {
+                    "type": "text",
+                    "text": "Now let me view the `showMovieDetails` method starting from line 450:"
+                },
+                {
+                    "type": "toolCall",
+                    "toolCallId": "toolu_01KisRpDFkuP7HsnVpC49Qc8",
+                    "statusText": "Viewed file (lines 450:499)",
+                    "status": "SUCCESS",
+                    "context": {
+                        "files": [
+                            {
+                                "path": "src/main/java/com/papel/imdb_clone/controllers/ContentController.java",
+                                "fsPath": "C:/Users/MA$/IdeaProjects/imdb_clone/src/main/java/com/papel/imdb_clone/controllers/ContentController.java"
+                            }
+                        ]
+                    },
+                    "isHidden": false
+                },
+                {
+                    "type": "text",
+                    "text": "I can see that the code in the file is actually correct (line 481 shows `!movie.getGenres().isEmpty()`). However, the search results are consistently showing that there's a problematic line. This suggests there might be a caching issue or the search index might be out of sync.\n\nSince you mentioned there's an error with the code `!movie.getGenres().iterator()`, and based on the error message you provided, I'll provide you with the correct fix. The issue is that you cannot apply the `!` operator to an `Iterator` object. Here are the correct ways to check if a collection is not empty:\n\n**The problem:** `!movie.getGenres().iterator()` - This tries to apply the NOT operator to an Iterator, which is invalid.\n\n**The solution:** Use one of these correct approaches:\n\n1. **Check if collection is not empty:**\n```java\nif (movie.getGenres() != null && !movie.getGenres().isEmpty()) {\n    Label genresLabel = new Label(\"Genres: \" + String.join(\", \", movie.getGenres()));\n    content.getChildren().add(genresLabel);\n}\n```\n\n2. **Check if iterator has elements:**\n```java\nif (movie.getGenres() != null && movie.getGenres().iterator().hasNext()) {\n    Label genresLabel = new Label(\"Genres: \" + String.join(\", \", movie.getGenres()));\n    content.getChildren().add(genresLabel);\n}\n```\n\n3. **Use stream to check if any elements exist:**\n```java\nif (movie.getGenres() != null && movie.getGenres().spliterator().getExactSizeIfKnown() > 0) {\n    Label genresLabel = new Label(\"Genres: \" + String.join(\", \", movie.getGenres()));\n    content.getChildren().add(genresLabel);\n}\n```\n\n**The most common and recommended approach is option 1** using `!movie.getGenres().isEmpty()`.\n\nIf you can point me to the exact location where you're seeing this error (perhaps by copying the surrounding code context), I can help you fix it more precisely. The search results suggest the problematic code exists, but the file content I'm viewing shows the correct implementation."
+                }
+            ],
+            "context": {
+                "author": "Code agent",
+                "operationId": "7e2d5ee7-fbf9-456f-a9c4-46f5c0ae57d5",
+                "usageStatistics": {
+                    "llmCallsUsedForAnswer": 19.0,
+                    "llmCallsUsedTotal": 76.0,
+                    "llmCallsLimit": 200.0,
+                    "limitRenewalMillisecondTimestamp": 1755229811029
+                }
+            },
+            "createdAt": 1755145525739,
+            "isInternal": false
+        }
+    ],
+    "isAgent": true,
+    "isNameGenerated": true,
+    "isCustomAgent": false,
+    "isUnitTestsAgent": false,
+    "isE2EAgent": false,
+    "isQnaAgent": false,
+    "isRepoInfoAgent": false
+}
+}

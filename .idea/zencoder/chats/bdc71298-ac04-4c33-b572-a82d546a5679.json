@@ -1,0 +1,613 @@
+{
+    "checksum": "02d0421c81a652a59e0c00188a956b556ae3dda8a97e07b5c0a69d18f4595266",
+    "data": {
+    "id": "bdc71298-ac04-4c33-b572-a82d546a5679",
+    "createdAt": 1754735563691,
+    "updatedAt": 1754735777362,
+    "title": "IMDB Clone Code Review",
+    "messages": [
+        {
+            "id": "713cb928-4720-48df-98b7-cfb57e7ce073",
+            "role": "user",
+            "content": [
+                {
+                    "type": "text",
+                    "text": "Review and add improvemnts to my code"
+                }
+            ],
+            "context": {
+                "currentFile": {
+                    "path": "src/main/java/com/papel/imdb_clone/gui/ImprovedMovieApp.java",
+                    "fsPath": "C:/Users/mas_b/IdeaProjects/imdb_clone/src/main/java/com/papel/imdb_clone/gui/ImprovedMovieApp.java",
+                    "sources": [
+                        "opened_tab"
+                    ],
+                    "content": "package com.papel.imdb_clone.gui;\n\nimport com.papel.imdb_clone.controllers.MainControllerRefactored;\nimport com.papel.imdb_clone.data.DataManager;\nimport com.papel.imdb_clone.util.SettingsManager;\nimport javafx.application.Application;\nimport javafx.fxml.FXMLLoader;\nimport javafx.scene.Parent;\nimport javafx.scene.Scene;\nimport javafx.stage.Modality;\nimport javafx.stage.Stage;\n\nimport java.io.IOException;\n\n/**\n * Improved IMDB Clone Application using FXML and modern JavaFX practices with authentication\n */\npublic class ImprovedMovieApp extends Application {\n\n    private static final String MAIN_FXML = \"/fxml/main-refactored.fxml\";\n    private static final String LOGIN_FXML = \"/fxml/login.fxml\";\n    private static final String CSS_FILE = \"/css/improved-styles.css\";\n    private static final String APP_TITLE = \"IMDB Clone - Movie & Series Manager\";\n    private static final double MIN_WIDTH = 1000.0;\n    private static final double MIN_HEIGHT = 700.0;\n\n    private Stage primaryStage;\n    private String currentSessionToken;\n    private DataManager dataManager;\n\n    @Override\n    public void start(Stage primaryStage) {\n        this.primaryStage = primaryStage;\n        this.primaryStage.setTitle(APP_TITLE);\n\n        try {\n            // Initialize DataManager and load all data\n            this.dataManager = new DataManager();\n            dataManager.loadAllData();\n            System.out.println(\"Successfully loaded application data\");\n        } catch (Exception e) {\n            showErrorAndExit(\"Failed to load application data\", e);\n            return;\n        }\n\n        // Show login screen\n        showLoginScreen();\n    }\n\n    private void showLoginScreen() {\n        try {\n            // Create a new stage for the login dialog\n            Stage loginStage = new Stage();\n            loginStage.initModality(Modality.APPLICATION_MODAL);\n            loginStage.initOwner(primaryStage);\n            loginStage.setTitle(\"Login - IMDB Clone\");\n            loginStage.setResizable(false);\n\n            // Load the login FXML\n            FXMLLoader loader = new FXMLLoader(getClass().getResource(LOGIN_FXML));\n            Parent root = loader.load();\n\n            // Get the controller and set the stage\n            com.papel.imdb_clone.controllers.LoginController loginController = loader.getController();\n            loginController.setStage(loginStage);\n\n            // Set up the login success callback\n            loginController.setLoginSuccessCallback(() -> {\n                this.currentSessionToken = loginController.getSessionToken();\n                loginStage.close(); // Close the login window\n                loadMainApplication(); // Load the main application\n            });\n\n            // Show login screen\n            Scene scene = new Scene(root);\n\n            // Apply base and theme styles\n            applyTheme(scene);\n\n            loginStage.setScene(scene);\n            loginStage.sizeToScene();\n            loginStage.centerOnScreen();\n\n            // Show the login dialog\n            loginStage.showAndWait();\n\n        } catch (IOException e) {\n            e.printStackTrace();\n            showErrorAndExit(\"Failed to load login form\", e);\n        }\n    }\n\n    private void loadMainApplication() {\n        try {\n            // Get the current user\n            com.papel.imdb_clone.service.AuthenticationService authService = \n                com.papel.imdb_clone.service.AuthenticationService.getInstance();\n            com.papel.imdb_clone.model.User currentUser = authService.getCurrentUser(currentSessionToken);\n\n            FXMLLoader loader = new FXMLLoader(getClass().getResource(MAIN_FXML));\n\n            // Create controller instance with both user and session token\n            MainControllerRefactored controller = new MainControllerRefactored(currentUser, currentSessionToken);\n            loader.setController(controller);\n\n            // Load the main view\n            Parent root = loader.load();\n\n            // Set the primary stage in the controller\n            controller.setPrimaryStage(primaryStage);\n\n            // Set up the main scene\n            Scene scene = new Scene(root, MIN_WIDTH, MIN_HEIGHT);\n            applyTheme(scene);\n\n            primaryStage.setScene(scene);\n            primaryStage.setTitle(\"IMDb Clone\" + (currentUser != null ? \" - \" + currentUser.getUsername() : \"\"));\n            primaryStage.setMinWidth(MIN_WIDTH);\n            primaryStage.setMinHeight(MIN_HEIGHT);\n            primaryStage.centerOnScreen();\n\n            // Show main application\n            primaryStage.show();\n\n        } catch (Exception e) {\n            showErrorAndExit(\"Failed to load main application\", e);\n        }\n    }\n\n    /**\n     * Apply base modern stylesheet plus user-selected theme and font size to the given scene.\n     */\n    private void applyTheme(Scene scene) {\n        // Clear any existing theme styles first\n        scene.getStylesheets().removeIf(s -> s.contains(\"/css/theme-\") || s.contains(\"/css/modern-styles.css\"));\n\n        // Always add base stylesheet\n        try {\n            scene.getStylesheets().add(getClass().getResource(CSS_FILE).toExternalForm());\n        } catch (Exception e) {\n            System.err.println(\"Failed to load base CSS: \" + e.getMessage());\n        }\n\n        // Add theme override\n        SettingsManager settings = SettingsManager.getInstance();\n        String theme = settings.getTheme();\n        String themePath = getThemeStylesheet(theme);\n        if (themePath != null) {\n            try {\n                scene.getStylesheets().add(getClass().getResource(themePath).toExternalForm());\n            } catch (Exception e) {\n                System.err.println(\"Failed to load theme CSS: \" + e.getMessage());\n            }\n        }\n\n        // Apply font size inline to root\n        int fontSize = settings.getFontSize();\n        if (scene.getRoot() != null) {\n            scene.getRoot().setStyle(\"-fx-font-size: \" + fontSize + \"px;\");\n        }\n\n        // Attach subtle global UI animations (hover scale, tab header pulse)\n        try {\n            UiAnimations.attach(scene);\n        } catch (Exception ignored) { }\n    }\n\n    private String getThemeStylesheet(String themeKey) {\n        if (themeKey == null) return \"/css/theme-cyberpunk.css\"; // default to vibrant cyberpunk\n        return switch (themeKey) {\n            case \"neon-dark\" -> \"/css/theme-neon-dark.css\";\n            case \"neon-light\" -> \"/css/theme-neon-light.css\";\n            case \"cyberpunk\" -> \"/css/theme-cyberpunk.css\";\n            default -> \"/css/theme-cyberpunk.css\"; // fallback to cyberpunk\n        };\n    }\n\n    private void showErrorAndExit(String message, Exception e) {\n        System.err.println(message + \": \" + e.getMessage());\n        e.printStackTrace();\n\n        // Try to show a JavaFX alert if possible\n        try {\n            javafx.scene.control.Alert alert = new javafx.scene.control.Alert(\n                    javafx.scene.control.Alert.AlertType.ERROR\n            );\n            alert.setTitle(\"Application Error\");\n            alert.setHeaderText(message);\n            alert.setContentText(e.getMessage());\n            alert.showAndWait();\n        } catch (Exception alertException) {\n            System.err.println(\"Could not show error dialog: \" + alertException.getMessage());\n        }\n\n        System.exit(1);\n    }\n\n    public static void main(String[] args) {\n        launch(args);\n    }\n}",
+                    "language": "java"
+                },
+                "codebaseEnabled": true
+            },
+            "createdAt": 1754735563715,
+            "isInternal": false,
+            "rawContent": {
+                "type": "doc",
+                "content": [
+                    {
+                        "type": "paragraph",
+                        "content": [
+                            {
+                                "type": "text",
+                                "text": "Review and add improvemnts to my code"
+                            }
+                        ]
+                    }
+                ]
+            },
+            "autoAppliedRules": [
+                {
+                    "name": "Repository Information Overview",
+                    "description": "Repository Information Overview",
+                    "uri": "zen-rules://repo/repo",
+                    "mimeType": "text/markdown",
+                    "content": "--\r\n\r\n# IMDB Clone Information\r\n\r\n## Summary\r\nA JavaFX-based application that simulates an IMDB-like movie and TV series database. The application allows users to browse, search, and rate movies and TV series.\r\n\r\n## Structure\r\n- `src/main/java`: Contains all Java source code\r\n- `src/main/resources`: Contains application resources including data files\r\n- `src/test`: Contains test files\r\n- `.mvn`: Maven wrapper files\r\n\r\n## Language & Runtime\r\n**Language**: Java\r\n**Version**: Java 21\r\n**Build System**: Maven\r\n**Package Manager**: Maven\r\n\r\n## Dependencies\r\n**Main Dependencies**:\r\n- JavaFX (21.0.3): Controls, FXML, Graphics, Media, Web modules\r\n- ControlsFX (11.2.1): Additional JavaFX controls\r\n\r\n**Development Dependencies**:\r\n- JUnit Jupiter (5.10.2): Testing framework\r\n\r\n## Build & Installation\r\n```bash\r\nmvn clean install\r\nmvn javafx:run\r\n```\r\n\r\n## Project Structure\r\nThe application follows an MVC-like architecture:\r\n\r\n### Model\r\n- `model/Content.java`: Abstract base class for all media content\r\n- `model/Movie.java`: Represents a movie with title, year, genre, etc.\r\n- `model/Series.java`: Represents a TV series with seasons and episodes\r\n- `model/Actor.java`, `model/Director.java`: Represent people involved in productions\r\n- `model/User.java`: Represents application users\r\n\r\n### Data Management\r\n- `data/DataManager.java`: Central class for data loading and management\r\n- `data/SearchCriteria.java`: Used for filtering content in searches\r\n\r\n### View/Controller\r\n- `gui/MovieManagementGUI.java`: Main JavaFX application UI\r\n\r\n### Enums & Exceptions\r\n- `enums/Genre.java`: Enumeration of content genres\r\n- Various exception classes for error handling\r\n\r\n## Issues Fixed\r\n1. Fixed parameter mismatch in Content constructor\r\n2. Implemented Movie constructors to match usage in DataManager\r\n3. Fixed DataManager's loadMovies method\r\n4. Implemented searchMovies method that was returning null\r\n5. Fixed getAllMovies and getAllSeries methods\r\n6. Implemented rateMovie functionality\r\n7. Created missing data directory and sample data files\r\n8. Updated module-info.java with required exports\r\n9. Created main application class\r\n10. Fixed pom.xml configuration",
+                    "alwaysApply": true
+                }
+            ]
+        },
+        {
+            "id": "87dd05ea-9b34-48d8-a8ff-8177d3285e4f",
+            "role": "assistant",
+            "content": [
+                {
+                    "type": "text",
+                    "text": "I'll analyze your IMDB Clone application code and suggest improvements. Let me first explore the codebase to understand the current structure and identify areas for enhancement."
+                },
+                {
+                    "type": "toolCall",
+                    "toolCallId": "toolu_01S28kJcmCAhKegVNATP6mzH",
+                    "statusText": "Viewed directory",
+                    "status": "SUCCESS",
+                    "context": {
+                        "files": [
+                            {
+                                "path": ".",
+                                "fsPath": "C:/Users/mas_b/IdeaProjects/imdb_clone"
+                            }
+                        ]
+                    },
+                    "isHidden": false
+                },
+                {
+                    "type": "toolCall",
+                    "toolCallId": "toolu_01UYeyqgSRxyJxh9nzDfm9rT",
+                    "statusText": "Viewed directory",
+                    "status": "SUCCESS",
+                    "context": {
+                        "files": [
+                            {
+                                "path": "src/main/java",
+                                "fsPath": "C:/Users/mas_b/IdeaProjects/imdb_clone/src/main/java"
+                            }
+                        ]
+                    },
+                    "isHidden": false
+                },
+                {
+                    "type": "toolCall",
+                    "toolCallId": "toolu_01RQh3dsJfawb9rHhh1pmQiY",
+                    "title": "File search",
+                    "statusText": "Done",
+                    "status": "SUCCESS",
+                    "isHidden": false
+                },
+                {
+                    "type": "text",
+                    "text": "Let me examine some key files to understand the current architecture and identify improvement opportunities:"
+                },
+                {
+                    "type": "toolCall",
+                    "toolCallId": "toolu_01RLzYsctKuPmhdfewVK7pzs",
+                    "statusText": "Viewed file (lines 1:400)",
+                    "status": "SUCCESS",
+                    "context": {
+                        "files": [
+                            {
+                                "path": "src/main/java/com/papel/imdb_clone/controllers/MainControllerRefactored.java",
+                                "fsPath": "C:/Users/mas_b/IdeaProjects/imdb_clone/src/main/java/com/papel/imdb_clone/controllers/MainControllerRefactored.java"
+                            }
+                        ]
+                    },
+                    "isHidden": false
+                },
+                {
+                    "type": "toolCall",
+                    "toolCallId": "toolu_01GZ1wTr9mD9kZTUS7wNm5r9",
+                    "statusText": "Viewed file (lines 1:100)",
+                    "status": "SUCCESS",
+                    "context": {
+                        "files": [
+                            {
+                                "path": "src/main/java/com/papel/imdb_clone/data/DataManager.java",
+                                "fsPath": "C:/Users/mas_b/IdeaProjects/imdb_clone/src/main/java/com/papel/imdb_clone/data/DataManager.java"
+                            }
+                        ]
+                    },
+                    "isHidden": false
+                },
+                {
+                    "type": "toolCall",
+                    "toolCallId": "toolu_01RMjz6JkCUfoa9MrUW9s6jF",
+                    "statusText": "Viewed file",
+                    "status": "SUCCESS",
+                    "context": {
+                        "files": [
+                            {
+                                "path": "pom.xml",
+                                "fsPath": "C:/Users/mas_b/IdeaProjects/imdb_clone/pom.xml"
+                            }
+                        ]
+                    },
+                    "isHidden": false
+                },
+                {
+                    "type": "toolCall",
+                    "toolCallId": "toolu_01V8gSTqPDZC1aZjyjQQfe9a",
+                    "statusText": "Viewed file (lines 1:100)",
+                    "status": "SUCCESS",
+                    "context": {
+                        "files": [
+                            {
+                                "path": "src/main/java/com/papel/imdb_clone/service/AuthenticationService.java",
+                                "fsPath": "C:/Users/mas_b/IdeaProjects/imdb_clone/src/main/java/com/papel/imdb_clone/service/AuthenticationService.java"
+                            }
+                        ]
+                    },
+                    "isHidden": false
+                },
+                {
+                    "type": "text",
+                    "text": "Now let me examine some more key files to understand the architecture better:"
+                },
+                {
+                    "type": "toolCall",
+                    "toolCallId": "toolu_01L8kyuHabNo5hnLXFQDev2i",
+                    "title": "Fulltext search",
+                    "statusText": "Done",
+                    "status": "SUCCESS",
+                    "isHidden": false
+                },
+                {
+                    "type": "toolCall",
+                    "toolCallId": "toolu_017B432nCbjGo1azBLzqgBEB",
+                    "title": "Fulltext search",
+                    "statusText": "Done",
+                    "status": "SUCCESS",
+                    "isHidden": false
+                },
+                {
+                    "type": "toolCall",
+                    "toolCallId": "toolu_012ZyzPwRzHLdUgDcRZ7CHV7",
+                    "statusText": "Viewed file (lines 1:100)",
+                    "status": "SUCCESS",
+                    "context": {
+                        "files": [
+                            {
+                                "path": "src/main/java/com/papel/imdb_clone/model/User.java",
+                                "fsPath": "C:/Users/mas_b/IdeaProjects/imdb_clone/src/main/java/com/papel/imdb_clone/model/User.java"
+                            }
+                        ]
+                    },
+                    "isHidden": false
+                },
+                {
+                    "type": "toolCall",
+                    "toolCallId": "toolu_018vV4dHK2JrsGptXbB9iZZs",
+                    "statusText": "Viewed file",
+                    "status": "SUCCESS",
+                    "context": {
+                        "files": [
+                            {
+                                "path": "IMPROVEMENTS.md",
+                                "fsPath": "C:/Users/mas_b/IdeaProjects/imdb_clone/IMPROVEMENTS.md"
+                            }
+                        ]
+                    },
+                    "isHidden": false
+                },
+                {
+                    "type": "text",
+                    "text": "Now let me check for any existing issues or areas that need improvement:"
+                },
+                {
+                    "type": "toolCall",
+                    "toolCallId": "toolu_01Wsfg53QjVZ7QZYuftzuq3k",
+                    "title": "Fulltext search",
+                    "statusText": "Done",
+                    "status": "SUCCESS",
+                    "isHidden": false
+                },
+                {
+                    "type": "toolCall",
+                    "toolCallId": "toolu_01FFFMJp8uzTwpqyvW8G5MQS",
+                    "statusText": "Viewed file",
+                    "status": "SUCCESS",
+                    "context": {
+                        "files": [
+                            {
+                                "path": "src/main/java/com/papel/imdb_clone/gui/UiAnimations.java",
+                                "fsPath": "C:/Users/mas_b/IdeaProjects/imdb_clone/src/main/java/com/papel/imdb_clone/gui/UiAnimations.java"
+                            }
+                        ]
+                    },
+                    "isHidden": false
+                },
+                {
+                    "type": "text",
+                    "text": "Based on my analysis of your IMDB Clone application, I can see it's a well-structured JavaFX application with modern architecture. Here are the key improvements I recommend to enhance your codebase:\n\n## **Code Review & Improvement Recommendations**\n\n### **1. Architecture & Design Patterns**\n\n**Current Issues:**\n- Multiple constructors in `MainControllerRefactored` creating potential inconsistency\n- Direct instantiation of services in constructors\n- Missing dependency injection pattern\n\n**Improvements:**"
+                },
+                {
+                    "type": "toolCall",
+                    "toolCallId": "toolu_01XQBBN6LxmTuyyyw6KKXaD7",
+                    "statusText": "Change generated",
+                    "status": "SUCCESS",
+                    "context": {
+                        "files": [
+                            {
+                                "path": "src/main/java/com/papel/imdb_clone/gui/ImprovedMovieApp.java",
+                                "fsPath": "C:/Users/mas_b/IdeaProjects/imdb_clone/src/main/java/com/papel/imdb_clone/gui/ImprovedMovieApp.java"
+                            }
+                        ]
+                    },
+                    "isHidden": false
+                },
+                {
+                    "type": "codeHunk",
+                    "lineBasedDiff": "--- C:/Users/mas_b/IdeaProjects/imdb_clone/src/main/java/com/papel/imdb_clone/gui/ImprovedMovieApp.java\n+++ C:/Users/mas_b/IdeaProjects/imdb_clone/src/main/java/com/papel/imdb_clone/gui/ImprovedMovieApp.java\n@@ -192,7 +192,8 @@\n             System.err.println(\"Could not show error dialog: \" + alertException.getMessage());\n         }\n \n-        System.exit(1);\n+        // Graceful shutdown instead of System.exit\n+        Platform.exit();\n     }\n \n     public static void main(String[] args) {",
+                    "refToolCallId": "toolu_01XQBBN6LxmTuyyyw6KKXaD7"
+                },
+                {
+                    "type": "text",
+                    "text": "Now let me add the missing import:"
+                },
+                {
+                    "type": "toolCall",
+                    "toolCallId": "toolu_01Vwn8kBhd87DwC74aC6wvhV",
+                    "statusText": "Change generated",
+                    "status": "SUCCESS",
+                    "context": {
+                        "files": [
+                            {
+                                "path": "src/main/java/com/papel/imdb_clone/gui/ImprovedMovieApp.java",
+                                "fsPath": "C:/Users/mas_b/IdeaProjects/imdb_clone/src/main/java/com/papel/imdb_clone/gui/ImprovedMovieApp.java"
+                            }
+                        ]
+                    },
+                    "isHidden": false
+                },
+                {
+                    "type": "codeHunk",
+                    "lineBasedDiff": "--- C:/Users/mas_b/IdeaProjects/imdb_clone/src/main/java/com/papel/imdb_clone/gui/ImprovedMovieApp.java\n+++ C:/Users/mas_b/IdeaProjects/imdb_clone/src/main/java/com/papel/imdb_clone/gui/ImprovedMovieApp.java\n@@ -4,6 +4,7 @@\n import com.papel.imdb_clone.data.DataManager;\n import com.papel.imdb_clone.util.SettingsManager;\n import javafx.application.Application;\n+import javafx.application.Platform;\n import javafx.fxml.FXMLLoader;\n import javafx.scene.Parent;\n import javafx.scene.Scene;",
+                    "refToolCallId": "toolu_01Vwn8kBhd87DwC74aC6wvhV"
+                },
+                {
+                    "type": "text",
+                    "text": "### **2. Create a Service Locator Pattern**\n\nLet me create a service locator to manage dependencies better:"
+                },
+                {
+                    "type": "toolCall",
+                    "toolCallId": "toolu_01SYCWUGjHTVua1hovRxRBHM",
+                    "statusText": "Change generated",
+                    "status": "SUCCESS",
+                    "context": {
+                        "files": [
+                            {
+                                "path": "src/main/java/com/papel/imdb_clone/service/ServiceLocator.java",
+                                "fsPath": "C:/Users/mas_b/IdeaProjects/imdb_clone/src/main/java/com/papel/imdb_clone/service/ServiceLocator.java"
+                            }
+                        ]
+                    },
+                    "isHidden": false
+                },
+                {
+                    "type": "codeHunk",
+                    "lineBasedDiff": "--- C:/Users/mas_b/IdeaProjects/imdb_clone/src/main/java/com/papel/imdb_clone/service/ServiceLocator.java\n+++ C:/Users/mas_b/IdeaProjects/imdb_clone/src/main/java/com/papel/imdb_clone/service/ServiceLocator.java\n@@ -0,0 +1,100 @@\n+package com.papel.imdb_clone.service;\n+\n+import com.papel.imdb_clone.data.DataManager;\n+import com.papel.imdb_clone.util.SettingsManager;\n+import org.slf4j.Logger;\n+import org.slf4j.LoggerFactory;\n+\n+import java.util.concurrent.ConcurrentHashMap;\n+import java.util.concurrent.ConcurrentMap;\n+\n+/**\n+ * Service Locator pattern implementation for managing application services.\n+ * Provides centralized access to services and ensures singleton behavior.\n+ */\n+public class ServiceLocator {\n+    private static final Logger logger = LoggerFactory.getLogger(ServiceLocator.class);\n+    private static ServiceLocator instance;\n+    private final ConcurrentMap<Class<?>, Object> services = new ConcurrentHashMap<>();\n+    \n+    private ServiceLocator() {\n+        initializeServices();\n+    }\n+    \n+    public static synchronized ServiceLocator getInstance() {\n+        if (instance == null) {\n+            instance = new ServiceLocator();\n+        }\n+        return instance;\n+    }\n+    \n+    private void initializeServices() {\n+        logger.info(\"Initializing application services...\");\n+        \n+        // Initialize core services\n+        registerService(DataManager.class, new DataManager());\n+        registerService(AuthenticationService.class, AuthenticationService.getInstance());\n+        registerService(EncryptionService.class, EncryptionService.getInstance());\n+        registerService(SettingsManager.class, SettingsManager.getInstance());\n+        \n+        // Initialize dependent services\n+        DataManager dataManager = getService(DataManager.class);\n+        registerService(WatchlistService.class, new WatchlistService(dataManager));\n+        \n+        logger.info(\"Service initialization complete\");\n+    }\n+    \n+    /**\n+     * Register a service instance\n+     */\n+    public <T> void registerService(Class<T> serviceClass, T serviceInstance) {\n+        if (serviceClass == null || serviceInstance == null) {\n+            throw new IllegalArgumentException(\"Service class and instance cannot be null\");\n+        }\n+        services.put(serviceClass, serviceInstance);\n+        logger.debug(\"Registered service: {}\", serviceClass.getSimpleName());\n+    }\n+    \n+    /**\n+     * Get a service instance\n+     */\n+    @SuppressWarnings(\"unchecked\")\n+    public <T> T getService(Class<T> serviceClass) {\n+        if (serviceClass == null) {\n+            throw new IllegalArgumentException(\"Service class cannot be null\");\n+        }\n+        \n+        T service = (T) services.get(serviceClass);\n+        if (service == null) {\n+            throw new IllegalStateException(\"Service not found: \" + serviceClass.getSimpleName());\n+        }\n+        return service;\n+    }\n+    \n+    /**\n+     * Check if a service is registered\n+     */\n+    public boolean hasService(Class<?> serviceClass) {\n+        return services.containsKey(serviceClass);\n+    }\n+    \n+    /**\n+     * Shutdown all services gracefully\n+     */\n+    public void shutdown() {\n+        logger.info(\"Shutting down services...\");\n+        \n+        // Shutdown services in reverse order of dependency\n+        try {\n+            if (hasService(DataManager.class)) {\n+                // DataManager might need cleanup\n+                logger.debug(\"Shutting down DataManager\");\n+            }\n+        } catch (Exception e) {\n+            logger.error(\"Error shutting down services\", e);\n+        }\n+        \n+        services.clear();\n+        logger.info(\"Service shutdown complete\");\n+    }\n+}",
+                    "refToolCallId": "toolu_01SYCWUGjHTVua1hovRxRBHM"
+                },
+                {
+                    "type": "text",
+                    "text": "### **3. Create Application Configuration Class**"
+                },
+                {
+                    "type": "toolCall",
+                    "toolCallId": "toolu_01NQk4m58QCszSFFXjJ8vTth",
+                    "statusText": "Change generated",
+                    "status": "SUCCESS",
+                    "context": {
+                        "files": [
+                            {
+                                "path": "src/main/java/com/papel/imdb_clone/config/ApplicationConfig.java",
+                                "fsPath": "C:/Users/mas_b/IdeaProjects/imdb_clone/src/main/java/com/papel/imdb_clone/config/ApplicationConfig.java"
+                            }
+                        ]
+                    },
+                    "isHidden": false
+                },
+                {
+                    "type": "codeHunk",
+                    "lineBasedDiff": "--- C:/Users/mas_b/IdeaProjects/imdb_clone/src/main/java/com/papel/imdb_clone/config/ApplicationConfig.java\n+++ C:/Users/mas_b/IdeaProjects/imdb_clone/src/main/java/com/papel/imdb_clone/config/ApplicationConfig.java\n@@ -0,0 +1,123 @@\n+package com.papel.imdb_clone.config;\n+\n+import java.io.IOException;\n+import java.io.InputStream;\n+import java.util.Properties;\n+\n+/**\n+ * Application configuration management.\n+ * Loads configuration from properties files and provides typed access to configuration values.\n+ */\n+public class ApplicationConfig {\n+    private static ApplicationConfig instance;\n+    private final Properties properties;\n+    \n+    // Default configuration values\n+    private static final String DEFAULT_APP_TITLE = \"IMDB Clone - Movie & Series Manager\";\n+    private static final double DEFAULT_MIN_WIDTH = 1000.0;\n+    private static final double DEFAULT_MIN_HEIGHT = 700.0;\n+    private static final String DEFAULT_THEME = \"cyberpunk\";\n+    private static final int DEFAULT_FONT_SIZE = 14;\n+    private static final int DEFAULT_SESSION_TIMEOUT_MINUTES = 60;\n+    \n+    private ApplicationConfig() {\n+        properties = new Properties();\n+        loadConfiguration();\n+    }\n+    \n+    public static synchronized ApplicationConfig getInstance() {\n+        if (instance == null) {\n+            instance = new ApplicationConfig();\n+        }\n+        return instance;\n+    }\n+    \n+    private void loadConfiguration() {\n+        // Load from application.properties if it exists\n+        try (InputStream is = getClass().getResourceAsStream(\"/application.properties\")) {\n+            if (is != null) {\n+                properties.load(is);\n+            }\n+        } catch (IOException e) {\n+            System.err.println(\"Could not load application.properties: \" + e.getMessage());\n+        }\n+        \n+        // Load system properties (these override file properties)\n+        properties.putAll(System.getProperties());\n+    }\n+    \n+    // Application settings\n+    public String getAppTitle() {\n+        return properties.getProperty(\"app.title\", DEFAULT_APP_TITLE);\n+    }\n+    \n+    public double getMinWidth() {\n+        return Double.parseDouble(properties.getProperty(\"app.window.min.width\", String.valueOf(DEFAULT_MIN_WIDTH)));\n+    }\n+    \n+    public double getMinHeight() {\n+        return Double.parseDouble(properties.getProperty(\"app.window.min.height\", String.valueOf(DEFAULT_MIN_HEIGHT)));\n+    }\n+    \n+    // UI settings\n+    public String getDefaultTheme() {\n+        return properties.getProperty(\"ui.theme.default\", DEFAULT_THEME);\n+    }\n+    \n+    public int getDefaultFontSize() {\n+        return Integer.parseInt(properties.getProperty(\"ui.font.size.default\", String.valueOf(DEFAULT_FONT_SIZE)));\n+    }\n+    \n+    public boolean isAnimationsEnabled() {\n+        return Boolean.parseBoolean(properties.getProperty(\"ui.animations.enabled\", \"true\"));\n+    }\n+    \n+    // Security settings\n+    public int getSessionTimeoutMinutes() {\n+        return Integer.parseInt(properties.getProperty(\"security.session.timeout.minutes\", String.valueOf(DEFAULT_SESSION_TIMEOUT_MINUTES)));\n+    }\n+    \n+    public int getPasswordMinLength() {\n+        return Integer.parseInt(properties.getProperty(\"security.password.min.length\", \"6\"));\n+    }\n+    \n+    // Data settings\n+    public String getDataDirectory() {\n+        return properties.getProperty(\"data.directory\", \"src/main/resources/data\");\n+    }\n+    \n+    public boolean isDataEncryptionEnabled() {\n+        return Boolean.parseBoolean(properties.getProperty(\"data.encryption.enabled\", \"true\"));\n+    }\n+    \n+    // Performance settings\n+    public int getSearchCacheSize() {\n+        return Integer.parseInt(properties.getProperty(\"performance.search.cache.size\", \"100\"));\n+    }\n+    \n+    public int getMaxConcurrentUsers() {\n+        return Integer.parseInt(properties.getProperty(\"performance.max.concurrent.users\", \"50\"));\n+    }\n+    \n+    // Development settings\n+    public boolean isDebugMode() {\n+        return Boolean.parseBoolean(properties.getProperty(\"debug.enabled\", \"false\"));\n+    }\n+    \n+    public boolean isTestDataEnabled() {\n+        return Boolean.parseBoolean(properties.getProperty(\"debug.test.data.enabled\", \"true\"));\n+    }\n+    \n+    // Generic property access\n+    public String getProperty(String key) {\n+        return properties.getProperty(key);\n+    }\n+    \n+    public String getProperty(String key, String defaultValue) {\n+        return properties.getProperty(key, defaultValue);\n+    }\n+    \n+    public void setProperty(String key, String value) {\n+        properties.setProperty(key, value);\n+    }\n+}",
+                    "refToolCallId": "toolu_01NQk4m58QCszSFFXjJ8vTth"
+                },
+                {
+                    "type": "text",
+                    "text": "### **4. Improve Error Handling with Custom Exception Handler**"
+                },
+                {
+                    "type": "toolCall",
+                    "toolCallId": "toolu_01XMP1xZiCvnrvb2aPcJwrL7",
+                    "statusText": "Change generated",
+                    "status": "SUCCESS",
+                    "context": {
+                        "files": [
+                            {
+                                "path": "src/main/java/com/papel/imdb_clone/util/GlobalExceptionHandler.java",
+                                "fsPath": "C:/Users/mas_b/IdeaProjects/imdb_clone/src/main/java/com/papel/imdb_clone/util/GlobalExceptionHandler.java"
+                            }
+                        ]
+                    },
+                    "isHidden": false
+                },
+                {
+                    "type": "codeHunk",
+                    "lineBasedDiff": "--- C:/Users/mas_b/IdeaProjects/imdb_clone/src/main/java/com/papel/imdb_clone/util/GlobalExceptionHandler.java\n+++ C:/Users/mas_b/IdeaProjects/imdb_clone/src/main/java/com/papel/imdb_clone/util/GlobalExceptionHandler.java\n@@ -0,0 +1,176 @@\n+package com.papel.imdb_clone.util;\n+\n+import javafx.application.Platform;\n+import javafx.scene.control.Alert;\n+import javafx.scene.control.ButtonType;\n+import javafx.scene.control.TextArea;\n+import javafx.scene.layout.GridPane;\n+import javafx.scene.layout.Priority;\n+import org.slf4j.Logger;\n+import org.slf4j.LoggerFactory;\n+\n+import java.io.PrintWriter;\n+import java.io.StringWriter;\n+import java.util.Optional;\n+\n+/**\n+ * Global exception handler for the application.\n+ * Provides consistent error handling and user-friendly error dialogs.\n+ */\n+public class GlobalExceptionHandler implements Thread.UncaughtExceptionHandler {\n+    private static final Logger logger = LoggerFactory.getLogger(GlobalExceptionHandler.class);\n+    private static GlobalExceptionHandler instance;\n+    \n+    private GlobalExceptionHandler() {}\n+    \n+    public static synchronized GlobalExceptionHandler getInstance() {\n+        if (instance == null) {\n+            instance = new GlobalExceptionHandler();\n+        }\n+        return instance;\n+    }\n+    \n+    /**\n+     * Initialize the global exception handler\n+     */\n+    public static void initialize() {\n+        GlobalExceptionHandler handler = getInstance();\n+        Thread.setDefaultUncaughtExceptionHandler(handler);\n+        \n+        // Set JavaFX exception handler\n+        if (Platform.isFxApplicationThread()) {\n+            Thread.currentThread().setUncaughtExceptionHandler(handler);\n+        }\n+    }\n+    \n+    @Override\n+    public void uncaughtException(Thread t, Throwable e) {\n+        logger.error(\"Uncaught exception in thread {}: {}\", t.getName(), e.getMessage(), e);\n+        \n+        // Show error dialog on JavaFX Application Thread\n+        if (Platform.isFxApplicationThread()) {\n+            showErrorDialog(\"Unexpected Error\", \"An unexpected error occurred\", e);\n+        } else {\n+            Platform.runLater(() -> showErrorDialog(\"Unexpected Error\", \"An unexpected error occurred\", e));\n+        }\n+    }\n+    \n+    /**\n+     * Handle application errors with user-friendly dialogs\n+     */\n+    public static void handleError(String title, String message, Throwable throwable) {\n+        logger.error(\"{}: {}\", title, message, throwable);\n+        \n+        if (Platform.isFxApplicationThread()) {\n+            getInstance().showErrorDialog(title, message, throwable);\n+        } else {\n+            Platform.runLater(() -> getInstance().showErrorDialog(title, message, throwable));\n+        }\n+    }\n+    \n+    /**\n+     * Handle application warnings\n+     */\n+    public static void handleWarning(String title, String message) {\n+        logger.warn(\"{}: {}\", title, message);\n+        \n+        if (Platform.isFxApplicationThread()) {\n+            getInstance().showWarningDialog(title, message);\n+        } else {\n+            Platform.runLater(() -> getInstance().showWarningDialog(title, message));\n+        }\n+    }\n+    \n+    /**\n+     * Handle application info messages\n+     */\n+    public static void handleInfo(String title, String message) {\n+        logger.info(\"{}: {}\", title, message);\n+        \n+        if (Platform.isFxApplicationThread()) {\n+            getInstance().showInfoDialog(title, message);\n+        } else {\n+            Platform.runLater(() -> getInstance().showInfoDialog(title, message));\n+        }\n+    }\n+    \n+    private void showErrorDialog(String title, String message, Throwable throwable) {\n+        try {\n+            Alert alert = new Alert(Alert.AlertType.ERROR);\n+            alert.setTitle(title);\n+            alert.setHeaderText(message);\n+            alert.setContentText(throwable.getMessage());\n+            \n+            // Create expandable Exception details\n+            StringWriter sw = new StringWriter();\n+            PrintWriter pw = new PrintWriter(sw);\n+            throwable.printStackTrace(pw);\n+            String exceptionText = sw.toString();\n+            \n+            TextArea textArea = new TextArea(exceptionText);\n+            textArea.setEditable(false);\n+            textArea.setWrapText(true);\n+            textArea.setMaxWidth(Double.MAX_VALUE);\n+            textArea.setMaxHeight(Double.MAX_VALUE);\n+            GridPane.setVgrow(textArea, Priority.ALWAYS);\n+            GridPane.setHgrow(textArea, Priority.ALWAYS);\n+            \n+            GridPane expContent = new GridPane();\n+            expContent.setMaxWidth(Double.MAX_VALUE);\n+            expContent.add(textArea, 0, 0);\n+            \n+            alert.getDialogPane().setExpandableContent(expContent);\n+            \n+            // Add \"Report Bug\" button for critical errors\n+            ButtonType reportButton = new ButtonType(\"Report Bug\");\n+            alert.getButtonTypes().add(reportButton);\n+            \n+            Optional<ButtonType> result = alert.showAndWait();\n+            if (result.isPresent() && result.get() == reportButton) {\n+                handleBugReport(title, message, throwable);\n+            }\n+            \n+        } catch (Exception e) {\n+            // Fallback if dialog creation fails\n+            logger.error(\"Failed to show error dialog\", e);\n+            System.err.println(\"CRITICAL ERROR: \" + title + \" - \" + message);\n+            throwable.printStackTrace();\n+        }\n+    }\n+    \n+    private void showWarningDialog(String title, String message) {\n+        try {\n+            Alert alert = new Alert(Alert.AlertType.WARNING);\n+            alert.setTitle(title);\n+            alert.setHeaderText(null);\n+            alert.setContentText(message);\n+            alert.showAndWait();\n+        } catch (Exception e) {\n+            logger.error(\"Failed to show warning dialog\", e);\n+        }\n+    }\n+    \n+    private void showInfoDialog(String title, String message) {\n+        try {\n+            Alert alert = new Alert(Alert.AlertType.INFORMATION);\n+            alert.setTitle(title);\n+            alert.setHeaderText(null);\n+            alert.setContentText(message);\n+            alert.showAndWait();\n+        } catch (Exception e) {\n+            logger.error(\"Failed to show info dialog\", e);\n+        }\n+    }\n+    \n+    private void handleBugReport(String title, String message, Throwable throwable) {\n+        // In a real application, this would send the bug report to a server\n+        // For now, we'll just log it and show a confirmation\n+        logger.info(\"Bug report generated for: {} - {}\", title, message);\n+        \n+        Alert confirmation = new Alert(Alert.AlertType.INFORMATION);\n+        confirmation.setTitle(\"Bug Report\");\n+        confirmation.setHeaderText(\"Thank you for reporting this issue\");\n+        confirmation.setContentText(\"The error details have been logged. Please contact support if the problem persists.\");\n+        confirmation.showAndWait();\n+    }\n+}",
+                    "refToolCallId": "toolu_01XMP1xZiCvnrvb2aPcJwrL7"
+                },
+                {
+                    "type": "text",
+                    "text": "### **5. Create Application Properties File**"
+                },
+                {
+                    "type": "toolCall",
+                    "toolCallId": "toolu_01DCyVRrLwMHp7BHMjLEGXBZ",
+                    "statusText": "Change generated",
+                    "status": "SUCCESS",
+                    "context": {
+                        "files": [
+                            {
+                                "path": "src/main/resources/application.properties",
+                                "fsPath": "C:/Users/mas_b/IdeaProjects/imdb_clone/src/main/resources/application.properties"
+                            }
+                        ]
+                    },
+                    "isHidden": false
+                },
+                {
+                    "type": "codeHunk",
+                    "lineBasedDiff": "--- C:/Users/mas_b/IdeaProjects/imdb_clone/src/main/resources/application.properties\n+++ C:/Users/mas_b/IdeaProjects/imdb_clone/src/main/resources/application.properties\n@@ -0,0 +1,66 @@\n+# IMDB Clone Application Configuration\n+\n+# Application Information\n+app.name=IMDB Clone\n+app.version=1.0.0\n+app.title=IMDB Clone - Movie & Series Manager\n+\n+# Window Settings\n+app.window.min.width=1000\n+app.window.min.height=700\n+app.window.default.width=1200\n+app.window.default.height=800\n+\n+# UI Settings\n+ui.theme.default=cyberpunk\n+ui.font.size.default=14\n+ui.animations.enabled=true\n+ui.reduced.motion=false\n+\n+# Security Settings\n+security.session.timeout.minutes=60\n+security.password.min.length=6\n+security.max.login.attempts=3\n+security.lockout.duration.minutes=15\n+\n+# Data Settings\n+data.directory=src/main/resources/data\n+data.encryption.enabled=true\n+data.backup.enabled=true\n+data.backup.interval.hours=24\n+\n+# Performance Settings\n+performance.search.cache.size=100\n+performance.max.concurrent.users=50\n+performance.thread.pool.size=10\n+\n+# Logging Settings\n+logging.level=INFO\n+logging.file.enabled=true\n+logging.file.path=logs/imdb-clone.log\n+logging.max.file.size=10MB\n+logging.max.files=5\n+\n+# Development Settings\n+debug.enabled=false\n+debug.test.data.enabled=true\n+debug.show.performance.metrics=false\n+\n+# Feature Flags\n+features.forum.enabled=true\n+features.news.enabled=true\n+features.quiz.enabled=true\n+features.watchlist.enabled=true\n+features.ratings.enabled=true\n+features.recommendations.enabled=true\n+\n+# External Services (for future use)\n+external.tmdb.api.enabled=false\n+external.tmdb.api.key=\n+external.omdb.api.enabled=false\n+external.omdb.api.key=\n+\n+# Cache Settings\n+cache.movie.posters.enabled=true\n+cache.movie.posters.max.size=100MB\n+cache.search.results.ttl.minutes=30",
+                    "refToolCallId": "toolu_01DCyVRrLwMHp7BHMjLEGXBZ"
+                },
+                {
+                    "type": "text",
+                    "text": "### **6. Improve the Main Application Class**"
+                },
+                {
+                    "type": "toolCall",
+                    "toolCallId": "toolu_01UsZYtMDBs6N23fdkxm5Lu5",
+                    "statusText": "Change generated",
+                    "status": "SUCCESS",
+                    "context": {
+                        "files": [
+                            {
+                                "path": "src/main/java/com/papel/imdb_clone/gui/ImprovedMovieApp.java",
+                                "fsPath": "C:/Users/mas_b/IdeaProjects/imdb_clone/src/main/java/com/papel/imdb_clone/gui/ImprovedMovieApp.java"
+                            }
+                        ]
+                    },
+                    "isHidden": false
+                },
+                {
+                    "type": "codeHunk",
+                    "lineBasedDiff": "--- C:/Users/mas_b/IdeaProjects/imdb_clone/src/main/java/com/papel/imdb_clone/gui/ImprovedMovieApp.java\n+++ C:/Users/mas_b/IdeaProjects/imdb_clone/src/main/java/com/papel/imdb_clone/gui/ImprovedMovieApp.java\n@@ -1,7 +1,10 @@\n package com.papel.imdb_clone.gui;\n \n+import com.papel.imdb_clone.config.ApplicationConfig;\n import com.papel.imdb_clone.controllers.MainControllerRefactored;\n import com.papel.imdb_clone.data.DataManager;\n+import com.papel.imdb_clone.service.ServiceLocator;\n+import com.papel.imdb_clone.util.GlobalExceptionHandler;\n import com.papel.imdb_clone.util.SettingsManager;\n import javafx.application.Application;\n import javafx.application.Platform;\n@@ -10,6 +13,8 @@\n import javafx.scene.Scene;\n import javafx.stage.Modality;\n import javafx.stage.Stage;\n+import org.slf4j.Logger;\n+import org.slf4j.LoggerFactory;\n \n import java.io.IOException;\n ",
+                    "refToolCallId": "toolu_01UsZYtMDBs6N23fdkxm5Lu5"
+                },
+                {
+                    "type": "toolCall",
+                    "toolCallId": "toolu_01QPKTRbWnPuM4bicYSACWVi",
+                    "statusText": "Change generated",
+                    "status": "SUCCESS",
+                    "context": {
+                        "files": [
+                            {
+                                "path": "src/main/java/com/papel/imdb_clone/gui/ImprovedMovieApp.java",
+                                "fsPath": "C:/Users/mas_b/IdeaProjects/imdb_clone/src/main/java/com/papel/imdb_clone/gui/ImprovedMovieApp.java"
+                            }
+                        ]
+                    },
+                    "isHidden": false
+                },
+                {
+                    "type": "codeHunk",
+                    "lineBasedDiff": "--- C:/Users/mas_b/IdeaProjects/imdb_clone/src/main/java/com/papel/imdb_clone/gui/ImprovedMovieApp.java\n+++ C:/Users/mas_b/IdeaProjects/imdb_clone/src/main/java/com/papel/imdb_clone/gui/ImprovedMovieApp.java\n@@ -22,17 +22,16 @@\n  * Improved IMDB Clone Application using FXML and modern JavaFX practices with authentication\n  */\n public class ImprovedMovieApp extends Application {\n+    private static final Logger logger = LoggerFactory.getLogger(ImprovedMovieApp.class);\n \n     private static final String MAIN_FXML = \"/fxml/main-refactored.fxml\";\n     private static final String LOGIN_FXML = \"/fxml/login.fxml\";\n     private static final String CSS_FILE = \"/css/improved-styles.css\";\n-    private static final String APP_TITLE = \"IMDB Clone - Movie & Series Manager\";\n-    private static final double MIN_WIDTH = 1000.0;\n-    private static final double MIN_HEIGHT = 700.0;\n \n     private Stage primaryStage;\n     private String currentSessionToken;\n-    private DataManager dataManager;\n+    private ApplicationConfig config;\n+    private ServiceLocator serviceLocator;\n \n     @Override\n     public void start(Stage primaryStage) {",
+                    "refToolCallId": "toolu_01QPKTRbWnPuM4bicYSACWVi"
+                },
+                {
+                    "type": "toolCall",
+                    "toolCallId": "toolu_01W5QiSuWTEd1RRfxoP7pBgj",
+                    "statusText": "Change generated",
+                    "status": "SUCCESS",
+                    "context": {
+                        "files": [
+                            {
+                                "path": "src/main/java/com/papel/imdb_clone/gui/ImprovedMovieApp.java",
+                                "fsPath": "C:/Users/mas_b/IdeaProjects/imdb_clone/src/main/java/com/papel/imdb_clone/gui/ImprovedMovieApp.java"
+                            }
+                        ]
+                    },
+                    "isHidden": false
+                },
+                {
+                    "type": "codeHunk",
+                    "lineBasedDiff": "--- C:/Users/mas_b/IdeaProjects/imdb_clone/src/main/java/com/papel/imdb_clone/gui/ImprovedMovieApp.java\n+++ C:/Users/mas_b/IdeaProjects/imdb_clone/src/main/java/com/papel/imdb_clone/gui/ImprovedMovieApp.java\n@@ -36,20 +36,43 @@\n     @Override\n     public void start(Stage primaryStage) {\n         this.primaryStage = primaryStage;\n-        this.primaryStage.setTitle(APP_TITLE);\n-\n-        try {\n-            // Initialize DataManager and load all data\n-            this.dataManager = new DataManager();\n-            dataManager.loadAllData();\n-            System.out.println(\"Successfully loaded application data\");\n+        \n+        try {\n+            // Initialize application\n+            initializeApplication();\n+            \n+            // Set window title from config\n+            this.primaryStage.setTitle(config.getAppTitle());\n+            \n+            logger.info(\"Application started successfully\");\n+            \n+            // Show login screen\n+            showLoginScreen();\n+            \n         } catch (Exception e) {\n-            showErrorAndExit(\"Failed to load application data\", e);\n-            return;\n-        }\n-\n-        // Show login screen\n-        showLoginScreen();\n+            logger.error(\"Failed to start application\", e);\n+            GlobalExceptionHandler.handleError(\"Startup Error\", \"Failed to start application\", e);\n+            Platform.exit();\n+        }\n+    }\n+    \n+    private void initializeApplication() {\n+        logger.info(\"Initializing IMDB Clone application...\");\n+        \n+        // Initialize global exception handler\n+        GlobalExceptionHandler.initialize();\n+        \n+        // Load configuration\n+        config = ApplicationConfig.getInstance();\n+        \n+        // Initialize service locator\n+        serviceLocator = ServiceLocator.getInstance();\n+        \n+        // Load application data\n+        DataManager dataManager = serviceLocator.getService(DataManager.class);\n+        dataManager.loadAllData();\n+        \n+        logger.info(\"Application initialization complete\");\n     }\n \n     private void showLoginScreen() {",
+                    "refToolCallId": "toolu_01W5QiSuWTEd1RRfxoP7pBgj"
+                },
+                {
+                    "type": "toolCall",
+                    "toolCallId": "toolu_018M2nQYfaYjgV3riTuoH1A6",
+                    "statusText": "Change generated",
+                    "status": "SUCCESS",
+                    "context": {
+                        "files": [
+                            {
+                                "path": "src/main/java/com/papel/imdb_clone/gui/ImprovedMovieApp.java",
+                                "fsPath": "C:/Users/mas_b/IdeaProjects/imdb_clone/src/main/java/com/papel/imdb_clone/gui/ImprovedMovieApp.java"
+                            }
+                        ]
+                    },
+                    "isHidden": false
+                },
+                {
+                    "type": "codeHunk",
+                    "lineBasedDiff": "--- C:/Users/mas_b/IdeaProjects/imdb_clone/src/main/java/com/papel/imdb_clone/gui/ImprovedMovieApp.java\n+++ C:/Users/mas_b/IdeaProjects/imdb_clone/src/main/java/com/papel/imdb_clone/gui/ImprovedMovieApp.java\n@@ -138,13 +138,13 @@\n             controller.setPrimaryStage(primaryStage);\n \n             // Set up the main scene\n-            Scene scene = new Scene(root, MIN_WIDTH, MIN_HEIGHT);\n+            Scene scene = new Scene(root, config.getMinWidth(), config.getMinHeight());\n             applyTheme(scene);\n \n             primaryStage.setScene(scene);\n-            primaryStage.setTitle(\"IMDb Clone\" + (currentUser != null ? \" - \" + currentUser.getUsername() : \"\"));\n-            primaryStage.setMinWidth(MIN_WIDTH);\n-            primaryStage.setMinHeight(MIN_HEIGHT);\n+            primaryStage.setTitle(config.getAppTitle() + (currentUser != null ? \" - \" + currentUser.getUsername() : \"\"));\n+            primaryStage.setMinWidth(config.getMinWidth());\n+            primaryStage.setMinHeight(config.getMinHeight());\n             primaryStage.centerOnScreen();\n \n             // Show main application",
+                    "refToolCallId": "toolu_018M2nQYfaYjgV3riTuoH1A6"
+                },
+                {
+                    "type": "toolCall",
+                    "toolCallId": "toolu_01H4FGWwXFH2UkoYxarPogGh",
+                    "statusText": "Change generated",
+                    "status": "SUCCESS",
+                    "context": {
+                        "files": [
+                            {
+                                "path": "src/main/java/com/papel/imdb_clone/gui/ImprovedMovieApp.java",
+                                "fsPath": "C:/Users/mas_b/IdeaProjects/imdb_clone/src/main/java/com/papel/imdb_clone/gui/ImprovedMovieApp.java"
+                            }
+                        ]
+                    },
+                    "isHidden": false
+                },
+                {
+                    "type": "codeHunk",
+                    "lineBasedDiff": "--- C:/Users/mas_b/IdeaProjects/imdb_clone/src/main/java/com/papel/imdb_clone/gui/ImprovedMovieApp.java\n+++ C:/Users/mas_b/IdeaProjects/imdb_clone/src/main/java/com/papel/imdb_clone/gui/ImprovedMovieApp.java\n@@ -188,9 +188,13 @@\n         }\n \n         // Attach subtle global UI animations (hover scale, tab header pulse)\n-        try {\n-            UiAnimations.attach(scene);\n-        } catch (Exception ignored) { }\n+        if (config.isAnimationsEnabled()) {\n+            try {\n+                UiAnimations.attach(scene);\n+            } catch (Exception e) {\n+                logger.warn(\"Failed to attach UI animations\", e);\n+            }\n+        }\n     }\n \n     private String getThemeStylesheet(String themeKey) {",
+                    "refToolCallId": "toolu_01H4FGWwXFH2UkoYxarPogGh"
+                },
+                {
+                    "type": "toolCall",
+                    "toolCallId": "toolu_01AigoxQQWUD5YprE6v7WPdf",
+                    "statusText": "Change generated",
+                    "status": "SUCCESS",
+                    "context": {
+                        "files": [
+                            {
+                                "path": "src/main/java/com/papel/imdb_clone/gui/ImprovedMovieApp.java",
+                                "fsPath": "C:/Users/mas_b/IdeaProjects/imdb_clone/src/main/java/com/papel/imdb_clone/gui/ImprovedMovieApp.java"
+                            }
+                        ]
+                    },
+                    "isHidden": false
+                },
+                {
+                    "type": "codeHunk",
+                    "lineBasedDiff": "--- C:/Users/mas_b/IdeaProjects/imdb_clone/src/main/java/com/papel/imdb_clone/gui/ImprovedMovieApp.java\n+++ C:/Users/mas_b/IdeaProjects/imdb_clone/src/main/java/com/papel/imdb_clone/gui/ImprovedMovieApp.java\n@@ -208,24 +208,30 @@\n     }\n \n     private void showErrorAndExit(String message, Exception e) {\n-        System.err.println(message + \": \" + e.getMessage());\n-        e.printStackTrace();\n-\n-        // Try to show a JavaFX alert if possible\n-        try {\n-            javafx.scene.control.Alert alert = new javafx.scene.control.Alert(\n-                    javafx.scene.control.Alert.AlertType.ERROR\n-            );\n-            alert.setTitle(\"Application Error\");\n-            alert.setHeaderText(message);\n-            alert.setContentText(e.getMessage());\n-            alert.showAndWait();\n-        } catch (Exception alertException) {\n-            System.err.println(\"Could not show error dialog: \" + alertException.getMessage());\n-        }\n-\n-        // Graceful shutdown instead of System.exit\n+        logger.error(\"{}: {}\", message, e.getMessage(), e);\n+        GlobalExceptionHandler.handleError(\"Application Error\", message, e);\n+        \n+        // Cleanup and graceful shutdown\n+        cleanup();\n         Platform.exit();\n+    }\n+    \n+    private void cleanup() {\n+        try {\n+            if (serviceLocator != null) {\n+                serviceLocator.shutdown();\n+            }\n+            logger.info(\"Application cleanup completed\");\n+        } catch (Exception e) {\n+            logger.error(\"Error during cleanup\", e);\n+        }\n+    }\n+    \n+    @Override\n+    public void stop() throws Exception {\n+        logger.info(\"Application stopping...\");\n+        cleanup();\n+        super.stop();\n     }\n \n     public static void main(String[] args) {",
+                    "refToolCallId": "toolu_01AigoxQQWUD5YprE6v7WPdf"
+                },
+                {
+                    "type": "codePatch",
+                    "diffs": [
+                        {
+                            "path": "src/main/java/com/papel/imdb_clone/gui/ImprovedMovieApp.java",
+                            "fsPath": "C:/Users/mas_b/IdeaProjects/imdb_clone/src/main/java/com/papel/imdb_clone/gui/ImprovedMovieApp.java",
+                            "patch": "@@ -28,16 +28,70 @@\n e.gui;%0A%0A\n+import com.papel.imdb_clone.config.ApplicationConfig;%0A\n import c\n@@ -190,24 +190,133 @@\n ataManager;%0A\n+import com.papel.imdb_clone.service.ServiceLocator;%0Aimport com.papel.imdb_clone.util.GlobalExceptionHandler;%0A\n import com.p\n@@ -392,16 +392,52 @@\n cation;%0A\n+import javafx.application.Platform;%0A\n import j\n@@ -570,16 +570,73 @@\n e.Stage;\n+%0Aimport org.slf4j.Logger;%0Aimport org.slf4j.LoggerFactory;\n %0A%0Aimport\n@@ -811,16 +811,106 @@\n cation %7B\n+%0A    private static final Logger logger = LoggerFactory.getLogger(ImprovedMovieApp.class);\n %0A%0A    pr\n@@ -1109,24 +1109,25 @@\n tyles.css%22;%0A\n+%0A\n     private \n@@ -1130,77 +1130,26 @@\n ate \n-static final String APP_TITLE = %22IMDB Clone - Movie & Series Man\n+Stage primarySt\n age\n-r%22\n ;%0A  \n@@ -1162,101 +1162,36 @@\n ate \n-static final double MIN_WIDTH = 1000.0;%0A    private static final double MIN_HEIGHT = 700.0\n+String currentSessionToken\n ;%0A\n-%0A\n     \n@@ -1202,102 +1202,74 @@\n ate \n-Stage primaryStage;%0A    private String currentSessionToken;%0A    private DataManager dataManage\n+ApplicationConfig config;%0A    private ServiceLocator serviceLocato\n r;%0A%0A\n@@ -1380,203 +1380,597 @@\n     \n-this.primaryStage.setTitle(APP_TITLE);%0A%0A        try %7B%0A            // Initialize DataManager and load all data%0A            this.dataManager = new DataManager();%0A            dataManager.loadAllData\n+%0A        try %7B%0A            // Initialize application%0A            initializeApplication();%0A            %0A            // Set window title from config%0A            this.primaryStage.setTitle(config.getAppTitle());%0A            %0A            logger.info(%22Application started successfully%22);%0A            %0A            // Show login screen%0A            showLoginScreen();%0A            %0A        %7D catch (Exception e) %7B%0A            logger.error(%22Failed to start application%22, e);%0A            GlobalExceptionHandler.handleError(%22Startup Error%22, %22Failed to start application%22, e);%0A            Platform.exit\n ();%0A\n@@ -1981,51 +1981,108 @@\n     \n+%7D%0A\n     \n-System.out.println(%22Successfully loaded\n+%7D%0A    %0A    private void initializeApplication() %7B%0A        logger.info(%22Initializing IMDB Clone\n  app\n@@ -2089,21 +2089,19 @@\n lication\n- data\n+...\n %22);%0A    \n@@ -2100,34 +2100,55 @@\n %22);%0A        \n-%7D catch (E\n+%0A        // Initialize global e\n xception e) \n@@ -2136,36 +2136,39 @@\n lobal exception \n-e) %7B\n+handler\n %0A            sho\n@@ -2164,65 +2164,131 @@\n     \n-    showErrorAndExit(%22Failed to load application data%22, e\n+GlobalExceptionHandler.initialize();%0A        %0A        // Load configuration%0A        config = ApplicationConfig.getInstance(\n );%0A \n@@ -2294,26 +2294,108 @@\n         \n+%0A   \n     \n-return\n+ // Initialize service locator%0A        serviceLocator = ServiceLocator.getInstance()\n ;%0A      \n@@ -2388,34 +2388,32 @@\n ance();%0A        \n-%7D%0A\n %0A        // Show\n@@ -2412,50 +2412,211 @@\n  // \n-Show login screen%0A        showLoginScreen(\n+Load application data%0A        DataManager dataManager = serviceLocator.getService(DataManager.class);%0A        dataManager.loadAllData();%0A        %0A        logger.info(%22Application initialization complete%22\n );%0A \n@@ -5127,29 +5127,51 @@\n ot, \n-MIN_WIDTH, MIN_HEIGHT\n+config.getMinWidth(), config.getMinHeight()\n );%0A \n@@ -5281,20 +5281,28 @@\n tle(\n-%22IMDb Clone%22\n+config.getAppTitle()\n  + (\n@@ -5406,17 +5406,28 @@\n dth(\n-MIN_WIDTH\n+config.getMinWidth()\n );%0A \n@@ -5467,18 +5467,29 @@\n ght(\n-MIN_HEIGHT\n+config.getMinHeight()\n );%0A \n@@ -7078,16 +7078,64 @@\n  pulse)%0A\n+        if (config.isAnimationsEnabled()) %7B%0A    \n         \n@@ -7132,32 +7132,36 @@\n           try %7B%0A\n+    \n             UiAn\n@@ -7184,32 +7184,36 @@\n scene);%0A        \n+    \n %7D catch (Excepti\n@@ -7219,18 +7219,100 @@\n ion \n-ignored) %7B\n+e) %7B%0A                logger.warn(%22Failed to attach UI animations%22, e);%0A            %7D%0A       \n  %7D%0A \n@@ -7859,43 +7859,39 @@\n     \n-System.err.println(message + %22: %22 +\n+logger.error(%22%7B%7D: %7B%7D%22, message,\n  e.g\n@@ -7893,32 +7893,35 @@\n , e.getMessage()\n+, e\n );%0A        e.pri\n@@ -7919,235 +7919,309 @@\n     \n-e.printStackTrace();%0A%0A        // Try to show a JavaFX alert if possible%0A        try %7B%0A            javafx.scene.control.Alert alert = new javafx.scene.control.Alert(%0A                    javafx.scene.control.Alert.AlertType.ERROR\n+GlobalExceptionHandler.handleError(%22Application Error%22, message, e);%0A        %0A        // Cleanup and graceful shutdown%0A        cleanup();%0A        Platform.exit();%0A    %7D%0A    %0A    private void cleanup() %7B%0A        try %7B%0A            if (serviceLocator != null) %7B%0A                serviceLocator.shutdown();\n %0A   \n@@ -8229,18 +8229,17 @@\n         \n-);\n+%7D\n %0A       \n@@ -8247,86 +8247,85 @@\n     \n-alert.setTitle(%22Application Error%22);%0A            alert.setHeaderText(message);\n+logger.info(%22Application cleanup completed%22);%0A        %7D catch (Exception e) %7B\n %0A   \n@@ -8337,43 +8337,46 @@\n     \n-alert.setContentText(e.getMessage()\n+logger.error(%22Error during cleanup%22, e\n );%0A \n@@ -8386,65 +8386,65 @@\n     \n+%7D%0A\n     \n-alert.showAndWait();\n+%7D\n %0A    \n+%0A\n     \n-%7D catch (Exception alert\n+@Override%0A    public void stop() throws \n Exce\n@@ -8448,17 +8448,16 @@\n xception\n-)\n  %7B%0A     \n@@ -8463,92 +8463,45 @@\n     \n-    System.err.println(%22Could not show error dialog: %22 + alertException.getMessage()\n+logger.info(%22Application stopping...%22\n );%0A \n@@ -8511,32 +8511,38 @@\n     \n-%7D%0A%0A        System.exit(1\n+cleanup();%0A        super.stop(\n );%0A \n",
+                            "isNew": false,
+                            "isApplied": true,
+                            "isUnread": true,
+                            "timestamp": 1754735626220
+                        },
+                        {
+                            "path": "src/main/java/com/papel/imdb_clone/service/ServiceLocator.java",
+                            "fsPath": "C:/Users/mas_b/IdeaProjects/imdb_clone/src/main/java/com/papel/imdb_clone/service/ServiceLocator.java",
+                            "patch": "@@ -0,0 +1,3485 @@\n+package com.papel.imdb_clone.service;%0D%0A%0D%0Aimport com.papel.imdb_clone.data.DataManager;%0D%0Aimport com.papel.imdb_clone.util.SettingsManager;%0D%0Aimport org.slf4j.Logger;%0D%0Aimport org.slf4j.LoggerFactory;%0D%0A%0D%0Aimport java.util.concurrent.ConcurrentHashMap;%0D%0Aimport java.util.concurrent.ConcurrentMap;%0D%0A%0D%0A/**%0D%0A * Service Locator pattern implementation for managing application services.%0D%0A * Provides centralized access to services and ensures singleton behavior.%0D%0A */%0D%0Apublic class ServiceLocator %7B%0D%0A    private static final Logger logger = LoggerFactory.getLogger(ServiceLocator.class);%0D%0A    private static ServiceLocator instance;%0D%0A    private final ConcurrentMap%3CClass%3C?%3E, Object%3E services = new ConcurrentHashMap%3C%3E();%0D%0A    %0D%0A    private ServiceLocator() %7B%0D%0A        initializeServices();%0D%0A    %7D%0D%0A    %0D%0A    public static synchronized ServiceLocator getInstance() %7B%0D%0A        if (instance == null) %7B%0D%0A            instance = new ServiceLocator();%0D%0A        %7D%0D%0A        return instance;%0D%0A    %7D%0D%0A    %0D%0A    private void initializeServices() %7B%0D%0A        logger.info(%22Initializing application services...%22);%0D%0A        %0D%0A        // Initialize core services%0D%0A        registerService(DataManager.class, new DataManager());%0D%0A        registerService(AuthenticationService.class, AuthenticationService.getInstance());%0D%0A        registerService(EncryptionService.class, EncryptionService.getInstance());%0D%0A        registerService(SettingsManager.class, SettingsManager.getInstance());%0D%0A        %0D%0A        // Initialize dependent services%0D%0A        DataManager dataManager = getService(DataManager.class);%0D%0A        registerService(WatchlistService.class, new WatchlistService(dataManager));%0D%0A        %0D%0A        logger.info(%22Service initialization complete%22);%0D%0A    %7D%0D%0A    %0D%0A    /**%0D%0A     * Register a service instance%0D%0A     */%0D%0A    public %3CT%3E void registerService(Class%3CT%3E serviceClass, T serviceInstance) %7B%0D%0A        if (serviceClass == null %7C%7C serviceInstance == null) %7B%0D%0A            throw new IllegalArgumentException(%22Service class and instance cannot be null%22);%0D%0A        %7D%0D%0A        services.put(serviceClass, serviceInstance);%0D%0A        logger.debug(%22Registered service: %7B%7D%22, serviceClass.getSimpleName());%0D%0A    %7D%0D%0A    %0D%0A    /**%0D%0A     * Get a service instance%0D%0A     */%0D%0A    @SuppressWarnings(%22unchecked%22)%0D%0A    public %3CT%3E T getService(Class%3CT%3E serviceClass) %7B%0D%0A        if (serviceClass == null) %7B%0D%0A            throw new IllegalArgumentException(%22Service class cannot be null%22);%0D%0A        %7D%0D%0A        %0D%0A        T service = (T) services.get(serviceClass);%0D%0A        if (service == null) %7B%0D%0A            throw new IllegalStateException(%22Service not found: %22 + serviceClass.getSimpleName());%0D%0A        %7D%0D%0A        return service;%0D%0A    %7D%0D%0A    %0D%0A    /**%0D%0A     * Check if a service is registered%0D%0A     */%0D%0A    public boolean hasService(Class%3C?%3E serviceClass) %7B%0D%0A        return services.containsKey(serviceClass);%0D%0A    %7D%0D%0A    %0D%0A    /**%0D%0A     * Shutdown all services gracefully%0D%0A     */%0D%0A    public void shutdown() %7B%0D%0A        logger.info(%22Shutting down services...%22);%0D%0A        %0D%0A        // Shutdown services in reverse order of dependency%0D%0A        try %7B%0D%0A            if (hasService(DataManager.class)) %7B%0D%0A                // DataManager might need cleanup%0D%0A                logger.debug(%22Shutting down DataManager%22);%0D%0A            %7D%0D%0A        %7D catch (Exception e) %7B%0D%0A            logger.error(%22Error shutting down services%22, e);%0D%0A        %7D%0D%0A        %0D%0A        services.clear();%0D%0A        logger.info(%22Service shutdown complete%22);%0D%0A    %7D%0D%0A%7D\n",
+                            "isNew": true,
+                            "isApplied": true,
+                            "isUnread": true,
+                            "timestamp": 1754735645450
+                        },
+                        {
+                            "path": "src/main/java/com/papel/imdb_clone/config/ApplicationConfig.java",
+                            "fsPath": "C:/Users/mas_b/IdeaProjects/imdb_clone/src/main/java/com/papel/imdb_clone/config/ApplicationConfig.java",
+                            "patch": "@@ -0,0 +1,4405 @@\n+package com.papel.imdb_clone.config;%0D%0A%0D%0Aimport java.io.IOException;%0D%0Aimport java.io.InputStream;%0D%0Aimport java.util.Properties;%0D%0A%0D%0A/**%0D%0A * Application configuration management.%0D%0A * Loads configuration from properties files and provides typed access to configuration values.%0D%0A */%0D%0Apublic class ApplicationConfig %7B%0D%0A    private static ApplicationConfig instance;%0D%0A    private final Properties properties;%0D%0A    %0D%0A    // Default configuration values%0D%0A    private static final String DEFAULT_APP_TITLE = %22IMDB Clone - Movie & Series Manager%22;%0D%0A    private static final double DEFAULT_MIN_WIDTH = 1000.0;%0D%0A    private static final double DEFAULT_MIN_HEIGHT = 700.0;%0D%0A    private static final String DEFAULT_THEME = %22cyberpunk%22;%0D%0A    private static final int DEFAULT_FONT_SIZE = 14;%0D%0A    private static final int DEFAULT_SESSION_TIMEOUT_MINUTES = 60;%0D%0A    %0D%0A    private ApplicationConfig() %7B%0D%0A        properties = new Properties();%0D%0A        loadConfiguration();%0D%0A    %7D%0D%0A    %0D%0A    public static synchronized ApplicationConfig getInstance() %7B%0D%0A        if (instance == null) %7B%0D%0A            instance = new ApplicationConfig();%0D%0A        %7D%0D%0A        return instance;%0D%0A    %7D%0D%0A    %0D%0A    private void loadConfiguration() %7B%0D%0A        // Load from application.properties if it exists%0D%0A        try (InputStream is = getClass().getResourceAsStream(%22/application.properties%22)) %7B%0D%0A            if (is != null) %7B%0D%0A                properties.load(is);%0D%0A            %7D%0D%0A        %7D catch (IOException e) %7B%0D%0A            System.err.println(%22Could not load application.properties: %22 + e.getMessage());%0D%0A        %7D%0D%0A        %0D%0A        // Load system properties (these override file properties)%0D%0A        properties.putAll(System.getProperties());%0D%0A    %7D%0D%0A    %0D%0A    // Application settings%0D%0A    public String getAppTitle() %7B%0D%0A        return properties.getProperty(%22app.title%22, DEFAULT_APP_TITLE);%0D%0A    %7D%0D%0A    %0D%0A    public double getMinWidth() %7B%0D%0A        return Double.parseDouble(properties.getProperty(%22app.window.min.width%22, String.valueOf(DEFAULT_MIN_WIDTH)));%0D%0A    %7D%0D%0A    %0D%0A    public double getMinHeight() %7B%0D%0A        return Double.parseDouble(properties.getProperty(%22app.window.min.height%22, String.valueOf(DEFAULT_MIN_HEIGHT)));%0D%0A    %7D%0D%0A    %0D%0A    // UI settings%0D%0A    public String getDefaultTheme() %7B%0D%0A        return properties.getProperty(%22ui.theme.default%22, DEFAULT_THEME);%0D%0A    %7D%0D%0A    %0D%0A    public int getDefaultFontSize() %7B%0D%0A        return Integer.parseInt(properties.getProperty(%22ui.font.size.default%22, String.valueOf(DEFAULT_FONT_SIZE)));%0D%0A    %7D%0D%0A    %0D%0A    public boolean isAnimationsEnabled() %7B%0D%0A        return Boolean.parseBoolean(properties.getProperty(%22ui.animations.enabled%22, %22true%22));%0D%0A    %7D%0D%0A    %0D%0A    // Security settings%0D%0A    public int getSessionTimeoutMinutes() %7B%0D%0A        return Integer.parseInt(properties.getProperty(%22security.session.timeout.minutes%22, String.valueOf(DEFAULT_SESSION_TIMEOUT_MINUTES)));%0D%0A    %7D%0D%0A    %0D%0A    public int getPasswordMinLength() %7B%0D%0A        return Integer.parseInt(properties.getProperty(%22security.password.min.length%22, %226%22));%0D%0A    %7D%0D%0A    %0D%0A    // Data settings%0D%0A    public String getDataDirectory() %7B%0D%0A        return properties.getProperty(%22data.directory%22, %22src/main/resources/data%22);%0D%0A    %7D%0D%0A    %0D%0A    public boolean isDataEncryptionEnabled() %7B%0D%0A        return Boolean.parseBoolean(properties.getProperty(%22data.encryption.enabled%22, %22true%22));%0D%0A    %7D%0D%0A    %0D%0A    // Performance settings%0D%0A    public int getSearchCacheSize() %7B%0D%0A        return Integer.parseInt(properties.getProperty(%22performance.search.cache.size%22, %22100%22));%0D%0A    %7D%0D%0A    %0D%0A    public int getMaxConcurrentUsers() %7B%0D%0A        return Integer.parseInt(properties.getProperty(%22performance.max.concurrent.users%22, %2250%22));%0D%0A    %7D%0D%0A    %0D%0A    // Development settings%0D%0A    public boolean isDebugMode() %7B%0D%0A        return Boolean.parseBoolean(properties.getProperty(%22debug.enabled%22, %22false%22));%0D%0A    %7D%0D%0A    %0D%0A    public boolean isTestDataEnabled() %7B%0D%0A        return Boolean.parseBoolean(properties.getProperty(%22debug.test.data.enabled%22, %22true%22));%0D%0A    %7D%0D%0A    %0D%0A    // Generic property access%0D%0A    public String getProperty(String key) %7B%0D%0A        return properties.getProperty(key);%0D%0A    %7D%0D%0A    %0D%0A    public String getProperty(String key, String defaultValue) %7B%0D%0A        return properties.getProperty(key, defaultValue);%0D%0A    %7D%0D%0A    %0D%0A    public void setProperty(String key, String value) %7B%0D%0A        properties.setProperty(key, value);%0D%0A    %7D%0D%0A%7D\n",
+                            "isNew": true,
+                            "isApplied": true,
+                            "isUnread": true,
+                            "timestamp": 1754735671330
+                        },
+                        {
+                            "path": "src/main/java/com/papel/imdb_clone/util/GlobalExceptionHandler.java",
+                            "fsPath": "C:/Users/mas_b/IdeaProjects/imdb_clone/src/main/java/com/papel/imdb_clone/util/GlobalExceptionHandler.java",
+                            "patch": "@@ -0,0 +1,6757 @@\n+package com.papel.imdb_clone.util;%0D%0A%0D%0Aimport javafx.application.Platform;%0D%0Aimport javafx.scene.control.Alert;%0D%0Aimport javafx.scene.control.ButtonType;%0D%0Aimport javafx.scene.control.TextArea;%0D%0Aimport javafx.scene.layout.GridPane;%0D%0Aimport javafx.scene.layout.Priority;%0D%0Aimport org.slf4j.Logger;%0D%0Aimport org.slf4j.LoggerFactory;%0D%0A%0D%0Aimport java.io.PrintWriter;%0D%0Aimport java.io.StringWriter;%0D%0Aimport java.util.Optional;%0D%0A%0D%0A/**%0D%0A * Global exception handler for the application.%0D%0A * Provides consistent error handling and user-friendly error dialogs.%0D%0A */%0D%0Apublic class GlobalExceptionHandler implements Thread.UncaughtExceptionHandler %7B%0D%0A    private static final Logger logger = LoggerFactory.getLogger(GlobalExceptionHandler.class);%0D%0A    private static GlobalExceptionHandler instance;%0D%0A    %0D%0A    private GlobalExceptionHandler() %7B%7D%0D%0A    %0D%0A    public static synchronized GlobalExceptionHandler getInstance() %7B%0D%0A        if (instance == null) %7B%0D%0A            instance = new GlobalExceptionHandler();%0D%0A        %7D%0D%0A        return instance;%0D%0A    %7D%0D%0A    %0D%0A    /**%0D%0A     * Initialize the global exception handler%0D%0A     */%0D%0A    public static void initialize() %7B%0D%0A        GlobalExceptionHandler handler = getInstance();%0D%0A        Thread.setDefaultUncaughtExceptionHandler(handler);%0D%0A        %0D%0A        // Set JavaFX exception handler%0D%0A        if (Platform.isFxApplicationThread()) %7B%0D%0A            Thread.currentThread().setUncaughtExceptionHandler(handler);%0D%0A        %7D%0D%0A    %7D%0D%0A    %0D%0A    @Override%0D%0A    public void uncaughtException(Thread t, Throwable e) %7B%0D%0A        logger.error(%22Uncaught exception in thread %7B%7D: %7B%7D%22, t.getName(), e.getMessage(), e);%0D%0A        %0D%0A        // Show error dialog on JavaFX Application Thread%0D%0A        if (Platform.isFxApplicationThread()) %7B%0D%0A            showErrorDialog(%22Unexpected Error%22, %22An unexpected error occurred%22, e);%0D%0A        %7D else %7B%0D%0A            Platform.runLater(() -%3E showErrorDialog(%22Unexpected Error%22, %22An unexpected error occurred%22, e));%0D%0A        %7D%0D%0A    %7D%0D%0A    %0D%0A    /**%0D%0A     * Handle application errors with user-friendly dialogs%0D%0A     */%0D%0A    public static void handleError(String title, String message, Throwable throwable) %7B%0D%0A        logger.error(%22%7B%7D: %7B%7D%22, title, message, throwable);%0D%0A        %0D%0A        if (Platform.isFxApplicationThread()) %7B%0D%0A            getInstance().showErrorDialog(title, message, throwable);%0D%0A        %7D else %7B%0D%0A            Platform.runLater(() -%3E getInstance().showErrorDialog(title, message, throwable));%0D%0A        %7D%0D%0A    %7D%0D%0A    %0D%0A    /**%0D%0A     * Handle application warnings%0D%0A     */%0D%0A    public static void handleWarning(String title, String message) %7B%0D%0A        logger.warn(%22%7B%7D: %7B%7D%22, title, message);%0D%0A        %0D%0A        if (Platform.isFxApplicationThread()) %7B%0D%0A            getInstance().showWarningDialog(title, message);%0D%0A        %7D else %7B%0D%0A            Platform.runLater(() -%3E getInstance().showWarningDialog(title, message));%0D%0A        %7D%0D%0A    %7D%0D%0A    %0D%0A    /**%0D%0A     * Handle application info messages%0D%0A     */%0D%0A    public static void handleInfo(String title, String message) %7B%0D%0A        logger.info(%22%7B%7D: %7B%7D%22, title, message);%0D%0A        %0D%0A        if (Platform.isFxApplicationThread()) %7B%0D%0A            getInstance().showInfoDialog(title, message);%0D%0A        %7D else %7B%0D%0A            Platform.runLater(() -%3E getInstance().showInfoDialog(title, message));%0D%0A        %7D%0D%0A    %7D%0D%0A    %0D%0A    private void showErrorDialog(String title, String message, Throwable throwable) %7B%0D%0A        try %7B%0D%0A            Alert alert = new Alert(Alert.AlertType.ERROR);%0D%0A            alert.setTitle(title);%0D%0A            alert.setHeaderText(message);%0D%0A            alert.setContentText(throwable.getMessage());%0D%0A            %0D%0A            // Create expandable Exception details%0D%0A            StringWriter sw = new StringWriter();%0D%0A            PrintWriter pw = new PrintWriter(sw);%0D%0A            throwable.printStackTrace(pw);%0D%0A            String exceptionText = sw.toString();%0D%0A            %0D%0A            TextArea textArea = new TextArea(exceptionText);%0D%0A            textArea.setEditable(false);%0D%0A            textArea.setWrapText(true);%0D%0A            textArea.setMaxWidth(Double.MAX_VALUE);%0D%0A            textArea.setMaxHeight(Double.MAX_VALUE);%0D%0A            GridPane.setVgrow(textArea, Priority.ALWAYS);%0D%0A            GridPane.setHgrow(textArea, Priority.ALWAYS);%0D%0A            %0D%0A            GridPane expContent = new GridPane();%0D%0A            expContent.setMaxWidth(Double.MAX_VALUE);%0D%0A            expContent.add(textArea, 0, 0);%0D%0A            %0D%0A            alert.getDialogPane().setExpandableContent(expContent);%0D%0A            %0D%0A            // Add %22Report Bug%22 button for critical errors%0D%0A            ButtonType reportButton = new ButtonType(%22Report Bug%22);%0D%0A            alert.getButtonTypes().add(reportButton);%0D%0A            %0D%0A            Optional%3CButtonType%3E result = alert.showAndWait();%0D%0A            if (result.isPresent() && result.get() == reportButton) %7B%0D%0A                handleBugReport(title, message, throwable);%0D%0A            %7D%0D%0A            %0D%0A        %7D catch (Exception e) %7B%0D%0A            // Fallback if dialog creation fails%0D%0A            logger.error(%22Failed to show error dialog%22, e);%0D%0A            System.err.println(%22CRITICAL ERROR: %22 + title + %22 - %22 + message);%0D%0A            throwable.printStackTrace();%0D%0A        %7D%0D%0A    %7D%0D%0A    %0D%0A    private void showWarningDialog(String title, String message) %7B%0D%0A        try %7B%0D%0A            Alert alert = new Alert(Alert.AlertType.WARNING);%0D%0A            alert.setTitle(title);%0D%0A            alert.setHeaderText(null);%0D%0A            alert.setContentText(message);%0D%0A            alert.showAndWait();%0D%0A        %7D catch (Exception e) %7B%0D%0A            logger.error(%22Failed to show warning dialog%22, e);%0D%0A        %7D%0D%0A    %7D%0D%0A    %0D%0A    private void showInfoDialog(String title, String message) %7B%0D%0A        try %7B%0D%0A            Alert alert = new Alert(Alert.AlertType.INFORMATION);%0D%0A            alert.setTitle(title);%0D%0A            alert.setHeaderText(null);%0D%0A            alert.setContentText(message);%0D%0A            alert.showAndWait();%0D%0A        %7D catch (Exception e) %7B%0D%0A            logger.error(%22Failed to show info dialog%22, e);%0D%0A        %7D%0D%0A    %7D%0D%0A    %0D%0A    private void handleBugReport(String title, String message, Throwable throwable) %7B%0D%0A        // In a real application, this would send the bug report to a server%0D%0A        // For now, we'll just log it and show a confirmation%0D%0A        logger.info(%22Bug report generated for: %7B%7D - %7B%7D%22, title, message);%0D%0A        %0D%0A        Alert confirmation = new Alert(Alert.AlertType.INFORMATION);%0D%0A        confirmation.setTitle(%22Bug Report%22);%0D%0A        confirmation.setHeaderText(%22Thank you for reporting this issue%22);%0D%0A        confirmation.setContentText(%22The error details have been logged. Please contact support if the problem persists.%22);%0D%0A        confirmation.showAndWait();%0D%0A    %7D%0D%0A%7D\n",
+                            "isNew": true,
+                            "isApplied": true,
+                            "isUnread": true,
+                            "timestamp": 1754735703249
+                        },
+                        {
+                            "path": "src/main/resources/application.properties",
+                            "fsPath": "C:/Users/mas_b/IdeaProjects/imdb_clone/src/main/resources/application.properties",
+                            "patch": "@@ -0,0 +1,1612 @@\n+# IMDB Clone Application Configuration%0D%0A%0D%0A# Application Information%0D%0Aapp.name=IMDB Clone%0D%0Aapp.version=1.0.0%0D%0Aapp.title=IMDB Clone - Movie & Series Manager%0D%0A%0D%0A# Window Settings%0D%0Aapp.window.min.width=1000%0D%0Aapp.window.min.height=700%0D%0Aapp.window.default.width=1200%0D%0Aapp.window.default.height=800%0D%0A%0D%0A# UI Settings%0D%0Aui.theme.default=cyberpunk%0D%0Aui.font.size.default=14%0D%0Aui.animations.enabled=true%0D%0Aui.reduced.motion=false%0D%0A%0D%0A# Security Settings%0D%0Asecurity.session.timeout.minutes=60%0D%0Asecurity.password.min.length=6%0D%0Asecurity.max.login.attempts=3%0D%0Asecurity.lockout.duration.minutes=15%0D%0A%0D%0A# Data Settings%0D%0Adata.directory=src/main/resources/data%0D%0Adata.encryption.enabled=true%0D%0Adata.backup.enabled=true%0D%0Adata.backup.interval.hours=24%0D%0A%0D%0A# Performance Settings%0D%0Aperformance.search.cache.size=100%0D%0Aperformance.max.concurrent.users=50%0D%0Aperformance.thread.pool.size=10%0D%0A%0D%0A# Logging Settings%0D%0Alogging.level=INFO%0D%0Alogging.file.enabled=true%0D%0Alogging.file.path=logs/imdb-clone.log%0D%0Alogging.max.file.size=10MB%0D%0Alogging.max.files=5%0D%0A%0D%0A# Development Settings%0D%0Adebug.enabled=false%0D%0Adebug.test.data.enabled=true%0D%0Adebug.show.performance.metrics=false%0D%0A%0D%0A# Feature Flags%0D%0Afeatures.forum.enabled=true%0D%0Afeatures.news.enabled=true%0D%0Afeatures.quiz.enabled=true%0D%0Afeatures.watchlist.enabled=true%0D%0Afeatures.ratings.enabled=true%0D%0Afeatures.recommendations.enabled=true%0D%0A%0D%0A# External Services (for future use)%0D%0Aexternal.tmdb.api.enabled=false%0D%0Aexternal.tmdb.api.key=%0D%0Aexternal.omdb.api.enabled=false%0D%0Aexternal.omdb.api.key=%0D%0A%0D%0A# Cache Settings%0D%0Acache.movie.posters.enabled=true%0D%0Acache.movie.posters.max.size=100MB%0D%0Acache.search.results.ttl.minutes=30\n",
+                            "isNew": true,
+                            "isApplied": true,
+                            "isUnread": true,
+                            "timestamp": 1754735723176
+                        }
+                    ]
+                }
+            ],
+            "context": {
+                "author": "Coding Agent",
+                "operationId": "7bfb49c2-d298-4200-9260-838a98efc0d1",
+                "usageStatistics": {
+                    "llmCallsUsedForAnswer": 25.0,
+                    "llmCallsUsedTotal": 50.0,
+                    "llmCallsLimit": 200.0,
+                    "limitRenewalMillisecondTimestamp": 1754803214967
+                }
+            },
+            "createdAt": 1754735565985,
+            "isInternal": false
+        },
+        {
+            "id": "77dbdce0-45f0-4409-b85c-c90b6d352286",
+            "role": "system",
+            "content": [
+                {
+                    "type": "warningText",
+                    "title": "Agent paused due to reaching step limit",
+                    "text": "You can continue if the agent is on the right track.",
+                    "actions": [
+                        {
+                            "type": "externalAction",
+                            "title": "Continue request",
+                            "action": "continueRequest"
+                        },
+                        {
+                            "type": "externalAction",
+                            "title": "Stop here",
+                            "action": "stopHere"
+                        }
+                    ]
+                }
+            ],
+            "createdAt": 1754735777362,
+            "isInternal": false
+        }
+    ],
+    "isAgent": true,
+    "isNameGenerated": true,
+    "isCustomAgent": false,
+    "isUnitTestsAgent": false,
+    "isE2EAgent": false,
+    "isQnaAgent": false,
+    "isRepoInfoAgent": false,
+    "isClaudeCode": false,
+    "autoApply": true,
+    "model": "default"
+}
+}

@@ -1,0 +1,441 @@
+{
+    "checksum": "f4515af2827be504481c2df54771dab71621f6fe0dc12c94d94fb767adac7d0d",
+    "data": {
+    "id": "2753ad7f-cd57-4521-92ec-288538edfb40",
+    "createdAt": 1754399277135,
+    "updatedAt": 1754399492369,
+    "title": "Java Method Duplication Fixes",
+    "messages": [
+        {
+            "id": "f1fe0d13-40de-483b-b1cc-90686b086322",
+            "role": "user",
+            "content": [
+                {
+                    "type": "command",
+                    "commandName": "fix"
+                },
+                {
+                    "type": "codeSnippet",
+                    "text": "public void setPrimaryStage(Stage primaryStage) {\n        this.primaryStage = primaryStage;\n    }",
+                    "language": "java"
+                },
+                {
+                    "type": "text",
+                    "text": "'setPrimaryStage(Stage)' is already defined in 'com.papel.imdb_clone.gui.MainController'"
+                }
+            ],
+            "context": {
+                "currentFile": {
+                    "path": "C:\\Users\\mas_b\\IdeaProjects\\imdb_clone\\src\\main\\java\\com\\papel\\imdb_clone\\gui\\MainController.java",
+                    "fsPath": "C:/Users/mas_b/IdeaProjects/imdb_clone/src/main/java/com/papel/imdb_clone/gui/MainController.java",
+                    "content": "package com.papel.imdb_clone.gui;\n\nimport com.papel.imdb_clone.data.DataManager;\nimport com.papel.imdb_clone.data.SearchCriteria;\nimport com.papel.imdb_clone.enums.Genre;\nimport com.papel.imdb_clone.model.Content;\nimport com.papel.imdb_clone.model.*;\nimport com.papel.imdb_clone.service.*;\nimport com.papel.imdb_clone.data.SeriesDataLoader;\nimport javafx.animation.FadeTransition;\nimport javafx.beans.property.SimpleStringProperty;\nimport javafx.collections.FXCollections;\nimport javafx.collections.ObservableList;\nimport javafx.fxml.FXML;\nimport javafx.fxml.Initializable;\nimport javafx.geometry.Insets;\nimport javafx.scene.Node;\nimport javafx.scene.control.ButtonBar.ButtonData;\nimport javafx.scene.control.*;\nimport javafx.scene.layout.GridPane;\nimport javafx.scene.layout.VBox;\nimport javafx.stage.Stage;\n\nimport java.net.URL;\nimport java.util.*;\nimport java.util.stream.Collectors;\nimport javafx.scene.image.Image;\nimport javafx.scene.image.ImageView;\nimport javafx.scene.layout.HBox;\nimport javafx.geometry.Pos;\nimport javafx.beans.property.SimpleIntegerProperty;\n\npublic class MainController implements Initializable {\n\n    private Stage primaryStage;\n    \n    public void setPrimaryStage(Stage primaryStage) {\n        this.primaryStage = primaryStage;\n    }\n\n    // FXML injected components\n    @FXML\n    private TableView<Movie> movieTable;\n    @FXML\n    private TableView<Series> seriesTable;\n    @FXML\n    private TableColumn<Series, String> seriesTitleColumn = new TableColumn<>(\"Title\");\n    @FXML\n    private TableColumn<Series, String> seriesYearColumn = new TableColumn<>(\"Year\");\n    @FXML\n    private TableColumn<Series, String> seriesGenreColumn = new TableColumn<>(\"Genre\");\n    @FXML\n    private TableColumn<Series, String> seriesSeasonsColumn = new TableColumn<>(\"Seasons\");\n    @FXML\n    private TableColumn<Series, String> seriesEpisodesColumn = new TableColumn<>(\"Episodes\");\n    @FXML\n    private TableColumn<Series, String> seriesImdbColumn = new TableColumn<>(\"IMDB Rating\");\n    @FXML\n    private TableColumn<Series, String> seriesUserRatingColumn = new TableColumn<>(\"User Rating\");\n    @FXML\n    private TableColumn<Series, String> seriesRatingColumn;\n    \n    // For nested tables\n    private TableColumn<Season, Integer> seasonNumberColumn;\n    private TableColumn<Season, Integer> episodesColumn;\n    private TableColumn<Season, Integer> seasonYearColumn;\n    \n    // For nested tables\n    private TableView<Season> seasonsTable;\n    \n    // Track expanded state for series\n    private final Map<Series, Boolean> expandedSeries = new HashMap<>();\n    @FXML\n    private TextField titleField;\n    @FXML\n    private TextField actorField;\n    @FXML\n    private TextField directorField;\n    @FXML\n    private TextField minImdbField;\n    @FXML\n    private TextField minUserField;\n    @FXML\n    private ComboBox<String> genreCombo;\n    @FXML\n    private Spinner<Integer> yearFromSpinner;\n    @FXML\n    private Spinner<Integer> yearToSpinner;\n    @FXML\n    private CheckBox gRatingCheck;\n    @FXML\n    private CheckBox pgRatingCheck;\n    @FXML\n    private CheckBox pg13RatingCheck;\n    @FXML\n    private CheckBox rRatingCheck;\n    @FXML\n    private Slider minImdbSlider;\n    @FXML\n    private Slider minUserSlider;\n    @FXML\n    private Label minImdbLabel;\n    @FXML\n    private Label minUserLabel;\n    @FXML\n    private ComboBox<String> sortByCombo;\n    \n    @FXML\n    private ToggleGroup sortOrderGroup;\n    @FXML\n    private ToggleButton sortAscButton;\n    @FXML\n    private ToggleButton sortDescButton;\n    @FXML\n    private ToggleButton sortOrderToggle;\n    @FXML\n    private ListView<String> resultsView;\n\n    // Watchlist components\n    @FXML\n    private ListView<String> watchlistsView;\n    @FXML\n    private TableView<Content> watchlistContentTable;\n    @FXML\n    private Label watchlistContentTitle;\n\n    // Data manager and services\n    private final DataManager dataManager;\n    private final WatchlistService watchlistService;\n    private Stage primaryStage;\n    private final int currentUserId = 1; // Default user ID for demo purposes\n\n    public MainController() {\n        this.dataManager = new DataManager();\n        this.watchlistService = new WatchlistService(dataManager);\n    }\n\n    @Override\n    public void initialize(URL location, ResourceBundle resources) {\n        setupMovieTable();\n        setupSeriesTable();\n        setupWatchlistComponents();\n        setupSearchComponents();\n        loadData();\n    }\n\n    public void setPrimaryStage(Stage primaryStage) {\n        this.primaryStage = primaryStage;\n        DialogUtils.setOwnerStage(primaryStage);\n    }\n\n    private void setupSearchComponents() {\n        // Initialize genre combo box\n        genreCombo.getItems().addAll(\"Action\", \"Comedy\", \"Drama\", \"Horror\", \"Thriller\",\n                \"Romance\", \"Science Fiction\", \"Fantasy\", \"Documentary\", \"Animation\",\n                \"Crime\", \"Mystery\", \"Adventure\", \"Biography\", \"Musical\",\n                \"Western\", \"War\", \"Family\", \"Sport\", \"History\");\n\n        // Initialize year spinners\n        int currentYear = java.time.Year.now().getValue();\n        yearFromSpinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(1900, currentYear, 1900));\n        yearToSpinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(1900, currentYear, currentYear));\n\n        // Initialize rating sliders and labels\n        minImdbSlider.valueProperty().addListener((obs, oldVal, newVal) -> {\n            minImdbLabel.setText(String.format(\"%.1f\", newVal));\n        });\n        minUserSlider.valueProperty().addListener((obs, oldVal, newVal) -> {\n            minUserLabel.setText(String.format(\"%.1f\", newVal));\n        });\n\n        // Initialize sort options\n        sortByCombo.getItems().addAll(\"Title\", \"Year\", \"IMDB Rating\", \"User Rating\");\n        sortByCombo.setValue(\"Title\");\n        sortDescButton.setSelected(true);\n\n        // Setup real-time search suggestions\n        titleField.textProperty().addListener((obs, oldVal, newVal) -> {\n            if (newVal.length() > 2) {\n                List<String> suggestions = dataManager.searchTitles(newVal).stream()\n                        .limit(5)\n                        .collect(Collectors.toList());\n                resultsView.setItems(FXCollections.observableArrayList(suggestions));\n                resultsView.setVisible(!suggestions.isEmpty());\n            } else {\n                resultsView.setVisible(false);\n            }\n        });\n\n        // Handle suggestion selection\n        resultsView.setOnMouseClicked(e -> {\n            String selected = resultsView.getSelectionModel().getSelectedItem();\n            if (selected != null) {\n                titleField.setText(selected);\n                resultsView.setVisible(false);\n            }\n        });\n    }\n\n    private void setupMovieTable() {\n        // Title column\n        TableColumn<Movie, String> titleColumn = new TableColumn<>(\"Title\");\n        titleColumn.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getTitle()));\n        titleColumn.setPrefWidth(200);\n\n        // Year column\n        TableColumn<Movie, String> yearColumn = new TableColumn<>(\"Year\");\n        yearColumn.setCellValueFactory(data ->\n                new SimpleStringProperty(String.valueOf(data.getValue().getYear().getYear() + 1900))\n        );\n        yearColumn.setPrefWidth(80);\n\n        // Genre column\n        TableColumn<Movie, String> genreColumn = new TableColumn<>(\"Genre\");\n        genreColumn.setCellValueFactory(data ->\n                new SimpleStringProperty(data.getValue().getGenre().toString())\n        );\n        genreColumn.setPrefWidth(120);\n\n        // Director column\n        TableColumn<Movie, String> directorColumn = new TableColumn<>(\"Director\");\n        directorColumn.setCellValueFactory(data ->\n                new SimpleStringProperty(\n                        data.getValue().getDirector() != null\n                                ? data.getValue().getDirector()\n                                : \"Unknown\"\n                )\n        );\n        directorColumn.setPrefWidth(150);\n\n        // IMDB Rating column\n        TableColumn<Movie, String> imdbColumn = new TableColumn<>(\"IMDB Rating\");\n        imdbColumn.setCellValueFactory(data ->\n                new SimpleStringProperty(String.format(\"%.1f\", data.getValue().getImdbRating()))\n        );\n        imdbColumn.setPrefWidth(100);\n\n        // User Rating column\n        TableColumn<Movie, String> userRatingColumn = new TableColumn<>(\"User Rating\");\n        userRatingColumn.setCellValueFactory(data ->\n                new SimpleStringProperty(\n                        data.getValue().getUserRating() != null\n                                ? String.format(\"%.1f\", data.getValue().getUserRating())\n                                : \"N/A\"\n                )\n        );\n        userRatingColumn.setPrefWidth(100);\n\n        movieTable.getColumns().clear();\n        movieTable.getColumns().addAll(\n                titleColumn, yearColumn, genreColumn, directorColumn, imdbColumn, userRatingColumn\n        );\n\n        // Enable row selection\n        movieTable.getSelectionModel().setSelectionMode(SelectionMode.SINGLE);\n\n        // Add double-click handler for movie details\n        movieTable.setRowFactory(tv -> {\n            TableRow<Movie> row = new TableRow<>();\n            row.setOnMouseClicked(event -> {\n                if (event.getClickCount() == 2 && !row.isEmpty()) {\n                    showMovieDetails(row.getItem());\n                }\n            });\n            return row;\n        });\n    }\n\n    private void setupSeriesTable() {\n        // Set up cell value factories for series table\n        seriesTitleColumn.setCellValueFactory(cellData -> \n            new SimpleStringProperty(cellData.getValue().getTitle()));\n            \n        seriesYearColumn.setCellValueFactory(cellData -> {\n            Series series = cellData.getValue();\n            return new SimpleStringProperty(String.valueOf(series.getYear()));\n        });\n        \n        seriesGenreColumn.setCellValueFactory(cellData -> \n            new SimpleStringProperty(\"N/A\"));\n            \n        seriesSeasonsColumn.setCellValueFactory(cellData -> \n            new SimpleStringProperty(String.valueOf(cellData.getValue().getSeasons().size())));\n            \n        seriesEpisodesColumn.setCellValueFactory(cellData -> {\n            int totalEpisodes = cellData.getValue().getSeasons().stream()\n                .mapToInt(season -> season.getEpisodes().size())\n                .sum();\n            return new SimpleStringProperty(String.valueOf(totalEpisodes));\n        });\n        \n        seriesImdbColumn.setCellValueFactory(cellData -> \n            new SimpleStringProperty(\"N/A\"));\n            \n        seriesUserRatingColumn.setCellValueFactory(cellData -> \n            new SimpleStringProperty(\"N/A\"));\n        \n        // Set up row factory to handle double-click for showing details\n        seriesTable.setRowFactory(tv -> {\n            TableRow<Series> row = new TableRow<>();\n            row.setOnMouseClicked(event -> {\n                if (event.getClickCount() == 2 && !row.isEmpty()) {\n                    showSeriesDetails(row.getItem());\n                }\n            });\n            return row;\n        });\n        \n        // Set up columns with appropriate cell value factories\n        seriesTable.getColumns().setAll(\n            seriesTitleColumn, \n            seriesYearColumn, \n            seriesGenreColumn, \n            seriesSeasonsColumn, \n            seriesEpisodesColumn, \n            seriesImdbColumn, \n            seriesUserRatingColumn\n        );\n        \n        // Set up cell factory for the title column to include expand/collapse\n        seriesTitleColumn.setCellFactory(column -> new TableCell<Series, String>() {\n            private final Button expandButton = new Button(\">\");\n            private final HBox container = new HBox(5);\n            private final Label titleLabel = new Label();\n            \n            {\n                expandButton.setStyle(\"-fx-background-color: transparent; -fx-padding: 2 5 2 5;\");\n                expandButton.setOnAction(event -> {\n                    Series series = getTableView().getItems().get(getIndex());\n                    boolean isExpanded = expandedSeries.getOrDefault(series, false);\n                    expandedSeries.put(series, !isExpanded);\n                    expandButton.setText(isExpanded ? \">\" : \"v\");\n                    if (!isExpanded) {\n                        showSeriesDetails(series);\n                    }\n                });\n                \n                container.getChildren().addAll(expandButton, titleLabel);\n                container.setAlignment(Pos.CENTER_LEFT);\n            }\n            \n            @Override\n            protected void updateItem(String item, boolean empty) {\n                super.updateItem(item, empty);\n                if (empty || item == null) {\n                    setGraphic(null);\n                } else {\n                    titleLabel.setText(item);\n                    setGraphic(container);\n                }\n            }\n        });\n    }\n\n    private void showSeriesDetails(Series series) {\n        // First show the series details using the enhanced dialog\n        MovieDetailsDialog.showContentDetails(series);\n        \n        // Then show the seasons dialog\n        showSeasonsDialog(series);\n    }\n    \n    private void showSeasonsDialog(Series series) {\n        Dialog<Void> dialog = new Dialog<>();\n        dialog.setTitle(series.getTitle() + \" - Seasons\");\n        \n        // Create a table for seasons\n        TableView<Season> seasonsTable = new TableView<>();\n        \n        TableColumn<Season, Integer> seasonNumberCol = new TableColumn<>(\"Season\");\n        seasonNumberCol.setCellValueFactory(cellData -> \n            new SimpleIntegerProperty(cellData.getValue().getYear()).asObject());\n            \n        TableColumn<Season, Integer> episodesCol = new TableColumn<>(\"Episodes\");\n        episodesCol.setCellValueFactory(cellData -> \n            new SimpleIntegerProperty(cellData.getValue().getEpisodes().size()).asObject());\n            \n        seasonsTable.getColumns().addAll(seasonNumberCol, episodesCol);\n        seasonsTable.setItems(FXCollections.observableArrayList(series.getSeasons()));\n        \n        // Make rows clickable\n        seasonsTable.setRowFactory(tv -> {\n            TableRow<Season> row = new TableRow<>();\n            row.setOnMouseClicked(event -> {\n                if (!row.isEmpty() && event.getClickCount() == 2) {\n                    dialog.close();\n                    showEpisodesForSeason(series, row.getItem());\n                }\n            });\n            return row;\n        });\n        \n        VBox content = new VBox(10);\n        content.getChildren().add(seasonsTable);\n        content.setPadding(new Insets(10));\n        \n        dialog.getDialogPane().setContent(content);\n        dialog.getDialogPane().getButtonTypes().add(ButtonType.CLOSE);\n        dialog.getDialogPane().setPrefSize(300, 400);\n        \n        dialog.showAndWait();\n    }\n    \n    private void showEpisodesForSeason(Series series, Season season) {\n        // Create a dialog to show episodes for the selected season\n        Dialog<Void> dialog = new Dialog<>();\n        dialog.setTitle(series.getTitle() + \" - Season \" + season.getYear());\n        \n        // Create a table for episodes\n        TableView<Episode> episodesTable = new TableView<>();\n        \n        TableColumn<Episode, Integer> episodeNumCol = new TableColumn<>(\"#\");\n        episodeNumCol.setCellValueFactory(cellData -> \n            new SimpleIntegerProperty(episodesTable.getItems().indexOf(cellData.getValue()) + 1).asObject());\n            \n        TableColumn<Episode, String> durationCol = new TableColumn<>(\"Duration\");\n        durationCol.setCellValueFactory(cellData -> \n            new SimpleStringProperty(cellData.getValue().getDuration() + \" min\"));\n            \n        TableColumn<Episode, String> ratingCol = new TableColumn<>(\"IMDB Rating\");\n        ratingCol.setCellValueFactory(cellData -> \n            new SimpleStringProperty(String.format(\"%.1f\", cellData.getValue().getImdbRating())));\n            \n        TableColumn<Episode, String> directorCol = new TableColumn<>(\"Director\");\n        directorCol.setCellValueFactory(cellData -> {\n            Director director = cellData.getValue().getDirector();\n            return new SimpleStringProperty(director != null ? director.getFullName() : \"Unknown\");\n        });\n        \n        episodesTable.getColumns().addAll(episodeNumCol, durationCol, ratingCol, directorCol);\n        episodesTable.setItems(FXCollections.observableArrayList(season.getEpisodes()));\n        \n        VBox content = new VBox(10);\n        content.getChildren().add(episodesTable);\n        content.setPadding(new Insets(10));\n        \n        dialog.getDialogPane().setContent(content);\n        dialog.getDialogPane().getButtonTypes().add(ButtonType.CLOSE);\n        dialog.getDialogPane().setPrefSize(400, 500);\n        \n        dialog.showAndWait();\n    }\n\n    private void refreshSeriesTable() {\n        if (seriesTable != null) {\n            List<Series> allSeries = dataManager.getAllSeries();\n            seriesTable.setItems(FXCollections.observableArrayList(allSeries));\n        }\n    }\n\n    private void loadData() {\n        try {\n            dataManager.loadAllData();\n            refreshMovieTable();\n            \n            // Load series data from file\n            SeriesDataLoader dataLoader = new SeriesDataLoader();\n            List<Series> seriesList = dataLoader.loadSeries();\n            seriesTable.setItems(FXCollections.observableArrayList(seriesList));\n            \n            refreshWatchlists();\n            \n        } catch (Exception e) {\n            showErrorAlert(\"Data Loading Error\", \"Failed to load application data: \" + e.getMessage());\n            e.printStackTrace();\n        }\n    }\n\n    private void refreshMovieTable() {\n        if (movieTable != null) {\n            List<Movie> movies = dataManager.getAllMovies();\n            ObservableList<Movie> items = FXCollections.observableArrayList(movies);\n            movieTable.setItems(items);\n        }\n    }\n\n    // FXML Event Handlers\n    @FXML\n    private void showAddMovieDialog() {\n        Dialog<Movie> dialog = createAddMovieDialog();\n        Optional<Movie> result = dialog.showAndWait();\n\n        result.ifPresent(movie -> {\n            try {\n                dataManager.addMovie(movie);\n                refreshMovieTable();\n                showSuccessAlert(\"Success\", \"Movie added successfully!\");\n            } catch (Exception e) {\n                showErrorAlert(\"Error\", \"Failed to add movie: \" + e.getMessage());\n            }\n        });\n    }\n\n    @FXML\n    private void showRatingDialog() {\n        Movie selectedMovie = movieTable.getSelectionModel().getSelectedItem();\n        if (selectedMovie == null) {\n            showWarningAlert(\"No Selection\", \"Please select a movie to rate.\");\n            return;\n        }\n\n        Dialog<Double> dialog = createRatingDialog(selectedMovie);\n        Optional<Double> result = dialog.showAndWait();\n\n        result.ifPresent(rating -> {\n            try {\n                dataManager.rateMovie(selectedMovie, rating);\n                refreshMovieTable();\n                showSuccessAlert(\"Success\", \"Movie rated successfully!\");\n            } catch (Exception e) {\n                showErrorAlert(\"Error\", \"Failed to rate movie: \" + e.getMessage());\n            }\n        });\n    }\n\n    @FXML\n    private void showAddSeriesDialog() {\n        TextInputDialog dialog = new TextInputDialog();\n        dialog.setTitle(\"Add Series\");\n        dialog.setHeaderText(\"Add New Series\");\n        dialog.setContentText(\"Enter series title:\");\n\n        Optional<String> result = dialog.showAndWait();\n        result.ifPresent(title -> {\n            if (!title.trim().isEmpty()) {\n                try {\n                    Series newSeries = new Series(title.trim());\n                    dataManager.addSeries(newSeries);\n                    refreshSeriesTable();\n                    showSuccessAlert(\"Success\", \"Series added successfully!\");\n                } catch (Exception e) {\n                    showErrorAlert(\"Error\", \"Failed to add series: \" + e.getMessage());\n                }\n            }\n        });\n    }\n\n    @FXML\n    private void handleSearch() {\n        try {\n            // Build search criteria from UI\n            SearchCriteria criteria = buildSearchCriteria();\n\n            // Perform the search\n            List<Movie> matches = dataManager.searchMovies(criteria);\n\n            // Format and display results\n            List<String> displayResults = matches.stream()\n                    .map(this::formatMovieForDisplay)\n                    .collect(Collectors.toList());\n\n            resultsView.setItems(FXCollections.observableArrayList(displayResults));\n\n            // Show search results count\n            showInfoAlert(\"Search Results\",\n                    String.format(\"Found %d movie(s) matching your criteria.\", matches.size()));\n\n        } catch (IllegalArgumentException e) {\n            showWarningAlert(\"Search Warning\", e.getMessage());\n        } catch (Exception e) {\n            showErrorAlert(\"Search Error\", \"Failed to perform search: \" + e.getMessage());\n        }\n    }\n\n    @FXML\n    private void clearSearch() {\n        titleField.clear();\n        actorField.clear();\n        directorField.clear();\n        minImdbField.clear();\n        minUserField.clear();\n        genreCombo.setValue(\"All Genres\");\n        yearFromSpinner.getValueFactory().setValue(1900);\n        yearToSpinner.getValueFactory().setValue(java.time.Year.now().getValue());\n        gRatingCheck.setSelected(false);\n        pgRatingCheck.setSelected(false);\n        pg13RatingCheck.setSelected(false);\n        rRatingCheck.setSelected(false);\n        minImdbSlider.setValue(0.0);\n        minUserSlider.setValue(0.0);\n        sortByCombo.setValue(\"Title\");\n        sortDescButton.setSelected(true);\n        resultsView.getItems().clear();\n    }\n\n    @FXML\n    private void showMovieDetails() {\n        Movie selectedMovie = movieTable.getSelectionModel().getSelectedItem();\n        if (selectedMovie != null) {\n            showMovieDetails(selectedMovie);\n        } else {\n            showWarningAlert(\"No Selection\", \"Please select a movie to view details.\");\n        }\n    }\n\n    @FXML\n    private void deleteMovie() {\n        Movie selectedMovie = movieTable.getSelectionModel().getSelectedItem();\n        if (selectedMovie == null) {\n            showWarningAlert(\"No Selection\", \"Please select a movie to delete.\");\n            return;\n        }\n\n        boolean confirmed = DialogUtils.showConfirmation(\n                \"Confirm Deletion\",\n                \"Delete Movie\",\n                \"Are you sure you want to delete \\\"\" + selectedMovie.getTitle() + \"\\\"?\"\n        );\n\n        if (confirmed) {\n            try {\n                // Note: You'll need to implement removeMovie in DataManager\n                // dataManager.removeMovie(selectedMovie);\n                refreshMovieTable();\n                showSuccessAlert(\"Success\", \"Movie deleted successfully!\");\n            } catch (Exception e) {\n                showErrorAlert(\"Error\", \"Failed to delete movie: \" + e.getMessage());\n            }\n        }\n    }\n\n    // Helper methods\n    private SearchCriteria buildSearchCriteria() {\n        SearchCriteria criteria = new SearchCriteria();\n\n        // Basic search fields\n        if (!titleField.getText().trim().isEmpty()) {\n            criteria.setTitle(titleField.getText().trim());\n        }\n        if (!actorField.getText().trim().isEmpty()) {\n            criteria.setActorName(actorField.getText().trim());\n        }\n        if (!directorField.getText().trim().isEmpty()) {\n            criteria.setDirectorName(directorField.getText().trim());\n        }\n\n        // Numeric fields with validation\n        try {\n            if (!minImdbField.getText().trim().isEmpty()) {\n                criteria.setMinImdbRating(Double.parseDouble(minImdbField.getText().trim()));\n            } else if (minImdbSlider.getValue() > 0) {\n                criteria.setMinImdbRating(minImdbSlider.getValue());\n            }\n\n            if (!minUserField.getText().trim().isEmpty()) {\n                criteria.setMinUserRating(Double.parseDouble(minUserField.getText().trim()));\n            } else if (minUserSlider.getValue() > 0) {\n                criteria.setMinUserRating(minUserSlider.getValue());\n            }\n        } catch (NumberFormatException e) {\n            throw new IllegalArgumentException(\"Rating fields must contain valid numbers.\");\n        }\n\n        // Genre filter\n        if (genreCombo.getValue() != null && !genreCombo.getValue().equals(\"All Genres\")) {\n            try {\n                Genre selectedGenre = Genre.valueOf(genreCombo.getValue().toUpperCase().replace(\" \", \"_\"));\n                criteria.addGenre(selectedGenre);\n            } catch (IllegalArgumentException e) {\n                // Handle case where genre string doesn't match any enum value\n                showWarningAlert(\"Invalid Genre\", \"The selected genre is not recognized.\");\n            }\n        }\n\n        // Year range\n        if (yearFromSpinner.getValue() != null) {\n            criteria.setMinYear(yearFromSpinner.getValue());\n        }\n        if (yearToSpinner.getValue() != null) {\n            criteria.setMaxYear(yearToSpinner.getValue());\n        }\n\n        // MPAA Rating (simplified example - you'd need to map these to your actual rating system)\n        List<String> mpaaRatings = new ArrayList<>();\n        if (gRatingCheck.isSelected()) mpaaRatings.add(\"G\");\n        if (pgRatingCheck.isSelected()) mpaaRatings.add(\"PG\");\n        if (pg13RatingCheck.isSelected()) mpaaRatings.add(\"PG-13\");\n        if (rRatingCheck.isSelected()) mpaaRatings.add(\"R\");\n\n        // In a real app, you would set these on the criteria object if your model supports it\n        // For now, we'll just log them\n        if (!mpaaRatings.isEmpty()) {\n            System.out.println(\"MPAA Ratings filter: \" + String.join(\", \", mpaaRatings));\n        }\n\n        // Sorting\n        if (sortByCombo.getValue() != null) {\n            String sortField = sortByCombo.getValue().toLowerCase().replace(\" \", \"\");\n            criteria.setSortBy(sortField);\n            criteria.setSortDescending(!sortOrderToggle.isSelected());\n        }\n\n        return criteria;\n    }\n\n    private String formatMovieForDisplay(Movie movie) {\n        return String.format(\"%s (%d) - %s | IMDB: %.1f | User: %s | Director: %s\",\n                movie.getTitle(),\n                movie.getYear().getYear() + 1900,\n                movie.getGenre(),\n                movie.getImdbRating(),\n                movie.getUserRating() != null ? String.format(\"%.1f\", movie.getUserRating()) : \"N/A\",\n                movie.getDirector() != null ? movie.getDirector() : \"Unknown\"\n        );\n    }\n\n    private Dialog<Movie> createAddMovieDialog() {\n        Dialog<Movie> dialog = new Dialog<>();\n        dialog.setTitle(\"Add New Movie\");\n        dialog.setHeaderText(\"Enter movie details\");\n\n        ButtonType addButtonType = new ButtonType(\"Add Movie\", ButtonData.OK_DONE);\n        dialog.getDialogPane().getButtonTypes().addAll(addButtonType, ButtonType.CANCEL);\n\n        GridPane grid = new GridPane();\n        grid.setHgap(10);\n        grid.setVgap(10);\n        grid.setPadding(new Insets(20, 150, 10, 10));\n\n        TextField titleField = new TextField();\n        TextField yearField = new TextField();\n        TextField genreField = new TextField();\n        TextField directorField = new TextField();\n        TextField imdbRatingField = new TextField();\n        TextArea descriptionArea = new TextArea();\n\n        titleField.setPromptText(\"Movie title\");\n        yearField.setPromptText(\"Release year (e.g., 2023)\");\n        genreField.setPromptText(\"Genre (e.g., ACTION, DRAMA)\");\n        directorField.setPromptText(\"Director name\");\n        imdbRatingField.setPromptText(\"IMDB rating (0.0 - 10.0)\");\n        descriptionArea.setPromptText(\"Movie description (optional)\");\n        descriptionArea.setPrefRowCount(3);\n\n        grid.add(new Label(\"Title:\"), 0, 0);\n        grid.add(titleField, 1, 0);\n        grid.add(new Label(\"Year:\"), 0, 1);\n        grid.add(yearField, 1, 1);\n        grid.add(new Label(\"Genre:\"), 0, 2);\n        grid.add(genreField, 1, 2);\n        grid.add(new Label(\"Director:\"), 0, 3);\n        grid.add(directorField, 1, 3);\n        grid.add(new Label(\"IMDB Rating:\"), 0, 4);\n        grid.add(imdbRatingField, 1, 4);\n        grid.add(new Label(\"Description:\"), 0, 5);\n        grid.add(descriptionArea, 1, 5);\n\n        Node addButton = dialog.getDialogPane().lookupButton(addButtonType);\n        addButton.setDisable(true);\n\n        // Enable/disable add button based on required fields\n        titleField.textProperty().addListener((observable, oldValue, newValue) ->\n                addButton.setDisable(newValue.trim().isEmpty()));\n\n        dialog.getDialogPane().setContent(grid);\n\n        dialog.setResultConverter(dialogButton -> {\n            if (dialogButton == addButtonType) {\n                try {\n                    String title = titleField.getText().trim();\n                    int year = Integer.parseInt(yearField.getText().trim());\n                    String genre = genreField.getText().trim().toUpperCase();\n                    String director = directorField.getText().trim();\n\n                    Movie movie = new Movie(title, year, genre, director, Map.of());\n\n                    // Set IMDB rating if provided\n                    if (!imdbRatingField.getText().trim().isEmpty()) {\n                        double rating = Double.parseDouble(imdbRatingField.getText().trim());\n                        movie.setImdbRating(rating);\n                    }\n\n                    // Set description if provided\n                    if (!descriptionArea.getText().trim().isEmpty()) {\n                        movie.setDescription(descriptionArea.getText().trim());\n                    }\n\n                    return movie;\n                } catch (NumberFormatException e) {\n                    showErrorAlert(\"Invalid Input\", \"Please enter valid numbers for year and rating.\");\n                    return null;\n                } catch (Exception e) {\n                    showErrorAlert(\"Error\", \"Failed to create movie: \" + e.getMessage());\n                    return null;\n                }\n            }\n            return null;\n        });\n\n        return dialog;\n    }\n\n    private Dialog<Double> createRatingDialog(Movie movie) {\n        Dialog<Double> dialog = new Dialog<>();\n        dialog.setTitle(\"Rate Movie\");\n        dialog.setHeaderText(\"Rate: \" + movie.getTitle());\n\n        ButtonType rateButtonType = new ButtonType(\"Rate\", ButtonData.OK_DONE);\n        dialog.getDialogPane().getButtonTypes().addAll(rateButtonType, ButtonType.CANCEL);\n\n        VBox content = new VBox(10);\n        content.setPadding(new Insets(20));\n\n        Label instructionLabel = new Label(\"Enter your rating (0.0 - 10.0):\");\n        Slider ratingSlider = new Slider(0, 10, 5);\n        ratingSlider.setShowTickLabels(true);\n        ratingSlider.setShowTickMarks(true);\n        ratingSlider.setMajorTickUnit(1);\n        ratingSlider.setBlockIncrement(0.1);\n\n        Label valueLabel = new Label(\"5.0\");\n        ratingSlider.valueProperty().addListener((obs, oldVal, newVal) ->\n                valueLabel.setText(String.format(\"%.1f\", newVal.doubleValue())));\n\n        content.getChildren().addAll(instructionLabel, ratingSlider, valueLabel);\n        dialog.getDialogPane().setContent(content);\n\n        dialog.setResultConverter(dialogButton -> {\n            if (dialogButton == rateButtonType) {\n                return ratingSlider.getValue();\n            }\n            return null;\n        });\n\n        return dialog;\n    }\n\n    private void showMovieDetails(Movie movie) {\n        MovieDetailsDialog.showContentDetails(movie);\n    }\n\n    // Alert helper methods using DialogUtils\n    private void showSuccessAlert(String title, String message) {\n        DialogUtils.showSuccess(title, message);\n    }\n\n    private void showErrorAlert(String title, String message) {\n        DialogUtils.showError(title, message);\n    }\n\n    private void showWarningAlert(String title, String message) {\n        DialogUtils.showWarning(title, message);\n    }\n\n    private void showInfoAlert(String title, String message) {\n        DialogUtils.showInfo(title, message);\n    }\n\n    // Watchlist setup and management methods\n    private void setupWatchlistComponents() {\n        setupWatchlistTable();\n        setupWatchlistSelection();\n    }\n\n    private void setupWatchlistTable() {\n        // Title column\n        TableColumn<Content, String> titleColumn = new TableColumn<>(\"Title\");\n        titleColumn.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getTitle()));\n        titleColumn.setPrefWidth(200);\n\n        // Type column\n        TableColumn<Content, String> typeColumn = new TableColumn<>(\"Type\");\n        typeColumn.setCellValueFactory(data ->\n                new SimpleStringProperty(data.getValue() instanceof Movie ? \"Movie\" : \"Series\"));\n        typeColumn.setPrefWidth(80);\n\n        // Year column\n        TableColumn<Content, String> yearColumn = new TableColumn<>(\"Year\");\n        yearColumn.setCellValueFactory(data -> {\n            if (data.getValue() instanceof Movie movie) {\n                return new SimpleStringProperty(String.valueOf(movie.getYear().getYear() + 1900));\n            } else if (data.getValue() instanceof Series series) {\n                return new SimpleStringProperty(String.valueOf(series.getYear().getYear() + 1900));\n            }\n            return new SimpleStringProperty(\"N/A\");\n        });\n        yearColumn.setPrefWidth(80);\n\n        // Genre column\n        TableColumn<Content, String> genreColumn = new TableColumn<>(\"Genre\");\n        genreColumn.setCellValueFactory(data -> {\n            if (data.getValue() instanceof Movie movie) {\n                return new SimpleStringProperty(movie.getGenre().toString());\n            } else if (data.getValue() instanceof Series series) {\n                return new SimpleStringProperty(series.getGenre().toString());\n            }\n            return new SimpleStringProperty(\"N/A\");\n        });\n        genreColumn.setPrefWidth(120);\n\n        // Rating column\n        TableColumn<Content, String> ratingColumn = new TableColumn<>(\"User Rating\");\n        ratingColumn.setCellValueFactory(data -> {\n            if (data.getValue() instanceof Movie movie) {\n                return new SimpleStringProperty(String.format(\"%.1f\", movie.getImdbRating()));\n            } else if (data.getValue() instanceof Series series) {\n                double avgRating = series.calculateAverageUserRating();\n                return new SimpleStringProperty(avgRating > 0 ? String.format(\"%.1f\", avgRating) : \"N/A\");\n            }\n            return new SimpleStringProperty(\"N/A\");\n        });\n        ratingColumn.setPrefWidth(100);\n\n        watchlistContentTable.getColumns().clear();\n        watchlistContentTable.getColumns().addAll(titleColumn, typeColumn, yearColumn, genreColumn, ratingColumn);\n        watchlistContentTable.getSelectionModel().setSelectionMode(SelectionMode.SINGLE);\n    }\n\n    private void setupWatchlistSelection() {\n        watchlistsView.getSelectionModel().selectedItemProperty().addListener((obs, oldSelection, newSelection) -> {\n            if (newSelection != null) {\n                loadWatchlistContent(newSelection);\n            }\n        });\n    }\n\n    private void refreshWatchlists() {\n        if (watchlistsView != null) {\n            List<Watchlist> userWatchlists = watchlistService.getUserWatchlists(currentUserId);\n            List<String> watchlistNames = userWatchlists.stream()\n                    .map(w -> w.getName() + \" (\" + w.getContentCount() + \" items)\")\n                    .collect(Collectors.toList());\n\n            ObservableList<String> items = FXCollections.observableArrayList(watchlistNames);\n            watchlistsView.setItems(items);\n        }\n    }\n\n    private void loadWatchlistContent(String selectedWatchlistDisplay) {\n        // Extract watchlist name from display string (remove count part)\n        String watchlistName = selectedWatchlistDisplay.split(\" \\\\(\")[0];\n\n        List<Watchlist> userWatchlists = watchlistService.getUserWatchlists(currentUserId);\n        Watchlist selectedWatchlist = userWatchlists.stream()\n                .filter(w -> w.getName().equals(watchlistName))\n                .findFirst()\n                .orElse(null);\n\n        if (selectedWatchlist != null) {\n            List<Content> content = watchlistService.getWatchlistContent(selectedWatchlist.getId());\n            ObservableList<Content> items = FXCollections.observableArrayList(content);\n            watchlistContentTable.setItems(items);\n\n            watchlistContentTitle.setText(\"Contents of \\\"\" + watchlistName + \"\\\":\");\n        } else {\n            watchlistContentTable.getItems().clear();\n            watchlistContentTitle.setText(\"Watchlist Contents:\");\n        }\n    }\n\n    // FXML Event Handlers for Watchlist\n    @FXML\n    private void createWatchlist() {\n        Dialog<Watchlist> dialog = createWatchlistDialog();\n        Optional<Watchlist> result = dialog.showAndWait();\n\n        result.ifPresent(watchlist -> {\n            try {\n                watchlistService.createWatchlist(currentUserId, watchlist.getName(), watchlist.getDescription());\n                refreshWatchlists();\n                showSuccessAlert(\"Success\", \"Watchlist created successfully!\");\n            } catch (Exception e) {\n                showErrorAlert(\"Error\", \"Failed to create watchlist: \" + e.getMessage());\n            }\n        });\n    }\n\n    @FXML\n    private void deleteWatchlist() {\n        String selectedWatchlistDisplay = watchlistsView.getSelectionModel().getSelectedItem();\n        if (selectedWatchlistDisplay == null) {\n            showWarningAlert(\"No Selection\", \"Please select a watchlist to delete.\");\n            return;\n        }\n\n        String watchlistName = selectedWatchlistDisplay.split(\" \\\\(\")[0];\n\n        boolean confirmed = DialogUtils.showConfirmation(\n                \"Confirm Deletion\",\n                \"Delete Watchlist\",\n                \"Are you sure you want to delete the watchlist \\\"\" + watchlistName + \"\\\"?\"\n        );\n\n        if (confirmed) {\n            try {\n                List<Watchlist> userWatchlists = watchlistService.getUserWatchlists(currentUserId);\n                Watchlist watchlistToDelete = userWatchlists.stream()\n                        .filter(w -> w.getName().equals(watchlistName))\n                        .findFirst()\n                        .orElse(null);\n\n                if (watchlistToDelete != null) {\n                    watchlistService.deleteWatchlist(watchlistToDelete.getId(), currentUserId);\n                    refreshWatchlists();\n                    watchlistContentTable.getItems().clear();\n                    watchlistContentTitle.setText(\"Watchlist Contents:\");\n                    showSuccessAlert(\"Success\", \"Watchlist deleted successfully!\");\n                }\n            } catch (Exception e) {\n                showErrorAlert(\"Error\", \"Failed to delete watchlist: \" + e.getMessage());\n            }\n        }\n    }\n\n    @FXML\n    private void addToWatchlist() {\n        // Get selected movie from movie table\n        Movie selectedMovie = movieTable.getSelectionModel().getSelectedItem();\n        if (selectedMovie == null) {\n            showWarningAlert(\"No Selection\", \"Please select a movie to add to watchlist.\");\n            return;\n        }\n\n        // Get user's watchlists\n        List<Watchlist> userWatchlists = watchlistService.getUserWatchlists(currentUserId);\n        if (userWatchlists.isEmpty()) {\n            showWarningAlert(\"No Watchlists\", \"Please create a watchlist first.\");\n            return;\n        }\n\n        // Show selection dialog\n        ChoiceDialog<String> dialog = new ChoiceDialog<>();\n        dialog.setTitle(\"Add to Watchlist\");\n        dialog.setHeaderText(\"Select Watchlist\");\n        dialog.setContentText(\"Choose a watchlist to add \\\"\" + selectedMovie.getTitle() + \"\\\" to:\");\n\n        List<String> watchlistNames = userWatchlists.stream()\n                .map(Watchlist::getName)\n                .collect(Collectors.toList());\n        dialog.getItems().addAll(watchlistNames);\n        dialog.setSelectedItem(watchlistNames.get(0));\n\n        Optional<String> result = dialog.showAndWait();\n        result.ifPresent(selectedWatchlistName -> {\n            try {\n                Watchlist selectedWatchlist = userWatchlists.stream()\n                        .filter(w -> w.getName().equals(selectedWatchlistName))\n                        .findFirst()\n                        .orElse(null);\n\n                if (selectedWatchlist != null) {\n                    if (selectedWatchlist.containsContent(selectedMovie.getId())) {\n                        showInfoAlert(\"Already Added\", \"This movie is already in the selected watchlist.\");\n                    } else {\n                        watchlistService.addToWatchlist(selectedWatchlist.getId(), selectedMovie.getId());\n                        refreshWatchlists();\n                        // Refresh content if this watchlist is currently selected\n                        String currentSelection = watchlistsView.getSelectionModel().getSelectedItem();\n                        if (currentSelection != null && currentSelection.startsWith(selectedWatchlistName)) {\n                            loadWatchlistContent(currentSelection);\n                        }\n                        showSuccessAlert(\"Success\", \"Movie added to watchlist successfully!\");\n                    }\n                }\n            } catch (Exception e) {\n                showErrorAlert(\"Error\", \"Failed to add movie to watchlist: \" + e.getMessage());\n            }\n        });\n    }\n\n    @FXML\n    private void removeFromWatchlist() {\n        Content selectedContent = watchlistContentTable.getSelectionModel().getSelectedItem();\n        if (selectedContent == null) {\n            showWarningAlert(\"No Selection\", \"Please select an item to remove from the watchlist.\");\n            return;\n        }\n\n        String selectedWatchlistDisplay = watchlistsView.getSelectionModel().getSelectedItem();\n        if (selectedWatchlistDisplay == null) {\n            showWarningAlert(\"No Watchlist Selected\", \"Please select a watchlist first.\");\n            return;\n        }\n\n        String watchlistName = selectedWatchlistDisplay.split(\" \\\\(\")[0];\n\n        boolean confirmed = DialogUtils.showConfirmation(\n                \"Confirm Removal\",\n                \"Remove from Watchlist\",\n                \"Are you sure you want to remove \\\"\" + selectedContent.getTitle() + \"\\\" from the watchlist?\"\n        );\n\n        if (confirmed) {\n            try {\n                List<Watchlist> userWatchlists = watchlistService.getUserWatchlists(currentUserId);\n                Watchlist watchlist = userWatchlists.stream()\n                        .filter(w -> w.getName().equals(watchlistName))\n                        .findFirst()\n                        .orElse(null);\n\n                if (watchlist != null) {\n                    watchlistService.removeFromWatchlist(watchlist.getId(), selectedContent.getId());\n                    refreshWatchlists();\n                    loadWatchlistContent(selectedWatchlistDisplay);\n                    showSuccessAlert(\"Success\", \"Item removed from watchlist successfully!\");\n                }\n            } catch (Exception e) {\n                showErrorAlert(\"Error\", \"Failed to remove item from watchlist: \" + e.getMessage());\n            }\n        }\n    }\n\n    private Dialog<Watchlist> createWatchlistDialog() {\n        Dialog<Watchlist> dialog = new Dialog<>();\n        dialog.setTitle(\"Create New Watchlist\");\n        dialog.setHeaderText(\"Enter watchlist details\");\n\n        ButtonType createButtonType = new ButtonType(\"Create\", ButtonData.OK_DONE);\n        dialog.getDialogPane().getButtonTypes().addAll(createButtonType, ButtonType.CANCEL);\n\n        GridPane grid = new GridPane();\n        grid.setHgap(10);\n        grid.setVgap(10);\n        grid.setPadding(new Insets(20, 150, 10, 10));\n\n        TextField nameField = new TextField();\n        TextArea descriptionArea = new TextArea();\n        CheckBox publicCheckBox = new CheckBox();\n\n        nameField.setPromptText(\"Watchlist name\");\n        descriptionArea.setPromptText(\"Description (optional)\");\n        descriptionArea.setPrefRowCount(3);\n        publicCheckBox.setText(\"Make this watchlist public\");\n\n        grid.add(new Label(\"Name:\"), 0, 0);\n        grid.add(nameField, 1, 0);\n        grid.add(new Label(\"Description:\"), 0, 1);\n        grid.add(descriptionArea, 1, 1);\n        grid.add(publicCheckBox, 1, 2);\n\n        dialog.getDialogPane().setContent(grid);\n\n        // Enable/disable create button based on name field\n        Node createButton = dialog.getDialogPane().lookupButton(createButtonType);\n        createButton.setDisable(true);\n\n        nameField.textProperty().addListener((observable, oldValue, newValue) -> {\n            createButton.setDisable(newValue.trim().isEmpty());\n        });\n\n        dialog.setResultConverter(dialogButton -> {\n            if (dialogButton == createButtonType) {\n                Watchlist watchlist = new Watchlist(currentUserId, nameField.getText().trim());\n                if (!descriptionArea.getText().trim().isEmpty()) {\n                    watchlist.setDescription(descriptionArea.getText().trim());\n                }\n                watchlist.setPublic(publicCheckBox.isSelected());\n                return watchlist;\n            }\n            return null;\n        });\n\n        return dialog;\n    }\n\n    // Getters and setters\n    public Stage getPrimaryStage() {\n        return primaryStage;\n    }\n\n    public DataManager getDataManager() {\n        return dataManager;\n    }\n\n    public WatchlistService getWatchlistService() {\n        return watchlistService;\n    }\n}",
+                    "language": "java"
+                },
+                "codebaseEnabled": true
+            },
+            "createdAt": 1754399277158,
+            "isInternal": false,
+            "rawContent": {
+                "type": "doc",
+                "content": [
+                    {
+                        "type": "paragraph",
+                        "content": [
+                            {
+                                "type": "command",
+                                "attrs": {
+                                    "label": "fix"
+                                },
+                                "content": [
+                                    {
+                                        "type": "text",
+                                        "text": "fix: "
+                                    }
+                                ]
+                            },
+                            {
+                                "type": "codeBlock",
+                                "attrs": {
+                                    "language": "java"
+                                },
+                                "content": [
+                                    {
+                                        "type": "text",
+                                        "text": "public void setPrimaryStage(Stage primaryStage) {\n        this.primaryStage = primaryStage;\n    }"
+                                    }
+                                ]
+                            },
+                            {
+                                "type": "text",
+                                "text": "'setPrimaryStage(Stage)' is already defined in 'com.papel.imdb_clone.gui.MainController'"
+                            }
+                        ]
+                    }
+                ]
+            },
+            "autoAppliedRules": []
+        },
+        {
+            "id": "268ba57e-767d-40b6-9f3b-12a827b65f1a",
+            "role": "assistant",
+            "content": [
+                {
+                    "type": "text",
+                    "text": "I can see the issue! Looking at the current file, there are two `setPrimaryStage` methods defined:\n\n1. One at line 37-39\n2. Another at line 147-150\n\nThis is causing the duplicate method definition error. Let me examine the full context and fix this by removing the duplicate."
+                },
+                {
+                    "type": "toolCall",
+                    "toolCallId": "toolu_019twRmatJHkyLZbRL5DBArK",
+                    "title": "",
+                    "statusText": "Invalid offset",
+                    "status": "WARNING",
+                    "context": {
+                        "files": [
+                            {
+                                "path": "src/main/java/com/papel/imdb_clone/gui/MainController.java",
+                                "fsPath": "C:\\Users\\mas_b\\IdeaProjects\\imdb_clone\\src\\main\\java\\com\\papel\\imdb_clone\\gui\\MainController.java"
+                            }
+                        ]
+                    },
+                    "isHidden": false
+                },
+                {
+                    "type": "text",
+                    "text": "Let me check the full file to see the complete context:"
+                },
+                {
+                    "type": "toolCall",
+                    "toolCallId": "toolu_01KNdryo8sPLaznmwyL81tqv",
+                    "statusText": "Viewed file",
+                    "status": "SUCCESS",
+                    "context": {
+                        "files": [
+                            {
+                                "path": "src/main/java/com/papel/imdb_clone/gui/MainController.java",
+                                "fsPath": "C:\\Users\\mas_b\\IdeaProjects\\imdb_clone\\src\\main\\java\\com\\papel\\imdb_clone\\gui\\MainController.java"
+                            }
+                        ]
+                    },
+                    "isHidden": false
+                },
+                {
+                    "type": "text",
+                    "text": "Perfect! I can see the issue clearly now. There are several problems:\n\n1. **Duplicate `setPrimaryStage` method**: One at lines 37-39 and another at lines 147-150\n2. **Duplicate `primaryStage` field declaration**: One at line 35 and another at line 130\n\nThe second method (lines 147-150) is more complete as it also calls `DialogUtils.setOwnerStage(primaryStage)`, so I'll remove the first one and the duplicate field declaration."
+                },
+                {
+                    "type": "toolCall",
+                    "toolCallId": "toolu_vrtx_01RvdjUzEZD7eSKLacqGKm4v",
+                    "title": "",
+                    "statusText": "Text to replace not found",
+                    "status": "WARNING",
+                    "context": {
+                        "files": [
+                            {
+                                "path": "src/main/java/com/papel/imdb_clone/gui/MainController.java",
+                                "fsPath": "C:\\Users\\mas_b\\IdeaProjects\\imdb_clone\\src\\main\\java\\com\\papel\\imdb_clone\\gui\\MainController.java"
+                            }
+                        ]
+                    },
+                    "isHidden": false
+                },
+                {
+                    "type": "text",
+                    "text": "Let me check the exact formatting around those lines:"
+                },
+                {
+                    "type": "toolCall",
+                    "toolCallId": "toolu_vrtx_01NnHap2cQ3azfQ8oAzXRhNY",
+                    "title": "",
+                    "statusText": "Invalid offset",
+                    "status": "WARNING",
+                    "context": {
+                        "files": [
+                            {
+                                "path": "src/main/java/com/papel/imdb_clone/gui/MainController.java",
+                                "fsPath": "C:\\Users\\mas_b\\IdeaProjects\\imdb_clone\\src\\main\\java\\com\\papel\\imdb_clone\\gui\\MainController.java"
+                            }
+                        ]
+                    },
+                    "isHidden": false
+                },
+                {
+                    "type": "text",
+                    "text": "Let me search for the duplicate field declaration:"
+                },
+                {
+                    "type": "toolCall",
+                    "toolCallId": "toolu_vrtx_015rjhCpaYjSY3BgBRUfpWdN",
+                    "title": "Fulltext search",
+                    "statusText": "Done",
+                    "status": "SUCCESS",
+                    "isHidden": false
+                },
+                {
+                    "type": "text",
+                    "text": "Perfect! Now I can see there are indeed two declarations at lines 35 and 130. Let me remove the first one and the first setPrimaryStage method:"
+                },
+                {
+                    "type": "toolCall",
+                    "toolCallId": "toolu_vrtx_01RVkyZANyuF5f5qcsX6NrTr",
+                    "title": "",
+                    "statusText": "Text to replace not found",
+                    "status": "WARNING",
+                    "context": {
+                        "files": [
+                            {
+                                "path": "src/main/java/com/papel/imdb_clone/gui/MainController.java",
+                                "fsPath": "C:\\Users\\mas_b\\IdeaProjects\\imdb_clone\\src\\main\\java\\com\\papel\\imdb_clone\\gui\\MainController.java"
+                            }
+                        ]
+                    },
+                    "isHidden": false
+                },
+                {
+                    "type": "text",
+                    "text": "Let me get the exact text around those lines:"
+                },
+                {
+                    "type": "toolCall",
+                    "toolCallId": "toolu_vrtx_013EEcwTVZf3aeAuXBTCbcyx",
+                    "title": "Fulltext search",
+                    "statusText": "Done",
+                    "status": "SUCCESS",
+                    "isHidden": false
+                },
+                {
+                    "type": "text",
+                    "text": "Now let me remove the first occurrence (lines 35-39) by getting the exact context:"
+                },
+                {
+                    "type": "toolCall",
+                    "toolCallId": "toolu_vrtx_014EZCoqiojNQctXuvVFLqe7",
+                    "title": "",
+                    "statusText": "Text to replace not found",
+                    "status": "WARNING",
+                    "context": {
+                        "files": [
+                            {
+                                "path": "src/main/java/com/papel/imdb_clone/gui/MainController.java",
+                                "fsPath": "C:\\Users\\mas_b\\IdeaProjects\\imdb_clone\\src\\main\\java\\com\\papel\\imdb_clone\\gui\\MainController.java"
+                            }
+                        ]
+                    },
+                    "isHidden": false
+                },
+                {
+                    "type": "text",
+                    "text": "Let me try a more targeted approach by removing just the duplicate field first:"
+                },
+                {
+                    "type": "toolCall",
+                    "toolCallId": "toolu_vrtx_019a1tfssaMT4ukXpmiFDSSj",
+                    "title": "",
+                    "statusText": "Text to replace not found",
+                    "status": "WARNING",
+                    "context": {
+                        "files": [
+                            {
+                                "path": "src/main/java/com/papel/imdb_clone/gui/MainController.java",
+                                "fsPath": "C:\\Users\\mas_b\\IdeaProjects\\imdb_clone\\src\\main\\java\\com\\papel\\imdb_clone\\gui\\MainController.java"
+                            }
+                        ]
+                    },
+                    "isHidden": false
+                },
+                {
+                    "type": "text",
+                    "text": "Let me check the exact content around line 35:"
+                },
+                {
+                    "type": "toolCall",
+                    "toolCallId": "toolu_vrtx_01LGhgyXCjNu5j6KScsdkB6A",
+                    "title": "Fulltext search",
+                    "statusText": "Done",
+                    "status": "SUCCESS",
+                    "isHidden": false
+                },
+                {
+                    "type": "text",
+                    "text": "It seems the file might be in a different location. Let me search for the MainController file:"
+                },
+                {
+                    "type": "toolCall",
+                    "toolCallId": "toolu_vrtx_0193vM41qvuDC6R2PnCVz7rr",
+                    "title": "File search",
+                    "statusText": "Done",
+                    "status": "SUCCESS",
+                    "isHidden": false
+                },
+                {
+                    "type": "text",
+                    "text": "Ah! The file is actually in the `controllers` package, not `gui`. Let me check the correct file:"
+                },
+                {
+                    "type": "toolCall",
+                    "toolCallId": "toolu_vrtx_019HjiBN9nrBhL8Jk7xmYZ4s",
+                    "statusText": "Viewed file",
+                    "status": "SUCCESS",
+                    "context": {
+                        "files": [
+                            {
+                                "path": "src/main/java/com/papel/imdb_clone/controllers/MainController.java",
+                                "fsPath": "C:\\Users\\mas_b\\IdeaProjects\\imdb_clone\\src\\main\\java\\com\\papel\\imdb_clone\\controllers\\MainController.java"
+                            }
+                        ]
+                    },
+                    "isHidden": false
+                },
+                {
+                    "type": "text",
+                    "text": "Perfect! Now I can see the exact same issue in the correct file. I can see:\n1. Line 35: `private Stage primaryStage;`\n2. Lines 37-39: First `setPrimaryStage` method\n3. Line 130: `private Stage primaryStage;` (duplicate field)\n4. Lines 147-150: Second `setPrimaryStage` method (with DialogUtils call)\n\nI need to remove the first field declaration and the first method. Let me do this step by step:"
+                },
+                {
+                    "type": "toolCall",
+                    "toolCallId": "toolu_vrtx_012tw1SMAsNpP2QdzYwHLoHe",
+                    "title": "",
+                    "statusText": "Text to replace not found",
+                    "status": "WARNING",
+                    "context": {
+                        "files": [
+                            {
+                                "path": "src/main/java/com/papel/imdb_clone/controllers/MainController.java",
+                                "fsPath": "C:\\Users\\mas_b\\IdeaProjects\\imdb_clone\\src\\main\\java\\com\\papel\\imdb_clone\\controllers\\MainController.java"
+                            }
+                        ]
+                    },
+                    "isHidden": false
+                },
+                {
+                    "type": "text",
+                    "text": "Let me try removing just the duplicate field first:"
+                },
+                {
+                    "type": "toolCall",
+                    "toolCallId": "toolu_vrtx_01E4QZTedvnam3kfekvZXwLN",
+                    "statusText": "Change generated",
+                    "status": "SUCCESS",
+                    "context": {
+                        "files": [
+                            {
+                                "path": "src/main/java/com/papel/imdb_clone/controllers/MainController.java",
+                                "fsPath": "C:\\Users\\mas_b\\IdeaProjects\\imdb_clone\\src\\main\\java\\com\\papel\\imdb_clone\\controllers\\MainController.java"
+                            }
+                        ]
+                    },
+                    "isHidden": false
+                },
+                {
+                    "type": "codeHunk",
+                    "lineBasedDiff": "--- C:/Users/mas_b/IdeaProjects/imdb_clone/src/main/java/com/papel/imdb_clone/controllers/MainController.java\n+++ C:/Users/mas_b/IdeaProjects/imdb_clone/src/main/java/com/papel/imdb_clone/controllers/MainController.java\n@@ -32,7 +32,7 @@\n \n public class MainController implements Initializable {\n \n-    private Stage primaryStage;\n+\n     \n     public void setPrimaryStage(Stage primaryStage) {\n         this.primaryStage = primaryStage;\n@@ -127,7 +127,7 @@\n     // Data manager and services\n     private final DataManager dataManager;\n     private final WatchlistService watchlistService;\n-    private Stage primaryStage;\n+\n     private final int currentUserId = 1; // Default user ID for demo purposes\n \n     public MainController() {",
+                    "refToolCallId": "toolu_vrtx_01E4QZTedvnam3kfekvZXwLN"
+                },
+                {
+                    "type": "text",
+                    "text": "Good! Now I need to remove the first `setPrimaryStage` method since we removed both field declarations. Let me add back one field declaration and remove the first method:"
+                },
+                {
+                    "type": "toolCall",
+                    "toolCallId": "toolu_vrtx_01GeaLDZmyeWwFandG1zqs4k",
+                    "title": "",
+                    "statusText": "Text to replace not found",
+                    "status": "WARNING",
+                    "context": {
+                        "files": [
+                            {
+                                "path": "src/main/java/com/papel/imdb_clone/controllers/MainController.java",
+                                "fsPath": "C:\\Users\\mas_b\\IdeaProjects\\imdb_clone\\src\\main\\java\\com\\papel\\imdb_clone\\controllers\\MainController.java"
+                            }
+                        ]
+                    },
+                    "isHidden": false
+                },
+                {
+                    "type": "text",
+                    "text": "Let me check the current state of the file:"
+                },
+                {
+                    "type": "toolCall",
+                    "toolCallId": "toolu_vrtx_0113YP6o2Zoxh1c4mWy8wK7K",
+                    "title": "",
+                    "statusText": "Invalid offset",
+                    "status": "WARNING",
+                    "context": {
+                        "files": [
+                            {
+                                "path": "src/main/java/com/papel/imdb_clone/controllers/MainController.java",
+                                "fsPath": "C:\\Users\\mas_b\\IdeaProjects\\imdb_clone\\src\\main\\java\\com\\papel\\imdb_clone\\controllers\\MainController.java"
+                            }
+                        ]
+                    },
+                    "isHidden": false
+                },
+                {
+                    "type": "toolCall",
+                    "toolCallId": "toolu_vrtx_014ai1khtLSj8cNRZWzvq2pX",
+                    "statusText": "Viewed file",
+                    "status": "SUCCESS",
+                    "context": {
+                        "files": [
+                            {
+                                "path": "src/main/java/com/papel/imdb_clone/controllers/MainController.java",
+                                "fsPath": "C:\\Users\\mas_b\\IdeaProjects\\imdb_clone\\src\\main\\java\\com\\papel\\imdb_clone\\controllers\\MainController.java"
+                            }
+                        ]
+                    },
+                    "isHidden": false
+                },
+                {
+                    "type": "codePatch",
+                    "diffs": [
+                        {
+                            "path": "src/main/java/com/papel/imdb_clone/controllers/MainController.java",
+                            "patch": "@@ -1124,39 +1124,8 @@\n  %7B%0A%0A\n-    private Stage primaryStage;\n %0A   \n@@ -3932,39 +3932,8 @@\n ce;%0A\n-    private Stage primaryStage;\n %0A   \n",
+                            "isNew": false,
+                            "isApplied": false,
+                            "isUnread": true
+                        }
+                    ]
+                }
+            ],
+            "context": {
+                "author": "Coding Agent",
+                "operationId": "7f6bda03-1c6b-4491-bf3b-c4f0460fb439"
+            },
+            "createdAt": 1754399400096,
+            "isInternal": false
+        },
+        {
+            "id": "0573d487-818f-4201-9aea-a5c841528b8c",
+            "role": "system",
+            "content": [
+                {
+                    "type": "warningText",
+                    "title": "Agent paused due to reaching step limit",
+                    "text": "You can continue if the agent is on the right track.",
+                    "actions": [
+                        {
+                            "type": "externalAction",
+                            "title": "Continue request",
+                            "action": "continueRequest"
+                        },
+                        {
+                            "type": "externalAction",
+                            "title": "Stop here",
+                            "action": "stopHere"
+                        }
+                    ]
+                }
+            ],
+            "createdAt": 1754399492369,
+            "isInternal": false
+        }
+    ],
+    "isAgent": true,
+    "isNameGenerated": true,
+    "isCustomAgent": false,
+    "isUnitTestsAgent": false,
+    "isE2EAgent": false,
+    "isQnaAgent": false,
+    "isRepoInfoAgent": false
+}
+}

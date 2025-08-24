@@ -1,0 +1,339 @@
+{
+    "checksum": "b47bd897929dd503b86cd6eb0664b3e1533f1e41efb60492499d8ef96253328a",
+    "data": {
+    "id": "e1e11772-8b69-4060-80eb-7fdcaf183750",
+    "createdAt": 1755091887650,
+    "updatedAt": 1755092147716,
+    "title": "IMDB Clone Project Structure Tips",
+    "messages": [
+        {
+            "id": "7a4aaa58-6d9d-47bc-a29d-8479bfea99eb",
+            "role": "user",
+            "content": [
+                {
+                    "type": "text",
+                    "text": "tell me what i need to fix in my curret project structure to make this imdb_clone better. what controllers folders,service folders etc."
+                }
+            ],
+            "context": {
+                "currentFile": {
+                    "path": "C:/Users/MA$/.codeium/brain/0d99592f-9d79-4565-bd88-b95ecdd6a7a1/plan.md",
+                    "fsPath": "C:/Users/MA$/.codeium/brain/0d99592f-9d79-4565-bd88-b95ecdd6a7a1/plan.md",
+                    "sources": [
+                        "opened_tab"
+                    ],
+                    "content": "# Plan for Fixing Compilation Errors in imdb_clone\n\n## Notes\n- Multiple compilation errors due to missing classes (ContentType, ContentNotFoundException, InvalidEmailException, etc.).\n- Many missing JavaFX and Java util imports (TableView, List, Map, etc.).\n- Constructor and method signature mismatches (ContentService, RefactoredDataManager).\n- ContentService class generics and constructor updated to match usage in RefactoredDataManager.\n- RefactoredDataManager service initialization updated to match ContentService changes.\n- RefactoredDataManager updated to singleton with getInstance().\n- SearchCacheService implementation reviewed for required methods.\n- Added missing cache methods (invalidateCache, getCachedResults, cacheResults) to SearchCacheService to support ContentService.\n- Some errors relate to missing or incorrect method implementations.\n\n## Task List\n- [x] Create ContentType enum in com.papel.imdb_clone.enums\n- [x] Create ContentNotFoundException in com.papel.imdb_clone.exceptions\n- [x] Create InvalidEmailException in com.papel.imdb_clone.exceptions\n- [x] Review and fix ContentService for constructor and generics issues\n- [x] Review and fix RefactoredDataManager for service initialization issues\n- [ ] Continue resolving missing classes and imports (JavaFX, util, etc.)\n- [x] Implement missing cache methods in SearchCacheService\n- [ ] Rebuild and re-test after each major fix\n\n## Current Goal\nContinue resolving missing classes and imports (JavaFX, util, etc.)",
+                    "language": "markdown"
+                },
+                "codebaseEnabled": true
+            },
+            "createdAt": 1755091887659,
+            "isInternal": false,
+            "rawContent": {
+                "type": "doc",
+                "content": [
+                    {
+                        "type": "paragraph",
+                        "content": [
+                            {
+                                "type": "text",
+                                "text": "tell me what i need to fix in my curret project structure to make this imdb_clone better. what controllers folders,service folders etc. "
+                            }
+                        ]
+                    }
+                ]
+            },
+            "autoAppliedRules": []
+        },
+        {
+            "id": "5173681f-0722-48aa-a955-b4e70cfe81bb",
+            "role": "assistant",
+            "content": [
+                {
+                    "type": "text",
+                    "text": "I'll help you analyze your IMDB clone project structure and provide recommendations for better organization. Let me first explore your current project structure to understand what you have."
+                },
+                {
+                    "type": "toolCall",
+                    "toolCallId": "toolu_01BN5o2zVohFnyFFhYFwLsxy",
+                    "statusText": "Viewed directory",
+                    "status": "SUCCESS",
+                    "context": {
+                        "files": [
+                            {
+                                "path": ".",
+                                "fsPath": "C:/Users/MA$/IdeaProjects/imdb_clone"
+                            }
+                        ]
+                    },
+                    "isHidden": false
+                },
+                {
+                    "type": "toolCall",
+                    "toolCallId": "toolu_0179iUgAHfkxCSNWwQh3zZ2E",
+                    "statusText": "Viewed directory",
+                    "status": "SUCCESS",
+                    "context": {
+                        "files": [
+                            {
+                                "path": "src",
+                                "fsPath": "C:/Users/MA$/IdeaProjects/imdb_clone/src"
+                            }
+                        ]
+                    },
+                    "isHidden": false
+                },
+                {
+                    "type": "toolCall",
+                    "toolCallId": "toolu_01GxSKifzSKHS3CkwaxTjwwF",
+                    "statusText": "Viewed directory",
+                    "status": "SUCCESS",
+                    "context": {
+                        "files": [
+                            {
+                                "path": "src/main/java",
+                                "fsPath": "C:/Users/MA$/IdeaProjects/imdb_clone/src/main/java"
+                            }
+                        ]
+                    },
+                    "isHidden": false
+                },
+                {
+                    "type": "toolCall",
+                    "toolCallId": "toolu_01Gp5rGP9GJXSuH9JVrop88k",
+                    "statusText": "Viewed directory",
+                    "status": "SUCCESS",
+                    "context": {
+                        "files": [
+                            {
+                                "path": "src/main/java/com/papel",
+                                "fsPath": "C:/Users/MA$/IdeaProjects/imdb_clone/src/main/java/com/papel"
+                            }
+                        ]
+                    },
+                    "isHidden": false
+                },
+                {
+                    "type": "text",
+                    "text": "Now let me explore the deeper structure to understand your current organization:"
+                },
+                {
+                    "type": "toolCall",
+                    "toolCallId": "toolu_0131qcWBeNCvabVPfeGD2gWn",
+                    "title": "File search",
+                    "statusText": "Done",
+                    "status": "SUCCESS",
+                    "isHidden": false
+                },
+                {
+                    "type": "text",
+                    "text": "Let me get more files to see the complete structure:"
+                },
+                {
+                    "type": "toolCall",
+                    "toolCallId": "toolu_01LqsK3L5p7zQKAMG62X3c3j",
+                    "title": "File search",
+                    "statusText": "Done",
+                    "status": "SUCCESS",
+                    "isHidden": false
+                },
+                {
+                    "type": "text",
+                    "text": "Now let me check the current directory structure in more detail:"
+                },
+                {
+                    "type": "toolCall",
+                    "toolCallId": "toolu_01C3sb4b4hJbRfCsT8exaP85",
+                    "status": "IN_PROGRESS",
+                    "isHidden": true,
+                    "localResult": "{\"status\":\"SUCCESS\",\"exitCode\":0,\"output\":\"\\u001b[?9001h\\u001b[?1004h\\u001b[?25l\\u001b[2J\\u001b[m\\u001b[H\\r\\n\\r\\n\\r\\n\\r\\n\\r\\n\\r\\n\\r\\n\\u001b[H\\u001b]0;C:\\\\WINDOWS\\\\System32\\\\WindowsPowerShell\\\\v1.0\\\\powershell.exe\\u0007\\u001b[?25h\\r\\nFullName\\u001b[87X\\r\\n--------\\u001b[87X\\r\\nC:\\\\Users\\\\MA$\\\\IdeaProjects\\\\imdb_clone\\\\src\\\\main\\\\java\\\\com\\\\papel\\\\imdb_clone\\\\config\\u001b[17X\\r\\nC:\\\\Users\\\\MA$\\\\IdeaProjects\\\\imdb_clone\\\\src\\\\main\\\\java\\\\com\\\\papel\\\\imdb_clone\\\\controllers\\u001b[12X\\r\\nC:\\\\Users\\\\MA$\\\\IdeaProjects\\\\imdb_clone\\\\src\\\\main\\\\java\\\\com\\\\papel\\\\imdb_clone\\\\data\\u001b[19X\\r\\nC:\\\\Users\\\\MA$\\\\IdeaProjects\\\\imdb_clone\\\\src\\\\main\\\\java\\\\com\\\\papel\\\\imdb_clone\\\\enums\\u001b[18X\\r\\nC:\\\\Users\\\\MA$\\\\IdeaProjects\\\\imdb_clone\\\\src\\\\main\\\\java\\\\com\\\\papel\\\\imdb_clone\\\\exceptions\\u001b[13X\\r\\nC:\\\\Users\\\\MA$\\\\IdeaProjects\\\\imdb_clone\\\\src\\\\main\\\\java\\\\com\\\\papel\\\\imdb_clone\\\\gui\\r\\nC:\\\\Users\\\\MA$\\\\IdeaProjects\\\\imdb_clone\\\\src\\\\main\\\\java\\\\com\\\\papel\\\\imdb_clone\\\\model\\r\\nC:\\\\Users\\\\MA$\\\\IdeaProjects\\\\imdb_clone\\\\src\\\\main\\\\java\\\\com\\\\papel\\\\imdb_clone\\\\repository\\r\\nC:\\\\Users\\\\MA$\\\\IdeaProjects\\\\imdb_clone\\\\src\\\\main\\\\java\\\\com\\\\papel\\\\imdb_clone\\\\service\\r\\nC:\\\\Users\\\\MA$\\\\IdeaProjects\\\\imdb_clone\\\\src\\\\main\\\\java\\\\com\\\\papel\\\\imdb_clone\\\\services\\r\\nC:\\\\Users\\\\MA$\\\\IdeaProjects\\\\imdb_clone\\\\src\\\\main\\\\java\\\\com\\\\papel\\\\imdb_clone\\\\tools\\r\\nC:\\\\Users\\\\MA$\\\\IdeaProjects\\\\imdb_clone\\\\src\\\\main\\\\java\\\\com\\\\papel\\\\imdb_clone\\\\util\\r\\nC:\\\\Users\\\\MA$\\\\IdeaProjects\\\\imdb_clone\\\\src\\\\main\\\\java\\\\com\\\\papel\\\\imdb_clone\\\\controllers\\\\coordinator\\r\\nC:\\\\Users\\\\MA$\\\\IdeaProjects\\\\imdb_clone\\\\src\\\\main\\\\java\\\\com\\\\papel\\\\imdb_clone\\\\repository\\\\impl\\r\\nC:\\\\Users\\\\MA$\\\\IdeaProjects\\\\imdb_clone\\\\src\\\\main\\\\java\\\\com\\\\papel\\\\imdb_clone\\\\service\\\\cache\\r\\nC:\\\\Users\\\\MA$\\\\IdeaProjects\\\\imdb_clone\\\\src\\\\main\\\\java\\\\com\\\\papel\\\\imdb_clone\\\\service\\\\data\\r\\nC:\\\\Users\\\\MA$\\\\IdeaProjects\\\\imdb_clone\\\\src\\\\main\\\\java\\\\com\\\\papel\\\\imdb_clone\\\\service\\\\validation\\r\\n\\n\\n\"}"
+                },
+                {
+                    "type": "shellCommand",
+                    "command": "Get-ChildItem \"C:/Users/MA$/IdeaProjects/imdb_clone/src/main/java/com/papel/imdb_clone\" -Recurse -Directory | Select-Object FullName",
+                    "id": "6d2cd5f1-787a-4e6f-821b-b16fa226243e",
+                    "status": "SUCCESS",
+                    "toolCallId": "toolu_01C3sb4b4hJbRfCsT8exaP85",
+                    "commandsRequiringConfirmation": [
+                        {
+                            "name": "get-childitem",
+                            "arguments": [
+                                "-Recurse",
+                                "-Directory"
+                            ]
+                        },
+                        {
+                            "name": "select-object",
+                            "arguments": [
+                                "FullName"
+                            ]
+                        }
+                    ],
+                    "exitCode": 0,
+                    "output": "\u001b[?9001h\u001b[?1004h\u001b[?25l\u001b[2J\u001b[m\u001b[H\r\n\r\n\r\n\r\n\r\n\r\n\r\n\u001b[H\u001b]0;C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0\\powershell.exe\u0007\u001b[?25h\r\nFullName\u001b[87X\r\n--------\u001b[87X\r\nC:\\Users\\MA$\\IdeaProjects\\imdb_clone\\src\\main\\java\\com\\papel\\imdb_clone\\config\u001b[17X\r\nC:\\Users\\MA$\\IdeaProjects\\imdb_clone\\src\\main\\java\\com\\papel\\imdb_clone\\controllers\u001b[12X\r\nC:\\Users\\MA$\\IdeaProjects\\imdb_clone\\src\\main\\java\\com\\papel\\imdb_clone\\data\u001b[19X\r\nC:\\Users\\MA$\\IdeaProjects\\imdb_clone\\src\\main\\java\\com\\papel\\imdb_clone\\enums\u001b[18X\r\nC:\\Users\\MA$\\IdeaProjects\\imdb_clone\\src\\main\\java\\com\\papel\\imdb_clone\\exceptions\u001b[13X\r\nC:\\Users\\MA$\\IdeaProjects\\imdb_clone\\src\\main\\java\\com\\papel\\imdb_clone\\gui\r\nC:\\Users\\MA$\\IdeaProjects\\imdb_clone\\src\\main\\java\\com\\papel\\imdb_clone\\model\r\nC:\\Users\\MA$\\IdeaProjects\\imdb_clone\\src\\main\\java\\com\\papel\\imdb_clone\\repository\r\nC:\\Users\\MA$\\IdeaProjects\\imdb_clone\\src\\main\\java\\com\\papel\\imdb_clone\\service\r\nC:\\Users\\MA$\\IdeaProjects\\imdb_clone\\src\\main\\java\\com\\papel\\imdb_clone\\services\r\nC:\\Users\\MA$\\IdeaProjects\\imdb_clone\\src\\main\\java\\com\\papel\\imdb_clone\\tools\r\nC:\\Users\\MA$\\IdeaProjects\\imdb_clone\\src\\main\\java\\com\\papel\\imdb_clone\\util\r\nC:\\Users\\MA$\\IdeaProjects\\imdb_clone\\src\\main\\java\\com\\papel\\imdb_clone\\controllers\\coordinator\r\nC:\\Users\\MA$\\IdeaProjects\\imdb_clone\\src\\main\\java\\com\\papel\\imdb_clone\\repository\\impl\r\nC:\\Users\\MA$\\IdeaProjects\\imdb_clone\\src\\main\\java\\com\\papel\\imdb_clone\\service\\cache\r\nC:\\Users\\MA$\\IdeaProjects\\imdb_clone\\src\\main\\java\\com\\papel\\imdb_clone\\service\\data\r\nC:\\Users\\MA$\\IdeaProjects\\imdb_clone\\src\\main\\java\\com\\papel\\imdb_clone\\service\\validation\r\n\n\n",
+                    "outputPath": "C:\\Users\\MA$\\AppData\\Local\\Temp\\Zencoder-c6c09ab6-4914-4af4-b4d9-9f1be6688e1e17238140003847909800.log",
+                    "isBackground": false,
+                    "maxWaitTimeInSeconds": 600
+                }
+            ],
+            "context": {
+                "author": "Review",
+                "operationId": "2a7e17fd-1daf-47e2-b7ab-29e5fa933b05"
+            },
+            "createdAt": 1755091891141,
+            "isInternal": false
+        },
+        {
+            "id": "4d38c100-127b-48a5-b2ef-d1d4a6dc004f",
+            "role": "assistant",
+            "content": [
+                {
+                    "type": "text",
+                    "text": "Let me also check the pom.xml to understand the project dependencies:"
+                },
+                {
+                    "type": "toolCall",
+                    "toolCallId": "toolu_01XfiC1sqq9EZin8Gms9bwXZ",
+                    "statusText": "Viewed whole file",
+                    "status": "SUCCESS",
+                    "context": {
+                        "files": [
+                            {
+                                "path": "pom.xml",
+                                "fsPath": "C:/Users/MA$/IdeaProjects/imdb_clone/pom.xml"
+                            }
+                        ]
+                    },
+                    "isHidden": false
+                },
+                {
+                    "type": "text",
+                    "text": "Now let me examine a few key files to understand the current architecture:"
+                },
+                {
+                    "type": "toolCall",
+                    "toolCallId": "toolu_017xn8XV63NXEsJfDAFGoqoP",
+                    "statusText": "Viewed whole file",
+                    "status": "SUCCESS",
+                    "context": {
+                        "files": [
+                            {
+                                "path": "src/main/java/com/papel/imdb_clone/HelloApplication.java",
+                                "fsPath": "C:/Users/MA$/IdeaProjects/imdb_clone/src/main/java/com/papel/imdb_clone/HelloApplication.java"
+                            }
+                        ]
+                    },
+                    "isHidden": false
+                },
+                {
+                    "type": "toolCall",
+                    "toolCallId": "toolu_01YDiF5sFdwvH7f6T5e4Xbga",
+                    "statusText": "Viewed file (from the beginning up to line 40)",
+                    "status": "SUCCESS",
+                    "context": {
+                        "files": [
+                            {
+                                "path": "src/main/java/com/papel/imdb_clone/controllers/BaseController.java",
+                                "fsPath": "C:/Users/MA$/IdeaProjects/imdb_clone/src/main/java/com/papel/imdb_clone/controllers/BaseController.java"
+                            }
+                        ]
+                    },
+                    "isHidden": false
+                },
+                {
+                    "type": "text",
+                    "text": "Based on my analysis of your IMDB clone project structure, I can provide you with comprehensive recommendations to improve the organization and architecture. Here's what I found and what needs to be improved:\n\n## **Current Project Structure Analysis**\n\n### **Strengths:**\n1. ✅ Good separation of concerns with distinct packages (model, service, controller, repository)\n2. ✅ Proper exception handling with custom exceptions\n3. ✅ Configuration management with ApplicationConfig\n4. ✅ Base classes for controllers and repositories\n5. ✅ Utility classes for common functionality\n\n### **Issues and Recommendations:**\n\n## **1. Package Structure Issues**\n\n### **Problem:** Inconsistent service organization\n- You have both `service/` and `services/` packages\n- Services are scattered across different locations\n\n### **Recommended Structure:**\n```\nsrc/main/java/com/papel/imdb_clone/\n├── config/                    # Configuration classes\n├── controller/                # All controllers (rename from controllers)\n│   ├── api/                  # REST API controllers (if needed)\n│   ├── web/                  # Web/JavaFX controllers\n│   └── coordinator/          # Keep coordinators here\n├── dto/                      # Data Transfer Objects (NEW)\n├── entity/                   # Rename from model/ for clarity\n├── enums/                    # Keep as is\n├── exception/                # Rename from exceptions/ (singular)\n├── repository/               # Keep structure, add interfaces\n│   ├── impl/                # Implementations\n│   └── [interfaces]         # Repository interfaces at root level\n├── service/                  # Consolidate all services here\n│   ├── impl/                # Service implementations\n│   ├── cache/               # Caching services\n│   ├── data/                # Data loading services\n│   └── validation/          # Validation services\n├── util/                     # Utility classes\n├── gui/                      # JavaFX specific GUI components\n└── Application.java          # Main class (rename from HelloApplication)\n```\n\n## **2. Specific Improvements Needed**\n\n### **A. Controller Layer**\n```java\n// Create a proper controller hierarchy\ncontroller/\n├── BaseController.java\n├── web/\n│   ├── AuthController.java\n│   ├── MovieController.java\n│   ├── ContentController.java\n│   ├── WatchlistController.java\n│   └── SeriesManagementController.java\n├── api/                      # For future REST API\n│   └── [REST controllers]\n└── coordinator/\n    ├── SearchCoordinator.java\n    └── UICoordinator.java\n```\n\n### **B. Service Layer Organization**\n```java\nservice/\n├── AuthService.java                    # Interface\n├── ContentService.java                 # Interface\n├── UserService.java                    # Interface\n├── WatchlistService.java              # Interface\n├── impl/                               # All implementations\n│   ├── AuthServiceImpl.java\n│   ├── ContentServiceImpl.java\n│   ├── UserServiceImpl.java\n│   └── WatchlistServiceImpl.java\n├── cache/\n│   ├── CacheService.java              # Interface\n│   └── impl/\n│       └── SearchCacheServiceImpl.java\n├── data/\n│   ├── DataLoaderService.java         # Interface\n│   └── impl/\n│       ├── FileDataLoaderServiceImpl.java\n│       └── ContentDataLoaderImpl.java\n└── validation/\n    ├── ValidationService.java         # Interface\n    └── impl/\n        ├── UserInputValidatorImpl.java\n        └── ValidationServiceImpl.java\n```\n\n### **C. Repository Layer**\n```java\nrepository/\n├── UserRepository.java                 # Interface\n├── MovieRepository.java               # Interface\n├── SeriesRepository.java              # Interface\n├── BaseRepository.java                # Interface\n└── impl/\n    ├── InMemoryUserRepository.java\n    ├── InMemoryMovieRepository.java\n    └── [other implementations]\n```\n\n### **D. Add Missing Layers**\n\n#### **DTO Package (NEW)**\n```java\ndto/\n├── UserDto.java\n├── MovieDto.java\n├── ContentDto.java\n├── SearchResultDto.java\n└── AuthDto.java\n```\n\n#### **Configuration Improvements**\n```java\nconfig/\n├── ApplicationConfig.java\n├── DatabaseConfig.java              # For future database integration\n├── CacheConfig.java\n└── SecurityConfig.java\n```\n\n## **3. Architectural Improvements**\n\n### **A. Dependency Injection**\nConsider implementing a simple dependency injection container or use Spring Boot:\n\n```java\n// Create a proper service locator or DI container\nconfig/ServiceConfiguration.java\n```\n\n### **B. Event-Driven Architecture**\nYour `AppEventBus` is good, but organize events better:\n\n```java\nevent/\n├── Event.java                        # Base event interface\n├── UserEvent.java\n├── ContentEvent.java\n└── SearchEvent.java\n```\n\n### **C. Add Proper Interfaces**\nCreate interfaces for all services and repositories to improve testability and maintainability.\n\n## **4. Testing Structure**\nAdd a proper test structure:\n\n```\nsrc/test/java/com/papel/imdb_clone/\n├── controller/\n├── service/\n├── repository/\n├── util/\n└── integration/\n```\n\n## **5. Resources Organization**\n```\nsrc/main/resources/\n├── fxml/                             # JavaFX FXML files\n├── css/                              # Stylesheets\n├── data/                             # Data files\n├── config/                           # Configuration files\n│   ├── application.properties\n│   └── logging.properties\n└── static/                           # Static resources (images, etc.)\n```\n\n## **6. Immediate Action Items**\n\n1. **Consolidate Services**: Merge `service/` and `services/` packages\n2. **Create Interfaces**: Add interfaces for all services and repositories\n3. **Rename Packages**: Use singular names (controller, exception, entity)\n4. **Add DTOs**: Create data transfer objects for API boundaries\n5. **Improve Main Class**: Rename `HelloApplication` to `Application` or `ImdbCloneApplication`\n6. **Add Tests**: Create comprehensive test structure\n7. **Configuration**: Centralize all configuration in `config/` package\n\n## **7. Code Quality Improvements**\n\n1. **Add validation annotations** (Bean Validation)\n2. **Implement proper logging** throughout the application\n3. **Add comprehensive error handling**\n4. **Create proper documentation** (JavaDoc)\n5. **Add integration tests**\n\nWould you like me to help you implement any of these structural improvements? I can start by reorganizing specific packages or creating the missing interfaces and DTOs."
+                }
+            ],
+            "context": {
+                "author": "Review",
+                "operationId": "2fdcc8aa-e85b-47f9-88c4-fd79aa2476f1"
+            },
+            "createdAt": 1755092147716,
+            "isInternal": false
+        }
+    ],
+    "isAgent": false,
+    "isNameGenerated": true,
+    "isCustomAgent": true,
+    "customAgent": {
+        "id": "f83edcb4-57ff-4600-81bd-361662ea8c8e",
+        "name": "Review",
+        "commandName": "review",
+        "command": "You are a Code Review agent. Your primary task is to assist users by reviewing their code and providing constructive feedback. Follow these steps to ensure an effective and thorough review:\n\n1. **Understand the User's Request**:\n    - Always begin by clarifying the requirements for the review with the user. For example:\n        - \"What would you like me to review?\"\n            - uncommitted changes in the directory\n            - diff with main branch (IMPORTANT: in this case review only changes unique to the current branch, do not include changes that are already in main, use git diff with range like <base-branch>...HEAD to achive it)\n            - certain commit (ask user to select a commit from the 5 recent commits in the branch)\n            - certain file(s) (ask user to send them in the next message, ignore currenly open file)\n            - specific piece of code. Ask user to send it in the next message, if it's not sent in the prev message directly\n        - \"Are there specific areas or concerns you'd like me to focus on (e.g., performance, readability, bugs)?\"\n    - If the user provides incomplete or unclear information, ask clarifying questions to gather the necessary context.\n2. **Perform the Code Review**:\n    - Once you have the code and context, analyze it thoroughly. Focus on the following key aspects during the review:\n\n        **a. Functionality**:\n\n        - Does the code work as intended? Are there any bugs or logical errors?\n        - Are edge cases and error handling properly addressed?\n\n        **b. Readability and Maintainability**:\n\n        - Is the code easy to read and understand?\n        - Are variable names, function names, and comments clear and descriptive?\n        - Is the code modular and well-organized?\n\n        **c. Performance**:\n\n        - Is the code efficient? Are there any unnecessary computations or bottlenecks?\n        - Are there opportunities to optimize the code for better performance?\n\n        **d. Security**:\n\n        - Are there any potential security vulnerabilities (e.g., SQL injection, unsafe input handling)?\n        - Is sensitive data handled securely?\n\n        **e. Adherence to Best Practices**:\n\n        - Does the code follow language-specific best practices and conventions?\n        - Are there any anti-patterns or bad practices that should be avoided?\n\n        **f. Testing**:\n\n        - Are there sufficient tests for the code (e.g., unit tests, integration tests)?\n        - Do the tests cover edge cases and potential failure points?\n\n        **g. Documentation**:\n\n        - Is the code adequately documented (e.g., docstrings, inline comments)?\n        - Are there clear instructions for how to use or run the code?\n3. **Provide Feedback**:\n    - Summarize your findings in a clear and constructive manner. Highlight both strengths and areas for improvement.\n    - For each issue or suggestion, explain why it matters and, if possible, provide examples or recommendations for improvement.\n    - If the code is excellent and requires no changes, acknowledge this and provide positive feedback.\n4. **Iterate if Needed**:\n    - If the user has follow-up questions or requests further clarification, respond accordingly.\n    - If the user provides updated code after making changes, review it again as needed.\n\nYour goal is to help the user improve their code while maintaining a positive and collaborative tone. Always be specific, actionable, and constructive in your feedback.",
+        "codeLens": true,
+        "repair": true,
+        "rag": true,
+        "creationDate": "2025-08-01T12:17:13.836319Z",
+        "lastModifiedDate": "2025-08-01T12:17:13.836319Z",
+        "tools": [
+            {
+                "id": "str_replace_editor",
+                "name": "File Editor",
+                "description": "Allows viewing, creating, and editing files with features like text replacement in existing files, inserting text at specific lines, and reverting edits",
+                "author": "ZENCODER_BACKEND",
+                "icon": "iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAACXBIWXMAABYlAAAWJQFJUiTwAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAANqSURBVHgB7Zs/b9NAGMaf91poCKQSUju0UydWkPIFykYprcRYMbCVFVH20J1/K526saLSCiQG8gGoVFYWOjUDSNAmRGlp7uXOaoRjxfHZ8bl27d+CfLapnp8v9vnuNVBQUJBnCBHg5alKS7aqUmJebd5QLRXBuAaiCmKCwQ3w2Mbkh/Z7WCS0gOa90jy6XIsz7DCYxbpNCaEEHC1MrBHRChLGpgRhemBzobR6HuE1RLJ2tFBeggWMeoC68ksqfM3dxowmCbwVELsYQ6ONcnN662cTI9K8W/rit89GTxg3Ooqw6t6UoMbJJXo0vdU++N/ahm3OegLilBD4E3CuPmjG3XYy7g2fHHH/HAIFMFHVvS2B7fMK3yNOCYECiNF39cdJWH0umxKXhOCnAPGse7OtbnhICXFICO4Bnt//eXd/L6NKMB4HpJlRJKRPgBpfIAJRJaROAAPfEBGCfIKQpE7A8alYj9oLlIHQL2ipEzD9qX3QORUPmLiOBDAbCieMlqD+eWpy7LB3BxMuxFNgFAoByDmFAOScQgByTiEAOSf7AlzvDXqyFiHJvACGeKmDO9P0TBsISSrfBcJwNkUeeZ6yuAcg5xQCkHNyLyDzTwE3unhDV61cvozNK+86+ybnXJgeoKbGaiz5M4Frf0/4e2ux9NDkvAshwAkPfuZuk8ybJhIyL2BQ+B4mEjItYFj4HlqCU9jlQ2YFmITvwRK+vSCTAsKE16hjD/32ZU5A+PDYl5Je++3PlICI4W9f/+g/JsiMABvhNZkQYCu8JliAZ6n6x/JUIjXCPWyG1xiUyXGrv6WdmADb4TXBRVJEfT2g3O0vm7NFEuE1gQIk95esSMgqLJNUeE2gACFQ72uQWPmzXJ6FJZIMrwkU0BGd3b4bIaHSPe2+sSUhyfAao3J552VC4rm3XdcNO6WzY2hcjaGAUv8d/U5vcmwc4TXGX4wcLU6sqYWHkT+YGPYt0OHixGNivAr+P+IJrzEeCE3uHL9QukKvvHjRpbd+9XxqNudm0PlxhteEGglWdjob+quNKGtwbiRRa1C7knNr2Hlxh9eEnhTtLUXpslQmWSXCDDPPCk9RtR/OGh4Gr+Ex6LcTc+A+7Knw9+MMr4n03aAtft0pzQmhJzYxp6+2GoTV1T3jqyDaq2x36igoKIibf1tovo7P+7AmAAAAAElFTkSuQmCC",
+                "tools": [
+                    "str_replace_editor"
+                ],
+                "status": {}
+            },
+            {
+                "id": "web_search",
+                "name": "Web Search",
+                "description": "Search the web for up-to-date technical information like latest releases, security advisories, migration guides, benchmarks, and community insights",
+                "author": "ZENCODER_MCP_BACKEND",
+                "icon": "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",
+                "tools": [
+                    "web_search"
+                ],
+                "status": {}
+            },
+            {
+                "id": "RequirementsTool",
+                "name": "Gather Requirements",
+                "description": "Asks clarifying questions to fully understand user needs before starting a task, ensuring precise and efficient solutions",
+                "author": "ZENCODER_CLIENT",
+                "icon": "iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAACXBIWXMAABYlAAAWJQFJUiTwAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAASaSURBVHgB7Zu9cttGEMd3jxQJ06KsIiysSpVfwA8QpchMRMkctXJjp5HqWOkt97EnrdhEVdRmJFkuUkR+AE96N05lFcqMMwRNUSRxm1vI8AAwyTuAh5FM4leQwAHEYf+43fvgAiAnJ2eWQbAMNb6ptvvtTQK4jwj3wQIS4C0SHSy8ujwCy1gV4OP3lSVvzttDwLuQAQR0VigWtm8fdt6DJQRYJEvjGb62N/D2zlUrA0tYE6C1Wn6QpfEBXIfjtTfBEqlcgP3c7bsrhKh8nHw/FzHjld8e94rzz2uH/7owAefKrUpzcks9qfX4savYgMod5Ou08SGxAO66swIePQXEsc2wWxSNmiVfPW9A1Rk4f407h+OD+mgmFSKRC6hmvqNk/0Vn/BWViZ585EoXFW197BqI+NRddbYgAcYC8IVVBca+Vxq0dz42KkswIexuA+UCxj9A2PIflPHpBvgBTqkbLiMCFwUcCBBvoABn0pPrqgkmUj8tROLZwqvOUbdevncJ+HBYfFCP9ufqcfdUdy0zAerlo3CEl4BnvSJuh32c/bQ0uPW7AMq0J+C675xcPAiXXQVK2ovUrR5Qd26+oQvCWhcY1r3FjWdqh+D2+rjNNwgZEQgfL6/92XnPdbPRnwsRqmXpruiuqY8BQnwbvQk4HhXd+Ub46XATlQhvwRKE8EYZ1OwVbz8cV7ey5iBS6EXvfRhF3QkIFAlkRRTabob9U31ZH7erznXsUY5Hkh9RsI/yHmjQtwAJkebfUQEPbiidQifS6ghQ2wvpBVC+FN6tWZyI2IbjECTE6mToayQXAGacXACYcXIBYMbJBYAZRzsXSEprtaJmj94Ts1Ujc66WvArNT/MMa9hvAeht2TbevywveYF8ApaxLoBapZ2HjJCIbbCMdQEIxIssFkX8JTjCJljGegzIbi0gG/JuEKaN0LqgiStOnQBBDDKNGdZjwHWTNAblMQBmnHwuAJZJOhfIaow/tK6NxUW3192YK8HprT+6/3DZtc8Fshrjx7nYcJbd3sXfSobf+j165+c5wA2ZC2Qxxg/DxiujOcFiOSgjCY/4+9rnAlmN8QOGGf+J1/wx1XOBUcaruPPszsnlPm9PbS8w3vjebrA/lQKYGs9MnQBJjGdunADtNedRa630oVUvv+PtJL9NajyjF4CifznbTFMdhiTaBcJFtbmstvdNRUhjPKMVgJBifXQnUwHUQGIxvGsiQlrjGa0AiBhpARUPss0HJvFTvGicCJMYz2gFkBRNdpIgrbwDMIqFk+6+kv1H+OI+aN+tlyK5ipMaz2gFEAJOo3cCmzYyQMcxSgQC3A1EsGE8o02U9BOV+85hOFcoixcXhtGqO4958hIvR4Rf1RB6AyY03r+WyUn+zImTpGNwzqCfNleAs6zEGCVCnDTGM8bp8q218o6atFh7USHAZD1AJ0Ja4xnjgdDCy8vnnK0JljFZD+CYgAK/U13kf/FjkxjPJBoJVl92m34arOW/vkzWAzjzWxBFRJjUeCb1W2O89EUo+dW4u0S0JFK+L0T+SFO8MF0S+/CDs6x6psfcO5mkw+fk5OSM439mq0xXi3gaPgAAAABJRU5ErkJggg==",
+                "tools": [
+                    "RequirementsTool"
+                ],
+                "status": {}
+            },
+            {
+                "id": "ExecuteShellCommand",
+                "name": "Execute Shell Command",
+                "description": "Run shell commands within the project's root directory",
+                "author": "ZENCODER_CLIENT",
+                "icon": "iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAACXBIWXMAABYlAAAWJQFJUiTwAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAP1SURBVHgB7ZoxUxNBFMff27tIVOJYmAIqq/gB/AI2zCgw9GLh2MTa8QMAH4AZWlJhIfYMoDM2fAE+gGmkIgXOyBCQRHL7fC+C3h2BvQsb2Az7a5Jdbsnuf9+73Z39A3g8Ho/H47mtIFwBmnlUOuocTEegniDBGCGNS70CHIMBoIEa8omEu6CwDlrXg0KwfX/t1y70SV8CHE3cG49CPYcIT8EBNMB6GKpaP0LkFuDw+d2XhLoKiCVwCYImR0Zt9MvxpzzNcgnQfFHkgUMVXIagVvrcqmV9PLMA3ZlX9P7c7yFsK8It/ltDKVWXuqvk5GUczdwbDzrRaIRBiYgqEcCsAjr3vkGNi1kjIZMAkvM6jD7Gw5445BRyyG3mCznbHE7yxBBJZP5PSelbQb3KMhEKMtApJHNeBs+v4rc3PXhB+lDgvsig/1WyGNGJnsvS3iiAzD4/NJ1oxDP/YLNdB0cocl+Q+xSvkxVqj5dpU1ujAFEYJZY6DdhwYebTSJ84MrfjdXc7R9OmduYUUFCJFwOAVXAUjsyteDkCemJsY3oANCYE4FBzJvTTyEoUL3MaGHekZgFOt7dnRBQ0wVFabZWYHEVkQYAU7TA67FV/OFV8fTB15+fB5Mh3+Q5DglEATB1syhesrZponndFD/nrY/6+chMilL8m+0aA46Y2uSPgQpAexos3JUJe7AlA6l26ahhEsCbAg83WCofBm3S96yLYiwAYThGsCiAMmwjWBRAuEWEJHGMgAnT/MfIqlIIr9sExBiKAhLqEfLqe9xQL4BjWBbho8JISf1PDLawKMGyDF0KwRL+D77YDvXS6jc7DDh9/50c3Wh/gCliLgO5Z4BzmmY+dIfLy2MaqMrCzQOawP9cuOzZWFatnAe7QDl+P7efK+dN2kBP5HRurirV3wOmAVyAn/bazxcA2QsOCFwBuOV4AuOV4AUwPECQvG/b4ihocZW8i2Tc+kdu5HR4WSoVgFHJiFkAMSTGKWlfAUSKMErfBGrFhamNOAYTkfZsejAPMBuIaSdaY7zGNAgSA3+JlPoE9A0fhY/VsssKCAMfh8Xq8LMYD8QuBY0if0td47ULSL9ALowDlNWimjQd8Equ2JkvOvAtakyOVrnUvhngHy7Y8Qu2OWkh7cE7oZNmFSJA+nBAspz1Mv0OVySqX3SYnbizoYZPjfYICWkUM6wEFzYivzwdpk5NPzSsRaj2mST3r5VblVFjMauPJZ5ScKlZ5xG4bJRFqpY0BGCXP6OnLc4B+fYt9maVly3mnoKtp+9xNIW7VdqAWytdhlo4jQoyEnINKNiBU4ci4Hrs84i7PeEP2KMfhfX7b/3DWt+TxeDwej8dd/gBP3cjdQfST7wAAAABJRU5ErkJggg==",
+                "tools": [
+                    "ExecuteShellCommand"
+                ],
+                "status": {}
+            },
+            {
+                "id": "fetch_webpage",
+                "name": "Fetch Webpage Content",
+                "description": "Retrieve webpage content from a specific URL",
+                "author": "ZENCODER_MCP_BACKEND",
+                "icon": "iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAACXBIWXMAABYlAAAWJQFJUiTwAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAQTSURBVHgB7Zq/ThtBEMZn9s7BAYwo4gIqKvMAeQEapAQQfUgRpXHqKA8APAASLa5IEdIjIJHS8AI8QNyEChdECsIQ7Ni3kxkC5O4w7Nm+PZ/gfg2+5RZ2vv036/0AMjIyMjIyMh4rCH1Ai88K5+3TBQ/UNBJMENKklCvACbCABqrJTyQ8AoVV0Lrq5JyDke3fR9AjPQlwPjs86bl6GRGeQwrQADuuqyq9CNG1AGcvnr4i1GVALECaIKjzyKiMfr343E21rgSov8xz4FCGNENQKXxpVKK+HlmAy55X9OHW/0M4UIT7/LuaUqoqZf3Myfs4XxyedNreqIdOgYhKHsCSArq13qDGtagjIZIAMue1633yD3viIaeQh9xed0Mubs7muGOIZGT+n5LStpx6HaUjFESgnQvOeQmel+J3gw5ekDbkuC0S9E0hi+G19HKU+kYBpPf5pYVAJe75sb1mFVJCntuC3CZ/mexQx7xNm+oaBfBcL7DVacBaHD1/Np9/czr/5Nfp3NAP+Qx9Im3ikXngL3vaPl8w1TNPAQUl/6MDsAUxoIlWeAUd549T/HkdYoBH5r7/2QOaNtYxvQAaAwLwUItr6E/5Po9DDMhO5H/maWDMSM0CXKW313jk1CGlNJoq0DmKKAYBQjRd7wweEEYBMHSwKVpKcuKg+C3YNgKcNNXpegQ8NDIB4JFjVYBek524k6T7sCpAKNnZjBKMvCPvxp0k3YXdKYAUSHBMItwE74MATsAidgUg9T5cdJcInYIXeBteBYtYFWBsr7HJIbwNl3cKtFOZ1P33N+xhfRe4SwQz9oMXEtkGuxchmeCFxPKA6CIkF7yQaCJkFiHZ4IXEM8G7RUg+eGEgqfC1CLzHH/J12smgghdcGBBXAW/CgMkOQ/DIefQCWFsDLnN70OtXp7p+OOSvu1dGdxsfwQLWRoDvKNwvVo/E9qZA6CjcDzaPxEYBCIKXDcd8RQ1R4KOw7PPQJ5InRD0SH88G24ZAxm+wra0Bg9jnCzlntCWGmS4wTwExJPnIa12ClOKhF7gN1og1Ux3zFEAI3rdpOw6wOBDXSLDEfI9pFMAB/O5/5hV5BlIKb7tLwYIYBLhwL3b8z2I8EL8QpAxpU/gar5kL+gU6YRSguA31sPGAV+ZyY66QmrWgMTdUurTu+RDvYDEuj1CzrVbDHpwWtTbSMBKkDS2CjbCH6Y+rIlnlotvkxI0FHWxynCcooC1Et+qQU/f4+tymTU5+at6JUOsJTWqmk1uVp8JaVBtPd0bJ+XyZI063URKhUti1YJS8pqMvLwX06lvsySwtKeeTnC6H7XODQtyqTUetFpMwS/sRIYZcnoNKEhAq8chIxi6PeMQ9XpMc5cId4dX+Z2p9SxkZGRkZGRnp5S+lzdnY4AK96gAAAABJRU5ErkJggg==",
+                "tools": [
+                    "fetch_webpage"
+                ],
+                "status": {}
+            }
+        ],
+        "author": "39399e8c-7f6a-40ff-a6eb-da4ede91e4ac",
+        "isSharedWithOrganization": false,
+        "email": "giorgos_M000@hotmail.com"
+    },
+    "isUnitTestsAgent": false,
+    "isE2EAgent": false,
+    "isQnaAgent": false,
+    "isRepoInfoAgent": false,
+    "isClaudeCode": false,
+    "isZencoderCli": false,
+    "autoApply": true,
+    "model": "default"
+}
+}

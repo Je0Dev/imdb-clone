@@ -1,0 +1,280 @@
+package com.papel.imdb_clone.service.data.loader;
+
+import com.papel.imdb_clone.enums.Genre;
+import com.papel.imdb_clone.exceptions.FileParsingException;
+import com.papel.imdb_clone.model.Actor;
+import com.papel.imdb_clone.model.Director;
+import com.papel.imdb_clone.model.Movie;
+import com.papel.imdb_clone.repository.impl.InMemoryMovieRepository;
+import com.papel.imdb_clone.service.CelebrityService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.sql.Date;
+import java.time.LocalDate;
+import java.util.Calendar;
+import java.util.List;
+import java.util.Optional;
+
+/**
+ * Loads movie data from files.
+ */
+public class MovieDataLoader extends BaseDataLoader {
+    private static final Logger logger = LoggerFactory.getLogger(MovieDataLoader.class);
+    private final InMemoryMovieRepository movieRepository;
+    private final CelebrityService<Actor> actorService;
+    private final CelebrityService<Director> directorService;
+    private char gender;
+    private String ethnicity;
+    private LocalDate birthDate;
+
+    public MovieDataLoader(
+            InMemoryMovieRepository movieRepository,
+            CelebrityService<Actor> actorService,
+            CelebrityService<Director> directorService) {
+        this.movieRepository = movieRepository;
+        this.actorService = actorService;
+        this.directorService = directorService;
+    }
+
+    /**
+     * Loads movies from the specified file.
+     *
+     * @param filename the name of the file to load
+     * @throws IOException if there is an error reading the file
+     */
+    public void load(String filename) throws IOException {
+        logger.info("Loading movies from {}", filename);
+        int count = 0;
+        int errors = 0;
+        int duplicates = 0;
+        int lineNumber = 0;
+
+        try (InputStream inputStream = getResourceAsStream(filename);
+             BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream))) {
+
+            validateInput(inputStream, filename);
+            String line;
+
+            while ((line = reader.readLine()) != null) {
+                lineNumber++;
+                if (line.trim().isEmpty() || line.trim().startsWith("#")) {
+                    continue;
+                }
+
+                try {
+                    String[] parts = parseCSVLine(line);
+
+                    if (parts.length >= 7) {
+                        // Expected format: Title,Year,Genre,Duration,Director,Rating,Actors
+                        String title = parts[0].trim();
+
+                        // Parse year and create release date (using first day of year if only year is provided)
+                        int year = 0;
+                        Date releaseDate = null;
+                        try {
+                            year = Integer.parseInt(parts[1].trim());
+                            Calendar cal = Calendar.getInstance();
+                            cal.set(Calendar.YEAR, year);
+                            cal.set(Calendar.MONTH, Calendar.JANUARY);
+                            cal.set(Calendar.DAY_OF_MONTH, 1);
+                            releaseDate = new Date(cal.getTimeInMillis());
+                        } catch (Exception e) {
+                            logger.warn("Invalid year format '{}' at line {}: {}", parts[1], lineNumber, e.getMessage());
+                            errors++;
+                            continue;
+                        }
+
+                        // Parse genres (handle both comma and semicolon separated values)
+                        String[] genreNames = parts[2].trim().split("[,;]");
+
+                        // Parse duration (in minutes)
+                        int duration = 0;
+                        try {
+                            duration = Integer.parseInt(parts[3].trim());
+                        } catch (NumberFormatException e) {
+                            logger.warn("Invalid duration format '{}' at line {}", parts[3], lineNumber);
+                            duration = 0; // Default to 0 if duration is invalid
+                        }
+
+                        // Parse director name (handle potential quotes and trim)
+                        String directorName = parts[4].trim().replaceAll("^\"|\"$", "");
+
+                        // Parse rating (0.0 to 10.0 scale)
+                        double rating = 0.0;
+                        try {
+                            rating = Double.parseDouble(parts[5].trim());
+                            // Ensure rating is within valid range
+                            if (rating < 0.0) rating = 0.0;
+                            if (rating > 10.0) rating = 10.0;
+                        } catch (NumberFormatException e) {
+                            logger.warn("Invalid rating format '{}' at line {}", parts[5].trim(), lineNumber);
+                            rating = 0.0; // Default to 0.0 if rating is invalid
+                        }
+
+                        // Parse actors (semicolon separated)
+                        String[] actorNames = parts[6].trim().split(";");
+
+                        // Set default values for missing fields
+                        String country = "USA";
+                        String language = "English";
+                        String description = "No description available";
+                        String imageUrl = "";
+
+                        // Create and save the movie
+                        try {
+                            // Create new movie with required fields
+                            Movie movie = new Movie();
+                            movie.setTitle(title);
+                            movie.setReleaseDate(releaseDate);
+                            movie.setRating(rating);
+                            movie.setDuration(duration);
+
+                            // Set optional fields with null checks
+                            if (country != null) movie.setCountry(country);
+                            if (language != null) movie.setLanguage(language);
+                            if (description != null) movie.setDescription(description);
+
+                            // Set genres with improved handling
+                            for (String genreName : genreNames) {
+                                try {
+                                    if (genreName != null && !genreName.trim().isEmpty()) {
+                                        // Normalize genre name: trim, uppercase, and replace special characters
+                                        String normalizedGenre = genreName.trim().toUpperCase()
+                                                .replace("-", "_")
+                                                .replace(" ", "_")
+                                                .replace("&", "AND")
+                                                .replace("/", "_")
+                                                .replace("'", "");
+
+                                        // Special case handling for common variations
+                                        if (normalizedGenre.equals("SCIFI")) {
+                                            normalizedGenre = "SCI_FI";
+                                        } else if (normalizedGenre.equals("SCIFANTASY")) {
+                                            normalizedGenre = "SCIENCE_FANTASY";
+                                        } else if (normalizedGenre.equals("DOCUMENTARY")) {
+                                            normalizedGenre = "DOCUMENTARY";
+                                        } else if (normalizedGenre.matches("^DRAMA.*")) {
+                                            normalizedGenre = "DRAMA";
+                                        } else if (normalizedGenre.matches("^COMEDY.*")) {
+                                            normalizedGenre = "COMEDY";
+                                        }
+
+                                        try {
+                                            Genre genre = Genre.valueOf(normalizedGenre);
+                                            movie.addGenre(genre);
+                                        } catch (IllegalArgumentException e) {
+                                            logger.debug("Unknown genre '{}' at line {} (tried as '{}')",
+                                                    genreName, lineNumber, normalizedGenre);
+                                        }
+                                    }
+                                } catch (Exception e) {
+                                    logger.warn("Error processing genre '{}' at line {}: {}",
+                                            genreName, lineNumber, e.getMessage());
+                                }
+                            }
+
+                            // Set director with improved error handling
+                            if (directorName != null && !directorName.trim().isEmpty()) {
+                                try {
+                                    // Split director name into first and last name
+                                    String[] nameParts = directorName.trim().split("\\s+", 2);
+                                    String firstName = nameParts[0];
+                                    String lastName = nameParts.length > 1 ? nameParts[1] : "";
+
+                                    // Try to find existing director by name
+                                    List<Director> directorOpt = (List<Director>) directorService.findByName(directorName);
+
+                                    if (!directorOpt.isEmpty()) {
+                                        movie.setDirector(String.valueOf(directorOpt.get(directorOpt.size() - 1)));
+                                    } else {
+                                        // Create new director if not found
+                                        Director newDirector = new Director(firstName, lastName, birthDate, gender);
+                                        newDirector.setFirstName(firstName);
+                                        if (!lastName.isEmpty()) {
+                                            newDirector.setLastName(lastName);
+                                        }
+                                        newDirector = directorService.save(newDirector);
+                                        movie.setDirector(String.valueOf(newDirector));
+                                        logger.debug("Created new director: {} {}", firstName, lastName);
+                                    }
+                                } catch (Exception e) {
+                                    logger.warn("Error setting director '{}' at line {}: {}",
+                                            directorName, lineNumber, e.getMessage());
+                                    // Continue without director rather than failing the whole movie
+                                }
+                            }
+
+                            // Set actors with improved error handling
+                            for (String actorName : actorNames) {
+                                if (actorName != null && !actorName.trim().isEmpty()) {
+                                    try {
+                                        // Split actor name into first and last name
+                                        String[] nameParts = actorName.trim().split("\\s+", 2);
+                                        String firstName = nameParts[0];
+                                        String lastName = nameParts.length > 1 ? nameParts[1] : "";
+
+                                        // Try to find existing actor by name
+                                        Optional<Actor> actorOpt = actorService.findByFullName(firstName, lastName);
+
+                                        if (actorOpt.isPresent()) {
+                                            movie.addActor(actorOpt.get());
+                                        } else {
+                                            // Create new actor if not found
+                                            Actor newActor = new Actor(firstName, lastName, birthDate, gender, ethnicity);
+                                            newActor.setFirstName(firstName);
+                                            if (!lastName.isEmpty()) {
+                                                newActor.setLastName(lastName);
+                                            }
+                                            newActor = actorService.save(newActor);
+                                            movie.addActor(newActor);
+                                            logger.debug("Created new actor: {} {}", firstName, lastName);
+                                        }
+                                    } catch (Exception e) {
+                                        logger.warn("Error processing actor '{}' at line {}: {}",
+                                                actorName, lineNumber, e.getMessage());
+                                        // Continue with next actor rather than failing
+                                    }
+                                }
+                            }
+
+
+                            try {
+                                // Add the movie using addMovie() to preserve pre-defined IDs
+                                movieRepository.addMovie(movie);
+                                count++;
+                                logger.debug("Successfully loaded movie: {} ({}), ID: {}",
+                                        movie.getTitle(), movie.getReleaseYear(), movie.getId());
+                            } catch (Exception e) {
+                                logger.error("Failed to save movie '{}' at line {}: {}",
+                                        title, lineNumber, e.getMessage(), e);
+                                errors++;
+                            }
+
+                        } catch (Exception e) {
+                            logger.error("Error creating movie at line {}: {}", lineNumber, e.getMessage(), e);
+                            errors++;
+                        }
+                    } else {
+                        logger.warn("Invalid movie data format at line {}: {}", lineNumber, line);
+                        errors++;
+                    }
+                } catch (Exception e) {
+                    logger.error("Error processing line {}: {}", lineNumber, e.getMessage());
+                    errors++;
+                }
+            }
+
+            logger.info("Successfully loaded {} movies ({} duplicates, {} errors, {} total lines)",
+                    count, duplicates, errors, lineNumber);
+
+        } catch (IOException e) {
+            logger.error("Error reading movies file: {}", e.getMessage(), e);
+            throw new FileParsingException("Error reading movies file: " + e.getMessage());
+        }
+    }
+}

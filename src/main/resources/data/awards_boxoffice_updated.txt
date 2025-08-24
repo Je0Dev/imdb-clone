@@ -1,0 +1,11 @@
+# Format: ContentType,Title,Year,BoxOffice,Awards,Rating,Genre
+movie,The Godfather,1972,"$246,120,974","3 Oscars, 5 Golden Globes",9.2,Crime
+movie,The Shawshank Redemption,1994,"$28,767,189","7 Oscar nominations",9.3,Drama
+movie,The Dark Knight,2008,"$1,006,234,167","2 Oscars, 1 Golden Globe",9.0,Action
+movie,Parasite,2019,"$263,158,996","4 Oscars, 1 Golden Globe",8.5,Drama
+movie,Inception,2010,"$836,836,967","4 Oscars, 4 BAFTAs",8.8,Sci-Fi
+series,Breaking Bad,2008-2013,"N/A","16 Emmys, 2 Golden Globes",9.5,Crime
+series,Game of Thrones,2011-2019,"N/A","59 Emmys, 4 Golden Globes",9.3,Fantasy
+movie,Titanic,1997,"$2,257,884,705","11 Oscars, 4 Golden Globes",7.9,Romance
+movie,The Lord of the Rings: The Return of the King,2003,"$1,147,633,833","11 Oscars, 4 BAFTAs",9.0,Fantasy
+series,Stranger Things,2016-2022,"N/A","7 Emmys, 4 SAG Awards",8.7,Drama

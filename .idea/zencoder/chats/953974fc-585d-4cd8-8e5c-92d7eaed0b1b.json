@@ -1,0 +1,48 @@
+{
+    "checksum": "995cce3bc723d04021ccda94cca6d8341d55fd08635bf0b44bdc983add4415a6",
+    "data": {
+    "id": "953974fc-585d-4cd8-8e5c-92d7eaed0b1b",
+    "createdAt": 1755090949718,
+    "updatedAt": 1755090949727,
+    "title": " Generate tests for UserAlreadyExistsException ...",
+    "messages": [
+        {
+            "id": "2246f278-c41e-4552-9796-1e9775755e45",
+            "role": "user",
+            "content": [
+                {
+                    "type": "text",
+                    "text": " Generate tests for UserAlreadyExistsException class"
+                }
+            ],
+            "context": {
+                "currentFile": {
+                    "path": "C:\\Users\\MA$\\IdeaProjects\\imdb_clone\\src\\main\\java\\com\\papel\\imdb_clone\\exceptions\\UserAlreadyExistsException.java",
+                    "fsPath": "C:/Users/MA$/IdeaProjects/imdb_clone/src/main/java/com/papel/imdb_clone/exceptions/UserAlreadyExistsException.java",
+                    "content": "package com.papel.imdb_clone.exceptions;\n\nimport java.util.Collections;\nimport java.util.HashMap;\nimport java.util.Map;\n\n/**\n * Exception thrown when attempting to create a user that already exists in the system.\n * This is a specific type of AuthException for user registration conflicts.\n */\npublic class UserAlreadyExistsException extends AuthException {\n    private static final String DEFAULT_FIELD = \"email\";\n    \n    /**\n     * Creates a new UserAlreadyExistsException with the default message.\n     */\n    public UserAlreadyExistsException() {\n        this((String) null);\n    }\n    \n    /**\n     * Creates a new UserAlreadyExistsException with a custom message.\n     * \n     * @param message the detail message\n     */\n    public UserAlreadyExistsException(String message) {\n        this(message, (String) null);\n    }\n    \n    /**\n     * Creates a new UserAlreadyExistsException for a specific field and value.\n     * \n     * @param field the field that caused the conflict (e.g., \"email\", \"username\")\n     * @param value the value that caused the conflict\n     */\n    public UserAlreadyExistsException(String field, Object value) {\n        this(createDefaultMessage(field, value), field, value);\n    }\n    \n    /**\n     * Creates a new UserAlreadyExistsException with a custom message and field details.\n     * \n     * @param message the detail message\n     * @param field the field that caused the conflict\n     * @param value the value that caused the conflict\n     */\n    public UserAlreadyExistsException(String message, String field, Object value) {\n        this(message, field, value, null);\n    }\n    \n    /**\n     * Creates a new UserAlreadyExistsException with a custom message, field details, and cause.\n     * \n     * @param message the detail message\n     * @param field the field that caused the conflict\n     * @param value the value that caused the conflict\n     * @param cause the cause of the exception\n     */\n    public UserAlreadyExistsException(String message, String field, Object value, Throwable cause) {\n        super(\n            AuthErrorType.USER_ALREADY_EXISTS,\n            message != null ? message : createDefaultMessage(field, value),\n            createFieldErrors(field, value),\n            cause\n        );\n    }\n    \n    /**\n     * Creates a new UserAlreadyExistsException for an email address.\n     * \n     * @param email the email that already exists\n     * @return a new UserAlreadyExistsException instance\n     */\n    public static UserAlreadyExistsException forEmail(String email) {\n        return new UserAlreadyExistsException(\n            String.format(\"User with email '%s' already exists\", email),\n            \"email\",\n            email\n        );\n    }\n    \n    /**\n     * Creates a new UserAlreadyExistsException for a username.\n     * \n     * @param username the username that already exists\n     * @return a new UserAlreadyExistsException instance\n     */\n    public static UserAlreadyExistsException forUsername(String username) {\n        return new UserAlreadyExistsException(\n            String.format(\"Username '%s' is already taken\", username),\n            \"username\",\n            username\n        );\n    }\n    \n    private static String createDefaultMessage(String field, Object value) {\n        String fieldName = field != null ? field : DEFAULT_FIELD;\n        return String.format(\"User with %s '%s' already exists\", fieldName, value);\n    }\n    \n    private static Map<String, List<String>> createFieldErrors(String field, Object value) {\n        String fieldName = field != null ? field : DEFAULT_FIELD;\n        Map<String, List<String>> errors = new HashMap<>();\n        errors.put(fieldName, Collections.singletonList(\"already exists\"));\n        return errors;\n    }\n}\n",
+                    "language": "java"
+                },
+                "codebaseEnabled": true
+            },
+            "createdAt": 1755090949727,
+            "isInternal": false,
+            "rawContent": {
+                "type": "doc",
+                "content": [
+                    {
+                        "type": "paragraph",
+                        "content": [
+                            {
+                                "type": "text",
+                                "text": " Generate tests for UserAlreadyExistsException class"
+                            }
+                        ]
+                    }
+                ]
+            },
+            "autoAppliedRules": []
+        }
+    ],
+    "isUnitTestsAgent": true
+}
+}

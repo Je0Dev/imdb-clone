@@ -1,0 +1,11 @@
+# Format: FirstName,LastName,BirthDate,Gender,Nationality,NotableWorks,ActiveYears
+Quentin,Tarantino,1963-03-27,M,American,"Pulp Fiction, Kill Bill, Once Upon a Time in Hollywood","1987-present"
+Christopher,Nolan,1970-07-30,M,British,"Inception, The Dark Knight, Interstellar","1998-present"
+Greta,Gerwig,1983-08-04,F,American,"Lady Bird, Little Women, Barbie","2006-present"
+Bong,Joon-ho,1969-09-14,M,Korean,"Parasite, Snowpiercer, The Host","1994-present"
+Ava,DuVernay,1972-08-24,F,American,"Selma, 13th, When They See Us","1999-present"
+Denis,Villeneuve,1967-10-03,M,Canadian,"Blade Runner 2049, Dune, Arrival","1994-present"
+Chloé,Zhao,1982-03-31,F,Chinese,"Nomadland, Eternals, The Rider","2008-present"
+Jordan,Peele,1979-02-21,M,American,"Get Out, Us, Nope","2017-present"
+Taika,Waititi,1975-08-16,M,New Zealander,"Jojo Rabbit, Thor: Ragnarök, What We Do in the Shadows","1999-present"
+Agnès,Varda,1928-05-30,F,French,"Cléo from 5 to 7, The Gleaners and I, Faces Places","1954-2019"

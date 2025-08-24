@@ -1,0 +1,11 @@
+# Format: FirstName,LastName,BirthDate,Gender,Nationality,Biography,NotableWorks
+Julia,Roberts,1967-10-28,F,American,"Academy Award-winning actress known for her roles in romantic comedies and dramas.","Pretty Woman, Erin Brockovich, Notting Hill"
+Denzel,Washington,1954-12-28,M,American,"Two-time Academy Award-winning actor and director known for his powerful performances.","Training Day, Malcolm X, The Equalizer"
+Nicole,Kidman,1967-06-20,F,Australian,"Academy Award-winning actress with a diverse range of roles in film and television.","Moulin Rouge!, The Hours, Big Little Lies"
+Brad,Pitt,1963-12-18,M,American,"Academy Award-winning actor and producer known for his versatile acting and production work.","Fight Club, Once Upon a Time in Hollywood, 12 Years a Slave"
+Scarlett,Johansson,1984-11-22,F,American,"Highest-grossing actress of all time, known for her role as Black Widow in the MCU.","Lost in Translation, Marriage Story, Avengers"
+Tom,Hanks,1956-07-09,M,American,"Two-time Academy Award-winning actor known for his everyman persona.","Forrest Gump, Cast Away, Saving Private Ryan"
+Meryl,Streep,1949-06-22,F,American,"The most Academy Award-nominated actor of all time with three wins.","The Devil Wears Prada, Sophie's Choice, Mamma Mia!"
+Leonardo,DiCaprio,1974-11-11,M,American,"Academy Award-winning actor and environmental activist.","Titanic, The Revenant, Inception"
+Cate,Blanchett,1969-05-14,F,Australian,"Two-time Academy Award-winning actress known for her versatile performances.","Blue Jasmine, The Aviator, Carol"
+Joaquin,Phoenix,1974-10-28,M,American,"Academy Award-winning actor known for his intense and transformative performances.","Joker, Walk the Line, Gladiator"

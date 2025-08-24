@@ -1,0 +1,86 @@
+{
+    "checksum": "474a7548c6d02df7cf0c4f40c3d518d42697bb6d7be61481cac55f850504fb11",
+    "data": {
+    "id": "464f57bb-c72e-4571-9989-4f34675e8c19",
+    "createdAt": 1755189204464,
+    "updatedAt": 1755189204469,
+    "title": "/fix ContentService<Movie> movieService = new C...",
+    "messages": [
+        {
+            "id": "7e9d4bf7-56be-4a4e-b680-2d789acb9035",
+            "role": "user",
+            "content": [
+                {
+                    "type": "command",
+                    "commandName": "fix"
+                },
+                {
+                    "type": "codeSnippet",
+                    "text": "ContentService<Movie> movieService = new ContentService<>(searchCacheService, Movie.class);",
+                    "language": "java"
+                },
+                {
+                    "type": "text",
+                    "text": "'ContentService(com.papel.imdb_clone.service.cache.SearchCacheService, java.lang.Class<com.papel.imdb_clone.model.Series>)' in 'com.papel.imdb_clone.service.ContentService' cannot be applied to '(com.papel.imdb_clone.service.SearchCacheService, java.lang.Class<com.papel.imdb_clone.model.Movie>)'"
+                }
+            ],
+            "context": {
+                "currentFile": {
+                    "path": "C:\\Users\\MA$\\IdeaProjects\\imdb_clone\\src\\main\\java\\com\\papel\\imdb_clone\\service\\ServiceLocator.java",
+                    "fsPath": "C:/Users/MA$/IdeaProjects/imdb_clone/src/main/java/com/papel/imdb_clone/service/ServiceLocator.java",
+                    "content": "package com.papel.imdb_clone.service;\n\nimport com.papel.imdb_clone.data.RefactoredDataManager;\nimport com.papel.imdb_clone.model.Actor;\nimport com.papel.imdb_clone.model.Director;\nimport com.papel.imdb_clone.model.Movie;\nimport com.papel.imdb_clone.model.Series;\nimport com.papel.imdb_clone.util.AppStateManager;\nimport com.papel.imdb_clone.util.AsyncExecutor;\nimport org.slf4j.Logger;\nimport org.slf4j.LoggerFactory;\n\nimport java.util.concurrent.ConcurrentHashMap;\nimport java.util.concurrent.ConcurrentMap;\n\n/**\n * Service Locator pattern implementation for managing application services.\n * Provides centralized access to services and ensures singleton behavior.\n * Updated to use the refactored service-oriented architecture.\n */\npublic class ServiceLocator {\n    private static final Logger logger = LoggerFactory.getLogger(ServiceLocator.class);\n    private static ServiceLocator instance;\n    private final ConcurrentMap<Class<?>, Object> services = new ConcurrentHashMap<>();\n\n    private ServiceLocator() {\n        initializeServices();\n    }\n\n    public static synchronized ServiceLocator getInstance() {\n        if (instance == null) {\n            instance = new ServiceLocator();\n        }\n        return instance;\n    }\n\n    private void initializeServices() {\n        logger.info(\"Initializing application services with refactored architecture...\");\n\n        // Initialize core services\n        RefactoredDataManager dataManager = new RefactoredDataManager();\n        registerService(RefactoredDataManager.class, dataManager);\n\n        registerService(AuthenticationService.class, AuthenticationService.getInstance());\n        registerService(EncryptionService.class, EncryptionService.getInstance());\n        registerService(AppStateManager.class, AppStateManager.getInstance());\n\n        // Initialize search cache service\n        SearchCacheService searchCacheService = dataManager.getSearchCacheService();\n        registerService(SearchCacheService.class, searchCacheService);\n\n        // Initialize content services\n        ContentService<Movie> movieService = new ContentService<>(searchCacheService, Movie.class);\n        ContentService<Series> seriesService = new ContentService<>(searchCacheService, Series.class);\n        registerService(ContentService.class, movieService); // Default to MovieService for backward compatibility\n        registerService(ContentService.class, seriesService, \"series\");\n\n        // Initialize celebrity services\n        CelebrityService<Actor> actorService = new CelebrityService<>(Actor.class);\n        CelebrityService<Director> directorService = new CelebrityService<>(Director.class);\n        registerService(CelebrityService.class, actorService); // Default to ActorService for backward compatibility\n        registerService(CelebrityService.class, directorService, \"director\");\n\n        // Initialize dependent services\n        registerService(WatchlistService.class, new WatchlistService(dataManager));\n\n\n        // Initialize data in the services (migrate from old services if needed)\n        initializeServiceData(movieService, seriesService, actorService, directorService);\n\n\n        logger.info(\"Service initialization complete with {} services registered\", services.size());\n    }\n\n    /**\n     * Register a service instance with a qualifier for multiple implementations\n     */\n    public <T> void registerService(Class<T> serviceClass, T serviceInstance, String qualifier) {\n        if (serviceClass == null || serviceInstance == null || qualifier == null) {\n            throw new IllegalArgumentException(\"Service class, instance, and qualifier cannot be null\");\n        }\n        String key = serviceClass.getName() + \"_\" + qualifier;\n        services.put(key.getClass(), serviceInstance);\n        logger.debug(\"Registered service: {} with qualifier: {}\", serviceClass.getSimpleName(), qualifier);\n\n        // If this is the first registration for this class, also register it without a qualifier\n        if (!services.containsKey(serviceClass.getName())) {\n            services.put(serviceClass.getName().getClass(), serviceInstance);\n        }\n    }\n\n    /**\n     * Register a service instance (default qualifier)\n     */\n    public <T> void registerService(Class<T> serviceClass, T serviceInstance) {\n        registerService(serviceClass, serviceInstance, \"default\");\n    }\n\n    /**\n     * Get a service instance with a specific qualifier\n     */\n    @SuppressWarnings(\"unchecked\")\n    public <T> T getService(Class<T> serviceClass, String qualifier) {\n        if (serviceClass == null || qualifier == null) {\n            throw new IllegalArgumentException(\"Service class and qualifier cannot be null\");\n        }\n\n        String key = serviceClass.getName() + \"_\" + qualifier;\n        T service = (T) services.get(key);\n        if (service == null) {\n            throw new IllegalStateException(\"Service not found: \" + serviceClass.getSimpleName() + \" with qualifier: \" + qualifier);\n        }\n        return service;\n    }\n\n    /**\n     * Get a service instance (default qualifier)\n     */\n    @SuppressWarnings(\"unchecked\")\n    public <T> T getService(Class<T> serviceClass) {\n        if (serviceClass == null) {\n            throw new IllegalArgumentException(\"Service class cannot be null\");\n        }\n\n        T service = (T) services.get(serviceClass.getName());\n        if (service == null) {\n            throw new IllegalStateException(\"Service not found: \" + serviceClass.getSimpleName());\n        }\n        return service;\n    }\n\n    /**\n     * Initialize data in the new services by migrating from old services if needed\n     */\n    private void initializeServiceData(ContentService<Movie> movieService,\n                                       ContentService<Series> seriesService,\n                                       CelebrityService<Actor> actorService,\n                                       CelebrityService<Director> directorService) {\n        try {\n            logger.info(\"Service data initialization complete\");\n        } catch (Exception e) {\n            logger.error(\"Error initializing service data\", e);\n        }\n    }\n\n    /**\n     * Check if a service is registered\n     */\n    public boolean hasService(Class<?> serviceClass) {\n        return services.containsKey(serviceClass);\n    }\n\n    /**\n     * Shutdown all services gracefully\n     */\n    public void shutdown() {\n        logger.info(\"Shutting down services...\");\n\n        // Shutdown services in reverse order of dependency\n        try {\n            // Stop background executors first to prevent new tasks from scheduling\n            try {\n                AsyncExecutor.getInstance().shutdown();\n                logger.debug(\"AsyncExecutor shut down\");\n            } catch (Exception e) {\n                logger.warn(\"Failed to shutdown AsyncExecutor\", e);\n            }\n\n            if (hasService(RefactoredDataManager.class)) {\n                // RefactoredDataManager might need cleanup\n                logger.debug(\"Shutting down RefactoredDataManager\");\n            }\n        } catch (Exception e) {\n            logger.error(\"Error shutting down services\", e);\n        }\n\n        services.clear();\n        logger.info(\"Service shutdown complete\");\n    }\n}",
+                    "language": "java"
+                },
+                "codebaseEnabled": true
+            },
+            "createdAt": 1755189204469,
+            "isInternal": false,
+            "rawContent": {
+                "type": "doc",
+                "content": [
+                    {
+                        "type": "paragraph",
+                        "content": [
+                            {
+                                "type": "command",
+                                "attrs": {
+                                    "label": "fix"
+                                },
+                                "content": [
+                                    {
+                                        "type": "text",
+                                        "text": "fix: "
+                                    }
+                                ]
+                            },
+                            {
+                                "type": "codeBlock",
+                                "attrs": {
+                                    "language": "java"
+                                },
+                                "content": [
+                                    {
+                                        "type": "text",
+                                        "text": "ContentService<Movie> movieService = new ContentService<>(searchCacheService, Movie.class);"
+                                    }
+                                ]
+                            },
+                            {
+                                "type": "text",
+                                "text": "'ContentService(com.papel.imdb_clone.service.cache.SearchCacheService, java.lang.Class<com.papel.imdb_clone.model.Series>)' in 'com.papel.imdb_clone.service.ContentService' cannot be applied to '(com.papel.imdb_clone.service.SearchCacheService, java.lang.Class<com.papel.imdb_clone.model.Movie>)'"
+                            }
+                        ]
+                    }
+                ]
+            },
+            "autoAppliedRules": []
+        }
+    ],
+    "isAgent": true,
+    "isCustomAgent": false,
+    "isUnitTestsAgent": false,
+    "isE2EAgent": false,
+    "isQnaAgent": false,
+    "isRepoInfoAgent": false
+}
+}

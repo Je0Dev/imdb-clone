@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.Text?>
+<SplitPane dividerPositions="0.3" xmlns:fx="http://javafx.com/fxml/1"
+           fx:controller="com.papel.imdb_clone.controllers.ContentController"
+>
+
+    <!-- Left Pane: Series List -->
+
+    <VBox style="-fx-padding: 10;">
+        <HBox spacing="10" style="-fx-padding: 0 0 10 0;">
+            <Label text="TV Series" style="-fx-font-size: 18; -fx-font-weight: bold;"/>
+            />
+            <Button text="Add Series" onAction="#handleAddSeries" styleClass="action-button"/>
+        </HBox>
+
+        <TableView fx:id="seriesTable" style="-fx-fixed-cell-size: 35;" VBox.vgrow="ALWAYS">
+            <columns>
+                <TableColumn fx:id="seriesTitleColumn" text="Title" prefWidth="150"/>
+                <TableColumn fx:id="seriesYearColumn" text="Year" prefWidth="60"/>
+                <TableColumn fx:id="seriesGenreColumn" text="Genre" prefWidth="100"/>
+                <TableColumn fx:id="seriesSeasonsColumn" text="Seasons" prefWidth="70"/>
+            </columns>
+        </TableView>
+    </VBox>
+
+    <!-- Right Pane: Series Details -->
+    <VBox style="-fx-padding: 10;" spacing="10">
+
+        <!-- Series Header -->
+        <HBox spacing="10" style="-fx-padding: 0 0 10 0; -fx-border-color: #e0e0e0; -fx-border-width: 0 0 1 0;">
+            <VBox spacing="5">
+                <Text fx:id="seriesTitleLabel" style="-fx-font-size: 24; -fx-font-weight: bold;"/>
+                <HBox spacing="20">
+                    <Label fx:id="yearLabel" style="-fx-text-fill: #666;"/>
+                    <Label fx:id="genreLabel" style="-fx-text-fill: #666;"/>
+                    <Label fx:id="seasonsCountLabel" style="-fx-text-fill: #666;"/>
+                </HBox>
+            </VBox>
+            />
+            <VBox spacing="5" alignment="CENTER_RIGHT">
+                <HBox spacing="5">
+                    <Button text="Edit" onAction="#handleEditSeries" styleClass="action-button"/>
+                    <Button text="Delete" onAction="#handleDeleteSeries" styleClass="delete-button"/>
+                </HBox>
+                <Button text="Rate" onAction="#handleRateSeries" styleClass="action-button"/>
+            </VBox>
+        </HBox>
+
+
+        <!-- Seasons and Episodes -->
+        <VBox spacing="5" VBox.vgrow="ALWAYS">
+            <HBox spacing="10" alignment="CENTER_LEFT">
+                <Label text="Seasons &amp; Episodes" style="-fx-font-weight: bold;"/>
+                />
+                <Button text="Add Season" onAction="#handleAddSeason" styleClass="small-button"/>
+                <Button text="Add Episode" onAction="#handleAddEpisode" styleClass="small-button"/>
+            </HBox>
+            <TreeView fx:id="seasonsTreeView" VBox.vgrow="ALWAYS" showRoot="false"/>
+        </VBox>
+    </VBox>
+
+</SplitPane>

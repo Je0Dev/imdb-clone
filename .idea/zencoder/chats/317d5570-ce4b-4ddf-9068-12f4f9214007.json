@@ -1,0 +1,363 @@
+{
+    "checksum": "9b5010651b1568840440b29e38299a09a34f1ab498232835f0f2de4ea1988e2c",
+    "data": {
+    "id": "317d5570-ce4b-4ddf-9068-12f4f9214007",
+    "createdAt": 1755442282863,
+    "updatedAt": 1755442291103,
+    "title": "fix content controller not being initialized an...",
+    "messages": [
+        {
+            "id": "7f20f558-72d3-4a4f-be0b-a12bc4525400",
+            "role": "user",
+            "content": [
+                {
+                    "type": "text",
+                    "text": "fix content controller not being initialized and also all the buttons and the features of the main screen not working correctly also remove unessary methods that are not being used"
+                }
+            ],
+            "context": {
+                "currentFile": {
+                    "path": "src/main/java/com/papel/imdb_clone/controllers/WatchlistController.java",
+                    "fsPath": "C:/Users/MA$/IdeaProjects/imdb_clone/src/main/java/com/papel/imdb_clone/controllers/WatchlistController.java",
+                    "sources": [
+                        "opened_tab"
+                    ],
+                    "content": "package com.papel.imdb_clone.controllers;\n\nimport com.papel.imdb_clone.model.*;\nimport com.papel.imdb_clone.service.WatchlistService;\nimport javafx.beans.property.SimpleDoubleProperty;\nimport javafx.beans.property.SimpleIntegerProperty;\nimport javafx.beans.property.SimpleStringProperty;\nimport javafx.collections.FXCollections;\nimport javafx.collections.ObservableList;\nimport javafx.collections.transformation.FilteredList;\nimport javafx.collections.transformation.SortedList;\nimport javafx.event.ActionEvent;\nimport javafx.fxml.FXML;\nimport javafx.geometry.Insets;\nimport javafx.scene.Node;\nimport javafx.scene.control.*;\nimport javafx.scene.input.KeyCode;\nimport javafx.scene.layout.GridPane;\nimport javafx.stage.Stage;\nimport org.slf4j.Logger;\nimport org.slf4j.LoggerFactory;\n\nimport java.net.URL;\nimport java.util.List;\nimport java.util.Optional;\nimport java.util.ResourceBundle;\nimport java.util.stream.Collectors;\n\nimport static com.papel.imdb_clone.util.UIUtils.showSuccess;\n\n/**\n * Controller for managing watchlist-related UI components and logic.\n */\npublic class WatchlistController extends BaseController {\n    private static final Logger logger = LoggerFactory.getLogger(WatchlistController.class);\n\n    private WatchlistService watchlistService;\n\n    @FXML\n    private ListView<String> watchlistsView;\n    @FXML\n    private TableView<Content> watchlistContentTable;\n    @FXML\n    private TableColumn<Content, String> contentTitleColumn;\n    @FXML\n    private TableColumn<Content, String> contentTypeColumn;\n    @FXML\n    private TableColumn<Content, Integer> contentYearColumn;\n    @FXML\n    private TableColumn<Content, String> contentGenreColumn;\n    @FXML\n    private TableColumn<Content, String> contentRatingColumn;\n    @FXML\n    private Label watchlistContentTitle;\n    @FXML\n    private ComboBox<String> watchlistSortBy;\n    private TableColumn<Content, Double> userAvgRatingColRef;\n    @FXML\n    private TextField watchlistSearchField;\n\n\n    private final ObservableList<Content> watchlistItems = FXCollections.observableArrayList();\n    private FilteredList<Content> wlFiltered;\n    private final Double minUserRatingThreshold = null;\n    private int currentUserId;\n    private Rating selectedContent;\n    private String selectedWatchlistDisplay;\n\n\n    // Default constructor for FXML\n    public WatchlistController() {\n        this.watchlistService = null; // Will be set later by the main controller\n    }\n\n\n    @Override\n    protected void initializeController(int currentUserId) {\n        try {\n            setupWatchlistTable();\n            setupWatchlistSelection(currentUserId);\n            setupKeyboardNavigation(currentUserId);\n        } catch (Exception e) {\n            logger.error(\"WatchlistController initialization error\", e);\n            showError(\"Initialization Error\", \"Failed to initialize watchlist controller: \" + e.getMessage());\n        }\n    }\n\n    public void setWatchlistService(WatchlistService watchlistService, int currentUserId) {\n        this.watchlistService = watchlistService;\n        try {\n            refreshWatchlists(currentUserId);\n        } catch (Exception e) {\n            logger.error(\"WatchlistService setup error\", e);\n            showError(\"Setup Error\", \"Failed to set up WatchlistService: \" + e.getMessage());\n        }\n    }\n\n    private void setupWatchlistTable() {\n        try {\n            // Title column\n            contentTitleColumn.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getTitle()));\n            contentTitleColumn.setPrefWidth(200);\n\n            // Type column\n            contentTypeColumn.setCellValueFactory(data ->\n                    new SimpleStringProperty(data.getValue() instanceof Movie ? \"Movie\" : \"Series\"));\n            contentTypeColumn.setPrefWidth(80);\n\n            // Year column\n            contentYearColumn.setCellValueFactory(data -> {\n                if (data.getValue() instanceof Movie movie) {\n                    return new SimpleIntegerProperty(movie.getYear().getYear() + 1900).asObject();\n                } else if (data.getValue() instanceof Series series) {\n                    return new SimpleIntegerProperty(series.getYear().getYear() + 1900).asObject();\n                }\n                return new SimpleIntegerProperty(0).asObject();\n            });\n            contentYearColumn.setPrefWidth(80);\n\n            // Genre column\n            if (contentGenreColumn != null) {\n                contentGenreColumn.setCellValueFactory(data ->\n                        new SimpleStringProperty(data.getValue().getGenre() != null ?\n                                data.getValue().getGenre().toString() : \"N/A\"));\n                contentGenreColumn.setPrefWidth(100);\n            }\n\n            // Rating column (IMDB)\n            if (contentRatingColumn != null) {\n                contentRatingColumn.setCellValueFactory(data -> {\n                    Double rating = data.getValue().getImdbRating();\n                    String ratingStr = (rating != null && rating > 0) ?\n                            String.format(\"%.1f\", rating) : \"N/A\";\n                    return new SimpleStringProperty(ratingStr);\n                });\n                contentRatingColumn.setPrefWidth(100);\n            }\n\n            // Average User Rating column (computed via central WatchlistService)\n            // Keep a Double value for proper numeric sorting; render with count via cell factory\n            TableColumn<Content, Double> userAvgRatingCol = new TableColumn<>(\"User Rating\");\n            userAvgRatingCol.setCellValueFactory(data -> {\n                double avg = 0.0;\n                try {\n                    if (watchlistService != null) {\n                        avg = watchlistService.getAverageRating(data.getValue().getId());\n                    }\n                } catch (Exception ignored) {\n                }\n                return new SimpleDoubleProperty(avg).asObject();\n            });\n            userAvgRatingCol.setCellFactory(column -> new TableCell<>() {\n                @Override\n                protected void updateItem(Double item, boolean empty) {\n                    super.updateItem(item, empty);\n                    if (empty) {\n                        setText(null);\n                        return;\n                    }\n                    try {\n                        Content c = getTableView().getItems().get(getIndex());\n                        int count = (watchlistService != null) ? watchlistService.getRatingCount(c.getId()) : 0;\n                        double avg = (watchlistService != null) ? watchlistService.getAverageRating(c.getId()) : 0.0;\n                        if (count <= 0 || avg == 0.0) setText(\"N/A\");\n                        else setText(String.format(\"%.1f (%d)\", avg, count));\n                    } catch (Exception ex) {\n                        setText(\"N/A\");\n                    }\n                }\n            });\n            userAvgRatingCol.setPrefWidth(120);\n            userAvgRatingCol.setSortable(true);\n            // Append after the IMDB rating column\n            watchlistContentTable.getColumns().add(userAvgRatingCol);\n            userAvgRatingColRef = userAvgRatingCol;\n\n            // Data pipeline: observable -> filtered -> sorted -> table\n            wlFiltered = new FilteredList<>(watchlistItems, c -> true);\n            SortedList<Content> wlSorted = new SortedList<>(wlFiltered);\n            wlSorted.comparatorProperty().bind(watchlistContentTable.comparatorProperty());\n            watchlistContentTable.setItems(wlSorted);\n            watchlistContentTable.getSelectionModel().setSelectionMode(SelectionMode.SINGLE);\n\n            // Setup visible sort control\n            if (watchlistSortBy != null) {\n                watchlistSortBy.getItems().setAll(\"Title\", \"Year\", \"IMDB Rating\", \"Avg User Rating\");\n                watchlistSortBy.getSelectionModel().selectFirst();\n                watchlistSortBy.getSelectionModel().selectedItemProperty().addListener((obs, old, val) -> {\n                    if (val == null) return;\n                    switch (val) {\n                        case \"Title\" -> {\n                        }\n                        case \"Year\" -> {\n                            watchlistContentTable.getSortOrder().setAll(contentYearColumn);\n                        }\n                        case \"IMDB Rating\" -> {\n                            watchlistContentTable.getSortOrder().setAll(contentRatingColumn);\n                        }\n                        case \"Avg User Rating\" -> {\n                            if (userAvgRatingColRef != null) {\n                                watchlistContentTable.getSortOrder().setAll(userAvgRatingColRef);\n                            }\n                        }\n                        default -> throw new IllegalStateException(\"Unexpected value: \" + val);\n                    }\n                });\n            }\n\n            // Setup search + quick rating filters\n            Runnable applyPredicate = () -> wlFiltered.setPredicate(item -> {\n                // Text search by title, genre, year, or type\n                String q = (watchlistSearchField != null && watchlistSearchField.getText() != null)\n                        ? watchlistSearchField.getText().trim().toLowerCase()\n                        : \"\";\n                if (!q.isEmpty()) {\n                    boolean match = false;\n                    try {\n                        String title = item.getTitle() != null ? item.getTitle().toLowerCase() : \"\";\n                        String genre = item.getGenre() != null ? item.getGenre().toString().toLowerCase() : \"\";\n                        String year = \"\";\n                        if (item instanceof Movie m) year = String.valueOf(m.getYear().getYear() + 1900);\n                        else if (item instanceof Series s) year = String.valueOf(s.getYear().getYear() + 1900);\n                        String type = (item instanceof Movie) ? \"movie\" : \"series\";\n                        match = title.contains(q) || genre.contains(q) || year.contains(q) || type.contains(q);\n                    } catch (Exception ignored) {\n                    }\n                    if (!match) return false;\n                }\n                if (minUserRatingThreshold != null) {\n                    try {\n                        double avg = (watchlistService != null) ? watchlistService.getAverageRating(item.getId()) : 0.0;\n                        if (avg < minUserRatingThreshold) return false;\n                    } catch (Exception ignored) {\n                    }\n                }\n                return true;\n            });\n\n            if (watchlistSearchField != null) {\n                watchlistSearchField.textProperty().addListener((obs, o, n) -> applyPredicate.run());\n            }\n\n            logger.debug(\"Watchlist table columns configured\");\n        } catch (Exception e) {\n            logger.error(\"Error setting up watchlist table\", e);\n            showError(\"Table Setup Error\", \"Failed to initialize watchlist table: \" + e.getMessage());\n            throw new RuntimeException(\"Failed to initialize watchlist table\", e);\n        }\n    }\n\n    private void setupWatchlistSelection(int currentUserId) {\n        watchlistsView.getSelectionModel().selectedItemProperty().addListener((obs, oldSelection, newSelection) -> {\n            if (newSelection != null) {\n                loadWatchlistContent(newSelection, currentUserId);\n            }\n        });\n    }\n\n    private void setupKeyboardNavigation(int currentUserId) {\n        watchlistsView.setOnKeyPressed(event -> {\n            if (event.getCode() == KeyCode.ENTER) {\n                String selectedWatchlistName = watchlistsView.getSelectionModel().getSelectedItem();\n                if (selectedWatchlistName != null) {\n                    loadWatchlistContent(selectedWatchlistName, currentUserId);\n                }\n            }\n        });\n\n        watchlistContentTable.setOnKeyPressed(event -> {\n            if (event.getCode() == KeyCode.DELETE) {\n                removeFromWatchlist(currentUserId);\n            }\n        });\n    }\n\n    /**\n     * Load content for the selected watchlist.\n     */\n    private void loadWatchlistContent(String selectedWatchlistDisplay, int currentUserId) {\n        try {\n            // Extract watchlist name from display string (remove count part)\n            String watchlistName = selectedWatchlistDisplay.split(\" \\\\(\")[0];\n\n            if (watchlistService != null) {\n                List<Watchlist> userWatchlists = watchlistService.getUserWatchlists(currentUserId);\n                Watchlist selectedWatchlist = userWatchlists.stream()\n                        .filter(w -> w.getName().equals(watchlistName))\n                        .findFirst()\n                        .orElse(null);\n\n                if (selectedWatchlist != null) {\n                    List<Content> content = watchlistService.getWatchlistContent(selectedWatchlist.getId());\n                    watchlistItems.setAll(content);\n\n                    if (watchlistContentTitle != null) {\n                        watchlistContentTitle.setText(\"Contents of \\\"\" + watchlistName + \"\\\":\");\n                    }\n                } else {\n                    watchlistItems.clear();\n                    if (watchlistContentTitle != null) {\n                        watchlistContentTitle.setText(\"Watchlist Contents:\");\n                    }\n                }\n            }\n            logger.debug(\"Loading content for watchlist: {}\", selectedWatchlistDisplay);\n        } catch (Exception e) {\n            logger.error(\"Error loading watchlist content\", e);\n            showError(\"Load Error\", \"Failed to load watchlist content: \" + e.getMessage());\n        }\n    }\n\n    /**\n     * Refresh the watchlist view with the latest data.\n     */\n    public void refreshWatchlists(int currentUserId) {\n        try {\n            if (watchlistsView != null && watchlistService != null) {\n                List<Watchlist> userWatchlists = watchlistService.getUserWatchlists(currentUserId);\n                List<String> watchlistNames = userWatchlists.stream()\n                        .map(w -> w.getName() + \" (\" + w.getContentCount() + \" items)\")\n                        .collect(Collectors.toList());\n\n                ObservableList<String> items = FXCollections.observableArrayList(watchlistNames);\n                watchlistsView.setItems(items);\n            }\n            logger.debug(\"Refreshing watchlists\");\n        } catch (Exception e) {\n            logger.error(\"Error refreshing watchlists\", e);\n            showError(\"Refresh Error\", \"Failed to refresh watchlists: \" + e.getMessage());\n        }\n    }\n\n    /**\n     * Handles the Create Watchlist button click event.\n     */\n    @FXML\n    public void createWatchlist(int currentUserId) {\n        Dialog<Watchlist> dialog = createWatchlistDialog(currentUserId);\n        Optional<Watchlist> result = dialog.showAndWait();\n\n        result.ifPresent(watchlist -> {\n            try {\n                if (watchlistService != null) {\n                    watchlistService.createWatchlist(currentUserId, watchlist.getName(), watchlist.getDescription());\n                    refreshWatchlists(currentUserId);\n                    showSuccess(\"Watchlist created successfully!\", \"Content added successfully!\");\n                } else {\n                    showError(\"Error\", \"Watchlist service not initialized\");\n                }\n            } catch (Exception e) {\n                showError(\"Error\", \"Failed to create watchlist: \" + e.getMessage());\n            }\n        });\n    }\n\n    /**\n     * Handles the Add to Watchlist button click event.\n     */\n    @FXML\n    private void handleAddToWatchlist(Object currentUser, Object sessionToken, int currentUserId) {\n        if (currentUser == null || sessionToken == null) {\n            showError(\"Login Required\", \"Please log in to add items to watchlist\");\n            return;\n        }\n\n        Content selectedContent = watchlistContentTable.getSelectionModel().getSelectedItem();\n        if (selectedContent == null) {\n            showWarning(\"No Selection\", \"Please select content from the table first.\");\n            return;\n        }\n\n        String selectedWatchlistDisplay = watchlistsView.getSelectionModel().getSelectedItem();\n        if (selectedWatchlistDisplay == null) {\n            showWarning(\"No Watchlist Selected\", \"Please select a watchlist first.\");\n            return;\n        }\n\n        String watchlistName = selectedWatchlistDisplay.split(\" \\\\(\")[0];\n\n        Alert confirmDialog = new Alert(Alert.AlertType.CONFIRMATION);\n        confirmDialog.setTitle(\"Confirm Addition\");\n        confirmDialog.setHeaderText(\"Add to Watchlist\");\n        confirmDialog.setContentText(\"Are you sure you want to add \\\"\" + selectedContent.getTitle() + \"\\\" to the watchlist?\");\n\n        Optional<ButtonType> result = confirmDialog.showAndWait();\n        if (result.isPresent() && result.get() == ButtonType.OK) {\n            try {\n                List<Watchlist> userWatchlists = watchlistService.getUserWatchlists(currentUserId);\n                Watchlist watchlist = userWatchlists.stream()\n                        .filter(w -> w.getName().equals(watchlistName))\n                        .findFirst()\n                        .orElse(null);\n\n                if (watchlist != null) {\n                    watchlistService.addToWatchlist(Integer.parseInt(String.valueOf(watchlist.getId())), selectedContent.getId());\n                    refreshWatchlists(currentUserId);\n                    loadWatchlistContent(selectedWatchlistDisplay, currentUserId);\n                    showSuccess(\"Item added to watchlist successfully!\", \"Content added successfully!\");\n                }\n            } catch (Exception e) {\n                showError(\"Error\", \"Failed to add item to watchlist: \" + e.getMessage());\n            }\n        }\n    }\n\n    /**\n     * Handles the Remove from Watchlist button click event.\n     */\n    @FXML\n    public void removeFromWatchlist(int currentUserId) {\n        if (watchlistService == null) {\n            showError(\"Error\", \"Watchlist service not initialized\");\n            return;\n        }\n\n        Content selectedContent = watchlistContentTable.getSelectionModel().getSelectedItem();\n        if (selectedContent == null) {\n            showWarning(\"No Selection\", \"Please select an item to remove from the watchlist.\");\n            return;\n        }\n\n        String selectedWatchlistDisplay = watchlistsView.getSelectionModel().getSelectedItem();\n        if (selectedWatchlistDisplay == null) {\n            showWarning(\"No Watchlist Selected\", \"Please select a watchlist first.\");\n            return;\n        }\n\n        String watchlistName = selectedWatchlistDisplay.split(\" \\\\(\")[0];\n\n        Alert confirmDialog = new Alert(Alert.AlertType.CONFIRMATION);\n        confirmDialog.setTitle(\"Confirm Removal\");\n        confirmDialog.setHeaderText(\"Remove from Watchlist\");\n        confirmDialog.setContentText(\"Are you sure you want to remove \\\"\" + selectedContent.getTitle() + \"\\\" from the watchlist?\");\n\n        Optional<ButtonType> result = confirmDialog.showAndWait();\n        if (result.isPresent() && result.get() == ButtonType.OK) {\n            try {\n                List<Watchlist> userWatchlists = watchlistService.getUserWatchlists(currentUserId);\n                Watchlist watchlist = userWatchlists.stream()\n                        .filter(w -> w.getName().equals(watchlistName))\n                        .findFirst()\n                        .orElse(null);\n\n                if (watchlist != null) {\n                    watchlistService.removeFromWatchlist(Integer.parseInt(String.valueOf(watchlist.getId())), selectedContent.getId());\n                    refreshWatchlists(currentUserId);\n                    loadWatchlistContent(selectedWatchlistDisplay, currentUserId);\n                    showSuccess(\"Item removed from watchlist successfully!\", \"Content added successfully!\");\n                }\n            } catch (Exception e) {\n                showError(\"Error\", \"Failed to remove item from watchlist: \" + e.getMessage());\n            }\n        }\n    }\n\n    private Dialog<Watchlist> createWatchlistDialog(int currentUserId) {\n        Dialog<Watchlist> dialog = new Dialog<>();\n        dialog.setTitle(\"Create New Watchlist\");\n        dialog.setHeaderText(\"Enter watchlist details\");\n\n        ButtonType createButtonType = new ButtonType(\"Create\", ButtonBar.ButtonData.OK_DONE);\n        dialog.getDialogPane().getButtonTypes().addAll(createButtonType, ButtonType.CANCEL);\n\n        GridPane grid = new GridPane();\n        grid.setHgap(10);\n        grid.setVgap(10);\n        grid.setPadding(new Insets(20, 150, 10, 10));\n\n        TextField nameField = new TextField();\n        TextArea descriptionArea = new TextArea();\n        CheckBox publicCheckBox = new CheckBox(\"Public\");\n\n        nameField.setPromptText(\"Watchlist name\");\n        descriptionArea.setPromptText(\"Description (optional)\");\n        descriptionArea.setPrefRowCount(2);\n\n        grid.add(new Label(\"Name:\"), 0, 0);\n        grid.add(nameField, 1, 0);\n        grid.add(new Label(\"Description:\"), 0, 1);\n        grid.add(descriptionArea, 1, 1);\n        grid.add(publicCheckBox, 1, 2);\n\n        Node createButton = dialog.getDialogPane().lookupButton(createButtonType);\n        createButton.setDisable(true);\n        nameField.textProperty().addListener((observable, oldValue, newValue) -> {\n            createButton.setDisable(newValue.trim().isEmpty() || newValue.trim().length() > 100);\n        });\n\n        dialog.getDialogPane().setContent(grid);\n\n        dialog.setResultConverter(dialogButton -> {\n            if (dialogButton == createButtonType) {\n                String name = nameField.getText().trim();\n                if (name.isEmpty() || name.length() > 100) {\n                    showError(\"Validation Error\", \"Watchlist name is required and must be under 100 characters.\");\n                    return null;\n                }\n                Watchlist watchlist = new Watchlist(currentUserId, name);\n                if (!descriptionArea.getText().trim().isEmpty()) {\n                    watchlist.setDescription(descriptionArea.getText().trim());\n                }\n                watchlist.setPublic(publicCheckBox.isSelected());\n                return watchlist;\n            }\n            return null;\n        });\n\n        return dialog;\n    }\n\n    /**\n     * Sets the primary stage for this controller.\n     */\n    public void setPrimaryStage(Stage primaryStage) {\n        // Store the primary stage if needed for dialogs\n    }\n\n    public void setCurrentUser(User currentUser) {\n    }\n\n    public void setSessionToken(String sessionToken) {\n    }\n\n    public void createWatchlist(ActionEvent actionEvent) {\n        Dialog<Watchlist> dialog = createWatchlistDialog(currentUserId);\n        Optional<Watchlist> result = dialog.showAndWait();\n        result.ifPresent(watchlist -> {\n            try {\n                watchlistService.createWatchlist(watchlist);\n                refreshWatchlists(currentUserId);\n                showSuccess(\"Watchlist created successfully!\", \"Watchlist created successfully!\");\n            } catch (Exception e) {\n                showError(\"Error\", \"Failed to create watchlist: \" + e.getMessage());\n            }\n        });\n    }\n\n    public void deleteWatchlist(ActionEvent actionEvent) {\n        if (watchlistService == null) {\n            showError(\"Error\", \"Watchlist service not initialized\");\n            return;\n        }\n\n        String selectedWatchlist = watchlistsView.getSelectionModel().getSelectedItem();\n        if (selectedWatchlist == null) {\n            showWarning(\"No Selection\", \"Please select a watchlist to delete.\");\n            return;\n        }\n\n        // Extract watchlist name from display string (remove count part)\n        String watchlistName = selectedWatchlist.split(\" \\\\(\")[0];\n\n        try {\n            List<Watchlist> userWatchlists = watchlistService.getUserWatchlists(currentUserId);\n            Watchlist watchlist = userWatchlists.stream()\n                    .filter(w -> w.getName().equals(watchlistName))\n                    .findFirst()\n                    .orElse(null);\n\n            if (watchlist != null) {\n                watchlistService.deleteWatchlist(watchlist.getId());\n                refreshWatchlists(currentUserId);\n                showSuccess(\"Watchlist deleted successfully!\", \"Watchlist deleted successfully!\");\n            }\n        } catch (Exception e) {\n            showError(\"Error\", \"Failed to delete watchlist: \" + e.getMessage());\n        }\n    }\n\n    public void addToWatchlist(ActionEvent actionEvent) {\n        Button button = (Button) actionEvent.getSource();\n        String watchlistName = button.getText();\n        try {\n            watchlistService.addToWatchlist(Integer.parseInt(watchlistName), selectedContent.getId());\n            refreshWatchlists(currentUserId);\n            loadWatchlistContent(selectedWatchlistDisplay, currentUserId);\n            showSuccess(\"Item added to watchlist successfully!\", \"Content added successfully!\");\n        } catch (Exception e) {\n            showError(\"Error\", \"Failed to add item to watchlist: \" + e.getMessage());\n        }\n    }\n\n    public void removeFromWatchlist(ActionEvent actionEvent) {\n        Button button = (Button) actionEvent.getSource();\n        String watchlistName = button.getText();\n        try {\n            watchlistService.removeFromWatchlist(Integer.parseInt(watchlistName), selectedContent.getId());\n            refreshWatchlists(currentUserId);\n            loadWatchlistContent(selectedWatchlistDisplay, currentUserId);\n            showSuccess(\"Item removed from watchlist successfully!\", \"Content removed successfully!\");\n        } catch (Exception e) {\n            showError(\"Error\", \"Failed to remove item from watchlist: \" + e.getMessage());\n        }\n    }\n\n    @Override\n    public void initialize(URL url, ResourceBundle resourceBundle) {\n        initializeController(currentUserId);\n    }\n}\n",
+                    "language": "java"
+                },
+                "codebaseEnabled": true
+            },
+            "createdAt": 1755442282892,
+            "isInternal": false,
+            "rawContent": {
+                "type": "doc",
+                "content": [
+                    {
+                        "type": "paragraph",
+                        "content": [
+                            {
+                                "type": "text",
+                                "text": "fix content controller not being initialized and also all the buttons and the features of the main screen not working correctly also remove unessary methods that are not being used"
+                            }
+                        ]
+                    }
+                ]
+            },
+            "autoAppliedRules": []
+        },
+        {
+            "id": "4c891701-17fc-4b2d-875d-7e3e52ae2403",
+            "role": "assistant",
+            "content": [
+                {
+                    "type": "text",
+                    "text": "I'll help you fix the content controller initialization issues and the main screen functionality problems. Let me first examine the current codebase to understand the structure and identify the issues."
+                },
+                {
+                    "type": "toolCall",
+                    "toolCallId": "toolu_016vAMJSRf62WoMDeffwXbu5",
+                    "title": "File search",
+                    "statusText": "Done",
+                    "status": "SUCCESS",
+                    "isHidden": false
+                },
+                {
+                    "type": "text",
+                    "text": "Let me examine the main controller and content controller to understand the initialization issues:"
+                },
+                {
+                    "type": "toolCall",
+                    "toolCallId": "toolu_016vJey4ver4zKhMV97gjQAB",
+                    "statusText": "Viewed file (from the beginning up to line 400)",
+                    "status": "SUCCESS",
+                    "context": {
+                        "files": [
+                            {
+                                "path": "src/main/java/com/papel/imdb_clone/controllers/RefactoredMainController.java",
+                                "fsPath": "C:/Users/MA$/IdeaProjects/imdb_clone/src/main/java/com/papel/imdb_clone/controllers/RefactoredMainController.java"
+                            }
+                        ]
+                    },
+                    "isHidden": false
+                },
+                {
+                    "type": "toolCall",
+                    "toolCallId": "toolu_01LFEeyWUoVHVXj9djgviaeU",
+                    "statusText": "Viewed file (from the beginning up to line 400)",
+                    "status": "SUCCESS",
+                    "context": {
+                        "files": [
+                            {
+                                "path": "src/main/java/com/papel/imdb_clone/controllers/ContentController.java",
+                                "fsPath": "C:/Users/MA$/IdeaProjects/imdb_clone/src/main/java/com/papel/imdb_clone/controllers/ContentController.java"
+                            }
+                        ]
+                    },
+                    "isHidden": false
+                },
+                {
+                    "type": "text",
+                    "text": "Let me search for the main application class to understand how controllers are being initialized:"
+                },
+                {
+                    "type": "toolCall",
+                    "toolCallId": "toolu_01R8KirqN9RFfxKLEDZK6dnZ",
+                    "title": "File search",
+                    "statusText": "Done",
+                    "status": "SUCCESS",
+                    "isHidden": false
+                },
+                {
+                    "type": "toolCall",
+                    "toolCallId": "toolu_01WHzzyBjn734FduLSMYQ72Z",
+                    "title": "File search",
+                    "statusText": "Done",
+                    "status": "SUCCESS",
+                    "isHidden": false
+                },
+                {
+                    "type": "toolCall",
+                    "toolCallId": "toolu_018mFbW7YsbjSkSkcEPqvFfh",
+                    "statusText": "Viewed file (lines 1:21)",
+                    "status": "SUCCESS",
+                    "context": {
+                        "files": [
+                            {
+                                "path": "src/main/java/com/papel/imdb_clone/HelloApplication.java",
+                                "fsPath": "C:/Users/MA$/IdeaProjects/imdb_clone/src/main/java/com/papel/imdb_clone/HelloApplication.java"
+                            }
+                        ]
+                    },
+                    "isHidden": false
+                },
+                {
+                    "type": "toolCall",
+                    "toolCallId": "toolu_01Y81UJqdZvVBmp5y5GrtLHQ",
+                    "statusText": "Viewed file (lines 1:250)",
+                    "status": "SUCCESS",
+                    "context": {
+                        "files": [
+                            {
+                                "path": "src/main/java/com/papel/imdb_clone/gui/ImprovedMovieApp.java",
+                                "fsPath": "C:/Users/MA$/IdeaProjects/imdb_clone/src/main/java/com/papel/imdb_clone/gui/ImprovedMovieApp.java"
+                            }
+                        ]
+                    },
+                    "isHidden": false
+                },
+                {
+                    "type": "text",
+                    "text": "Now let me check the UICoordinator to understand how the content controller should be initialized:"
+                },
+                {
+                    "type": "toolCall",
+                    "toolCallId": "toolu_01VtAZG8J86howFSeN8Dm4Ku",
+                    "title": "File search",
+                    "statusText": "Done",
+                    "status": "SUCCESS",
+                    "isHidden": false
+                },
+                {
+                    "type": "toolCall",
+                    "toolCallId": "toolu_01XtSjX6HasxudNB2vzi2dRz",
+                    "statusText": "Viewed file (lines 1:146)",
+                    "status": "SUCCESS",
+                    "context": {
+                        "files": [
+                            {
+                                "path": "src/main/java/com/papel/imdb_clone/controllers/coordinator/UICoordinator.java",
+                                "fsPath": "C:/Users/MA$/IdeaProjects/imdb_clone/src/main/java/com/papel/imdb_clone/controllers/coordinator/UICoordinator.java"
+                            }
+                        ]
+                    },
+                    "isHidden": false
+                },
+                {
+                    "type": "text",
+                    "text": "Now let me check the BaseController to understand the initialization pattern:"
+                },
+                {
+                    "type": "toolCall",
+                    "toolCallId": "toolu_0131q7TZECes2GXmthGCHn7F",
+                    "statusText": "Viewed file (lines 1:51)",
+                    "status": "SUCCESS",
+                    "context": {
+                        "files": [
+                            {
+                                "path": "src/main/java/com/papel/imdb_clone/controllers/BaseController.java",
+                                "fsPath": "C:/Users/MA$/IdeaProjects/imdb_clone/src/main/java/com/papel/imdb_clone/controllers/BaseController.java"
+                            }
+                        ]
+                    },
+                    "isHidden": false
+                },
+                {
+                    "type": "text",
+                    "text": "Let me check the FXML files to understand the structure:"
+                },
+                {
+                    "type": "toolCall",
+                    "toolCallId": "toolu_01Nc8HNg2qJWxU5i9tQqzLMd",
+                    "statusText": "Viewed file (lines 1:217)",
+                    "status": "SUCCESS",
+                    "context": {
+                        "files": [
+                            {
+                                "path": "src/main/resources/fxml/main-refactored.fxml",
+                                "fsPath": "C:/Users/MA$/IdeaProjects/imdb_clone/src/main/resources/fxml/main-refactored.fxml"
+                            }
+                        ]
+                    },
+                    "isHidden": false
+                },
+                {
+                    "type": "text",
+                    "text": "Let me check if the content-view.fxml exists:"
+                },
+                {
+                    "type": "toolCall",
+                    "toolCallId": "toolu_01X2V4LuVKcvpJNKmN7S5Sdy",
+                    "title": "File search",
+                    "statusText": "Done",
+                    "status": "SUCCESS",
+                    "isHidden": false
+                },
+                {
+                    "type": "toolCall",
+                    "toolCallId": "toolu_018JFAzzBtiy7c5xzj49Y2yo",
+                    "title": "File search",
+                    "statusText": "Done",
+                    "status": "SUCCESS",
+                    "isHidden": false
+                },
+                {
+                    "type": "toolCall",
+                    "toolCallId": "toolu_01XwhJXyDNiVfRH2rgraNtj8",
+                    "statusText": "Viewed file (lines 1:159)",
+                    "status": "SUCCESS",
+                    "context": {
+                        "files": [
+                            {
+                                "path": "src/main/resources/fxml/movie-view.fxml",
+                                "fsPath": "C:/Users/MA$/IdeaProjects/imdb_clone/src/main/resources/fxml/movie-view.fxml"
+                            }
+                        ]
+                    },
+                    "isHidden": false
+                },
+                {
+                    "type": "text",
+                    "text": "Now let me check the series-view.fxml:"
+                },
+                {
+                    "type": "toolCall",
+                    "toolCallId": "toolu_01VcNUSp5gwqJ4k2HkhfekJt",
+                    "statusText": "Viewed file (lines 1:160)",
+                    "status": "SUCCESS",
+                    "context": {
+                        "files": [
+                            {
+                                "path": "src/main/resources/fxml/series-view.fxml",
+                                "fsPath": "C:/Users/MA$/IdeaProjects/imdb_clone/src/main/resources/fxml/series-view.fxml"
+                            }
+                        ]
+                    },
+                    "isHidden": false
+                },
+                {
+                    "type": "text",
+                    "text": "Now let me search for unused methods in the ContentController to identify what needs to be cleaned up:"
+                },
+                {
+                    "type": "toolCall",
+                    "toolCallId": "toolu_01WG1Pyq6Pqq9P1c65QThAUj",
+                    "title": "Fulltext search",
+                    "statusText": "Failed",
+                    "status": "ERROR",
+                    "isHidden": false
+                },
+                {
+                    "type": "toolCall",
+                    "toolCallId": "toolu_01RBNtbEhoDkFVUKx4VxaUrk",
+                    "title": "Fulltext search",
+                    "statusText": "Done",
+                    "status": "SUCCESS",
+                    "isHidden": false
+                },
+                {
+                    "type": "text",
+                    "text": "Let me get the full ContentController to understand all the methods:"
+                },
+                {
+                    "type": "toolCall",
+                    "toolCallId": "toolu_01EScGxCj5yG3JSvNuUZdufq",
+                    "statusText": "Viewed file (lines 370:569)",
+                    "status": "SUCCESS",
+                    "context": {
+                        "files": [
+                            {
+                                "path": "src/main/java/com/papel/imdb_clone/controllers/ContentController.java",
+                                "fsPath": "C:/Users/MA$/IdeaProjects/imdb_clone/src/main/java/com/papel/imdb_clone/controllers/ContentController.java"
+                            }
+                        ]
+                    },
+                    "isHidden": false
+                },
+                {
+                    "type": "toolCall",
+                    "toolCallId": "toolu_01UkZuPGErUX8DDYseTvpeT2",
+                    "statusText": "Viewed file (lines 570:769)",
+                    "status": "SUCCESS",
+                    "context": {
+                        "files": [
+                            {
+                                "path": "src/main/java/com/papel/imdb_clone/controllers/ContentController.java",
+                                "fsPath": "C:/Users/MA$/IdeaProjects/imdb_clone/src/main/java/com/papel/imdb_clone/controllers/ContentController.java"
+                            }
+                        ]
+                    },
+                    "isHidden": false
+                },
+                {
+                    "type": "toolCall",
+                    "toolCallId": "toolu_01PpDZ3HVMSKYohFcPtFaWag",
+                    "statusText": "Viewed file (lines 770:969)",
+                    "status": "SUCCESS",
+                    "context": {
+                        "files": [
+                            {
+                                "path": "src/main/java/com/papel/imdb_clone/controllers/ContentController.java",
+                                "fsPath": "C:/Users/MA$/IdeaProjects/imdb_clone/src/main/java/com/papel/imdb_clone/controllers/ContentController.java"
+                            }
+                        ]
+                    },
+                    "isHidden": false
+                },
+                {
+                    "type": "toolCall",
+                    "toolCallId": "toolu_01QoWTbpHzB7kw9cffV4hU9W",
+                    "statusText": "Viewing file",
+                    "status": "IN_PROGRESS",
+                    "isHidden": false
+                }
+            ],
+            "context": {
+                "author": "Code agent",
+                "operationId": "d771bba3-c166-4dd0-9ce3-a370a94903b2"
+            },
+            "createdAt": 1755442291103,
+            "isInternal": false
+        }
+    ],
+    "isAgent": true,
+    "isCustomAgent": false,
+    "isUnitTestsAgent": false,
+    "isE2EAgent": false,
+    "isQnaAgent": false,
+    "isRepoInfoAgent": false,
+    "isClaudeCode": false,
+    "isZencoderCli": false,
+    "autoApply": true,
+    "model": "default"
+}
+}
