@@ -26,6 +26,7 @@ public class Movie extends Content {
     private String posterUrl;
     private String trailerUrl;
     private List<String> imageUrls;
+    private Arrays directors;
 
     public Date getReleaseDate() {
         return releaseDate != null ? new Date(releaseDate.getTime()) : null;
@@ -307,5 +308,9 @@ public class Movie extends Content {
 
     public void addActor(Actor actor) {
         this.actors.add(actor);
+    }
+
+    public Arrays getDirectors() {
+        return directors;
     }
 }

@@ -18,9 +18,11 @@ import javafx.concurrent.Task;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.geometry.Insets;
+import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.control.*;
 import javafx.scene.layout.GridPane;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.stage.Popup;
 import javafx.stage.Stage;
@@ -139,31 +141,53 @@ public class ContentController extends BaseController {
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {
+        logger.info("Initializing ContentController...");
+
         try {
-            initializeServices();
-            setupEventListeners();
-            setupSearchFunctionality();
+            // Initialize UI components if they exist
+            if (globalSearchField != null) {
+                setupSearchFunctionality();
+            } else {
+                logger.warn("globalSearchField is not available. Search functionality will be disabled.");
+            }
+
             setupTableColumns();
+            setupEventListeners();
 
-            // Set column resize policy programmatically
+            // Initialize movie table if it exists
             if (movieTable != null) {
-                movieTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
-            }
-
-            loadInitialData();
-
-            // Set default sort options
-            if (movieSortBy != null) {
-                movieSortBy.getItems().addAll("Title (A-Z)", "Title (Z-A)", "Year (Newest)", "Year (Oldest)", "Rating (High to Low)");
-                movieSortBy.getSelectionModel().selectedItemProperty().addListener((obs, oldVal, newVal) -> {
-                    if (newVal != null) {
+                movieTable.setPlaceholder(new Label("No movies found"));
+                
+                // Initialize table columns
+                initializeMovieTableColumns();
+                
+                // Set up sorting if sort controls exist
+                if (movieSortBy != null) {
+                    movieSortBy.getItems().addAll("Title (A-Z)", "Title (Z-A)", "Year (Newest)", "Year (Oldest)", "Rating (High-Low)", "Rating (Low-High)");
+                    movieSortBy.setValue("Title (A-Z)");
+                    movieSortBy.getSelectionModel().selectedItemProperty().addListener((obs, oldVal, newVal) -> {
                         sortMovieTable(newVal);
-                    }
-                });
-                movieSortBy.getSelectionModel().selectFirst();
+                    });
+                }
+                
+                // Load initial data
+                loadInitialData();
+            } else {
+                logger.warn("movieTable is not initialized. Please check your FXML file.");
             }
 
-            if (seriesSortBy != null) {
+            // Initialize series table if it exists
+            if (seriesTable != null) {
+                seriesTable.setPlaceholder(new Label("No series found"));
+
+                // Set up sorting if sort controls exist
+                if (seriesSortBy != null) {
+                    seriesSortBy.getItems().addAll("Title (A-Z)", "Title (Z-A)", "Year (Newest)", "Year (Oldest)", "Rating (High-Low)", "Rating (Low-High)");
+                    seriesSortBy.setValue("Title (A-Z)");
+                    seriesSortBy.getSelectionModel().selectedItemProperty().addListener((obs, oldVal, newVal) -> {
+                        // Implement series sorting if needed
+                    });
+                }
                 seriesSortBy.getItems().addAll("Title (A-Z)", "Title (Z-A)", "Year (Newest)", "Year (Oldest)", "Rating (High to Low)");
                 seriesSortBy.getSelectionModel().selectFirst();
             }
@@ -174,6 +198,41 @@ public class ContentController extends BaseController {
         } catch (Exception e) {
             logger.error("Error initializing ContentController: {}", e.getMessage(), e);
             UIUtils.showError("Initialization Error", "Failed to initialize content management");
+        }
+    }
+
+    private void sortMovieTable(String newVal) {
+        switch (newVal) {
+            case "Title (A-Z)":
+                movieTable.getSortOrder().clear();
+                movieTable.getSortOrder().add(movieTitleColumn);
+                break;
+            case "Title (Z-A)":
+                movieTable.getSortOrder().clear();
+                movieTable.getSortOrder().add(movieTitleColumn);
+                movieTable.getSortOrder().add(movieTitleColumn);
+                break;
+            case "Year (Newest)":
+                movieTable.getSortOrder().clear();
+                movieTable.getSortOrder().add(movieYearColumn);
+                break;
+            case "Year (Oldest)":
+                movieTable.getSortOrder().clear();
+                movieTable.getSortOrder().add(movieYearColumn);
+                movieTable.getSortOrder().add(movieYearColumn);
+                break;
+            case "Rating (High-Low)":
+                movieTable.getSortOrder().clear();
+                movieTable.getSortOrder().add(movieRatingColumn);
+                break;
+            case "Rating (Low-High)":
+                movieTable.getSortOrder().clear();
+                movieTable.getSortOrder().add(movieRatingColumn);
+                movieTable.getSortOrder().add(movieRatingColumn);
+                break;
+            default:
+                movieTable.getSortOrder().clear();
+                break;
         }
     }
 
@@ -199,59 +258,130 @@ public class ContentController extends BaseController {
         globalSearchField.focusedProperty().addListener((obs, oldVal, newVal) -> {
             if (newVal && !globalSearchField.getText().isEmpty()) {
                 showSearchSuggestions();
-            } else if (!newVal) {
+            } else if (!newVal && searchSuggestions != null) {
                 // Small delay to allow for clicking on a suggestion
                 PauseTransition delay = new PauseTransition(Duration.millis(200));
-                delay.setOnFinished(event -> searchSuggestions.hide());
+                delay.setOnFinished(event -> {
+                    if (searchSuggestions != null) {
+                        searchSuggestions.hide();
+                    }
+                });
                 delay.play();
             }
         });
     }
 
     private void setupTableColumns() {
-        if (movieTable == null) {
-            logger.warn("movieTable is not initialized");
-            return;
-        }
+        // Setup movie table columns if they exist
+        if (movieTable != null) {
+            try {
+                // Clear existing columns to avoid duplicates
+                movieTable.getColumns().clear();
 
-        // Clear existing columns to avoid duplicates
-        movieTable.getColumns().clear();
-
-        // Configure table columns using FXML-injected columns
-        if (movieTitleColumn != null) {
-            movieTitleColumn.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().getTitle()));
-            movieTable.getColumns().add(movieTitleColumn);
-        }
-
-        if (movieYearColumn != null) {
-            movieYearColumn.setCellValueFactory(cellData -> {
-                Date releaseDate = cellData.getValue().getReleaseDate();
-                if (releaseDate != null) {
-                    Calendar cal = Calendar.getInstance();
-                    cal.setTime(releaseDate);
-                    return new SimpleStringProperty(String.valueOf(cal.get(Calendar.YEAR)));
+                // Configure table columns using FXML-injected columns
+                if (movieTitleColumn != null) {
+                    movieTitleColumn.setCellValueFactory(cellData -> {
+                        try {
+                            return new SimpleStringProperty(cellData.getValue().getTitle());
+                        } catch (Exception e) {
+                            logger.warn("Error getting movie title: " + e.getMessage());
+                            return new SimpleStringProperty("");
+                        }
+                    });
+                    movieTable.getColumns().add(movieTitleColumn);
                 }
-                return new SimpleStringProperty("");
-            });
-            movieTable.getColumns().add(movieYearColumn);
+
+                if (movieYearColumn != null) {
+                    movieYearColumn.setCellValueFactory(cellData -> {
+                        try {
+                            Date releaseDate = cellData.getValue().getReleaseDate();
+                            if (releaseDate != null) {
+                                Calendar cal = Calendar.getInstance();
+                                cal.setTime(releaseDate);
+                                return new SimpleStringProperty(String.valueOf(cal.get(Calendar.YEAR)));
+                            }
+                        } catch (Exception e) {
+                            logger.warn("Error getting movie year: " + e.getMessage());
+                        }
+                        return new SimpleStringProperty("");
+                    });
+                    movieTable.getColumns().add(movieYearColumn);
+                }
+
+                if (movieRatingColumn != null) {
+                    movieRatingColumn.setCellValueFactory(cellData -> {
+                        try {
+                            Movie movie = cellData.getValue();
+                            Double rating = movie != null ? Movie.getRating(movie) : 0.0;
+                            return new SimpleDoubleProperty(rating).asObject();
+                        } catch (Exception e) {
+                            logger.warn("Error getting movie rating: " + e.getMessage());
+                            return new SimpleDoubleProperty(0.0).asObject();
+                        }
+                    });
+                    movieTable.getColumns().add(movieRatingColumn);
+                }
+
+                // Set the items after columns are configured
+                movieTable.setItems(filteredMovies);
+
+                // Add row selection listener
+                movieTable.getSelectionModel().selectedItemProperty().addListener((obs, oldSelection, newSelection) -> {
+                    selectedMovie.set(newSelection);
+                });
+            } catch (Exception e) {
+                logger.error("Error setting up movie table columns: " + e.getMessage(), e);
+            }
         }
 
-        if (movieRatingColumn != null) {
-            movieRatingColumn.setCellValueFactory(cellData -> {
-                Movie movie = cellData.getValue();
-                Double rating = movie != null ? Movie.getRating(movie) : 0.0;
-                return new SimpleDoubleProperty(rating).asObject();
-            });
-            movieTable.getColumns().add(movieRatingColumn);
+        // Setup series table columns if they exist
+        if (seriesTable != null) {
+            try {
+                // Clear existing columns to avoid duplicates
+                seriesTable.getColumns().clear();
+
+                // Configure series table columns
+                if (seriesTitleColumn != null) {
+                    seriesTitleColumn.setCellValueFactory(cellData -> {
+                        try {
+                            return new SimpleStringProperty(cellData.getValue().getTitle());
+                        } catch (Exception e) {
+                            logger.warn("Error getting series title: " + e.getMessage());
+                            return new SimpleStringProperty("");
+                        }
+                    });
+                    seriesTable.getColumns().add(seriesTitleColumn);
+                }
+
+                if (seriesYearColumn != null) {
+                    seriesYearColumn.setCellValueFactory(cellData -> {
+                        try {
+                            return new SimpleIntegerProperty().asObject();
+                        } catch (Exception e) {
+                            logger.warn("Error getting series year: " + e.getMessage());
+                            return new SimpleIntegerProperty(0).asObject();
+                        }
+                    });
+                    seriesTable.getColumns().add(seriesYearColumn);
+                }
+
+                if (seriesRatingColumn != null) {
+                    seriesRatingColumn.setCellValueFactory(cellData -> {
+                        try {
+                            Series series = cellData.getValue();
+                            Double rating = series != null ? series.getRating() : 0.0;
+                            return new SimpleDoubleProperty(rating).asObject();
+                        } catch (Exception e) {
+                            logger.warn("Error getting series rating: " + e.getMessage());
+                            return new SimpleDoubleProperty(0.0).asObject();
+                        }
+                    });
+                    seriesTable.getColumns().add(seriesRatingColumn);
+                }
+            } catch (Exception e) {
+                logger.error("Error setting up series table columns: " + e.getMessage(), e);
+            }
         }
-
-        // Set the items after columns are configured
-        movieTable.setItems(filteredMovies);
-
-        // Add row selection listener
-        movieTable.getSelectionModel().selectedItemProperty().addListener((obs, oldSelection, newSelection) -> {
-            selectedMovie.set(newSelection);
-        });
     }
 
     private void performSearch(String query) {
@@ -305,6 +435,11 @@ public class ContentController extends BaseController {
     }
 
     private void showSearchSuggestions() {
+        if (searchSuggestions == null) {
+            logger.warn("searchSuggestions is not initialized");
+            return;
+        }
+
         if (!suggestionsContainer.getChildren().isEmpty()) {
             if (!searchSuggestions.isShowing()) {
                 searchSuggestions.show(globalSearchField,
@@ -320,7 +455,9 @@ public class ContentController extends BaseController {
     private void clearSearch() {
         filteredMovies.setAll(allMovies);
         suggestionsContainer.getChildren().clear();
-        searchSuggestions.hide();
+        if (searchSuggestions != null) {
+            searchSuggestions.hide();
+        }
         updateStatusLabel(allMovies.size());
     }
 
@@ -345,9 +482,9 @@ public class ContentController extends BaseController {
             this.contentDataLoader = ContentDataLoader.getInstance(dataManager);
             this.searchService = new SearchService(dataManager);
 
-            // Initialize content service
+            // Initialize content service with movie service as default
             ServiceLocator serviceLocator = ServiceLocator.getInstance();
-            this.contentService = serviceLocator.getService(ContentService.class);
+            this.contentService = serviceLocator.getService(ContentService.class, "movie");
 
             logger.debug("Services initialized successfully");
         } catch (Exception e) {
@@ -964,109 +1101,146 @@ public class ContentController extends BaseController {
     }
 
     private void initializeMovieTableColumns() {
-        // Initialize movie table columns
-        movieTitleColumn.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().getTitle()));
-        movieYearColumn.setCellValueFactory(cellData -> {
-            Date date = cellData.getValue().getReleaseDate();
-            if (date != null) {
-                Calendar cal = Calendar.getInstance();
-                cal.setTime(date);
-                return new SimpleStringProperty(String.valueOf(cal.get(Calendar.YEAR)));
+        if (movieTable == null) {
+            logger.warn("Cannot initialize columns: movieTable is null");
+            return;
+        }
+        
+        try {
+            // Title column
+            if (movieTitleColumn != null) {
+                movieTitleColumn.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().getTitle()));
             }
-            return new SimpleStringProperty("");
-        });
-        movieGenreColumn.setCellValueFactory(cellData -> {
-            List<Genre> genres = cellData.getValue().getGenres();
-            String genreText = genres != null ?
-                    genres.stream().map(Enum::name).collect(Collectors.joining(", ")) : "";
-            return new SimpleStringProperty(genreText);
-        });
-        movieRatingColumn.setCellValueFactory(cellData ->
-                new SimpleDoubleProperty(Movie.getRating(cellData.getValue())).asObject()
-        );
-        movieDurationColumn.setCellValueFactory(cellData -> {
-            Integer duration = cellData.getValue().getDuration();
-            return new SimpleIntegerProperty(duration != null ? duration : 0).asObject();
-        });
-    }
-
-    private void sortMovieTable(String sortOption) {
-        if (sortOption == null) return;
-
-        Comparator<Movie> comparator = switch (sortOption) {
-            case "Title (A-Z)" -> Comparator.comparing(Movie::getTitle);
-            case "Title (Z-A)" -> Comparator.comparing(Movie::getTitle).reversed();
-            case "Year (Newest)" -> (m1, m2) -> {
-                Date d1 = m1.getReleaseDate();
-                Date d2 = m2.getReleaseDate();
-                if (d1 == null && d2 == null) return 0;
-                if (d1 == null) return 1;
-                if (d2 == null) return -1;
-                return d2.compareTo(d1);
-            };
-            case "Year (Oldest)" -> (m1, m2) -> {
-                Date d1 = m1.getReleaseDate();
-                Date d2 = m2.getReleaseDate();
-                if (d1 == null && d2 == null) return 0;
-                if (d1 == null) return 1;
-                if (d2 == null) return -1;
-                return d1.compareTo(d2);
-            };
-            case "Rating (Highest)" -> (m1, m2) -> Double.compare(
-                    Movie.getRating(m2),
-                    Movie.getRating(m1)
-            );
-            default -> (m1, m2) -> 0;
-        };
-
-        FXCollections.sort(movieTable.getItems(), comparator);
+            
+            // Year column
+            if (movieYearColumn != null) {
+                movieYearColumn.setCellValueFactory(cellData -> 
+                    new SimpleStringProperty(String.valueOf(cellData.getValue().getYear()))
+                );
+            }
+            
+            // Genre column
+            if (movieGenreColumn != null) {
+                movieGenreColumn.setCellValueFactory(cellData -> {
+                    List<Genre> genres = cellData.getValue().getGenres();
+                    String genreText = genres.stream()
+                        .map(Genre::name)
+                        .collect(Collectors.joining(", "));
+                    return new SimpleStringProperty(genreText);
+                });
+            }
+            
+            // Director column
+            if (movieDirectorColumn != null) {
+                movieDirectorColumn.setCellValueFactory(cellData -> {
+                    Movie movie = cellData.getValue();
+                    if (movie.getDirector() != null) {
+                        // Access director name directly from the director string
+                        return new SimpleStringProperty(movie.getDirector());
+                    }
+                    return new SimpleStringProperty("");
+                });
+            }
+            
+            // Rating column
+            if (movieRatingColumn != null) {
+                movieRatingColumn.setCellValueFactory(cellData -> {
+                    Double rating = cellData.getValue().getImdbRating();
+                    return new SimpleDoubleProperty(rating != null ? rating : 0.0).asObject();
+                });
+            }
+            
+            // Duration column
+            if (movieDurationColumn != null) {
+                movieDurationColumn.setCellValueFactory(cellData -> 
+                    new SimpleIntegerProperty(cellData.getValue().getDuration()).asObject()
+                );
+            }
+            
+            // Actions column
+            if (movieActionsColumn != null) {
+                movieActionsColumn.setCellFactory(param -> new TableCell<>() {
+                    private final Button editButton = new Button("Edit");
+                    private final Button deleteButton = new Button("Delete");
+                    
+                    {
+                        editButton.setOnAction(event -> {
+                            Movie movie = getTableView().getItems().get(getIndex());
+                            // TODO: Implement edit functionality
+                            logger.info("Edit movie: {}", movie.getTitle());
+                        });
+                        
+                        deleteButton.setOnAction(event -> {
+                            Movie movie = getTableView().getItems().get(getIndex());
+                            handleDeleteMovie();
+                        });
+                    }
+                    
+                    @Override
+                    protected void updateItem(Void item, boolean empty) {
+                        super.updateItem(item, empty);
+                        if (empty) {
+                            setGraphic(null);
+                        } else {
+                            HBox buttons = new HBox(5, editButton, deleteButton);
+                            buttons.setAlignment(Pos.CENTER);
+                            setGraphic(buttons);
+                        }
+                    }
+                });
+            }
+            
+            logger.debug("Movie table columns initialized successfully");
+            
+        } catch (Exception e) {
+            logger.error("Error initializing movie table columns: {}", e.getMessage(), e);
+        }
     }
 
     private void loadInitialData() {
-        try {
-            // Show loading indicator
-            showLoadingIndicator(true);
-
-            // Load data in background
-            Task<Void> loadTask = new Task<>() {
-                @Override
-                protected Void call() {
-                    // Load movies
-                    List<Movie> movies = contentService.getAllMovies();
+        if (dataManager == null) {
+            logger.error("DataManager is not initialized. Cannot load movies.");
+            return;
+        }
+        
+        Task<Void> task = new Task<>() {
+            @Override
+            protected Void call() throws Exception {
+                try {
+                    // Load movies from the data manager
+                    List<Movie> movies = dataManager.getAllMovies();
                     Platform.runLater(() -> {
                         allMovies.setAll(movies);
                         filteredMovies.setAll(movies);
+                        movieTable.setItems(filteredMovies);
                         updateStatusLabel(movies.size());
-
-                        // Update movie count
-                        if (movieCountLabel != null) {
-                            movieCountLabel.setText(String.valueOf(movies.size()));
-                        }
-
-                        // Initial sort
-                        if (movieSortBy != null) {
-                            sortMovieTable(movieSortBy.getSelectionModel().getSelectedItem());
-                        }
+                        logger.info("Successfully loaded {} movies into the table", movies.size());
                     });
                     return null;
+                } catch (Exception e) {
+                    logger.error("Error loading movies: {}", e.getMessage(), e);
+                    throw e;
                 }
-            };
+            }
+        };
 
-            // Handle completion
-            loadTask.setOnFailed(e -> {
-                Throwable ex = loadTask.getException();
-                logger.error("Error loading initial data: {}", ex.getMessage(), ex);
-                Platform.runLater(() ->
-                        UIUtils.showError("Loading Error", "Failed to load initial data: " + ex.getMessage()));
-            });
+        // Handle task completion
+        task.setOnSucceeded(event -> {
+            logger.info("Successfully loaded movies");
+        });
 
-            // Start the task in a background thread
-            new Thread(loadTask).start();
+        task.setOnFailed(event -> {
+            Throwable ex = task.getException();
+            logger.error("Error loading initial data: {}", ex != null ? ex.getMessage() : "Unknown error", ex);
+            Platform.runLater(() ->
+                UIUtils.showError("Loading Error", "Failed to load initial data: " + 
+                    (ex != null ? ex.getMessage() : "Unknown error")));
+        });
 
-        } catch (Exception e) {
-            logger.error("Error in loadInitialData: {}", e.getMessage(), e);
-            UIUtils.showError("Error", "Failed to load initial data: " + e.getMessage());
-        }
+        // Start the task in a background thread
+        Thread thread = new Thread(task);
+        thread.setDaemon(true);
+        thread.start();
     }
 
     private void refreshMovieTable() {

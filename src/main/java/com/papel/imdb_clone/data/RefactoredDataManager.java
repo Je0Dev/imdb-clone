@@ -88,8 +88,8 @@ public class RefactoredDataManager {
                 movieRepository,
                 seriesService,
                 actorService,
-                directorService
-        );
+                directorService,
+                movieService);
 
         // Only register services if not skipped
         if (!skipServiceRegistration) {

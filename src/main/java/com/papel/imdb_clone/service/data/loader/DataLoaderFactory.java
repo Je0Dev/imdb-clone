@@ -1,5 +1,9 @@
 package com.papel.imdb_clone.service.data.loader;
 
+import com.papel.imdb_clone.model.Actor;
+import com.papel.imdb_clone.model.Director;
+import com.papel.imdb_clone.model.Movie;
+import com.papel.imdb_clone.model.Series;
 import com.papel.imdb_clone.repository.impl.InMemoryMovieRepository;
 import com.papel.imdb_clone.repository.impl.InMemoryUserRepository;
 import com.papel.imdb_clone.service.CelebrityService;
@@ -22,18 +26,19 @@ public class DataLoaderFactory {
     /**
      * Creates a new DataLoaderFactory with the required dependencies.
      *
-     * @param userRepository the user repository
+     * @param userRepository  the user repository
      * @param movieRepository the movie repository
-     * @param seriesService the series service
-     * @param actorService the actor service
+     * @param movieService
+     * @param seriesService   the series service
+     * @param actorService    the actor service
      * @param directorService the director service
      */
     public DataLoaderFactory(
             InMemoryUserRepository userRepository,
             InMemoryMovieRepository movieRepository,
-            ContentService<com.papel.imdb_clone.model.Series> seriesService,
-            CelebrityService<com.papel.imdb_clone.model.Actor> actorService,
-            CelebrityService<com.papel.imdb_clone.model.Director> directorService) {
+            ContentService<Movie> movieService, ContentService<Series> seriesService,
+            CelebrityService<Actor> actorService,
+            CelebrityService<Director> directorService) {
         this.userRepository = userRepository;
         this.movieRepository = movieRepository;
         this.seriesService = seriesService;
@@ -44,7 +49,7 @@ public class DataLoaderFactory {
     /**
      * Gets a loader instance of the specified type.
      *
-     * @param <T> the type of loader to get
+     * @param <T>         the type of loader to get
      * @param loaderClass the class of the loader to get
      * @return the loader instance
      * @throws IllegalArgumentException if the loader type is not supported

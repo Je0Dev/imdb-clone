@@ -2,8 +2,10 @@ package com.papel.imdb_clone.service;
 
 import com.papel.imdb_clone.controllers.coordinator.UICoordinator;
 import com.papel.imdb_clone.data.RefactoredDataManager;
-import com.papel.imdb_clone.repository.MovieRepository;
-import com.papel.imdb_clone.repository.UserRepository;
+import com.papel.imdb_clone.model.Actor;
+import com.papel.imdb_clone.model.Director;
+import com.papel.imdb_clone.model.Movie;
+import com.papel.imdb_clone.model.Series;
 import com.papel.imdb_clone.repository.impl.InMemoryMovieRepository;
 import com.papel.imdb_clone.repository.impl.InMemoryUserRepository;
 import com.papel.imdb_clone.service.data.FileDataLoaderService;
@@ -29,6 +31,7 @@ public class ServiceLocator {
     private static Stage primaryStage;
     private static FileDataLoaderService fileDataLoaderService;
     private static DataLoaderFactory dataLoaderFactory;
+    private EncryptionService encryptionService;
 
     private ServiceLocator() {
         initializeServices();
@@ -51,18 +54,33 @@ public class ServiceLocator {
         }
 
         // Initialize repositories with concrete types
-        InMemoryUserRepository userRepository = (InMemoryUserRepository) dataManager.getUserRepository();
+        InMemoryUserRepository userRepository = dataManager.getUserRepository();
         InMemoryMovieRepository movieRepository = (InMemoryMovieRepository) dataManager.getMovieRepository();
 
         // Initialize services
-        ContentService<com.papel.imdb_clone.model.Series> seriesService = new ContentService<>(com.papel.imdb_clone.model.Series.class);
-        CelebrityService<com.papel.imdb_clone.model.Actor> actorService = new CelebrityService<>(com.papel.imdb_clone.model.Actor.class);
-        CelebrityService<com.papel.imdb_clone.model.Director> directorService = new CelebrityService<>(com.papel.imdb_clone.model.Director.class);
+        UserService userService = UserService.getInstance(dataManager, encryptionService);
+        registerService(UserService.class, userService);
+
+        // Initialize content services with proper generic types
+        ContentService<Movie> movieService = new ContentService<>(Movie.class);
+        ContentService<Series> seriesService = new ContentService<>(Series.class);
+        CelebrityService<Actor> actorService = new CelebrityService<>(Actor.class);
+        CelebrityService<Director> directorService = new CelebrityService<>(Director.class);
+
+        // Register content services with type-safe qualifiers
+        registerService(ContentService.class, movieService, "movie");
+        registerService(ContentService.class, seriesService, "series");
+        registerService(CelebrityService.class, actorService, "actor");
+        registerService(CelebrityService.class, directorService, "director");
+
+        // Register default ContentService instance for backward compatibility
+        registerService(ContentService.class, movieService);
 
         // Initialize data loader factory with concrete repository types
         dataLoaderFactory = new DataLoaderFactory(
                 userRepository,
                 movieRepository,
+                movieService,
                 seriesService,
                 actorService,
                 directorService
@@ -75,8 +93,8 @@ public class ServiceLocator {
                 movieRepository,
                 seriesService,
                 actorService,
-                directorService
-        );
+                directorService,
+                movieService);
         registerService(FileDataLoaderService.class, fileDataLoaderService);
 
         // Initialize search service
@@ -147,6 +165,31 @@ public class ServiceLocator {
         registerService(serviceClass, serviceInstance, "default");
     }
 
+
+    /**
+     * Get a service instance with a specific qualifier
+     */
+    @SuppressWarnings("unchecked")
+    public <T> T getService(Class<T> serviceClass, String qualifier) {
+        if (serviceClass == null || qualifier == null) {
+            throw new IllegalArgumentException("Service class and qualifier cannot be null");
+        }
+
+        // Try with qualified key first
+        String qualifiedKey = serviceClass.getName() + "_" + qualifier;
+        T service = (T) services.get(qualifiedKey);
+
+        if (service == null) {
+            // Fallback to unqualified lookup
+            service = (T) services.get(serviceClass);
+        }
+
+        if (service == null) {
+            throw new IllegalStateException("Service not found: " + serviceClass.getSimpleName() + " with qualifier: " + qualifier);
+        }
+
+        return service;
+    }
 
     /**
      * Get a service instance (default qualifier)

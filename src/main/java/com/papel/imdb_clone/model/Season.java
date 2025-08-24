@@ -22,7 +22,7 @@ public class Season {
 
     /**
      * Constructor for Season with season number, episode count, and title.
-     * 
+     *
      * @param seasonNumber the season number
      * @param episodeCount the episode count (not used in this implementation)
      * @param title        the title of the season
@@ -130,5 +130,9 @@ public class Season {
     }
 
     public void setSeries(Series series) {
+    }
+
+    public <E> void setEpisodes(List<Episode> episodes) {
+        this.episodes = episodes;
     }
 }

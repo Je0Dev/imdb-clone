@@ -284,4 +284,7 @@ public class Series extends Content {
         return true;
     }
 
+    public Double getRating() {
+        return rating;
+    }
 }

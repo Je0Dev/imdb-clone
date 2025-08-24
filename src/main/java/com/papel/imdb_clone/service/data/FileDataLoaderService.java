@@ -1,5 +1,9 @@
 package com.papel.imdb_clone.service.data;
 
+import com.papel.imdb_clone.model.Actor;
+import com.papel.imdb_clone.model.Director;
+import com.papel.imdb_clone.model.Movie;
+import com.papel.imdb_clone.model.Series;
 import com.papel.imdb_clone.repository.impl.InMemoryMovieRepository;
 import com.papel.imdb_clone.repository.impl.InMemoryUserRepository;
 import com.papel.imdb_clone.service.CelebrityService;
@@ -20,19 +24,21 @@ public class FileDataLoaderService implements DataLoaderService {
     private static final Logger logger = LoggerFactory.getLogger(FileDataLoaderService.class);
 
     private final DataLoaderFactory loaderFactory;
+    
     private final Map<String, String> dataFiles = new HashMap<>();
+
 
     public FileDataLoaderService(
             InMemoryUserRepository userRepository,
             InMemoryMovieRepository movieRepository,
-            ContentService<com.papel.imdb_clone.model.Series> seriesService,
-            CelebrityService<com.papel.imdb_clone.model.Actor> actorService,
-            CelebrityService<com.papel.imdb_clone.model.Director> directorService) {
+            ContentService<Series> seriesService,
+            CelebrityService<Actor> actorService,
+            CelebrityService<Director> directorService, ContentService<Movie> movieService) {
 
         this.loaderFactory = new DataLoaderFactory(
                 userRepository,
                 movieRepository,
-                seriesService,
+                movieService, seriesService,
                 actorService,
                 directorService
         );
@@ -73,7 +79,7 @@ public class FileDataLoaderService implements DataLoaderService {
             long endTime = System.currentTimeMillis();
             double duration = (endTime - startTime) / 1000.0;
             logger.info("\n=== Data loading completed in {:.2f} seconds ===", duration);
-            
+
         } catch (Exception e) {
             logger.error("\n!!! ERROR DURING DATA LOADING !!!", e);
             throw new IOException("Failed to load data: " + e.getMessage(), e);
@@ -84,11 +90,11 @@ public class FileDataLoaderService implements DataLoaderService {
     public void loadUsers(String filename) throws IOException {
         logger.info("Loading users from {}", filename);
         long startTime = System.currentTimeMillis();
-        
+
         try {
             UserDataLoader loader = loaderFactory.getLoader(UserDataLoader.class);
             loader.load(filename);
-            
+
             long endTime = System.currentTimeMillis();
             logger.info("Successfully loaded users in {} ms", (endTime - startTime));
         } catch (Exception e) {
@@ -101,11 +107,11 @@ public class FileDataLoaderService implements DataLoaderService {
     public void loadActors(String filename) throws IOException {
         logger.info("Loading actors from {}", filename);
         long startTime = System.currentTimeMillis();
-        
+
         try {
             ActorDataLoader loader = loaderFactory.getLoader(ActorDataLoader.class);
             loader.load(filename);
-            
+
             long endTime = System.currentTimeMillis();
             logger.info("Successfully loaded actors in {} ms", (endTime - startTime));
         } catch (Exception e) {
@@ -118,11 +124,11 @@ public class FileDataLoaderService implements DataLoaderService {
     public void loadDirectors(String filename) throws IOException {
         logger.info("Loading directors from {}", filename);
         long startTime = System.currentTimeMillis();
-        
+
         try {
             DirectorDataLoader loader = loaderFactory.getLoader(DirectorDataLoader.class);
             loader.load(filename);
-            
+
             long endTime = System.currentTimeMillis();
             logger.info("Successfully loaded directors in {} ms", (endTime - startTime));
         } catch (Exception e) {
@@ -135,11 +141,11 @@ public class FileDataLoaderService implements DataLoaderService {
     public void loadMovies(String filename) throws IOException {
         logger.info("Loading movies from {}", filename);
         long startTime = System.currentTimeMillis();
-        
+
         try {
             MovieDataLoader loader = loaderFactory.getLoader(MovieDataLoader.class);
             loader.load(filename);
-            
+
             long endTime = System.currentTimeMillis();
             logger.info("Successfully loaded movies in {} ms", (endTime - startTime));
         } catch (Exception e) {
@@ -152,11 +158,11 @@ public class FileDataLoaderService implements DataLoaderService {
     public void loadSeries(String filename) throws IOException {
         logger.info("Loading series from {}", filename);
         long startTime = System.currentTimeMillis();
-        
+
         try {
             SeriesDataLoader loader = loaderFactory.getLoader(SeriesDataLoader.class);
             loader.load(filename);
-            
+
             long endTime = System.currentTimeMillis();
             logger.info("Successfully loaded series in {} ms", (endTime - startTime));
         } catch (Exception e) {
@@ -169,11 +175,11 @@ public class FileDataLoaderService implements DataLoaderService {
     public void loadAwardsAndBoxOffice(String filename) throws IOException {
         logger.info("Loading awards and box office data from {}", filename);
         long startTime = System.currentTimeMillis();
-        
+
         try {
             AwardsDataLoader loader = loaderFactory.getLoader(AwardsDataLoader.class);
             loader.load(filename);
-            
+
             long endTime = System.currentTimeMillis();
             logger.info("Successfully loaded awards and box office data in {} ms", (endTime - startTime));
         } catch (Exception e) {
