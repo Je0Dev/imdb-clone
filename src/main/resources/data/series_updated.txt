@@ -1,8 +1,8 @@
 # Format: Title,Genre,Seasons,StartYear,EndYear,Rating,Creator,MainCast
 Breaking Bad,CRIME,5,2008,2013,9.5,Vince Gillian,Bryan Cranston;Aaron Paul;Anna Gunn
 Game of Thrones,FANTASY,8,2011,2019,9.3,David Benioff;D.B. Weiss,Emilia Clarke;Kit Harington;Peter Dinklage
-Stranger Things,SCI-FI,4,2016,2022,8.7,The Duffer Brothers,Millie Bobby Brown;Finn Wolfhard;Winona Ryder
-The Mandalorian,SCIENCE_FICTION,3,2019,2023,8.7,Jon Favreau,Pedro Pascal;Gina Carano;Carl Weathers
+Stranger Things,SCI_FI,4,2016,2022,8.7,The Duffer Brothers,Millie Bobby Brown;Finn Wolfhard;Winona Ryder
+The Mandalorian,SCI_FI,3,2019,2023,8.7,Jon Favreau,Pedro Pascal;Gina Carano;Carl Weathers
 The Witcher,FANTASY,3,2019,2023,8.1,Lauren Schmidt Hissrich,Henry Cavill;Anya Chalotra;Freya Allan
 Succession,DRAMA,4,2018,2023,8.9,Jesse Armstrong,Brian Cox;Jeremy Strong;Sarah Snook
 The Crown,DRAMA,5,2016,2022,8.6,Peter Morgan,Claire Foy;Olivia Colman;Imelda Staunton

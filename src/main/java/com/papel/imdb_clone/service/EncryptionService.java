@@ -15,7 +15,7 @@ public class EncryptionService {
     private static EncryptionService instance;
     private final SecureRandom secureRandom;
 
-    private EncryptionService() {
+    EncryptionService() {
         this.secureRandom = new SecureRandom();
     }
 

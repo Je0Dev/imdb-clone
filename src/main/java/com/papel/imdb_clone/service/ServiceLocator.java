@@ -33,94 +33,156 @@ public class ServiceLocator {
     private static FileDataLoaderService fileDataLoaderService;
     private static DataLoaderFactory dataLoaderFactory;
     private EncryptionService encryptionService;
+    private static volatile boolean servicesInitialized = false;
+    private static final Object lock = new Object();
 
     private ServiceLocator() {
-        initializeServices();
+        // Private constructor to prevent instantiation
     }
 
     public static synchronized ServiceLocator getInstance() {
         if (instance == null) {
-            instance = new ServiceLocator();
+            synchronized (ServiceLocator.class) {
+                if (instance == null) {
+                    instance = new ServiceLocator();
+                }
+            }
         }
         return instance;
     }
 
-    private void initializeServices() {
-        logger.info("Initializing application services with refactored architecture...");
-
-        // Initialize core services first
-        if (dataManager == null) {
-            dataManager = RefactoredDataManager.getInstance();
-            registerService(RefactoredDataManager.class, dataManager);
+    public static void setPrimaryStage(Stage stage) {
+        if (primaryStage == null && stage != null) {
+            synchronized (ServiceLocator.class) {
+                if (primaryStage == null) {
+                    primaryStage = stage;
+                    // If we already have an instance but services aren't initialized yet, initialize them
+                    if (instance != null && !servicesInitialized) {
+                        instance.initializeServices();
+                    }
+                }
+            }
         }
-
-        // Initialize repositories with concrete types
-        InMemoryUserRepository userRepository = dataManager.getUserRepository();
-        InMemoryMovieRepository movieRepository = (InMemoryMovieRepository) dataManager.getMovieRepository();
-        InMemorySeriesRepository seriesRepository = (InMemorySeriesRepository) dataManager.getSeriesRepository();
-
-        // Initialize services
-        UserService userService = UserService.getInstance(dataManager, encryptionService);
-        registerService(UserService.class, userService);
-
-        // Initialize content services with proper generic types
-        ContentService<Movie> movieService = new ContentService<>(Movie.class);
-        ContentService<Series> seriesService = new ContentService<>(Series.class);
-        CelebrityService<Actor> actorService = new CelebrityService<>(Actor.class);
-        CelebrityService<Director> directorService = new CelebrityService<>(Director.class);
-
-        // Register content services with type-safe qualifiers
-        registerService(ContentService.class, movieService, "movie");
-        registerService(ContentService.class, seriesService, "series");
-        registerService(CelebrityService.class, actorService, "actor");
-        registerService(CelebrityService.class, directorService, "director");
-
-        // Register default ContentService instance for backward compatibility
-        registerService(ContentService.class, movieService);
-
-        // Initialize data loader factory with concrete repository types
-        dataLoaderFactory = new DataLoaderFactory(
-                userRepository,
-                movieRepository,
-                seriesRepository,
-                movieService,
-                seriesService,
-                actorService,
-                directorService
-        );
-        registerService(DataLoaderFactory.class, dataLoaderFactory);
-
-        // Initialize file data loader service with concrete repository types
-        fileDataLoaderService = new FileDataLoaderService(
-                userRepository,
-                movieRepository,
-                seriesRepository,
-                seriesService,
-                actorService,
-                directorService,
-                movieService);
-        registerService(FileDataLoaderService.class, fileDataLoaderService);
-
-        // Initialize search service
-        SearchService searchService = new SearchService(dataManager);
-        registerService(SearchService.class, searchService);
-
-        logger.info("Service initialization complete with {} services registered", services.size());
     }
 
-    /**
-     * Gets the RefactoredDataManager instance.
-     *
-     * @return The RefactoredDataManager instance
-     */
+    private void initializeServices() {
+        if (servicesInitialized) {
+            return;
+        }
+
+        synchronized (lock) {
+            if (servicesInitialized) {
+                return;
+            }
+
+            try {
+                logger.info("Initializing application services...");
+
+                // Initialize core services first
+                dataManager = RefactoredDataManager.getInstance();
+                registerService(RefactoredDataManager.class, dataManager);
+                logger.info("DataManager initialized successfully");
+
+                // Initialize repositories with concrete types
+                InMemoryUserRepository userRepository = dataManager.getUserRepository();
+                InMemoryMovieRepository movieRepository = (InMemoryMovieRepository) dataManager.getMovieRepository();
+                InMemorySeriesRepository seriesRepository = (InMemorySeriesRepository) dataManager.getSeriesRepository();
+
+                // Initialize services
+                encryptionService = new EncryptionService();
+                UserService userService = UserService.getInstance(dataManager, encryptionService);
+                registerService(UserService.class, userService);
+
+                // Initialize content services with proper generic types
+                ContentService<Movie> movieService = new ContentService<>(Movie.class);
+                ContentService<Series> seriesService = new ContentService<>(Series.class);
+                CelebrityService<Actor> actorService = new CelebrityService<>(Actor.class);
+                CelebrityService<Director> directorService = new CelebrityService<>(Director.class);
+
+                // Register content services with type-safe qualifiers
+                registerService(ContentService.class, movieService, "movie");
+                registerService(ContentService.class, seriesService, "series");
+                registerService(CelebrityService.class, actorService, "actor");
+                registerService(CelebrityService.class, directorService, "director");
+
+                // Register default ContentService instance for backward compatibility
+                registerService(ContentService.class, movieService);
+
+                // Initialize data loader factory with concrete repository types
+                dataLoaderFactory = new DataLoaderFactory(
+                        userRepository,
+                        movieRepository,
+                        seriesRepository,
+                        movieService,
+                        seriesService,
+                        actorService,
+                        directorService
+                );
+                registerService(DataLoaderFactory.class, dataLoaderFactory);
+
+                // Initialize file data loader service with concrete repository types
+                fileDataLoaderService = new FileDataLoaderService(
+                        userRepository,
+                        movieRepository,
+                        seriesRepository,
+                        seriesService,
+                        actorService,
+                        directorService,
+                        movieService
+                );
+                registerService(FileDataLoaderService.class, fileDataLoaderService);
+
+                // Initialize search service
+                SearchService searchService = new SearchService(dataManager);
+                registerService(SearchService.class, searchService);
+
+                // Initialize UI Coordinator if primary stage is available
+                if (primaryStage != null) {
+                    uiCoordinator = new UICoordinator(dataManager);
+                    uiCoordinator.setPrimaryStage(primaryStage);
+                    registerService(UICoordinator.class, uiCoordinator);
+                    logger.info("UICoordinator initialized successfully with primary stage");
+                } else {
+                    logger.warn("Primary stage not set, UICoordinator initialization will be deferred");
+                }
+
+                servicesInitialized = true;
+                logger.info("All services initialized successfully");
+
+            } catch (Exception e) {
+                logger.error("Failed to initialize services: {}", e.getMessage(), e);
+                throw new RuntimeException("Failed to initialize services", e);
+            }
+        }
+    }
+
     public RefactoredDataManager getDataManager() {
         if (dataManager == null) {
-            dataManager = RefactoredDataManager.getInstance();
-            registerService(RefactoredDataManager.class, dataManager);
+            synchronized (lock) {
+                if (dataManager == null) {
+                    dataManager = RefactoredDataManager.getInstance();
+                    registerService(RefactoredDataManager.class, dataManager);
+                }
+            }
         }
         return dataManager;
     }
 
+    public UICoordinator getUICoordinator() {
+        if (uiCoordinator == null) {
+            synchronized (lock) {
+                if (uiCoordinator == null) {
+                    if (primaryStage == null) {
+                        throw new IllegalStateException("Cannot get UICoordinator: Primary stage is not set");
+                    }
+                    uiCoordinator = new UICoordinator(getDataManager());
+                    uiCoordinator.setPrimaryStage(primaryStage);
+                    registerService(UICoordinator.class, uiCoordinator);
+                }
+            }
+        }
+        return uiCoordinator;
+    }
 
     /**
      * Register a service instance with a qualifier for multiple implementations
@@ -144,7 +206,6 @@ public class ServiceLocator {
     public <T> void registerService(Class<T> serviceClass, T serviceInstance) {
         registerService(serviceClass, serviceInstance, "default");
     }
-
 
     /**
      * Get a service instance with a specific qualifier
@@ -190,7 +251,6 @@ public class ServiceLocator {
         }
         return service;
     }
-
 
     /**
      * Check if a service is registered

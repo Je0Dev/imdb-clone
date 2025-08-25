@@ -1,13 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <?import javafx.geometry.Insets?>
+<?import javafx.scene.AmbientLight?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.effect.DropShadow?>
 <?import javafx.scene.layout.*?>
 <?import javafx.scene.shape.Rectangle?>
-<?import javafx.scene.text.*?>
+<?import javafx.scene.text.Text?>
 <BorderPane style="-fx-background-color: #0a0a0a; -fx-font-family: 'Segoe UI', Arial, sans-serif;"
-            xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1">
+            xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.papel.imdb_clone.controllers.ContentController">
 
     <!-- Search Suggestions Popup -->
 
@@ -31,7 +33,6 @@
 
                 <HBox alignment="CENTER_RIGHT" spacing="10"
                       style="-fx-padding: 5 15; -fx-background-color: #1a1a1a; -fx-background-radius: 20;">
-                    <Text style="-fx-fill: #aaa; -fx-font-size: 12;" text="TOTAL MOVIES:"/>
                     <Label fx:id="movieCountLabel"
                            style="-fx-text-fill: #FFD700; -fx-font-weight: bolder; -fx-font-size: 16;"/>
                 </HBox>
@@ -74,6 +75,7 @@
                             style="-fx-background-color: #FF5252; -fx-text-fill: #FFFFFF; -fx-font-weight: bolder; -fx-font-size: 14px; -fx-padding: 10 20; -fx-background-radius: 20; -fx-cursor: hand; -fx-effect: dropshadow(gaussian, rgba(255,82,82,0.3), 5, 0, 0, 2); -fx-transition: all 0.2s;"
                             text="DELETE MOVIE"/>
                 </HBox>
+                <AmbientLight color="CHARTREUSE" lightOn="true"/>
             </VBox>
         </VBox>
     </top>

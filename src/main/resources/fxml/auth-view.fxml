@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <?import javafx.geometry.Insets?>
+<?import javafx.scene.AmbientLight?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 <?import javafx.scene.text.*?>
 <StackPane style="-fx-background-color: #0f0f0f;" xmlns="http://javafx.com/javafx/17.0.12"
-           xmlns:fx="http://javafx.com/fxml/1"
-           fx:controller="com.papel.imdb_clone.controllers.AuthController">
+           xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.papel.imdb_clone.controllers.AuthController">
 
 
     <!-- Login Form -->
@@ -20,6 +20,7 @@
                     <Font name="System Bold" size="28"/>
                 </font>
             </Text>
+            <AmbientLight color="CHARTREUSE" lightOn="true"/>
 
             <VBox spacing="15" style="-fx-min-width: 320;">
                 <Label style="-fx-text-fill: #e0e0e0; -fx-font-weight: bold; -fx-font-size: 14;"
@@ -30,10 +31,6 @@
                     <PasswordField fx:id="loginPasswordField" promptText="Enter your password"
                                    style="-fx-background-color: #2d2d2d; -fx-text-fill: #ffffff; -fx-prompt-text-fill: #888; -fx-background-radius: 5; -fx-padding: 10 35 10 10; -fx-font-size: 14; -fx-border-color: #3d3d3d; -fx-border-radius: 5; -fx-border-width: 1;">
                     </PasswordField>
-                    <Button fx:id="toggleLoginPassword" alignment="CENTER_RIGHT"
-                            onAction="#toggleLoginPasswordVisibility"
-                            style="-fx-background-color: transparent; -fx-padding: 0 10 0 0;"
-                            styleClass="toggle-password"/>
                 </StackPane>
                 <HBox alignment="CENTER_LEFT" spacing="10" style="-fx-padding: 5 0;">
                     <CheckBox fx:id="rememberMe"
@@ -47,6 +44,7 @@
                 <Label fx:id="loginErrorLabel"
                        style="-fx-text-fill: #ff6b6b; -fx-padding: 5 0 0 0; -fx-font-weight: bold; -fx-font-size: 13;"
                        visible="false"/>
+                <AmbientLight color="CHARTREUSE" lightOn="true"/>
                 <Button fx:id="loginButton" onAction="#handleLogin"
                         style="-fx-background-color: #f5c518; -fx-text-fill: #000000; -fx-font-weight: bold; -fx-font-size: 14; -fx-padding: 12 20; -fx-background-radius: 5; -fx-cursor: hand; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.2), 5, 0, 0, 2);"
                         text="SIGN IN">
@@ -108,11 +106,6 @@
                             <Insets right="30"/>
                         </padding>
                     </PasswordField>
-                    <Button fx:id="toggleRegisterPassword" alignment="CENTER_RIGHT"
-                            onAction="#toggleRegisterPasswordVisibility"
-                            style="-fx-background-color: transparent; -fx-padding: 0 5 0 0;"
-                            styleClass="toggle-password">
-                    </Button>
                 </StackPane>
                 <StackPane>
                     <PasswordField fx:id="confirmPasswordField" promptText="Confirm Password" styleClass="auth-field">
@@ -120,11 +113,7 @@
                             <Insets right="30"/>
                         </padding>
                     </PasswordField>
-                    <Button fx:id="toggleConfirmPassword" alignment="CENTER_RIGHT"
-                            onAction="#toggleConfirmPasswordVisibility"
-                            style="-fx-background-color: transparent; -fx-padding: 0 5 0 0;"
-                            styleClass="toggle-password">
-                    </Button>
+
                 </StackPane>
                 <Label fx:id="passwordStrengthLabel" style="-fx-font-size: 11; -fx-text-fill: #b3b3b3;"/>
 

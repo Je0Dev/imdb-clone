@@ -390,4 +390,23 @@ public class AuthController extends BaseController {
         logger.debug("Initializing AuthController");
         loginContainer.setVisible(true);
     }
+
+    public void showLoginForm(ActionEvent actionEvent) {
+        loginContainer.setVisible(true);
+        registerContainer.setVisible(false);
+        if (actionEvent != null) {
+            actionEvent.consume();
+        }
+        clearRegistrationForm();
+        loginErrorLabel.setVisible(false);
+        registerErrorLabel.setVisible(false);
+        loginUsernameField.requestFocus();
+        loginPasswordField.requestFocus();
+        loginErrorLabel.setText("");
+        registerErrorLabel.setText("");
+        loginErrorLabel.setStyle("-fx-text-fill: #d32f2f;");
+        registerErrorLabel.setStyle("-fx-text-fill: #d32f2f;");
+        loginErrorLabel.setVisible(false);
+        registerErrorLabel.setVisible(false);
+    }
 }

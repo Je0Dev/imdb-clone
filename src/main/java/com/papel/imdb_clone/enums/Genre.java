@@ -7,7 +7,7 @@ public enum Genre {
     HORROR("Horror"),
     THRILLER("Thriller"),
     ROMANCE("Romance"),
-    SCIENCE_FICTION("Science Fiction"),
+    SCI_FI("Science Fiction"),
     FANTASY("Fantasy"),
     DOCUMENTARY("Documentary"),
     ANIMATION("Animation"),
@@ -37,6 +37,7 @@ public enum Genre {
 
     /**
      * Converts a string to a Genre enum value (case-insensitive).
+     *
      * @param value The string value to convert
      * @return The matching Genre or null if no match found
      */

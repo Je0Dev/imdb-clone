@@ -39,7 +39,7 @@ public class ImprovedMovieApp extends Application {
             System.out.println("[Startup] Entering start()...");
 
             initializeApplication();
-            
+
             System.out.println("[Startup] initializeApplication() completed");
 
             // Set window title from config
@@ -135,40 +135,49 @@ public class ImprovedMovieApp extends Application {
     private void loadMainApplication() {
         try {
             System.out.println("[Startup] Enter loadMainApplication()");
+            
+            // Ensure we have a primary stage
+            if (primaryStage == null) {
+                primaryStage = new Stage();
+                System.out.println("[Startup] Created new primary stage");
+            }
+
             // Get the current user
-            com.papel.imdb_clone.service.AuthService authService =
+            com.papel.imdb_clone.service.AuthService authService = 
                     com.papel.imdb_clone.service.AuthService.getInstance();
             com.papel.imdb_clone.model.User currentUser = authService.getCurrentUser(currentSessionToken);
             System.out.println("[Startup] Current user: " + (currentUser != null ? currentUser.getUsername() : "<none>"));
 
+            // Load the FXML first to let it create the controller
             FXMLLoader loader = new FXMLLoader(getClass().getResource(MAIN_FXML));
-            System.out.println("[Startup] FXMLLoader created for " + MAIN_FXML);
-
-            // Create controller instance with both user and session token
-            RefactoredMainController controller = new RefactoredMainController(currentUser, currentSessionToken);
-            loader.setController(controller);
-            System.out.println("[Startup] Controller set: " + controller);
-
+            System.out.println("[Startup] Loading FXML: " + MAIN_FXML);
+            
             // Load the main view
             Parent root = loader.load();
             System.out.println("[Startup] FXML loaded successfully");
-
+            
+            // Get the controller that was created by the FXML loader
+            RefactoredMainController controller = loader.getController();
+            System.out.println("[Startup] Controller obtained from FXML loader");
+            
+            // Initialize the controller with the user and session
+            if (currentUser != null) {
+                controller.setUserSession(currentUser, currentSessionToken);
+            }
+            
             // Set the primary stage in the controller
             controller.setPrimaryStage(primaryStage);
             System.out.println("[Startup] Primary stage set in controller");
 
-            // Set up the main scene
+            // Set up the scene
             Scene scene = new Scene(root, config.getMinWidth(), config.getMinHeight());
-            System.out.println("[Startup] Scene created and theme applied");
-
             primaryStage.setScene(scene);
             primaryStage.setTitle(config.getAppTitle() + (currentUser != null ? " - " + currentUser.getUsername() : ""));
             primaryStage.setMinWidth(config.getMinWidth());
             primaryStage.setMinHeight(config.getMinHeight());
             primaryStage.centerOnScreen();
-            System.out.println("[Startup] Stage configured");
 
-            // Publish session globally for decoupled listeners
+            // Publish session globally
             try {
                 AppStateManager.getInstance().setSession(currentUser, currentSessionToken);
                 System.out.println("[Startup] Session published");
@@ -177,7 +186,7 @@ public class ImprovedMovieApp extends Application {
                 System.err.println("[Startup][WARN] Failed to publish session: " + e);
             }
 
-            // Show main application
+            // Show the main application
             primaryStage.show();
             System.out.println("[Startup] Stage shown");
 
