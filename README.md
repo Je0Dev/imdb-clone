@@ -12,7 +12,6 @@ A JavaFX-based clone of the Internet Movie Database (IMDB) that allows users to 
 
 ### 🔐 Authentication & User Management
 - **Secure Login/Registration**: BCrypt password hashing
-- **User Profiles**: View and manage your profile
 - **Session Management**: Token-based authentication
 
 ### 🏗️ Technical Architecture
@@ -73,30 +72,6 @@ A JavaFX-based clone of the Internet Movie Database (IMDB) that allows users to 
    - Username: admin
    - Password: admin123 (change immediately after first login)
 3. Sample data will be loaded automatically from `src/main/resources/data/`
-
-## 🏗️ Project Structure
-
-```
-src/
-├── main/
-│   ├── java/
-│   │   └── com/papel/imdb_clone/
-│   │       ├── config/           # Application configuration
-│   │       ├── controllers/      # UI controllers
-│   │       ├── data/             # Data management
-│   │       ├── enums/            # Enumerations
-│   │       ├── exceptions/       # Custom exceptions
-│   │       ├── gui/              # Main application class
-│   │       ├── model/            # Data models
-│   │       ├── repository/       # Data access
-│   │       ├── service/          # Business logic
-│   │       ├── services/         # Additional services
-│   │       ├── tools/            # Utility tools
-│   │       └── util/             # Utility classes
-│   └── resources/
-│       ├── data/                # Data files
-│       └── fxml/                # FXML view definitions
-```
 
 ### Core Components
 
@@ -258,7 +233,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 - JavaFX for the UI framework
 - Maven for build automation
-- All contributors
 
 ## 📞 Support
 
@@ -266,4 +240,4 @@ For support, please open an issue in the repository.
 
 ---
 
-*Last updated: August 2023*
+*Last updated: August 2025 @mastro*
