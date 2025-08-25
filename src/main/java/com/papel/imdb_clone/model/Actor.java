@@ -10,7 +10,7 @@ public class Actor extends Celebrity {
     // Backward-compatible storage of the original race label used in older tests
     private String raceLabel;
     private String notableWorks;
-    private String biography;
+
 
     public Actor(String firstName, String lastName, LocalDate birthDate, char gender, Ethnicity ethnicity) {
         super(firstName, lastName, birthDate, gender);
@@ -77,12 +77,9 @@ public class Actor extends Celebrity {
         this.notableWorks = notableWorks;
     }
 
-    public void setBiography(String biography) {
-        this.biography = biography;
-    }
 
+    //TODO: implement this method
     public void addMovie(Movie movie) {
-
     }
 
     public void setFirstName(String firstName) {

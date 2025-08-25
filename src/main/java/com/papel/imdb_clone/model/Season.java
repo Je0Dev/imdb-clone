@@ -6,6 +6,7 @@ import java.util.Objects;
 
 
 public class Season {
+    private int episodeCount;
     private int id;
     private int year;
     private List<Episode> episodes;
@@ -31,7 +32,7 @@ public class Season {
         this();
         this.seasonNumber = seasonNumber;
         this.title = title;
-        // Note: episodeCount is not used in this implementation
+        this.episodeCount = episodeCount;
     }
 
     public int getId() {
@@ -74,17 +75,6 @@ public class Season {
         this.year = year;
     }
 
-    /**
-     * Compares this {@code Season} object with the specified object for equality.
-     * Returns {@code true} if the given object is also a {@code Season} and
-     * its {@code id}, {@code year}, and {@code episodes} fields are equal.
-     * This method uses {@link Objects#equals(Object, Object)} for null-safe comparison
-     * of the {@code episodes} collection, assuming its elements (e.g., {@code Episode} objects)
-     * correctly implement their own {@code equals} method.
-     *
-     * @param obj The object to be compared for equality.
-     * @return {@code true} if the specified object is equal to this {@code Season}; {@code false} otherwise.
-     */
     @Override
     public boolean equals(Object obj) {
         if (this == obj) return true;
@@ -95,16 +85,7 @@ public class Season {
                 Objects.equals(episodes, season.episodes);
     }
 
-    /**
-     * Generates a hash code for this {@code Season} object.
-     * The hash code is computed based on the {@code id}, {@code year}, and {@code episodes} fields.
-     * This method is consistent with {@link #equals(Object)}, ensuring that
-     * equal {@code Season} objects produce the same hash code.
-     * Proper {@code hashCode} implementations are expected for elements within the
-     * {@code episodes} collection.
-     *
-     * @return A hash code value for this object.
-     */
+
     @Override
     public int hashCode() {
         return Objects.hash(id, year, episodes);
@@ -120,9 +101,11 @@ public class Season {
     }
 
     public void setSeriesId(int id) {
+        this.id = id;
     }
 
     public void setTitle(String format) {
+        this.title = format;
     }
 
     public Object getTitle() {

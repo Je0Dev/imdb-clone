@@ -4,6 +4,7 @@ import com.papel.imdb_clone.exceptions.ContentNotFoundException;
 import com.papel.imdb_clone.model.*;
 import com.papel.imdb_clone.repository.MovieRepository;
 import com.papel.imdb_clone.repository.impl.InMemoryMovieRepository;
+import com.papel.imdb_clone.repository.impl.InMemorySeriesRepository;
 import com.papel.imdb_clone.repository.impl.InMemoryUserRepository;
 import com.papel.imdb_clone.service.CelebrityService;
 import com.papel.imdb_clone.service.ContentService;
@@ -50,6 +51,7 @@ public class RefactoredDataManager {
     // Repositories
     private final InMemoryUserRepository userRepository;
     private final InMemoryMovieRepository movieRepository;
+    private InMemorySeriesRepository seriesRepository;
 
     // Services
     private final ContentService<Movie> movieService;

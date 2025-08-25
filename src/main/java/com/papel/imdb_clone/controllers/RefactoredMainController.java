@@ -4,7 +4,6 @@ import com.papel.imdb_clone.controllers.coordinator.UICoordinator;
 import com.papel.imdb_clone.data.RefactoredDataManager;
 import com.papel.imdb_clone.model.User;
 import com.papel.imdb_clone.service.ServiceLocator;
-import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.geometry.Insets;
@@ -49,6 +48,8 @@ public class RefactoredMainController {
     private User currentUser;
     private String sessionToken;
     private final boolean isSidebarCollapsed = false;
+    private String initializationError;
+    private String s;
 
 
     /**
@@ -80,6 +81,12 @@ public class RefactoredMainController {
 
     /**
      * Initialize services from ServiceLocator.
+     */
+    /**
+     * Initializes the service layer components required by the controller.
+     * This includes setting up the data manager and UI coordinator.
+     *
+     * @throws IllegalStateException if required services cannot be initialized
      */
     private void initializeServices() {
         try {
@@ -113,45 +120,55 @@ public class RefactoredMainController {
         }
     }
 
+    /**
+     * Initializes the controller after its root element has been completely processed.
+     * This method is automatically called by JavaFX after the FXML file has been loaded.
+     * It sets up the UI components, initializes services, and loads initial data.
+     */
     @FXML
     public void initialize() {
-        logger.info("Initializing RefactoredMainController");
-
         try {
-            // Initialize services if not already done
-            if (this.dataManager == null) {
-                initializeServices();
+            // Initialize services first
+            initializeServices();
 
-                // If we have a user from previous session, set it in the UI coordinator
-                if (this.currentUser != null && this.sessionToken != null && this.uiCoordinator != null) {
+            // Set the primary stage if it's not already set
+            if (primaryStage == null && mainBorderPane != null && mainBorderPane.getScene() != null) {
+                primaryStage = (Stage) mainBorderPane.getScene().getWindow();
+                logger.info("Primary stage set from scene: {}", primaryStage != null);
+            }
+
+            // Initialize coordinators
+            boolean coordinatorsInitialized = initializeCoordinators();
+            logger.info("Coordinators initialized: {}", coordinatorsInitialized);
+
+            // If we have a user from previous session, set it in the UI coordinator
+            if (this.currentUser != null && this.sessionToken != null) {
+                logger.info("Setting user session for user: {}", this.currentUser.getUsername());
+                if (this.uiCoordinator != null) {
                     this.uiCoordinator.setUserSession(this.currentUser, this.sessionToken);
                 }
             }
 
-
-            Platform.runLater(() -> {
-                try {
-                    if (initializeCoordinators()) {
-
-                        updateUserInterface();
-
-                        logger.info("RefactoredMainController initialized successfully");
-                    } else {
-                        logger.error("Failed to initialize coordinators");
-                        showErrorDialog("Initialization Error", "Failed to initialize application components.");
-                    }
-                } catch (Exception e) {
-                    logger.error("Error during UI initialization", e);
-                    showErrorDialog("Initialization Error", "Failed to initialize the UI: " + e.getMessage());
-                }
-            });
+            if (coordinatorsInitialized) {
+                updateUserInterface();
+                logger.info("RefactoredMainController initialized successfully");
+            } else {
+                logger.error("Failed to initialize coordinators");
+                showErrorDialog("Initialization Error", "Failed to initialize application components.");
+            }
         } catch (Exception e) {
             logger.error("Critical error during controller initialization", e);
             showErrorDialog("Critical Error", "Failed to initialize the application: " + e.getMessage());
         }
     }
 
-    private void showErrorDialog(String initializationError, String s) {
+    /**
+     * Displays an error dialog with the specified title and message.
+     *
+     * @param title   the title of the error dialog
+     * @param message the error message to display
+     */
+    private void showErrorDialog(String title, String message) {
         Alert alert = new Alert(Alert.AlertType.ERROR);
         alert.setTitle("Error");
         alert.setHeaderText(initializationError);
@@ -171,10 +188,21 @@ public class RefactoredMainController {
                 return false;
             }
 
-            uiCoordinator.setPrimaryStage(primaryStage);
-            uiCoordinator.setUserSession(currentUser, sessionToken);
+            logger.info("Setting primary stage in UI Coordinator");
+            if (primaryStage == null) {
+                logger.error("Cannot initialize coordinators: Primary stage is null");
+                return false;
+            }
 
-            if (!uiCoordinator.loadAndInitializeViews()) {
+            uiCoordinator.setPrimaryStage(primaryStage);
+
+            if (currentUser != null && sessionToken != null) {
+                uiCoordinator.setUserSession(currentUser, sessionToken);
+            }
+
+            logger.info("Loading and initializing views...");
+            boolean viewsInitialized = uiCoordinator.loadAndInitializeViews();
+            if (!viewsInitialized) {
                 logger.error("Failed to load and initialize views");
                 return false;
             }
@@ -192,6 +220,10 @@ public class RefactoredMainController {
         }
     }
 
+    /**
+     * Sets up the views in their respective tabs or containers.
+     * This method is kept for backward compatibility but is not used in the current UI.
+     */
     private void setViewsInTabs() {
         // No longer using tabs in the new UI
         // This method is kept for backward compatibility but does nothing
@@ -213,9 +245,17 @@ public class RefactoredMainController {
         }
     }
 
+    /**
+     * Updates the user label in the UI to reflect the current user's information.
+     * If no user is logged in, it may clear or hide the user label.
+     */
     private void updateUserLabel() {
     }
 
+    /**
+     * Initializes and populates the featured content section of the UI.
+     * This typically includes loading and displaying featured movies or TV shows.
+     */
     private void initializeFeaturedContent() {
         // Add some placeholder content
         Label title = new Label("Featured Content");
@@ -251,24 +291,38 @@ public class RefactoredMainController {
         }
     }
 
-    // Setters for dependency injection
+    /**
+     * Sets the primary stage for this controller and initializes necessary components.
+     *
+     * @param primaryStage the primary stage of the application
+     * @throws IOException              if there is an error during initialization
+     * @throws IllegalArgumentException if primaryStage is null
+     */
     public void setPrimaryStage(Stage primaryStage) throws IOException {
+        if (primaryStage == null) {
+            throw new IllegalArgumentException("Primary stage cannot be null");
+        }
+
         this.primaryStage = primaryStage;
+
+        // Initialize the UI coordinator if it hasn't been initialized yet
+        if (uiCoordinator == null) {
+            initializeServices();
+        }
+
         if (uiCoordinator != null) {
             uiCoordinator.setPrimaryStage(primaryStage);
-
-            // Load data if not already loaded
-            if (!this.dataManager.isDataLoaded()) {
-                try {
-                    this.dataManager.loadAllData();
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
-                sidebar.setVisible(true);
-            }
         }
+
+        // Data loading is now handled internally by the data manager
+        // No need to explicitly call loadInitialData()
     }
 
+    /**
+     * Handles the action event for showing the movies view.
+     *
+     * @param actionEvent the event that triggered this method
+     */
     @FXML
     public void showMovies(ActionEvent actionEvent) {
         try {
@@ -286,6 +340,11 @@ public class RefactoredMainController {
         }
     }
 
+    /**
+     * Handles the action event for showing the TV shows view.
+     *
+     * @param actionEvent the event that triggered this method
+     */
     @FXML
     public void showTVShows(ActionEvent actionEvent) {
         try {
@@ -303,6 +362,11 @@ public class RefactoredMainController {
         }
     }
 
+    /**
+     * Handles the action event for showing the advanced search view.
+     *
+     * @param actionEvent the event that triggered this method
+     */
     @FXML
     public void showAdvancedSearch(ActionEvent actionEvent) {
         try {
@@ -320,6 +384,11 @@ public class RefactoredMainController {
         }
     }
 
+    /**
+     * Handles the mouse event for navigating to the home view.
+     *
+     * @param mouseEvent the mouse event that triggered this method
+     */
     @FXML
     public void goToHome(MouseEvent mouseEvent) {
         try {
@@ -338,25 +407,5 @@ public class RefactoredMainController {
         }
     }
 
-
-    @FXML
-    public void toggleUserMenu(ActionEvent actionEvent) {
-        // Implementation for toggling user menu
-        // This will be implemented when the UI component is ready
-        logger.info("User menu toggled");
-    }
-
-    @FXML
-    public void toggleSidebar(ActionEvent actionEvent) {
-        try {
-            if (sidebar != null) {
-                boolean visible = sidebar.isVisible();
-                sidebar.setVisible(!visible);
-                sidebar.setManaged(!visible);
-            }
-        } catch (Exception e) {
-            logger.error("Error toggling sidebar: {}", e.getMessage(), e);
-        }
-    }
-
+    
 }

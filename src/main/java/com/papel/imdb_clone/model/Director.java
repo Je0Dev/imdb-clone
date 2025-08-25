@@ -10,8 +10,7 @@ import java.util.Objects;
 public class Director extends Celebrity {
     private final List<String> bestWorks;
     private Ethnicity ethnicity;
-    private String activeYears;
-    private String biography;
+
 
     public Director(String firstName, String lastName, LocalDate birthDate, char gender) {
         super(firstName, lastName, birthDate, gender);
@@ -117,13 +116,6 @@ public class Director extends Celebrity {
         }
     }
 
-    public void setActiveYears(String activeYears) {
-        this.activeYears = activeYears;
-    }
-
-    public void setBiography(String biography) {
-        this.biography = biography;
-    }
 
     public void setFirstName(String firstName) {
         this.firstName = firstName;

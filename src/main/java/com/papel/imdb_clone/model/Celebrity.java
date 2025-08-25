@@ -48,18 +48,6 @@ public abstract class Celebrity {
         this.birthDate = birthDate;
     }
 
-    /**
-     * Compares this Celebrity object to another object for equality.
-     * <p>
-     * This method first checks for identity (if both references point to the same object)
-     * and then verifies that the other object is a non-null instance of the Celebrity class.
-     * Two celebrities are considered equal if their id, gender, first name, last name,
-     * and birthdate are all identical.
-     *
-     * @param obj The object to compare against this one.
-     * @return {@code true} if the given object is a Celebrity with the same attribute values,
-     * {@code false} otherwise.
-     */
 
     @Override
     public boolean equals(Object obj) {
@@ -73,16 +61,7 @@ public abstract class Celebrity {
                 Objects.equals(birthDate, celebrity.birthDate);
     }
 
-    /**
-     * Generates a hash code for this {@code Person} object.
-     * The hash code is computed based on the values of the {@code id}, {@code firstName},
-     * {@code lastName}, {@code birthDate}, and {@code gender} fields.
-     * This method is consistent with {@link #equals(Object)}, meaning that for any two
-     * {@code Person} objects, {@code a} and {@code b}, if {@code a.equals(b)} is true,
-     * then {@code a.hashCode()} must be the same as {@code b.hashCode()}.
-     *
-     * @return A hash code value for this object.
-     */
+
     @Override
     public int hashCode() {
         return Objects.hash(id, firstName, lastName, birthDate, gender);

@@ -1,6 +1,8 @@
 package com.papel.imdb_clone.controllers.coordinator;
 
+import com.papel.imdb_clone.config.ApplicationConfig;
 import com.papel.imdb_clone.controllers.ContentController;
+import com.papel.imdb_clone.controllers.RefactoredMainController;
 import com.papel.imdb_clone.data.RefactoredDataManager;
 import com.papel.imdb_clone.model.User;
 import javafx.fxml.FXMLLoader;
@@ -14,12 +16,12 @@ import java.io.IOException;
 /**
  * Coordinates UI components and manages controller lifecycle.
  * Responsible for loading FXML views and initializing controllers.
+ * This class serves as the central coordinator for UI navigation and view management.
  */
 public class UICoordinator {
     private static final Logger logger = LoggerFactory.getLogger(UICoordinator.class);
 
     private final RefactoredDataManager dataManager;
-
     private Stage primaryStage;
     private User currentUser;
     private String sessionToken;
@@ -27,24 +29,53 @@ public class UICoordinator {
     // Controllers
     private ContentController contentController;
 
-
     // Views
-    private Node watchlistView;
     private Node movieView;
     private Node seriesView;
     private Node searchView;
     private Node homeView;
 
+    /**
+     * Constructs a new UICoordinator with the specified data manager.
+     *
+     * @param dataManager The data manager instance to be used for data operations
+     * @throws IllegalArgumentException if dataManager is null
+     */
     public UICoordinator(RefactoredDataManager dataManager) {
+        if (dataManager == null) {
+            throw new IllegalArgumentException("DataManager cannot be null");
+        }
         this.dataManager = dataManager;
         logger.info("UICoordinator initialized");
     }
 
     /**
      * Sets the primary stage for the application.
+     *
+     * @param primaryStage The primary stage instance
+     */
+    /**
+     * Sets the primary stage for the application with proper initialization.
+     *
+     * @param primaryStage The primary stage instance (must not be null)
+     * @throws IllegalArgumentException if primaryStage is null
      */
     public void setPrimaryStage(Stage primaryStage) {
+        if (primaryStage == null) {
+            throw new IllegalArgumentException("Primary stage cannot be null");
+        }
         this.primaryStage = primaryStage;
+
+        // Get configuration instance
+        ApplicationConfig config = ApplicationConfig.getInstance();
+
+        // Set minimum window size from config
+        primaryStage.setMinWidth(config.getMinWidth());
+        primaryStage.setMinHeight(config.getMinHeight());
+
+        // Set initial window size from config
+        primaryStage.setWidth(config.getMinWidth());
+        primaryStage.setHeight(config.getMinHeight());
     }
 
     /**
@@ -58,6 +89,10 @@ public class UICoordinator {
         updateControllersWithUserSession();
     }
 
+    /**
+     * Updates all initialized controllers with the current user session information.
+     * This method ensures that all controllers have access to the current user's session data.
+     */
     private void updateControllersWithUserSession() {
         if (contentController != null) {
             contentController.setUserSession(currentUser, sessionToken);
@@ -67,67 +102,132 @@ public class UICoordinator {
     /**
      * Loads and initializes all views and their controllers.
      */
-    public boolean loadAndInitializeViews() throws IOException {
+    public boolean loadAndInitializeViews() {
         logger.info("Loading and initializing all views");
+        boolean allViewsLoaded = true;
 
         try {
+            // Load content view first
             loadContentView();
-
-        } catch (Exception e) {
-            logger.error("Error loading views: {}", e.getMessage(), e);
-            throw e;
-        }
-
-        logger.info("All views loaded and initialized successfully");
-        return true;
-    }
-
-    private void loadContentView() throws IOException {
-        logger.debug("Loading movie view");
-        
-        // Create and configure the movie loader
-        FXMLLoader movieLoader = new FXMLLoader(getClass().getResource("/fxml/movie-view.fxml"));
-        
-        // Create and initialize the controller
-        contentController = new ContentController();
-        try {
-            contentController.initializeServices();
-            if (currentUser != null) {
-                contentController.setUserSession(currentUser, sessionToken);
+            
+            // Load other views
+            try {
+                logger.debug("Loading movie view");
+                movieView = loadView("/fxml/movie-view.fxml");
+            } catch (Exception e) {
+                logger.error("Failed to load movie view: {}", e.getMessage(), e);
+                allViewsLoaded = false;
             }
+            
+            try {
+                logger.debug("Loading series view");
+                seriesView = loadView("/fxml/series-view.fxml");
+            } catch (Exception e) {
+                logger.error("Failed to load series view: {}", e.getMessage(), e);
+                allViewsLoaded = false;
+            }
+            
+            try {
+                logger.debug("Loading search view");
+                searchView = loadView("/fxml/search-view.fxml");
+            } catch (Exception e) {
+                logger.error("Failed to load search view: {}", e.getMessage(), e);
+                allViewsLoaded = false;
+            }
+            
         } catch (Exception e) {
-            logger.error("Failed to initialize ContentController: {}", e.getMessage(), e);
-            throw new IOException("Failed to initialize ContentController", e);
+            logger.error("Critical error loading views: {}", e.getMessage(), e);
+            return false;
+        }
+
+        if (!allViewsLoaded) {
+            logger.warn("Some views failed to load, but continuing with available views");
         }
         
-        // Set the controller on the loader
-        movieLoader.setController(contentController);
-        
-        // Load the view
-        movieView = movieLoader.load();
+        logger.info("View loading completed. Success: {}", allViewsLoaded);
+        return allViewsLoaded;
+    }
 
-        logger.debug("Loading series view");
-        FXMLLoader seriesLoader = new FXMLLoader(getClass().getResource("/fxml/series-view.fxml"));
-        seriesView = seriesLoader.load();
-
-        logger.debug("Movie and series views loaded successfully");
+    /**
+     * Loads an FXML view from the specified path.
+     *
+     * @param fxmlPath the path to the FXML file relative to the resources directory
+     * @return the loaded JavaFX Node
+     * @throws IOException if the FXML file cannot be loaded or parsed
+     */
+    private Node loadView(String fxmlPath) throws IOException {
+        logger.debug("Loading view: {}", fxmlPath);
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource(fxmlPath));
+            if (loader.getLocation() == null) {
+                throw new IOException("FXML file not found: " + fxmlPath);
+            }
+            Node view = loader.load();
+            
+            // Initialize controller if needed
+            Object controller = loader.getController();
+            if (controller instanceof RefactoredMainController) {
+                ((RefactoredMainController) controller).setPrimaryStage(primaryStage);
+            }
+            
+            return view;
+        } catch (Exception e) {
+            logger.error("Error loading view {}: {}", fxmlPath, e.getMessage(), e);
+            throw new IOException("Failed to load view: " + fxmlPath, e);
+        }
+    }
+    
+    /**
+     * Loads the main content view of the application.
+     * This is a special case view that needs to be loaded first as it contains the main layout.
+     *
+     * @throws IOException if the home view FXML file cannot be loaded
+     */
+    private void loadContentView() throws IOException {
+        logger.debug("Loading home view");
+        try {
+            homeView = loadView("/fxml/main-refactored.fxml");
+        } catch (Exception e) {
+            logger.error("Failed to load home view: {}", e.getMessage(), e);
+            throw new IOException("Failed to load home view", e);
+        }
     }
 
 
+    /**
+     * Gets the movie view component.
+     *
+     * @return the Node containing the movie view, or null if not loaded
+     */
     public Node getMovieView() {
         return movieView;
     }
 
 
+    /**
+     * Gets the series view component.
+     *
+     * @return the Node containing the series view, or null if not loaded
+     */
     public Node getSeriesView() {
         return seriesView;
     }
 
 
+    /**
+     * Gets the search view component.
+     *
+     * @return the Node containing the search view, or null if not loaded
+     */
     public Node getSearchView() {
         return searchView;
     }
 
+    /**
+     * Gets the home view component.
+     *
+     * @return the Node containing the home view, or null if not loaded
+     */
     public Node getHomeView() {
         return homeView;
     }

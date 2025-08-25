@@ -26,10 +26,6 @@ public class User implements Serializable {
     private boolean active;
     private boolean admin;
     private LocalDate joinDate;
-    private LocalDate lastLogin;
-    private String accountStatus;
-    private LocalDate birthDate;
-    private String country;
 
     public User(String firstName, String lastName, String username, char gender, String email) {
         this.firstName = firstName;
@@ -95,16 +91,6 @@ public class User implements Serializable {
     }
 
 
-    /**
-     * Overrides the default `equals` method to provide a meaningful comparison between `User` objects.
-     * Two `User` objects are considered equal if all their significant fields match.
-     *
-     * @param obj The object to compare with this `User` object.
-     * @return `true` if the given object is a `User` and all its significant fields
-     * (id, gender, username, firstName, lastName, email) are equal to this `User`'s fields;
-     * `false` otherwise.
-     */
-
     @Override
     public boolean equals(Object obj) {
         if (this == obj) return true;
@@ -118,14 +104,6 @@ public class User implements Serializable {
                 Objects.equals(email, user.email);
     }
 
-    /**
-     * Overrides the default `hashCode` method, providing a hash code consistent with the `equals` method.
-     * This ensures that if two `User` objects are equal according to `equals()`, they will have the same hash code.
-     * It's crucial for correct functionality in hash-based collections like `HashMap` and `HashSet`.
-     *
-     * @return A hash code value for this `User` object, calculated from all significant fields
-     * (id, firstName, lastName, username, email, gender).
-     */
     @Override
     public int hashCode() {
         return Objects.hash(id, firstName, lastName, username, email, gender);
@@ -166,23 +144,5 @@ public class User implements Serializable {
     public void setJoinDate(LocalDate joinDate) {
         this.joinDate = joinDate;
     }
-
-    public void setLastLogin(LocalDate lastLogin) {
-        this.lastLogin = lastLogin;
-    }
-
-    public void setAccountStatus(String accountStatus) {
-        if (accountStatus == null || accountStatus.trim().isEmpty()) {
-            throw new IllegalArgumentException("Account status cannot be empty");
-        }
-        this.accountStatus = accountStatus;
-    }
-
-    public void setBirthDate(LocalDate birthDate) {
-        this.birthDate = birthDate;
-    }
-
-    public void setCountry(String country) {
-        this.country = country;
-    }
+    
 }

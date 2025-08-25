@@ -21,20 +21,57 @@ import java.util.logging.Logger;
  */
 public class UIUtils {
 
+    /**
+     * The primary stage of the application, used for dialog positioning.
+     */
     private static Stage ownerStage;
+    
+    /**
+     * The currently displayed loading indicator node.
+     */
     private static Node loadingIndicator;
+    
+    /**
+     * Container for the loading indicator overlay.
+     */
     private static StackPane loadingContainer;
+    
+    /**
+     * Logger instance for this class.
+     */
     private static final Logger logger = Logger.getLogger(UIUtils.class.getName());
 
-
+    // Standard dialog titles
+    
+    /**
+     * Standard title for information dialogs.
+     */
     public static final String TITLE_INFO = "Information";
+    
+    /**
+     * Standard title for error dialogs.
+     */
     public static final String TITLE_ERROR = "Error";
+    
+    /**
+     * Standard title for warning dialogs.
+     */
     public static final String TITLE_WARNING = "Warning";
+    
+    /**
+     * Standard title for confirmation dialogs.
+     */
     public static final String TITLE_CONFIRM = "Confirm";
 
 
     /**
-     * Shows an information alert with header and content
+     * Displays an information alert dialog with the specified title, header, and content.
+     * The dialog is shown on the JavaFX Application Thread.
+     *
+     * @param title   The title of the dialog (displayed in the window title bar)
+     * @param header  The header text (optional, can be null)
+     * @param content The main content message to display
+     * @throws IllegalArgumentException if title or content is null
      */
     public static void showInfo(String title, String header, String content) {
         Platform.runLater(() -> {
@@ -44,7 +81,12 @@ public class UIUtils {
     }
 
     /**
-     * Shows a success alert with consistent styling
+     * Displays a success alert with the specified title and message.
+     * Uses a consistent styling for success messages.
+     *
+     * @param title         The title of the dialog
+     * @param successMessage The success message to display (if null, "Success" is used)
+     * @throws IllegalArgumentException if title is null
      */
     public static void showSuccess(String title, String successMessage) {
         String message = successMessage != null ? successMessage : "Success";
@@ -52,14 +94,23 @@ public class UIUtils {
     }
 
     /**
-     * Shows an error alert with consistent styling
+     * Displays an error alert with the specified title and message.
+     * Uses a consistent styling for error messages.
+     *
+     * @param title   The title of the error dialog
+     * @param message The error message to display
+     * @throws IllegalArgumentException if title or message is null
      */
     public static void showError(String title, String message) {
         showError(title, null, message);
     }
 
     /**
-     * Shows a simple error message with default title
+     * Displays a simple error message with a default error title.
+     * This is a convenience method that uses the default error title.
+     *
+     * @param message The error message to display
+     * @throws IllegalArgumentException if message is null
      */
     public static void showError(String message) {
         showError(TITLE_ERROR, null, message);
@@ -67,11 +118,13 @@ public class UIUtils {
 
 
     /**
-     * Shows a confirmation dialog
+     * Displays a confirmation dialog with the specified title and message.
+     * The dialog includes OK and Cancel buttons.
      *
-     * @param title   The dialog title
-     * @param message The message to display
-     * @return true if user clicked OK, false otherwise
+     * @param title   The title of the confirmation dialog
+     * @param message The message to display in the dialog
+     * @return true if the user clicked OK, false if Cancel was clicked or the dialog was closed
+     * @throws IllegalArgumentException if title or message is null
      */
     public static boolean showConfirm(String title, String message) {
         Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
@@ -84,7 +137,13 @@ public class UIUtils {
     }
 
     /**
-     * Shows an error alert with header and content
+     * Displays an error alert with the specified title, header, and content.
+     * The dialog is shown on the JavaFX Application Thread.
+     *
+     * @param title   The title of the error dialog
+     * @param header  The header text (optional, can be null)
+     * @param content The detailed error message
+     * @throws IllegalArgumentException if title or content is null
      */
     public static void showError(String title, String header, String content) {
         Platform.runLater(() -> {
@@ -94,7 +153,12 @@ public class UIUtils {
     }
 
     /**
-     * Shows a warning alert with consistent styling
+     * Displays a warning alert with the specified title and message.
+     * Uses a consistent styling for warning messages.
+     *
+     * @param title   The title of the warning dialog
+     * @param message The warning message to display
+     * @throws IllegalArgumentException if title or message is null
      */
     public static void showWarning(String title, String message) {
         showAlert(Alert.AlertType.WARNING, title, message);
@@ -102,7 +166,15 @@ public class UIUtils {
 
 
     /**
-     * Creates a text input dialog with validation
+     * Creates a text input dialog with the specified parameters.
+     * The dialog is initialized with the application's owner stage if set.
+     *
+     * @param title       The title of the dialog
+     * @param header      The header text (optional, can be null)
+     * @param content     The content text to display
+     * @param defaultValue The default value for the input field (can be null)
+     * @return A configured TextInputDialog instance
+     * @throws IllegalArgumentException if title or content is null
      */
     public static TextInputDialog createTextInputDialog(String title, String header, String content, String defaultValue) {
         TextInputDialog dialog = new TextInputDialog(defaultValue);
@@ -119,7 +191,13 @@ public class UIUtils {
 
 
     /**
-     * Creates a consistent button with the given text and action
+     * Creates a styled button with the specified text and action handler.
+     * The button includes error handling for the action.
+     *
+     * @param text   The text to display on the button
+     * @param action The action to execute when the button is clicked (can be null)
+     * @return A configured Button instance
+     * @throws IllegalArgumentException if text is null
      */
     public static Button createButton(String text, Runnable action) {
         Button button = new Button(text);
@@ -191,7 +269,15 @@ public class UIUtils {
     }
 
     /**
-     * Creates a standardized alert with consistent styling
+     * Creates a standardized alert dialog with consistent styling.
+     * The alert is configured with the specified type, title, header, and content.
+     *
+     * @param type    The type of alert (e.g., ERROR, WARNING, INFORMATION)
+     * @param title   The title of the alert
+     * @param header  The header text (optional, can be null)
+     * @param content The content message
+     * @return A configured Alert instance
+     * @throws IllegalArgumentException if type, title, or content is null
      */
     private static Alert createAlert(Alert.AlertType type, String title, String header, String content) {
         Alert alert = new Alert(type);
@@ -211,7 +297,13 @@ public class UIUtils {
     }
 
     /**
-     * Shows an alert with consistent styling (simplified version)
+     * Displays a simple alert with the specified type, title, and message.
+     * This is a convenience method that creates and shows an alert in one call.
+     *
+     * @param type    The type of alert (e.g., ERROR, WARNING, INFORMATION)
+     * @param title   The title of the alert
+     * @param message The message to display
+     * @throws IllegalArgumentException if any parameter is null
      */
     private static void showAlert(Alert.AlertType type, String title, String message) {
         Alert alert = createAlert(type, title, null, message);

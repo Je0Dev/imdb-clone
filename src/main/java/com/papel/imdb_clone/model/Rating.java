@@ -85,15 +85,7 @@ public class Rating {
         return createdAt;
     }
 
-    /**
-     * Compares this {@code Rating} object with the specified object for equality.
-     * Returns {@code true} if the given object is also a {@code Rating} and
-     * all its primitive fields ({@code id}, {@code userId}, {@code contentId}, and {@code score}) are equal.
-     * This method performs direct primitive equality checks for all fields.
-     *
-     * @param obj The object to be compared for equality.
-     * @return {@code true} if the specified object is equal to this {@code Rating}; {@code false} otherwise.
-     */
+
     @Override
     public boolean equals(Object obj) {
         if (this == obj) return true;
@@ -107,15 +99,7 @@ public class Rating {
                 Objects.equals(createdAt, rating1.createdAt);
     }
 
-    /**
-     * Generates a hash code for this {@code Rating} object.
-     * The hash code is computed based on the values of the {@code id}, {@code userId},
-     * {@code contentId}, {@code score}, {@code review}, and {@code createdAt} fields.
-     * This method is consistent with {@link #equals(Object)}, ensuring that
-     * equal {@code Rating} objects produce the same hash code.
-     *
-     * @return A hash code value for this object.
-     */
+
     @Override
     public int hashCode() {
         return Objects.hash(id, userId, contentId, score, review, createdAt);

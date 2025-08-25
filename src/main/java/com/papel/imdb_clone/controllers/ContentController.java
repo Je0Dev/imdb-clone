@@ -32,7 +32,6 @@ import org.slf4j.LoggerFactory;
 
 import java.net.URL;
 import java.util.*;
-import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 import static com.papel.imdb_clone.util.UIUtils.showSuccess;
@@ -157,10 +156,10 @@ public class ContentController extends BaseController {
             // Initialize movie table if it exists
             if (movieTable != null) {
                 movieTable.setPlaceholder(new Label("No movies found"));
-                
+
                 // Initialize table columns
                 initializeMovieTableColumns();
-                
+
                 // Set up sorting if sort controls exist
                 if (movieSortBy != null) {
                     movieSortBy.getItems().addAll("Title (A-Z)", "Title (Z-A)", "Year (Newest)", "Year (Oldest)", "Rating (High-Low)", "Rating (Low-High)");
@@ -169,7 +168,7 @@ public class ContentController extends BaseController {
                         sortMovieTable(newVal);
                     });
                 }
-                
+
                 // Load initial data
                 loadInitialData();
             } else {
@@ -201,6 +200,19 @@ public class ContentController extends BaseController {
         }
     }
 
+    private void setupEventListeners() {
+        AppEventBus eventBus = AppEventBus.getInstance();
+        eventBus.subscribe(AppStateManager.EVT_USER_LOGGED_IN, event -> {
+            logger.debug("User logged in, updating UI");
+            Platform.runLater(this::updateUIForAuthState);
+        });
+    }
+
+    /**
+     * Sorts the movie table based on the specified sort option.
+     *
+     * @param newVal The sort option selected by the user (e.g., "Title (A-Z)", "Year (Newest)")
+     */
     private void sortMovieTable(String newVal) {
         switch (newVal) {
             case "Title (A-Z)":
@@ -384,6 +396,11 @@ public class ContentController extends BaseController {
         }
     }
 
+    /**
+     * Performs a search based on the provided query and updates the UI with results.
+     *
+     * @param query The search term entered by the user
+     */
     private void performSearch(String query) {
         if (query == null || query.trim().isEmpty()) {
             filteredMovies.setAll(allMovies);
@@ -408,32 +425,11 @@ public class ContentController extends BaseController {
         }
     }
 
-    private void updateSearchSuggestions(List<Movie> movies) {
-        suggestionsContainer.getChildren().clear();
-        if (movies.isEmpty()) {
-            searchSuggestions.hide();
-            return;
-        }
 
-        for (Movie movie : movies) {
-            Label suggestion = new Label(movie.getTitle() + " (" + (movie.getReleaseDate() != null ? movie.getReleaseDate().getYear() + 1900 : "N/A") + ")");
-            suggestion.getStyleClass().add("search-suggestion");
-            suggestion.setOnMouseClicked(e -> {
-                globalSearchField.setText(movie.getTitle());
-                searchSuggestions.hide();
-                performSearch(movie.getTitle());
-            });
-            suggestionsContainer.getChildren().add(suggestion);
-        }
-
-        if (globalSearchField.getScene() != null && globalSearchField.getScene().getWindow() != null) {
-            searchSuggestions.show(globalSearchField,
-                    javafx.stage.Screen.getPrimary().getVisualBounds().getMinX() + globalSearchField.localToScene(0, 0).getX() + globalSearchField.getScene().getX() + globalSearchField.getScene().getWindow().getX(),
-                    javafx.stage.Screen.getPrimary().getVisualBounds().getMinY() + globalSearchField.localToScene(0, 0).getY() + globalSearchField.getScene().getY() + globalSearchField.getScene().getWindow().getY() + globalSearchField.getHeight()
-            );
-        }
-    }
-
+    /**
+     * Displays the search suggestions popup near the search field.
+     * The popup will be positioned relative to the global search field.
+     */
     private void showSearchSuggestions() {
         if (searchSuggestions == null) {
             logger.warn("searchSuggestions is not initialized");
@@ -452,6 +448,10 @@ public class ContentController extends BaseController {
         }
     }
 
+    /**
+     * Clears the current search and resets the movie list to show all items.
+     * Also hides the search suggestions popup if it's visible.
+     */
     private void clearSearch() {
         filteredMovies.setAll(allMovies);
         suggestionsContainer.getChildren().clear();
@@ -461,10 +461,22 @@ public class ContentController extends BaseController {
         updateStatusLabel(allMovies.size());
     }
 
+    /**
+     * Updates the status label with the current movie count.
+     *
+     * @param count The number of movies currently displayed
+     */
     private void updateStatusLabel(int count) {
         statusLabel.setText(String.format("Showing %d %s", count, count == 1 ? "item" : "items"));
     }
 
+
+    /**
+     * Initializes the controller with the specified user ID.
+     * This method should be called after the controller is created.
+     *
+     * @param currentUserId The ID of the current user, or -1 if no user is logged in
+     */
     @Override
     protected void initializeController(int currentUserId) throws Exception {
         // This method is called by BaseController.initialize(int)
@@ -493,78 +505,7 @@ public class ContentController extends BaseController {
         }
     }
 
-    /**
-     * Sets up event listeners for application-wide events.
-     */
-    private void setupEventListeners() {
-        AppEventBus eventBus = AppEventBus.getInstance();
 
-        // Listen for login events
-        eventBus.subscribe(AppStateManager.EVT_USER_LOGGED_IN, event -> {
-            logger.debug("User logged in, updating UI");
-            Platform.runLater(this::updateUIForAuthState);
-        });
-
-        // Listen for logout events
-        eventBus.subscribe(AppStateManager.EVT_USER_LOGGED_OUT, event -> {
-            logger.debug("User logged out, updating UI");
-            Platform.runLater(this::updateUIForAuthState);
-        });
-
-        // Listen for content updates
-        eventBus.subscribe("CONTENT_UPDATED", event -> {
-            logger.debug("Content updated, refreshing view");
-        });
-    }
-
-    /**
-     * Initializes content data asynchronously.
-     *
-     * @return CompletableFuture that completes when content data is loaded
-     */
-    private CompletableFuture<Void> initializeContentData() {
-        CompletableFuture<Void> future = new CompletableFuture<>();
-
-        // Show loading indicator
-        showLoadingIndicator(true);
-
-        // Run content loading in background
-        Task<Void> loadTask = new Task<>() {
-            @Override
-            protected Void call() {
-                try {
-                    contentDataLoader.initializeContentData();
-                    return null;
-                } catch (Exception e) {
-                    throw new RuntimeException("Failed to load content data", e);
-                }
-            }
-        };
-
-        // Handle task completion
-        loadTask.setOnSucceeded(e -> {
-            showLoadingIndicator(false);
-            future.complete(null);
-        });
-
-        loadTask.setOnFailed(e -> {
-            showLoadingIndicator(false);
-            Throwable ex = loadTask.getException();
-            logger.error("Error loading content data: {}", ex.getMessage(), ex);
-            UIUtils.showError("Loading Error", "Failed to load content data: " + ex.getMessage());
-            future.completeExceptionally(ex);
-        });
-
-        // Start the task in a background thread
-        new Thread(loadTask).start();
-
-        return future;
-    }
-
-    /**
-     * Shows or hides the loading indicator.
-     * @param show Whether to show the loading indicator
-     */
     /**
      * Updates the UI based on the current authentication state.
      */
@@ -585,30 +526,6 @@ public class ContentController extends BaseController {
         }
     }
 
-    /**
-     * Shows or hides the loading indicator.
-     *
-     * @param show Whether to show the loading indicator
-     */
-    private void showLoadingIndicator(boolean show) {
-        if (contentContainer == null) {
-            logger.warn("Content container is not initialized");
-            return;
-        }
-
-        Platform.runLater(() -> {
-            try {
-                // Use UIUtils for consistent loading indicators
-                if (show) {
-                    UIUtils.showLoadingIndicator(contentContainer, "Loading content...");
-                } else {
-                    UIUtils.hideLoadingIndicator();
-                }
-            } catch (Exception e) {
-                logger.error("Error updating loading indicator: {}", e.getMessage(), e);
-            }
-        });
-    }
 
     /**
      * Shows a dialog to add a new movie and returns the created movie.
@@ -710,11 +627,6 @@ public class ContentController extends BaseController {
                         return null;
                     }
 
-                    // Set description if provided
-                    if (!descriptionArea.getText().trim().isEmpty()) {
-                        movie.setDescription(descriptionArea.getText().trim());
-                    }
-
                     return movie;
                 } catch (Exception e) {
                     logger.error("Error creating movie: {}", e.getMessage(), e);
@@ -790,9 +702,21 @@ public class ContentController extends BaseController {
         }
     }
 
+    /**
+     * Handles the "Add Season" button click event.
+     * Shows a dialog to add a new season to the selected series.
+     *
+     * @param actionEvent The action event that triggered this method
+     */
     public void handleAddSeason(ActionEvent actionEvent) {
     }
 
+    /**
+     * Handles the "Add Episode" button click event.
+     * Shows a dialog to add a new episode to the selected season.
+     *
+     * @param actionEvent The action event that triggered this method
+     */
     public void handleAddEpisode(ActionEvent actionEvent) {
 
     }
@@ -872,13 +796,13 @@ public class ContentController extends BaseController {
         dialog.setResultConverter(dialogButton -> {
             if (dialogButton == addButtonType) {
                 try {
-                    Series series = new Series();
+                    Series series = new Series(titleField.getText().trim());
                     series.setTitle(titleField.getText().trim());
 
                     // Parse year with validation
                     try {
                         int year = Integer.parseInt(yearField.getText().trim());
-                        series.setYear(year);
+                        series.setReleaseYear(year);
                     } catch (NumberFormatException e) {
                         showAlert("Invalid Year", "Please enter a valid year (e.g., 2023)");
                         return null;
@@ -908,10 +832,6 @@ public class ContentController extends BaseController {
                         return null;
                     }
 
-                    // Set description if provided
-                    if (!descriptionArea.getText().trim().isEmpty()) {
-                        series.setDescription(descriptionArea.getText().trim());
-                    }
 
                     return series;
                 } catch (Exception e) {
@@ -928,6 +848,10 @@ public class ContentController extends BaseController {
         return result.orElse(null);
     }
 
+    /**
+     * Handles the "Add Movie" button click event.
+     * Shows a dialog to add a new movie and refreshes the movie table upon success.
+     */
     @FXML
     private void handleAddMovie() {
         // Open a dialog to add a new movie
@@ -939,6 +863,10 @@ public class ContentController extends BaseController {
 
     }
 
+    /**
+     * Handles the "Rate Movie" button click event.
+     * Shows a rating dialog for the selected movie and updates the rating if confirmed.
+     */
     @FXML
     private void handleRateMovie() {
         Movie selectedMovie = movieTable.getSelectionModel().getSelectedItem();
@@ -953,11 +881,17 @@ public class ContentController extends BaseController {
         }
     }
 
-    private void showAlert(String noMovieSelected, String s) {
+    /**
+     * Shows an alert with the specified title and message.
+     *
+     * @param title   The title of the alert
+     * @param message The message to display in the alert
+     */
+    private void showAlert(String title, String message) {
         Alert alert = new Alert(Alert.AlertType.INFORMATION);
-        alert.setTitle("No Movie Selected");
-        alert.setHeaderText(noMovieSelected);
-        alert.setContentText(s);
+        alert.setTitle(title);
+        alert.setHeaderText(title);
+        alert.setContentText(message);
         alert.showAndWait();
     }
 
@@ -1021,6 +955,10 @@ public class ContentController extends BaseController {
         return dialog.getResult() != null ? dialog.getResult() : 0.0;
     }
 
+    /**
+     * Handles the "Delete Movie" button click event.
+     * Shows a confirmation dialog and deletes the selected movie if confirmed.
+     */
     @FXML
     private void handleDeleteMovie() {
         Movie selectedMovie = movieTable.getSelectionModel().getSelectedItem();
@@ -1042,13 +980,6 @@ public class ContentController extends BaseController {
      * @param message the message to display in the dialog
      * @return true if the user clicked OK, false otherwise
      */
-    /**
-     * Shows a confirmation dialog with the specified title and message.
-     *
-     * @param title   The title of the dialog
-     * @param message The message to display in the dialog
-     * @return true if the user confirmed, false otherwise
-     */
     private boolean showConfirmationDialog(String title, String message) {
         Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
         alert.setTitle(title);
@@ -1062,6 +993,10 @@ public class ContentController extends BaseController {
         return result.isPresent() && result.get() == ButtonType.OK;
     }
 
+    /**
+     * Handles the "Add Series" button click event.
+     * Shows a dialog to add a new TV series and refreshes the series table upon success.
+     */
     @FXML
     private void handleAddSeries() {
         // Open a dialog to add a new series
@@ -1072,6 +1007,10 @@ public class ContentController extends BaseController {
         }
     }
 
+    /**
+     * Handles the "Rate Series" button click event.
+     * Shows a rating dialog for the selected series and updates the rating if confirmed.
+     */
     @FXML
     private void handleRateSeries() {
         Series selectedSeries = seriesTable.getSelectionModel().getSelectedItem();
@@ -1086,6 +1025,10 @@ public class ContentController extends BaseController {
         }
     }
 
+    /**
+     * Handles the "Delete Series" button click event.
+     * Shows a confirmation dialog and deletes the selected series if confirmed.
+     */
     @FXML
     private void handleDeleteSeries() {
         Series selectedSeries = seriesTable.getSelectionModel().getSelectedItem();
@@ -1100,36 +1043,40 @@ public class ContentController extends BaseController {
         }
     }
 
+    /**
+     * Initializes the columns for the movie table.
+     * Sets up cell value factories and cell factories for each column.
+     */
     private void initializeMovieTableColumns() {
         if (movieTable == null) {
             logger.warn("Cannot initialize columns: movieTable is null");
             return;
         }
-        
+
         try {
             // Title column
             if (movieTitleColumn != null) {
                 movieTitleColumn.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().getTitle()));
             }
-            
+
             // Year column
             if (movieYearColumn != null) {
-                movieYearColumn.setCellValueFactory(cellData -> 
-                    new SimpleStringProperty(String.valueOf(cellData.getValue().getYear()))
+                movieYearColumn.setCellValueFactory(cellData ->
+                        new SimpleStringProperty(String.valueOf(cellData.getValue().getYear()))
                 );
             }
-            
+
             // Genre column
             if (movieGenreColumn != null) {
                 movieGenreColumn.setCellValueFactory(cellData -> {
                     List<Genre> genres = cellData.getValue().getGenres();
                     String genreText = genres.stream()
-                        .map(Genre::name)
-                        .collect(Collectors.joining(", "));
+                            .map(Genre::name)
+                            .collect(Collectors.joining(", "));
                     return new SimpleStringProperty(genreText);
                 });
             }
-            
+
             // Director column
             if (movieDirectorColumn != null) {
                 movieDirectorColumn.setCellValueFactory(cellData -> {
@@ -1141,7 +1088,7 @@ public class ContentController extends BaseController {
                     return new SimpleStringProperty("");
                 });
             }
-            
+
             // Rating column
             if (movieRatingColumn != null) {
                 movieRatingColumn.setCellValueFactory(cellData -> {
@@ -1149,33 +1096,33 @@ public class ContentController extends BaseController {
                     return new SimpleDoubleProperty(rating != null ? rating : 0.0).asObject();
                 });
             }
-            
+
             // Duration column
             if (movieDurationColumn != null) {
-                movieDurationColumn.setCellValueFactory(cellData -> 
-                    new SimpleIntegerProperty(cellData.getValue().getDuration()).asObject()
+                movieDurationColumn.setCellValueFactory(cellData ->
+                        new SimpleIntegerProperty(cellData.getValue().getDuration()).asObject()
                 );
             }
-            
+
             // Actions column
             if (movieActionsColumn != null) {
                 movieActionsColumn.setCellFactory(param -> new TableCell<>() {
                     private final Button editButton = new Button("Edit");
                     private final Button deleteButton = new Button("Delete");
-                    
+
                     {
                         editButton.setOnAction(event -> {
                             Movie movie = getTableView().getItems().get(getIndex());
                             // TODO: Implement edit functionality
                             logger.info("Edit movie: {}", movie.getTitle());
                         });
-                        
+
                         deleteButton.setOnAction(event -> {
                             Movie movie = getTableView().getItems().get(getIndex());
                             handleDeleteMovie();
                         });
                     }
-                    
+
                     @Override
                     protected void updateItem(Void item, boolean empty) {
                         super.updateItem(item, empty);
@@ -1189,20 +1136,24 @@ public class ContentController extends BaseController {
                     }
                 });
             }
-            
+
             logger.debug("Movie table columns initialized successfully");
-            
+
         } catch (Exception e) {
             logger.error("Error initializing movie table columns: {}", e.getMessage(), e);
         }
     }
 
+    /**
+     * Loads the initial data for the controller.
+     * This includes movies, series, and other content that should be displayed when the view loads.
+     */
     private void loadInitialData() {
         if (dataManager == null) {
             logger.error("DataManager is not initialized. Cannot load movies.");
             return;
         }
-        
+
         Task<Void> task = new Task<>() {
             @Override
             protected Void call() throws Exception {
@@ -1233,8 +1184,8 @@ public class ContentController extends BaseController {
             Throwable ex = task.getException();
             logger.error("Error loading initial data: {}", ex != null ? ex.getMessage() : "Unknown error", ex);
             Platform.runLater(() ->
-                UIUtils.showError("Loading Error", "Failed to load initial data: " + 
-                    (ex != null ? ex.getMessage() : "Unknown error")));
+                    UIUtils.showError("Loading Error", "Failed to load initial data: " +
+                            (ex != null ? ex.getMessage() : "Unknown error")));
         });
 
         // Start the task in a background thread
@@ -1243,6 +1194,10 @@ public class ContentController extends BaseController {
         thread.start();
     }
 
+    /**
+     * Refreshes the movie table with the latest data from the data source.
+     * This method should be called after any changes to the movie data.
+     */
     private void refreshMovieTable() {
         // Refresh the movie table with updated data
         List<Movie> movies = contentService.getAllMovies();
@@ -1252,15 +1207,31 @@ public class ContentController extends BaseController {
         }
     }
 
+    /**
+     * Refreshes the series table with the latest data from the data source.
+     * This method should be called after any changes to the series data.
+     */
     private void refreshSeriesTable() {
         // Refresh the series table with updated data
         seriesTable.setItems(FXCollections.observableArrayList(contentService.getAllSeries()));
     }
 
-
+    /**
+     * Handles the "Edit Series" button click event.
+     * Shows a dialog to edit the selected series and refreshes the series table upon success.
+     *
+     * @param actionEvent The action event that triggered this method
+     */
     public void handleEditSeries(ActionEvent actionEvent) {
     }
 
+    /**
+     * Sets the current user session information.
+     * Updates the UI to reflect the current user's authentication state.
+     *
+     * @param currentUser  The currently logged-in user, or null if no user is logged in
+     * @param sessionToken The session token for the current user, or null if no user is logged in
+     */
     public void setUserSession(User currentUser, String sessionToken) {
         this.currentUser = currentUser;
         this.sessionToken = sessionToken;

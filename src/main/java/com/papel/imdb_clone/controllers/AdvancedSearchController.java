@@ -11,7 +11,6 @@ import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.concurrent.Task;
-import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
@@ -121,7 +120,7 @@ public class AdvancedSearchController {
         });
         resultYearColumn.setCellValueFactory(new PropertyValueFactory<>("year"));
         resultGenreColumn.setCellValueFactory(cellData -> {
-            List<Genre> genres = (List<Genre>) cellData.getValue().getGenres();
+            List<Genre> genres = cellData.getValue().getGenres();
             String genreString = genres != null && !genres.isEmpty() ?
                     genres.stream().map(Genre::name).collect(java.util.stream.Collectors.joining(", ")) : "N/A";
             return new SimpleStringProperty(genreString);
@@ -340,6 +339,4 @@ public class AdvancedSearchController {
         prevPageButton.setDisable(currentPage <= 1);
     }
 
-    public void exportResults(ActionEvent actionEvent) {
-    }
 }

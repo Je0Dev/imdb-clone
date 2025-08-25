@@ -10,9 +10,6 @@ import javafx.beans.binding.Bindings;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
-import javafx.scene.control.Button;
-import javafx.scene.control.Label;
-import javafx.scene.control.TextField;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.StackPane;
@@ -20,7 +17,6 @@ import javafx.stage.Stage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.awt.*;
 import java.net.URL;
 import java.util.List;
 import java.util.Map;
@@ -378,34 +374,6 @@ public class AuthController extends BaseController {
         }
     }
 
-    public void setLoginSuccessCallback(Object o) {
-    }
-
-    public boolean isLoggedIn() {
-        return currentUser != null && sessionToken != null;
-    }
-
-    public String getSessionToken() {
-        return sessionToken;
-    }
-
-    @FXML
-    public void toggleLoginPasswordVisibility(ActionEvent actionEvent) {
-        boolean isVisible = loginPasswordVisibleField.isVisible();
-        loginPasswordVisibleField.setVisible(!isVisible);
-        loginPasswordField.setVisible(isVisible);
-
-        // Update button text/icon
-        if (isVisible) {
-            toggleLoginPassword.setText("👁️");
-            loginPasswordField.requestFocus();
-            loginPasswordField.positionCaret(loginPasswordField.getLength());
-        } else {
-            toggleLoginPassword.setText("👁️‍🗨️");
-            loginPasswordVisibleField.requestFocus();
-            loginPasswordVisibleField.positionCaret(loginPasswordVisibleField.getLength());
-        }
-    }
 
     @FXML
     public void showRegisterForm(ActionEvent event) {
@@ -416,53 +384,6 @@ public class AuthController extends BaseController {
         }
     }
 
-    @FXML
-    public void toggleRegisterPasswordVisibility(ActionEvent actionEvent) {
-        boolean isVisible = passwordVisibleField.isVisible();
-        passwordVisibleField.setVisible(!isVisible);
-        passwordField.setVisible(isVisible);
-
-        // Update button text/icon
-        if (isVisible) {
-            toggleRegisterPassword.setText("👁️");
-            passwordField.requestFocus();
-            passwordField.positionCaret(passwordField.getLength());
-        } else {
-            toggleRegisterPassword.setText("👁️‍🗨️");
-            passwordVisibleField.requestFocus();
-            passwordVisibleField.positionCaret(passwordVisibleField.getLength());
-        }
-    }
-
-    public void toggleConfirmPasswordVisibility(ActionEvent actionEvent, Component registerPasswordField) {
-        registerPasswordField.setVisible(!registerPasswordField.isVisible());
-    }
-
-    public void showLoginForm(ActionEvent event) {
-        registerContainer.setVisible(false);
-        loginContainer.setVisible(true);
-        if (event != null) {
-            event.consume();
-        }
-    }
-
-    @FXML
-    public void toggleConfirmPasswordVisibility(ActionEvent actionEvent) {
-        boolean isVisible = confirmPasswordVisibleField.isVisible();
-        confirmPasswordVisibleField.setVisible(!isVisible);
-        confirmPasswordField.setVisible(isVisible);
-
-        // Update button text/icon
-        if (isVisible) {
-            toggleConfirmPassword.setText("👁️");
-            confirmPasswordField.requestFocus();
-            confirmPasswordField.positionCaret(confirmPasswordField.getLength());
-        } else {
-            toggleConfirmPassword.setText("👁️‍🗨️");
-            confirmPasswordVisibleField.requestFocus();
-            confirmPasswordVisibleField.positionCaret(confirmPasswordVisibleField.getLength());
-        }
-    }
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {

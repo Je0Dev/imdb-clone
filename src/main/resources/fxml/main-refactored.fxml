@@ -29,10 +29,6 @@
 
 
                 <Region HBox.hgrow="ALWAYS"/>
-
-                <!-- User Menu - Simplified -->
-                <Button fx:id="userMenuButton" onAction="#toggleUserMenu"
-                        style="-fx-background-color: transparent; -fx-padding: 5 10; -fx-cursor: hand; -fx-background-radius: 20;"/>
             </HBox>
 
 

@@ -1,5 +1,7 @@
 package com.papel.imdb_clone.model;
 
+import com.papel.imdb_clone.enums.Genre;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -15,39 +17,26 @@ public class Series extends Content {
     // Rich content fields
     private String boxOffice;
     private List<String> awards;
-    private String country;
-    private String language;
-    private String status;
     private double rating;
 
-    /**
-     * Creates a new Series with default values.
-     */
-    public Series() {
-        this("", "");
-    }
 
     /**
      * Creates a new Series with the given title and summary.
      *
-     * @param title   The title of the series
-     * @param summary A brief summary/description of the series
+     * @param title The title of the series
      */
-    public Series(String title, String summary) {
-        super(title, new java.util.Date(), com.papel.imdb_clone.enums.Genre.DRAMA, "", new java.util.HashMap<>(), 0.0);
+    public Series(String title) {
+        super(title, new java.util.Date(), Genre.DRAMA, "", new java.util.HashMap<>(), 0.0);
         this.seasons = new ArrayList<>();
         this.actors = new ArrayList<>();
         this.awards = new ArrayList<>();
-        setSummary(summary);
     }
 
-    public Series(String title, String summary, com.papel.imdb_clone.enums.Genre genre, double imdbRating, double userRating) {
+    public Series(String title, String summary, Genre genre, double imdbRating, double userRating) {
         super(title, new java.util.Date(), genre, "", new HashMap<>(), imdbRating);
         this.seasons = new ArrayList<>();
         this.actors = new ArrayList<>();
         this.awards = new ArrayList<>();
-        setSummary(summary);
-        // The userRating would be set through a different mechanism, so we don't set it here.
     }
 
     public List<Season> getSeasons() {
@@ -245,36 +234,21 @@ public class Series extends Content {
 
 
     public void setEndYear(int endYear) {
+        this.endYear = endYear;
     }
 
     public void setCreator(String creator) {
     }
 
-    public void setDescription(String description) {
-    }
-
-    public void setReleaseYear(int i) {
-    }
 
     public void addGenre(String genreName) {
 
     }
 
-    public void setYear(int year) {
+    public void setReleaseYear(int year) {
         this.setReleaseYear(year);
     }
 
-    public void setCountry(String country) {
-        this.country = country;
-    }
-
-    public void setLanguage(String language) {
-        this.language = language;
-    }
-
-    public void setStatus(String status) {
-        this.status = status;
-    }
 
     public void setRating(double rating) {
         this.rating = rating;

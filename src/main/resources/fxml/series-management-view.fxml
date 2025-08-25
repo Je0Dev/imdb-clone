@@ -4,8 +4,7 @@
 <?import javafx.scene.layout.*?>
 <?import javafx.scene.text.Text?>
 <SplitPane dividerPositions="0.3" xmlns:fx="http://javafx.com/fxml/1"
-           fx:controller="com.papel.imdb_clone.controllers.ContentController"
->
+           fx:controller="com.papel.imdb_clone.controllers.ContentController">
 
     <!-- Left Pane: Series List -->
 
