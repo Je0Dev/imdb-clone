@@ -36,7 +36,6 @@ public class UserStorageService {
 
         } catch (IOException e) {
             System.err.println("Error saving user data: " + e.getMessage());
-            // In a production app, you might want to log this or show a user-friendly message
         }
     }
 

@@ -11,30 +11,19 @@ public class UserRating {
     private final int userId;
     private final int contentId;
     private double rating; // 1.0 to 10.0
-    private String review;
     private String title;
     private final LocalDateTime createdAt;
-    private final boolean isSpoiler;
-    private final int helpfulVotes;
-    private final int totalVotes;
 
     public UserRating(int userId, int contentId, double rating) {
         this.userId = userId;
         this.contentId = contentId;
         this.rating = rating;
         this.createdAt = LocalDateTime.now();
-        this.isSpoiler = false;
-        this.helpfulVotes = 0;
-        this.totalVotes = 0;
     }
 
-    public UserRating(int userId, int contentId, double rating, String review) {
+
+    public UserRating(int userId, int contentId, double rating, String title) {
         this(userId, contentId, rating);
-        this.review = review;
-    }
-
-    public UserRating(int userId, int contentId, double rating, String title, String review) {
-        this(userId, contentId, rating, review);
         this.title = title;
     }
 
@@ -68,11 +57,6 @@ public class UserRating {
         }
     }
 
-    public String getReview() {
-        return review;
-    }
-
-
     public String getTitle() {
         return title;
     }
@@ -85,21 +69,8 @@ public class UserRating {
         return createdAt;
     }
 
-
-    public boolean hasReview() {
-        return review != null && !review.trim().isEmpty();
-    }
-
     public boolean hasTitle() {
         return title != null && !title.trim().isEmpty();
-    }
-
-
-    public String getShortReview(int maxLength) {
-        if (review == null || review.length() <= maxLength) {
-            return review;
-        }
-        return review.substring(0, maxLength) + "...";
     }
 
 
@@ -126,10 +97,6 @@ public class UserRating {
                 ", contentId=" + contentId +
                 ", rating=" + rating +
                 ", title='" + title + '\'' +
-                ", hasReview=" + hasReview() +
-                ", isSpoiler=" + isSpoiler +
-                ", helpfulVotes=" + helpfulVotes +
-                ", totalVotes=" + totalVotes +
                 ", createdAt=" + createdAt +
                 '}';
     }

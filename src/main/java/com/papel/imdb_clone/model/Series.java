@@ -2,10 +2,7 @@ package com.papel.imdb_clone.model;
 
 import com.papel.imdb_clone.enums.Genre;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 
 public class Series extends Content {
     private List<Season> seasons;
@@ -18,6 +15,7 @@ public class Series extends Content {
     private String boxOffice;
     private List<String> awards;
     private double rating;
+    private String nominations;
 
 
     /**
@@ -147,8 +145,8 @@ public class Series extends Content {
         return new ArrayList<>(awards);
     }
 
-    public void setAwards(List<String> awards) {
-        this.awards = awards != null ? new ArrayList<>(awards) : new ArrayList<>();
+    public void setAwards(String awards) {
+        this.awards = awards != null ? new ArrayList<>(Collections.singleton(awards)) : new ArrayList<>();
     }
 
     public void addAward(String award) {
@@ -260,5 +258,13 @@ public class Series extends Content {
 
     public Double getRating() {
         return rating;
+    }
+
+    public void setNominations(String nominations) {
+        this.nominations = nominations;
+    }
+
+    public String getNominations() {
+        return nominations;
     }
 }

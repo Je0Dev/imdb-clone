@@ -7,6 +7,7 @@ import com.papel.imdb_clone.model.Director;
 import com.papel.imdb_clone.model.Movie;
 import com.papel.imdb_clone.model.Series;
 import com.papel.imdb_clone.repository.impl.InMemoryMovieRepository;
+import com.papel.imdb_clone.repository.impl.InMemorySeriesRepository;
 import com.papel.imdb_clone.repository.impl.InMemoryUserRepository;
 import com.papel.imdb_clone.service.data.FileDataLoaderService;
 import com.papel.imdb_clone.service.data.loader.DataLoaderFactory;
@@ -56,6 +57,7 @@ public class ServiceLocator {
         // Initialize repositories with concrete types
         InMemoryUserRepository userRepository = dataManager.getUserRepository();
         InMemoryMovieRepository movieRepository = (InMemoryMovieRepository) dataManager.getMovieRepository();
+        InMemorySeriesRepository seriesRepository = (InMemorySeriesRepository) dataManager.getSeriesRepository();
 
         // Initialize services
         UserService userService = UserService.getInstance(dataManager, encryptionService);
@@ -80,6 +82,7 @@ public class ServiceLocator {
         dataLoaderFactory = new DataLoaderFactory(
                 userRepository,
                 movieRepository,
+                seriesRepository,
                 movieService,
                 seriesService,
                 actorService,
@@ -91,6 +94,7 @@ public class ServiceLocator {
         fileDataLoaderService = new FileDataLoaderService(
                 userRepository,
                 movieRepository,
+                seriesRepository,
                 seriesService,
                 actorService,
                 directorService,
@@ -115,30 +119,6 @@ public class ServiceLocator {
             registerService(RefactoredDataManager.class, dataManager);
         }
         return dataManager;
-    }
-
-    /**
-     * Gets the FileDataLoaderService instance.
-     *
-     * @return The FileDataLoaderService instance
-     */
-    public FileDataLoaderService getFileDataLoaderService() {
-        if (fileDataLoaderService == null) {
-            throw new IllegalStateException("FileDataLoaderService not initialized. Call initializeServices() first.");
-        }
-        return fileDataLoaderService;
-    }
-
-    /**
-     * Gets the DataLoaderFactory instance.
-     *
-     * @return The DataLoaderFactory instance
-     */
-    public DataLoaderFactory getDataLoaderFactory() {
-        if (dataLoaderFactory == null) {
-            throw new IllegalStateException("DataLoaderFactory not initialized. Call initializeServices() first.");
-        }
-        return dataLoaderFactory;
     }
 
 

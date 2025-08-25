@@ -34,6 +34,7 @@ public class MovieDataLoader extends BaseDataLoader {
 
     public MovieDataLoader(
             InMemoryMovieRepository movieRepository,
+
             CelebrityService<Actor> actorService,
             CelebrityService<Director> directorService) {
         this.movieRepository = movieRepository;
@@ -133,11 +134,6 @@ public class MovieDataLoader extends BaseDataLoader {
                             movie.setReleaseDate(releaseDate);
                             movie.setRating(rating);
                             movie.setDuration(duration);
-
-                            // Set optional fields with null checks
-                            if (country != null) movie.setCountry(country);
-                            if (language != null) movie.setLanguage(language);
-                            if (description != null) movie.setDescription(description);
 
                             // Set genres with improved handling
                             for (String genreName : genreNames) {

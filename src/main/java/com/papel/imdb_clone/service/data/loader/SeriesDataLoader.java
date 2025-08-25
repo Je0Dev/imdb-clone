@@ -64,7 +64,7 @@ public class SeriesDataLoader extends BaseDataLoader {
 
                 try {
                     String[] parts = parseCSVLine(line);
-                    if (parts.length >= 8) {  // Reduced from 10 to 8 to match actual format
+                    if (parts.length >= 8) {
                         // Expected format: Title,Genre,Seasons,StartYear,EndYear,Rating,Creator,MainCast
                         String title = parts[0].trim();
                         String genreStr = parts[1].trim();
@@ -119,14 +119,11 @@ public class SeriesDataLoader extends BaseDataLoader {
                         }
 
                         // Create or update the series
-                        Series series = new Series();
+                        Series series = new Series(title);
                         series.setTitle(title);
                         series.setStartYear(startYear);
                         series.setEndYear(endYear);
                         series.setRating(rating);
-                        series.setDescription(description);
-                        series.setCountry(country);
-                        // Convert Set<Genre> to List<Genre>
                         series.setGenres(new ArrayList<>(genres));
 
                         // Add creator as director if not empty
@@ -142,7 +139,7 @@ public class SeriesDataLoader extends BaseDataLoader {
                                             Director newDirector = new Director(
                                                     creatorFirstName,
                                                     creatorLastName,
-                                                    null, // birth date unknown
+                                                    null, // birthdate unknown
                                                     'U'   // gender unknown
                                             );
                                             return directorService.save(newDirector);
@@ -157,7 +154,7 @@ public class SeriesDataLoader extends BaseDataLoader {
                                 Director creator = new Director(
                                         firstName,
                                         lastName,
-                                        null, // birth date unknown
+                                        null, // birthdate unknown
                                         'U'   // gender unknown
                                 );
                                 directorService.save(creator);
@@ -180,7 +177,7 @@ public class SeriesDataLoader extends BaseDataLoader {
                                                     Actor newActor = new Actor(
                                                             firstName,
                                                             lastName,
-                                                            null, // birth date unknown
+                                                            null, // birthdate unknown
                                                             'U',  // gender unknown
                                                             Ethnicity.CAUCASOID // default ethnicity
                                                     );
@@ -237,7 +234,7 @@ public class SeriesDataLoader extends BaseDataLoader {
                                         Actor actor = new Actor(
                                                 "",
                                                 actorName.trim(),
-                                                null, // birth date unknown
+                                                null, // birthdate unknown
                                                 'U',  // gender unknown
                                                 Ethnicity.CAUCASOID  // default to Caucasoid as fallback
                                         );

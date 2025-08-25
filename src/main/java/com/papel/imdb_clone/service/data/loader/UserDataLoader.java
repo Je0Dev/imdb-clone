@@ -78,20 +78,12 @@ public class UserDataLoader extends BaseDataLoader {
                             String[] nameParts = fullName.split(" ", 2);
                             String firstName = nameParts.length > 0 ? nameParts[0] : "";
                             String lastName = nameParts.length > 1 ? nameParts[1] : "";
-                            
+
                             // Create user with required fields
                             User user = new User(firstName, lastName, username, gender, email);
                             user.setId(id);
                             user.setPassword(password); // Set the password (will be hashed by the service)
-                            
-                            // Set optional fields if available
-                            if (birthDate != null) {
-                                user.setBirthDate(birthDate);
-                            }
-                            if (country != null && !country.trim().isEmpty()) {
-                                user.setCountry(country);
-                            }
-                            
+
                             // Set default values
                             user.setActive(true);
                             user.setAdmin(false);

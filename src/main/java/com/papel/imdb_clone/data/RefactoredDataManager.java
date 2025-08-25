@@ -443,4 +443,8 @@ public class RefactoredDataManager {
             return null;
         }
     }
+
+    public Object getSeriesRepository() {
+        return seriesRepository;
+    }
 }

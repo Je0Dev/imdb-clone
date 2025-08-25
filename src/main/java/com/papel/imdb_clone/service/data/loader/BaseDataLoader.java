@@ -4,7 +4,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -99,7 +98,7 @@ public abstract class BaseDataLoader {
      * Validates the input stream and filename.
      *
      * @param inputStream the input stream to validate
-     * @param filename the filename for error messages
+     * @param filename    the filename for error messages
      * @throws IllegalArgumentException if input stream is null
      */
     protected void validateInput(InputStream inputStream, String filename) {
@@ -169,18 +168,4 @@ public abstract class BaseDataLoader {
         return fields.toArray(new String[0]);
     }
 
-    /**
-     * Safely closes an AutoCloseable resource.
-     *
-     * @param closeable the resource to close
-     */
-    protected void closeQuietly(AutoCloseable closeable) {
-        if (closeable != null) {
-            try {
-                closeable.close();
-            } catch (Exception e) {
-                logger.warn("Error closing resource: {}", e.getMessage());
-            }
-        }
-    }
 }

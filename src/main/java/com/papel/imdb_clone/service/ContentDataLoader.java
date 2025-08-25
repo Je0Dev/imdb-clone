@@ -88,13 +88,12 @@ public class ContentDataLoader<T extends Content> {
      * Creates a new Series instance with the given parameters.
      */
     private Series createSeries(String title, int startYear, Genre genre, String creator, String description) {
-        Series series = new Series();
+        Series series = new Series(title);
         series.setTitle(title);
         series.setStartYear(startYear);
         series.setEndYear(endYear);
         series.setGenre(genre);
         series.setCreator(creator);
-        series.setDescription(description);
         series.setId(Integer.parseInt(UUID.randomUUID().toString()));
         return series;
     }
@@ -109,7 +108,7 @@ public class ContentDataLoader<T extends Content> {
         logger.info("Loading initial movies data...");
 
         try {
-            // Example: Load movies from a predefined list or external source
+            // Load movies from a predefined list or external source
             List<Movie> initialMovies = List.of(
                     createMovie("The Shawshank Redemption", 1994, Genre.DRAMA, "Frank Darabont", "Two imprisoned men bond over a number of years..."),
                     createMovie("The Godfather", 1972, Genre.DRAMA, "Francis Ford Coppola", "The aging patriarch of an organized crime dynasty..."),

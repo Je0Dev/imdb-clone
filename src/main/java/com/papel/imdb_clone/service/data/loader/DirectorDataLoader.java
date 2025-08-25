@@ -57,8 +57,8 @@ public class DirectorDataLoader extends BaseDataLoader {
                         // Expected format: FirstName,LastName,BirthDate,Gender,Nationality,NotableWorks,ActiveYears
                         String firstName = parts[0].trim();
                         String lastName = parts[1].trim();
-                        
-                        // Parse birth date
+
+                        // Parse birthdate
                         LocalDate birthDate = null;
                         try {
                             birthDate = parseDate(parts[2].trim());
@@ -67,20 +67,20 @@ public class DirectorDataLoader extends BaseDataLoader {
                             errors++;
                             continue;
                         }
-                        
+
                         // Parse gender (first character, uppercase)
                         char gender = 'U'; // Default to Unknown
                         if (parts.length > 3 && !parts[3].trim().isEmpty()) {
                             String genderStr = parts[3].trim().toUpperCase();
                             gender = genderStr.charAt(0);
                         }
-                        
+
                         // Nationality
                         String nationality = parts.length > 4 ? parts[4].trim() : "";
-                        
+
                         // Notable works (optional)
                         String notableWorks = parts.length > 5 ? parts[5].trim() : "";
-                        
+
                         // Active years (optional)
                         String activeYears = parts.length > 6 ? parts[6].trim() : "";
 
@@ -90,22 +90,7 @@ public class DirectorDataLoader extends BaseDataLoader {
                             if (nationality != null && !nationality.isEmpty()) {
                                 director.setNationality(nationality);
                             }
-                            
-                            // Combine notable works and active years for biography
-                            StringBuilder bioBuilder = new StringBuilder();
-                            if (notableWorks != null && !notableWorks.isEmpty()) {
-                                director.setNotableWorks(notableWorks);
-                                bioBuilder.append("Notable Works: ").append(notableWorks);
-                            }
-                            
-                            if (activeYears != null && !activeYears.isEmpty()) {
-                                if (bioBuilder.length() > 0) bioBuilder.append("\n");
-                                bioBuilder.append("Active Years: ").append(activeYears);
-                            }
-                            
-                            if (bioBuilder.length() > 0) {
-                                director.setBiography(bioBuilder.toString());
-                            }
+
 
                             // Check if director already exists
                             if (directorService.findByFullName(firstName, lastName).isPresent()) {

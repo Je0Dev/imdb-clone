@@ -38,7 +38,6 @@ public class InMemoryMovieRepository implements MovieRepository {
         }
     }
 
-
     @Override
     public List<Movie> findByTitle(String title) {
         if (title == null || title.trim().isEmpty()) {
@@ -93,7 +92,6 @@ public class InMemoryMovieRepository implements MovieRepository {
         }
     }
 
-
     @Override
     public boolean existsByTitle(String title) {
         if (title == null) return false;
@@ -125,7 +123,6 @@ public class InMemoryMovieRepository implements MovieRepository {
             lock.readLock().unlock();
         }
     }
-
 
     /**
      * Adds a movie directly to the repository (used by data loaders).

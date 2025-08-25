@@ -22,7 +22,9 @@ public class CelebrityService<T extends Celebrity> {
     private static final Logger logger = LoggerFactory.getLogger(CelebrityService.class);
 
     private final List<T> celebrities = new CopyOnWriteArrayList<>();
+
     private final AtomicInteger nextId = new AtomicInteger(1);
+
     private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
     private final Class<T> celebrityType;
 

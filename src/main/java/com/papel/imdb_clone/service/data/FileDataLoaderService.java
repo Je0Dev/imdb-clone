@@ -5,6 +5,7 @@ import com.papel.imdb_clone.model.Director;
 import com.papel.imdb_clone.model.Movie;
 import com.papel.imdb_clone.model.Series;
 import com.papel.imdb_clone.repository.impl.InMemoryMovieRepository;
+import com.papel.imdb_clone.repository.impl.InMemorySeriesRepository;
 import com.papel.imdb_clone.repository.impl.InMemoryUserRepository;
 import com.papel.imdb_clone.service.CelebrityService;
 import com.papel.imdb_clone.service.ContentService;
@@ -24,13 +25,14 @@ public class FileDataLoaderService implements DataLoaderService {
     private static final Logger logger = LoggerFactory.getLogger(FileDataLoaderService.class);
 
     private final DataLoaderFactory loaderFactory;
-    
+
     private final Map<String, String> dataFiles = new HashMap<>();
 
 
     public FileDataLoaderService(
             InMemoryUserRepository userRepository,
             InMemoryMovieRepository movieRepository,
+            InMemorySeriesRepository seriesRepository,
             ContentService<Series> seriesService,
             CelebrityService<Actor> actorService,
             CelebrityService<Director> directorService, ContentService<Movie> movieService) {
@@ -38,7 +40,9 @@ public class FileDataLoaderService implements DataLoaderService {
         this.loaderFactory = new DataLoaderFactory(
                 userRepository,
                 movieRepository,
-                movieService, seriesService,
+                seriesRepository,
+                movieService,
+                seriesService,
                 actorService,
                 directorService
         );
@@ -187,7 +191,4 @@ public class FileDataLoaderService implements DataLoaderService {
             throw new IOException("Failed to load awards and box office data: " + e.getMessage(), e);
         }
     }
-
-    // Helper methods for parsing CSV and other utilities can be added here if needed
-    // ...
 }

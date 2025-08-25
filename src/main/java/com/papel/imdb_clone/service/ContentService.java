@@ -364,14 +364,6 @@ public class ContentService<T extends Content> {
                 .collect(Collectors.toList());
     }
 
-    public T getSeriesByTitle(String seriesTitle) {
-        return (T) contentList.stream()
-                .filter(content -> content instanceof Series)
-                .map(content -> (Series) content)
-                .filter(series -> series.getTitle().equalsIgnoreCase(seriesTitle))
-                .findFirst()
-                .orElse(null);
-    }
 
     public Optional<T> findByTitleAndYear(String title, int startYear) {
         return contentList.stream()
@@ -380,11 +372,4 @@ public class ContentService<T extends Content> {
                 .findFirst();
     }
 
-    public T findByTitleAndStartYear(String title, int startYear) {
-        return contentList.stream()
-                .filter(content -> content.getTitle().equalsIgnoreCase(title) &&
-                        content.getStartYear() == startYear)
-                .findFirst()
-                .orElse(null);
-    }
 }

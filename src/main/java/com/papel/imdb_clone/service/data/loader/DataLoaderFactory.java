@@ -5,6 +5,7 @@ import com.papel.imdb_clone.model.Director;
 import com.papel.imdb_clone.model.Movie;
 import com.papel.imdb_clone.model.Series;
 import com.papel.imdb_clone.repository.impl.InMemoryMovieRepository;
+import com.papel.imdb_clone.repository.impl.InMemorySeriesRepository;
 import com.papel.imdb_clone.repository.impl.InMemoryUserRepository;
 import com.papel.imdb_clone.service.CelebrityService;
 import com.papel.imdb_clone.service.ContentService;
@@ -22,6 +23,7 @@ public class DataLoaderFactory {
     private final ContentService<com.papel.imdb_clone.model.Series> seriesService;
     private final CelebrityService<com.papel.imdb_clone.model.Actor> actorService;
     private final CelebrityService<com.papel.imdb_clone.model.Director> directorService;
+    private final InMemorySeriesRepository seriesRepository;
 
     /**
      * Creates a new DataLoaderFactory with the required dependencies.
@@ -36,11 +38,16 @@ public class DataLoaderFactory {
     public DataLoaderFactory(
             InMemoryUserRepository userRepository,
             InMemoryMovieRepository movieRepository,
-            ContentService<Movie> movieService, ContentService<Series> seriesService,
+            InMemorySeriesRepository seriesRepository,
+
+            ContentService<Movie> movieService,
+            ContentService<Series> seriesService,
             CelebrityService<Actor> actorService,
             CelebrityService<Director> directorService) {
         this.userRepository = userRepository;
         this.movieRepository = movieRepository;
+        this.seriesRepository = seriesRepository;
+
         this.seriesService = seriesService;
         this.actorService = actorService;
         this.directorService = directorService;

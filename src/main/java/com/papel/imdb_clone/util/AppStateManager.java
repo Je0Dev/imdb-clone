@@ -118,6 +118,7 @@ public class AppStateManager {
             properties.store(out, "IMDb Clone Settings");
         } catch (IOException ignored) {
             // Non-critical failure
+            System.err.println("Failed to save settings: " + ignored.getMessage());
         }
     }
 

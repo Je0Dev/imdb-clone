@@ -57,7 +57,7 @@ public class ActorDataLoader extends BaseDataLoader {
                         // Expected format: FirstName,LastName,BirthDate,Gender,Nationality,Biography,NotableWorks
                         String firstName = parts[0].trim();
                         String lastName = parts[1].trim();
-                        
+
                         // Parse birth date
                         LocalDate birthDate = null;
                         try {
@@ -67,29 +67,23 @@ public class ActorDataLoader extends BaseDataLoader {
                             errors++;
                             continue;
                         }
-                        
+
                         // Parse gender (first character, uppercase)
                         char gender = 'U'; // Default to Unknown
                         if (parts.length > 3 && !parts[3].trim().isEmpty()) {
                             String genderStr = parts[3].trim().toUpperCase();
                             gender = genderStr.charAt(0);
                         }
-                        
+
                         // Nationality (ethnicity in the model)
                         String nationality = parts.length > 4 ? parts[4].trim() : "";
-                        
-                        // Biography (optional)
-                        String biography = parts.length > 5 ? parts[5].trim() : "";
-                        
+
                         // Notable works (optional)
                         String notableWorks = parts.length > 6 ? parts[6].trim() : "";
 
                         // Create and save the actor
                         try {
                             Actor actor = new Actor(firstName, lastName, birthDate, gender, nationality);
-                            if (biography != null && !biography.isEmpty()) {
-                                actor.setBiography(biography);
-                            }
                             if (notableWorks != null && !notableWorks.isEmpty()) {
                                 actor.setNotableWorks(notableWorks);
                             }
