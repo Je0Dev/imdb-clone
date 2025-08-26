@@ -115,10 +115,12 @@ public class ContentController extends BaseController {
 
     // Search related
     private final PauseTypingDetector pauseTypingDetector = new PauseTypingDetector(300);
-    private final ObservableList<Movie> allMovies = FXCollections.observableArrayList();
-    private final ObservableList<Movie> filteredMovies = FXCollections.observableArrayList();
+    private ObservableList<Movie> allMovies = FXCollections.observableArrayList();
+    private ObservableList<Movie> filteredMovies = FXCollections.observableArrayList();
     private final ObjectProperty<Movie> selectedMovie = new SimpleObjectProperty<>();
-
+    // Add these lines with other field declarations
+    private final ObservableList<Series> allSeries = FXCollections.observableArrayList();
+    private final ObservableList<Series> filteredSeries = FXCollections.observableArrayList();
     // Services
     private ContentService<Content> contentService;
     private RefactoredDataManager dataManager;
@@ -150,6 +152,7 @@ public class ContentController extends BaseController {
                 logger.warn("globalSearchField is not available. Search functionality will be disabled.");
             }
 
+            // Initialize tables and columns
             setupTableColumns();
             setupEventListeners();
 
@@ -157,17 +160,12 @@ public class ContentController extends BaseController {
             if (movieTable != null) {
                 movieTable.setPlaceholder(new Label("No movies found"));
 
-                // Initialize table columns
-                initializeMovieTableColumns();
+                // Initialize the ObservableLists
+                allMovies = FXCollections.observableArrayList();
+                filteredMovies = FXCollections.observableArrayList();
 
-                // Set up sorting if sort controls exist
-                if (movieSortBy != null) {
-                    movieSortBy.getItems().addAll("Title (A-Z)", "Title (Z-A)", "Year (Newest)", "Year (Oldest)", "Rating (High-Low)", "Rating (Low-High)");
-                    movieSortBy.setValue("Title (A-Z)");
-                    movieSortBy.getSelectionModel().selectedItemProperty().addListener((obs, oldVal, newVal) -> {
-                        sortMovieTable(newVal);
-                    });
-                }
+                // Set the items to the table
+                movieTable.setItems(filteredMovies);
 
                 // Load initial data
                 loadInitialData();
@@ -179,16 +177,25 @@ public class ContentController extends BaseController {
             if (seriesTable != null) {
                 seriesTable.setPlaceholder(new Label("No series found"));
 
+                // Initialize the ObservableLists
+                ObservableList<Series> allSeries = FXCollections.observableArrayList();
+                ObservableList<Series> filteredSeries = FXCollections.observableArrayList();
+
+                // Set the items to the table
+                seriesTable.setItems(filteredSeries);
+
                 // Set up sorting if sort controls exist
                 if (seriesSortBy != null) {
-                    seriesSortBy.getItems().addAll("Title (A-Z)", "Title (Z-A)", "Year (Newest)", "Year (Oldest)", "Rating (High-Low)", "Rating (Low-High)");
+                    seriesSortBy.getItems().addAll("Title (A-Z)", "Title (Z-A)", "Year (Newest)", "Year (Oldest)", "Rating (High to Low)");
                     seriesSortBy.setValue("Title (A-Z)");
+
+                    // Add listener for sort changes
                     seriesSortBy.getSelectionModel().selectedItemProperty().addListener((obs, oldVal, newVal) -> {
-                        // Implement series sorting if needed
+                        if (newVal != null) {
+                            sortSeriesTable(newVal);
+                        }
                     });
                 }
-                seriesSortBy.getItems().addAll("Title (A-Z)", "Title (Z-A)", "Year (Newest)", "Year (Oldest)", "Rating (High to Low)");
-                seriesSortBy.getSelectionModel().selectFirst();
             }
 
             // Update UI based on initial auth state
@@ -197,6 +204,36 @@ public class ContentController extends BaseController {
         } catch (Exception e) {
             logger.error("Error initializing ContentController: {}", e.getMessage(), e);
             UIUtils.showError("Initialization Error", "Failed to initialize content management");
+        }
+    }
+
+    private void sortSeriesTable(String newVal) {
+        switch (newVal) {
+            case "Title (A-Z)":
+                seriesTable.getSortOrder().clear();
+                seriesTable.getSortOrder().add(seriesTitleColumn);
+                break;
+            case "Title (Z-A)":
+                seriesTable.getSortOrder().clear();
+                seriesTable.getSortOrder().add(seriesTitleColumn);
+                seriesTable.getSortOrder().add(seriesTitleColumn);
+                break;
+            case "Year (Newest)":
+                seriesTable.getSortOrder().clear();
+                seriesTable.getSortOrder().add(seriesYearColumn);
+                break;
+            case "Year (Oldest)":
+                seriesTable.getSortOrder().clear();
+                seriesTable.getSortOrder().add(seriesYearColumn);
+                seriesTable.getSortOrder().add(seriesYearColumn);
+                break;
+            case "Rating (High to Low)":
+                seriesTable.getSortOrder().clear();
+                seriesTable.getSortOrder().add(seriesRatingColumn);
+                break;
+            default:
+                seriesTable.getSortOrder().clear();
+                break;
         }
     }
 
@@ -1160,32 +1197,66 @@ public class ContentController extends BaseController {
                 try {
                     // Load movies from the data manager
                     List<Movie> movies = dataManager.getAllMovies();
+                    List<Series> series = dataManager.getAllSeries();
+
                     Platform.runLater(() -> {
-                        allMovies.setAll(movies);
-                        filteredMovies.setAll(movies);
-                        movieTable.setItems(filteredMovies);
-                        updateStatusLabel(movies.size());
-                        logger.info("Successfully loaded {} movies into the table", movies.size());
+                        try {
+                            // Update movies
+                            if (allMovies != null) {
+                                allMovies.setAll(movies);
+                                filteredMovies.setAll(movies);
+                                if (movieTable != null) {
+                                    movieTable.setItems(filteredMovies);
+                                }
+                                updateStatusLabel(movies.size());
+                                logger.info("Successfully loaded {} movies into the table", movies.size());
+                            }
+
+                            // Update series
+                            if (allSeries != null) {
+                                allSeries.setAll(series);
+                                filteredSeries.setAll(series);
+                                if (seriesTable != null) {
+                                    seriesTable.setItems(filteredSeries);
+                                }
+                                logger.info("Successfully loaded {} series into the table", series.size());
+                            }
+
+                            // Apply initial sort
+                            if (movieSortBy != null) {
+                                sortMovieTable(movieSortBy.getValue());
+                            }
+                            if (seriesSortBy != null) {
+                                sortSeriesTable(seriesSortBy.getValue());
+                            }
+
+                        } catch (Exception e) {
+                            logger.error("Error updating UI with loaded data: {}", e.getMessage(), e);
+                            Platform.runLater(() ->
+                                    showError("Error", "Failed to update UI with loaded data: " + e.getMessage())
+                            );
+                        }
                     });
+
                     return null;
                 } catch (Exception e) {
-                    logger.error("Error loading movies: {}", e.getMessage(), e);
+                    logger.error("Error loading initial data: {}", e.getMessage(), e);
                     throw e;
                 }
             }
         };
 
-        // Handle task completion
         task.setOnSucceeded(event -> {
-            logger.info("Successfully loaded movies");
+            logger.info("Successfully loaded initial data");
         });
 
         task.setOnFailed(event -> {
             Throwable ex = task.getException();
             logger.error("Error loading initial data: {}", ex != null ? ex.getMessage() : "Unknown error", ex);
             Platform.runLater(() ->
-                    UIUtils.showError("Loading Error", "Failed to load initial data: " +
-                            (ex != null ? ex.getMessage() : "Unknown error")));
+                    showError("Loading Error", "Failed to load initial data: " +
+                            (ex != null ? ex.getMessage() : "Unknown error"))
+            );
         });
 
         // Start the task in a background thread

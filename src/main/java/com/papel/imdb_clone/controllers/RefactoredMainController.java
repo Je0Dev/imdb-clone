@@ -12,6 +12,7 @@ import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Label;
+import javafx.scene.control.ScrollPane;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.VBox;
@@ -446,7 +447,7 @@ public class RefactoredMainController {
 
     /**
      * Handles navigation to the home view when the home button is clicked.
-     * This method prevents cycles by ensuring we don't try to load the main layout as a view.
+     * This method creates a new BorderPane that includes both the sidebar and featured content.
      *
      * @param mouseEvent the mouse event that triggered this method
      */
@@ -459,21 +460,35 @@ public class RefactoredMainController {
                 return;
             }
 
-            // Get the current center content
-            Node currentCenter = mainBorderPane.getCenter();
+            // Create a new container for the home view content
+            BorderPane homeContainer = new BorderPane();
+            homeContainer.setId("homeContainer");
             
-            // If we're already showing the home view (which should be empty for the main view), do nothing
-            if (currentCenter == null || currentCenter.getId() == null || !currentCenter.getId().equals("homeContent")) {
-                // Clear existing content to prevent memory leaks
-                mainBorderPane.setCenter(null);
-                
-                // Update UI state
-                updateUserInterface();
-                
-                // For the main view, we don't need to set any content in the center
-                // as the main layout is already loaded
-                logger.info("Navigated to home view");
+            // Add the sidebar (which contains the navigation buttons)
+            if (sidebar != null) {
+                homeContainer.setLeft(sidebar);
+            } else {
+                logger.warn("Sidebar is not initialized");
             }
+            
+            // Add featured content to the center
+            if (featuredContent != null) {
+                // Create a scrollable container for the featured content
+                ScrollPane scrollPane = new ScrollPane(featuredContent);
+                scrollPane.setFitToWidth(true);
+                scrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+                scrollPane.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
+                scrollPane.setStyle("-fx-background: #0f0f0f; -fx-background-color: #0f0f0f;");
+                
+                homeContainer.setCenter(scrollPane);
+            } else {
+                logger.warn("Featured content is not initialized");
+            }
+            
+            // Set the home container as the center of the main border pane
+            mainBorderPane.setCenter(homeContainer);
+            logger.info("Successfully navigated to home view with sidebar and featured content");
+            
         } catch (Exception e) {
             String errorMsg = "An error occurred while navigating to home: " + e.getMessage();
             logger.error(errorMsg, e);

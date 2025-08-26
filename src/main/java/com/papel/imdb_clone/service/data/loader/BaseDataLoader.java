@@ -30,67 +30,95 @@ public abstract class BaseDataLoader {
 
         // Normalize the filename
         String normalizedFilename = normalizeFilename(filename);
+        logger.debug("Attempting to load file: {}", normalizedFilename);
 
         // Try different approaches to load the resource
         String[] resourcePaths = {
-                "data/" + normalizedFilename,  // Standard Maven resources directory
-                "/data/" + normalizedFilename, // Some classloaders need leading slash
-                normalizedFilename,             // Try direct path
-                "/" + normalizedFilename       // Try direct path with leading slash
+            "/data/" + normalizedFilename,  // Standard Maven resources directory (with leading slash)
+            "data/" + normalizedFilename,   // Standard Maven resources directory (without leading slash)
+            "/" + normalizedFilename,       // Root of resources
+            normalizedFilename,              // Direct path
+            "/src/main/resources/data/" + normalizedFilename, // Common Maven source path
+            "src/main/resources/data/" + normalizedFilename   // Common Maven source path (relative)
         };
 
+        // Try classpath resources first
         for (String path : resourcePaths) {
             // Try with context class loader first
             InputStream stream = Thread.currentThread().getContextClassLoader().getResourceAsStream(path);
             if (stream != null) {
-                logger.debug("Loaded resource from classpath: {}", path);
+                logger.info("Successfully loaded resource from classpath: {}", path);
                 return stream;
             }
 
             // Try with this class's class loader
-            stream = getClass().getClassLoader().getResourceAsStream(path);
+            stream = getClass().getResourceAsStream(path);
             if (stream != null) {
-                logger.debug("Loaded resource using class loader: {}", path);
+                logger.info("Successfully loaded resource using class loader: {}", path);
                 return stream;
             }
         }
 
-        // Try direct file paths (for development)
+        // Try direct file paths (for development and testing)
         String[] filePaths = {
-                "src/main/resources/data/" + normalizedFilename,
-                "resources/data/" + normalizedFilename,
-                "data/" + normalizedFilename,
-                "./" + normalizedFilename,
-                "./data/" + normalizedFilename,
-                System.getProperty("user.dir") + "/src/main/resources/data/" + normalizedFilename,
-                System.getProperty("user.dir") + "/data/" + normalizedFilename
+            "src/main/resources/data/" + normalizedFilename,
+            "resources/data/" + normalizedFilename,
+            "data/" + normalizedFilename,
+            "./" + normalizedFilename,
+            "./data/" + normalizedFilename,
+            System.getProperty("user.dir") + "/src/main/resources/data/" + normalizedFilename,
+            System.getProperty("user.dir") + "/data/" + normalizedFilename,
+            System.getProperty("user.dir") + "/target/classes/data/" + normalizedFilename
         };
 
         for (String path : filePaths) {
-            File file = new File(path).getCanonicalFile();
-            if (file.exists() && file.isFile()) {
-                logger.debug("Loaded resource from file system: {}", file.getAbsolutePath());
-                return new FileInputStream(file);
+            try {
+                File file = new File(path).getCanonicalFile();
+                if (file.exists() && file.isFile()) {
+                    logger.info("Successfully loaded resource from file system: {}", file.getAbsolutePath());
+                    return new FileInputStream(file);
+                }
+                logger.debug("File not found: {}", file.getAbsolutePath());
+            } catch (IOException e) {
+                logger.debug("Error checking file path {}: {}", path, e.getMessage());
             }
         }
 
-        throw new FileNotFoundException(String.format(
-                "Failed to load resource '%s'. Checked multiple locations in classpath and filesystem.",
-                normalizedFilename));
+        // If we get here, we couldn't find the file anywhere
+        String errorMsg = String.format("""
+            Failed to load resource '%s'. Checked the following locations:\n"
+            - Classpath: /data/%s, data/%s, /%s, %s\n"
+            - File system: %s/src/main/resources/data/%s, %s/data/%s, etc.
+            """,
+            normalizedFilename, 
+            normalizedFilename, normalizedFilename, normalizedFilename, normalizedFilename,
+            System.getProperty("user.dir"), normalizedFilename,
+            System.getProperty("user.dir"), normalizedFilename
+        );
+        
+        logger.error(errorMsg);
+        throw new FileNotFoundException(errorMsg);
     }
 
     /**
      * Normalizes the filename by removing leading/trailing whitespace and slashes.
      */
     private String normalizeFilename(String filename) {
-        String normalized = filename.trim().replace("\\", "/");
-        while (normalized.startsWith("/") || normalized.startsWith("\\")) {
-            normalized = normalized.substring(1);
+        if (filename == null) {
+            return "";
         }
+        
+        String normalized = filename.trim()
+                .replace("\\", "/")
+                .replaceAll("^[\\/]+", "")  // Remove leading slashes
+                .replaceAll("[\\/]+$", "");   // Remove trailing slashes
+        
         // Remove any leading data/ from the filename to prevent double slashes
         if (normalized.startsWith("data/")) {
             normalized = normalized.substring(5);
         }
+        
+        logger.debug("Normalized filename '{}' to '{}'", filename, normalized);
         return normalized;
     }
 
