@@ -17,6 +17,7 @@ public abstract class Content {
     private Date releaseDate;
     private int startYear;
     private List<Genre> genres = new ArrayList<>();
+    private List<Actor> actors = new ArrayList<>();
 
 
     public Content(String title, Date year, Genre genre, String director, Map<Integer, Integer> userRatings, Double imdbRating) {
@@ -213,6 +214,13 @@ public abstract class Content {
         this.userRating = userRating;
     }
 
+    public List<Actor> getActors() {
+        return actors != null ? List.copyOf(actors) : List.of(); // Updated to return an unmodifiable list
+    }
+
+    public void setActors(List<Actor> actors) {
+        this.actors = actors != null ? new ArrayList<>(actors) : new ArrayList<>();
+    }
 
     public int getStartYear() {
         return startYear;

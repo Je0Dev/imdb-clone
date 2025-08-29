@@ -3,6 +3,7 @@ package com.papel.imdb_clone.service;
 import com.papel.imdb_clone.data.RefactoredDataManager;
 import com.papel.imdb_clone.data.SearchCriteria;
 import com.papel.imdb_clone.enums.ContentType;
+import com.papel.imdb_clone.model.Actor;
 import com.papel.imdb_clone.model.Content;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -11,8 +12,6 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -24,10 +23,8 @@ public class SearchService {
     private static final Logger logger = LoggerFactory.getLogger(SearchService.class);
     private static SearchService instance;
 
-    private final ContentService contentService;
-    private final ExecutorService executorService;
     private final RefactoredDataManager dataManager;
-    private int i;
+    private Predicate<? super Actor> nonNull;
 
     /**
      * Creates a new SearchService.
@@ -36,19 +33,8 @@ public class SearchService {
      */
     public SearchService(RefactoredDataManager dataManager) {
         this.dataManager = dataManager;
-        this.contentService = new ContentService(Content.class);
-        this.executorService = Executors.newFixedThreadPool(
-                Runtime.getRuntime().availableProcessors(),
-                r -> {
-                    Thread t = new Thread(r);
-                    t.setDaemon(true);
-                    t.setName("search-service-" + t.getId());
-                    return t;
-                }
-        );
         logger.info("SearchService initialized");
     }
-
 
     /**
      * Performs a search with the given criteria.
@@ -65,13 +51,9 @@ public class SearchService {
         String query = criteria.getQuery().trim();
         logger.debug("Performing search for query: {}", query);
 
-
         // Perform search
-        List<Content> results = performSearch(criteria);
-
-        return results;
+        return performSearch(criteria);
     }
-
 
     /**
      * Performs the actual search operation.
@@ -105,47 +87,96 @@ public class SearchService {
                 .collect(Collectors.toList());
     }
 
-    /**
-     * Creates search filters based on the search criteria.
-     */
+
     private List<Predicate<Content>> createSearchFilters(SearchCriteria criteria) {
         List<Predicate<Content>> filters = new ArrayList<>();
+        if (criteria == null) {
+            return filters;
+        }
 
-        // Text search filter
-        if (criteria.getQuery() != null && !criteria.getQuery().trim().isEmpty()) {
-            String query = criteria.getQuery().toLowerCase();
-            filters.add(content ->
-                    content.getTitle().toLowerCase().contains(query) ||
-                            (content.getSummary() != null && content.getSummary().toLowerCase().contains(query))
-            );
+        // Text search filter (title or summary)
+        String searchText = criteria.getQuery() != null ? criteria.getQuery().trim().toLowerCase() : "";
+        if (!searchText.isEmpty()) {
+            filters.add(content -> {
+                if (content == null) return false;
+                String title = content.getTitle() != null ? content.getTitle().toLowerCase() : "";
+                String summary = content.getSummary() != null ? content.getSummary().toLowerCase() : "";
+                return title.contains(searchText) || summary.contains(searchText);
+            });
+        }
+
+        // Actor filter
+        if (criteria.getActorName() != null && !criteria.getActorName().trim().isEmpty()) {
+            String actorName = criteria.getActorName().trim().toLowerCase();
+            filters.add(content -> {
+                if (content == null || content.getActors() == null) return false;
+                return content.getActors().stream()
+                        .filter(nonNull)
+                        .anyMatch(actor -> {
+                            String firstName = actor.getFirstName() != null ? actor.getFirstName().toLowerCase() : "";
+                            String lastName = actor.getLastName() != null ? actor.getLastName().toLowerCase() : "";
+                            String fullName = (firstName + " " + lastName).trim();
+                            return fullName.contains(actorName) ||
+                                    firstName.contains(actorName) ||
+                                    lastName.contains(actorName);
+                        });
+            });
+        }
+
+        // Director filter
+        if (criteria.getDirectorName() != null && !criteria.getDirectorName().trim().isEmpty()) {
+            String directorName = criteria.getDirectorName().trim().toLowerCase();
+            filters.add(content -> {
+                if (content == null) return false;
+                String director = content.getDirector() != null ? content.getDirector().toLowerCase() : "";
+                return director.contains(directorName);
+            });
         }
 
         // Genre filter
         if (criteria.getGenre() != null) {
-            filters.add(content -> content.getGenre() == criteria.getGenre());
+            filters.add(content -> {
+                if (content == null || content.getGenres() == null) return false;
+                return content.getGenres().contains(criteria.getGenre());
+            });
         }
 
         // Year range filter
-        if (criteria.getMinYear() > 0) {
+        if (criteria.getMinYear() != null && criteria.getMinYear() > 0) {
             filters.add(content -> {
-                if (content.getYear() == null) return false;
-                Calendar cal = Calendar.getInstance();
-                cal.setTime(content.getYear());
-                return cal.get(Calendar.YEAR) >= criteria.getMinYear();
+                if (content == null || content.getYear() == null) return false;
+                try {
+                    Calendar cal = Calendar.getInstance();
+                    cal.setTime(content.getYear());
+                    return cal.get(Calendar.YEAR) >= criteria.getMinYear();
+                } catch (Exception e) {
+                    logger.warn("Error processing year for content: " + content.getTitle(), e);
+                    return false;
+                }
             });
         }
-        if (criteria.getMaxYear() > 0) {
+
+        if (criteria.getMaxYear() != null && criteria.getMaxYear() > 0) {
             filters.add(content -> {
-                if (content.getYear() == null) return false;
-                Calendar cal = Calendar.getInstance();
-                cal.setTime(content.getYear());
-                return cal.get(Calendar.YEAR) <= criteria.getMaxYear();
+                if (content == null || content.getYear() == null) return false;
+                try {
+                    Calendar cal = Calendar.getInstance();
+                    cal.setTime(content.getYear());
+                    return cal.get(Calendar.YEAR) <= criteria.getMaxYear();
+                } catch (Exception e) {
+                    logger.warn("Error processing year for content: " + content.getTitle(), e);
+                    return false;
+                }
             });
         }
 
         // Rating filter
-        if (criteria.getMinRating() > 0) {
-            filters.add(content -> content.getImdbRating() >= criteria.getMinRating());
+        if (criteria.getMinRating() != null && criteria.getMinRating() > 0) {
+            filters.add(content -> {
+                if (content == null) return false;
+                Double rating = content.getImdbRating();
+                return rating != null && rating >= criteria.getMinRating();
+            });
         }
 
         return filters;

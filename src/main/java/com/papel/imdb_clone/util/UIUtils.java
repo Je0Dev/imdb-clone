@@ -111,4 +111,8 @@ public class UIUtils {
         Alert alert = createAlert(type, title, null, message);
         alert.showAndWait();
     }
+
+    public static void showInfo(String noResults, String s) {
+        showAlert(Alert.AlertType.INFORMATION, noResults, s);
+    }
 }

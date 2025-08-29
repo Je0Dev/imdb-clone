@@ -40,13 +40,25 @@ public class SearchCriteria {
         this.sortDescending = false;
     }
 
-    public SearchCriteria(String query) {
+    public SearchCriteria(String query, String keywords, List<String> contentTypes, Integer yearFromValue, Integer yearToValue) {
         this.query = query;
         this.minImdbRating = null;
         this.maxImdbRating = null;
         this.minUserRating = null;
         this.maxUserRating = null;
         this.genres = new ArrayList<>();
+        this.sortBy = "title";
+        this.sortDescending = false;
+    }
+
+    public SearchCriteria(String sortBy, boolean sortDescending) {
+
+        this.sortBy = sortBy;
+        this.sortDescending = sortDescending;
+    }
+
+    public SearchCriteria(String query) {
+        this.query = query;
         this.sortBy = "title";
         this.sortDescending = false;
     }
@@ -254,4 +266,11 @@ public class SearchCriteria {
         return endYear;
     }
 
+    public String getActorName() {
+        return actorName;
+    }
+
+    public String getDirectorName() {
+        return directorName;
+    }
 }

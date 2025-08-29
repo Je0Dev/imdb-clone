@@ -9,3 +9,17 @@ The Crown,DRAMA,5,2016,2022,8.6,Peter Morgan,Claire Foy;Olivia Colman;Imelda Sta
 Better Call Saul,CRIME,6,2015,2022,8.9,Vince Gillian;Peter Gould,Bob Odenkirk;Rhea Seehorn;Jonathan Banks
 Money Heist,THRILLER,5,2017,2021,8.2,Álex Pina,Úrsula Corberó;Álvaro Morte;Itziar Ituño
 The Queen's Gambit,DRAMA,1,2020,2020,8.6,Scott Frank,Anya Taylor-Joy;Bill Camp;Marielle Heller
+House of the Dragon,FANTASY,1,2022,,8.5,Ryan Condal,Milly Alcock;Emma D'Arcy;Matt Smith
+The Last of Us,ADVENTURE,1,2023,,8.8,Craig Mazin,Pedro Pascal;Bella Ramsey;Nick Offerman
+The White Lotus,COMEDY,2,2021,,8.0,Mike White,Jennifer Coolidge;Aubrey Plaza;Theo James
+Squid Game,THRILLER,1,2021,,8.0,Hwang Dong-hyuk,Lee Jung-jae;Jung Ho-yeon;Park Hae-soo
+Yellowstone,DRAMA,5,2018,,8.7,Taylor Sheridan,Kevin Costner;Luke Grimes;Kelly Reilly
+The Bear,COMEDY,2,2022,,8.4,Christopher Storer,Jeremy Allen White;Ebon Moss-Bachrach;Ayo Edebiri
+Wednesday,COMEDY,1,2022,,8.2,Alfred Gough;Miles Millar,Jenna Ortega;Gwendoline Christie;Christina Ricci
+The Boys,ACTION,4,2019,,8.7,Eric Kripke,Karl Urban;Jack Quaid;Antony Starr
+Euphoria,DRAMA,2,2019,,8.4,Sam Levinson,Zendaya;Hunter Schafer;Sydney Sweeney
+Severance,SCI-FI,1,2022,,8.7,Dan Erickson,Adam Scott;Britt Lower;John Turturro
+Andor,SCI-FI,1,2022,,8.4,Tony Gilroy,Diego Luna;Kyle Soller;Genevieve O'Reilly
+The Bear,COMEDY,2,2022,,8.4,Christopher Storer,Jeremy Allen White;Ebon Moss-Bachrach;Ayo Edebiri
+Pachinko,DRAMA,1,2022,,8.8,Soo Hugh,Lee Min-ho;Yuh-jung Youn;Jin Ha
+Bridgerton,ROMANCE,2,2020,,7.4,Chris Van Dusen,Jonathan Bailey;Simone Ashley;Nicola Coughlan

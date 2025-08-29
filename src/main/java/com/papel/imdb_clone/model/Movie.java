@@ -18,6 +18,7 @@ public class Movie extends Content {
     private Date releaseDate;
 
     private Arrays directors;
+    private int startyear;
 
     public Date getReleaseDate() {
         return releaseDate != null ? new Date(releaseDate.getTime()) : null;
@@ -172,5 +173,9 @@ public class Movie extends Content {
 
     public Arrays getDirectors() {
         return directors;
+    }
+
+    public int getStartYear() {
+        return startyear;
     }
 }

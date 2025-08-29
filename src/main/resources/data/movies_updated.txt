@@ -19,3 +19,43 @@ La La Land,2016,MUSICAL,128,Damien Chazelle,8.0,Ryan Gosling;Emma Stone
 Mad Max: Fury Road,2015,ACTION,120,George Miller,8.1,Tom Hardy;Charlize Theron
 The Grand Budapest Hotel,2014,COMEDY,99,Wes Anderson,8.1,Ralph Fiennes;F. Murray Abraham
 Gravity,2013,SCI-FI,91,Alfonso Cuarón,7.7,Sandra Bullock;George Clooney
+Everything Everywhere All at Once,2022,SCI-FI,139,Daniel Kwan;Daniel Scheinert,8.1,Michelle Yeoh;Ke Huy Quan
+The Batman,2022,ACTION,176,Matt Reeves,7.9,Robert Pattinson;Zoë Kravitz
+Elvis,2022,DRAMA,159,Baz Luhrmann,7.3,Austin Butler;Tom Hanks
+RRR,2022,ACTION,182,S.S. Rajamouli,7.9,N.T. Rama Rao Jr.;Ram Charan
+Nope,2022,HORROR,130,Jordan Peele,6.8,Daniel Kaluuya;Keke Palmer
+The Banshees of Inisherin,2022,DRAMA,114,Martin McDonagh,7.8,Colin Farrell;Brendan Gleeson
+Top Gun: Maverick,2022,ACTION,130,Joseph Kosinski,8.3,Tom Cruise;Miles Teller
+Black Panther: Wakanda Forever,2022,ACTION,161,Ryan Coogler,6.7,Letitia Wright;Lupita Nyong'o
+Avatar: The Way of Water,2022,SCI-FI,192,James Cameron,7.6,Sam Worthington;Zoe Saldana
+Oppenheimer,2023,DRAMA,180,Christopher Nolan,8.6,Cillian Murphy;Emily Blunt
+Barbie,2023,COMEDY,114,Greta Gerwig,7.4,Margot Robbie;Ryan Gosling
+Killers of the Flower Moon,2023,CRIME,206,Martin Scorsese,8.1,Leonardo DiCaprio;Robert De Niro
+Poor Things,2023,COMEDY,141,Yorgos Lanthimos,8.5,Emma Stone;Mark Ruffalo
+The Holdovers,2023,COMEDY,133,Alexander Payne,8.0,Paul Giamatti;Da'Vine Joy Randolph
+Past Lives,2023,ROMANCE,106,Celine Song,8.1,Greta Lee;Teo Yoo
+Anatomy of a Fall,2023,DRAMA,152,Justine Triet,8.1,Sandra Hüller;Swann Arlaud
+The Zone of Interest,2023,DRAMA,105,Jonathan Glazer,8.0,Christian Friedel;Sandra Hüller
+American Fiction,2023,COMEDY,117,Cord Jefferson,8.0,Jeffrey Wright;Tracee Ellis Ross
+Maestro,2023,DRAMA,129,Bradley Cooper,6.8,Bradley Cooper;Carey Mulligan
+May December,2023,DRAMA,117,Todd Haynes,7.0,Natalie Portman;Julianne Moore
+Saltburn,2023,THRILLER,131,Emerald Fennell,7.1,Barry Keoghan;Jacob Elordi
+Aftersun,2022,DRAMA,101,Charlotte Wells,7.7,Paul Mescal;Frankie Corio
+Tár,2022,DRAMA,158,Todd Field,7.5,Cate Blanchett;Nina Hoss
+The Fabelmans,2022,DRAMA,151,Steven Spielberg,7.6,Gabriel LaBelle;Michelle Williams
+Women Talking,2022,DRAMA,104,Sarah Polley,7.5,Rooney Mara;Claire Foy
+Triangle of Sadness,2022,COMEDY,147,Ruben Östlund,7.4,Harris Dickinson;Charlbi Dean
+The Whale,2022,DRAMA,117,Darren Aronofsky,7.7,Brendan Fraser;Sadie Sink
+Aftersun,2022,DRAMA,101,Charlotte Wells,7.7,Paul Mescal;Frankie Corio
+Decision to Leave,2022,ROMANCE,138,Park Chan-wook,7.3,Tang Wei;Park Hae-il
+All Quiet on the Western Front,2022,WAR,148,Edward Berger,7.8,Felix Kammerer;Albrecht Schuch
+RRR,2022,ACTION,182,S.S. Rajamouli,7.9,N.T. Rama Rao Jr.;Ram Charan
+Tár,2022,DRAMA,158,Todd Field,7.5,Cate Blanchett;Nina Hoss
+The Fabelmans,2022,DRAMA,151,Steven Spielberg,7.6,Gabriel LaBelle;Michelle Williams
+Glass Onion,2022,CRIME,139,Rian Johnson,7.1,Daniel Craig;Edward Norton
+The Whale,2022,DRAMA,117,Darren Aronofsky,7.7,Brendan Fraser;Sadie Sink
+Women Talking,2022,DRAMA,104,Sarah Polley,7.0,Rooney Mara;Claire Foy
+Triangle of Sadness,2022,COMEDY,147,Ruben Östlund,7.1,Harris Dickinson;Charlbi Dean
+The Menu,2022,THRILLER,107,Mark Mylod,7.2,Anya Taylor-Joy;Ralph Fiennes
+Aftersun,2022,DRAMA,96,Charlotte Wells,7.7,Paul Mescal;Frankie Corio
+Decision to Leave,2022,ROMANCE,138,Park Chan-wook,7.3,Tang Wei;Park Hae-il

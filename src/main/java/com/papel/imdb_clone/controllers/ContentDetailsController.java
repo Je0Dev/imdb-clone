@@ -1,10 +1,14 @@
 package com.papel.imdb_clone.controllers;
 
+import com.papel.imdb_clone.model.Actor;
 import javafx.fxml.FXML;
 import javafx.scene.control.Label;
-import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.VBox;
+
+import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 public class ContentDetailsController {
     @FXML
@@ -31,8 +35,8 @@ public class ContentDetailsController {
     private String rating;
     private String genre;
     private String boxOffice;
-    private String awards;
-    private String cast;
+    private List<String> awards;
+    private List<Actor> cast;
 
     private ContentDetailsController NavigationService;
 
@@ -45,7 +49,7 @@ public class ContentDetailsController {
     }
 
     public void setContentDetails(String title, String year, String rating, String genre,
-                                  String boxOffice, String awards, String cast) {
+                                  String boxOffice, List<String> awards, List<Actor> cast) {
         this.title = title;
         this.year = year;
         this.rating = rating;
@@ -60,22 +64,38 @@ public class ContentDetailsController {
     }
 
     private void updateUI() {
-        titleLabel.setText(title);
-        yearLabel.setText("(" + year + ")");
-        ratingLabel.setText(rating);
-        genreLabel.setText(genre);
-        boxOfficeLabel.setText(boxOffice.equals("N/A") ? "Not available" : boxOffice);
-        awardsLabel.setText(awards.equals("N/A") ? "No major awards" : awards);
-        castLabel.setText(cast != null ? cast : "Cast information not available");
+        if (titleLabel != null) titleLabel.setText(title != null ? title : "No title available");
+        if (yearLabel != null) yearLabel.setText(year != null ? "(" + year + ")" : "(Year not available)");
+        if (ratingLabel != null) ratingLabel.setText(rating != null ? rating : "N/A");
+        if (genreLabel != null) genreLabel.setText(genre != null ? genre : "Genre not specified");
+        
+        // Handle box office
+        String boxOfficeText = "Not available";
+        if (boxOffice != null && !boxOffice.trim().isEmpty() && !boxOffice.equalsIgnoreCase("N/A")) {
+            boxOfficeText = boxOffice;
+        }
+        if (boxOfficeLabel != null) boxOfficeLabel.setText(boxOfficeText);
 
+        // Handle awards
+        String awardsText = "No major awards";
+        if (awards != null && !awards.isEmpty()) {
+            awardsText = String.join(", ", awards);
+        }
+        if (awardsLabel != null) awardsLabel.setText(awardsText);
+
+        // Handle cast
+        String castText = "Cast information not available";
+        if (cast != null && !cast.isEmpty()) {
+            castText = cast.stream()
+                .filter(Objects::nonNull)
+                .map(actor -> actor.getFirstName() + " " + actor.getLastName())
+                .collect(Collectors.joining(", "));
+        }
+        if (castLabel != null) castLabel.setText(castText);
     }
 
     @FXML
     private void goBack() {
-        NavigationService.getInstance().goBack();
-    }
-
-    private ContentDetailsController getInstance() {
-        return this;
+        com.papel.imdb_clone.services.NavigationService.getInstance().goBack();
     }
 }

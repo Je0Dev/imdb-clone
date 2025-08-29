@@ -59,6 +59,9 @@ public class CelebritiesController implements Initializable {
     private TableColumn<Director, String> directorNotableWorksColumn;
     @FXML
     private TextField directorSearchField;
+    
+    @FXML
+    private TextField unifiedSearchField;
 
     // Data
     private final ObservableList<Actor> actors = FXCollections.observableArrayList();
@@ -84,6 +87,9 @@ public class CelebritiesController implements Initializable {
 
             // Initialize director table
             initializeDirectorTable();
+            
+            // Initialize unified search
+            initializeUnifiedSearch();
 
             // Load initial data
             loadCelebrities();
@@ -169,6 +175,10 @@ public class CelebritiesController implements Initializable {
     }
 
 
+    /**
+     * Filters the actors based on the search text
+     * @param searchText The text to search for in actor names, ethnicities, and notable works
+     */
     private void filterActors(String searchText) {
         if (searchText == null || searchText.isEmpty()) {
             filteredActors.setPredicate(actor -> true);
@@ -177,14 +187,18 @@ public class CelebritiesController implements Initializable {
             filteredActors.setPredicate(actor -> {
                 String fullName = (actor.getFirstName() + " " + actor.getLastName()).toLowerCase();
                 return fullName.contains(lowerCaseFilter) ||
-                        (actor.getEthnicity() != null && actor.getEthnicity().toLowerCase().contains(lowerCaseFilter)) ||
-                        (actor.getNotableWorks() != null &&
-                                actor.getNotableWorks().stream()
-                                        .anyMatch(work -> work.toLowerCase().contains(lowerCaseFilter)));
+                       (actor.getEthnicity() != null && actor.getEthnicity().getLabel().toLowerCase().contains(lowerCaseFilter)) ||
+                       (actor.getNotableWorks() != null &&
+                               actor.getNotableWorks().stream()
+                                       .anyMatch(work -> work != null && work.toLowerCase().contains(lowerCaseFilter)));
             });
         }
     }
 
+    /**
+     * Filters the directors based on the search text
+     * @param searchText The text to search for in director names, nationalities, and notable works
+     */
     private void filterDirectors(String searchText) {
         if (searchText == null || searchText.isEmpty()) {
             filteredDirectors.setPredicate(director -> true);
@@ -196,9 +210,41 @@ public class CelebritiesController implements Initializable {
                         (director.getNationality() != null && director.getNationality().toLowerCase().contains(lowerCaseFilter)) ||
                         (director.getNotableWorks() != null &&
                                 director.getNotableWorks().stream()
-                                        .anyMatch(work -> work.toLowerCase().contains(lowerCaseFilter)));
+                                        .anyMatch(work -> work != null && work.toLowerCase().contains(lowerCaseFilter)));
             });
         }
+    }
+    
+    /**
+     * Initializes the unified search functionality that searches both actors and directors
+     */
+    private void initializeUnifiedSearch() {
+        unifiedSearchField.textProperty().addListener((observable, oldValue, newValue) -> {
+            // Update both actor and director filters
+            filterActors(newValue);
+            filterDirectors(newValue);
+            
+            // Update the tab-specific search fields to keep them in sync
+            if (!newValue.equals(actorSearchField.getText())) {
+                actorSearchField.setText(newValue);
+            }
+            if (!newValue.equals(directorSearchField.getText())) {
+                directorSearchField.setText(newValue);
+            }
+        });
+        
+        // Update unified search when tab-specific searches change
+        actorSearchField.textProperty().addListener((observable, oldValue, newValue) -> {
+            if (!newValue.equals(unifiedSearchField.getText())) {
+                unifiedSearchField.setText(newValue);
+            }
+        });
+        
+        directorSearchField.textProperty().addListener((observable, oldValue, newValue) -> {
+            if (!newValue.equals(unifiedSearchField.getText())) {
+                unifiedSearchField.setText(newValue);
+            }
+        });
     }
 
     private void updateStatus(String message) {

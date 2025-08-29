@@ -1,5 +1,8 @@
 package com.papel.imdb_clone.service;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.PBEKeySpec;
 import java.security.NoSuchAlgorithmException;
@@ -12,6 +15,7 @@ import java.util.Base64;
  * Service class for password encryption using PBKDF2 algorithm.
  */
 public class EncryptionService {
+    private static final Logger logger = LoggerFactory.getLogger(EncryptionService.class);
     private static EncryptionService instance;
     private final SecureRandom secureRandom;
 
@@ -21,7 +25,10 @@ public class EncryptionService {
 
     public static synchronized EncryptionService getInstance() {
         if (instance == null) {
+            logger.debug("Creating new instance of EncryptionService");
             instance = new EncryptionService();
+        } else {
+            logger.trace("Returning existing EncryptionService instance");
         }
         return instance;
     }
@@ -33,6 +40,7 @@ public class EncryptionService {
      * @return String containing the algorithm, salt and hash in format "pbkdf2:salt:hash"
      */
     public String hashPasswordPBKDF2(String password) {
+        logger.debug("Hashing password using PBKDF2");
         try {
             byte[] salt = new byte[16];
             secureRandom.nextBytes(salt);
@@ -43,9 +51,11 @@ public class EncryptionService {
             byte[] hash = factory.generateSecret(spec).getEncoded();
             String saltBase64 = Base64.getEncoder().encodeToString(salt);
             String hashBase64 = Base64.getEncoder().encodeToString(hash);
-
+            
+            logger.trace("Password hashed successfully");
             return "pbkdf2:" + saltBase64 + ":" + hashBase64;
         } catch (NoSuchAlgorithmException | InvalidKeySpecException e) {
+            logger.error("Error hashing password: {}", e.getMessage(), e);
             throw new RuntimeException("Error hashing password", e);
         }
     }
@@ -58,13 +68,20 @@ public class EncryptionService {
      * @return true if passwords match, false otherwise
      */
     public boolean checkPassword(String plainPassword, String hashedPassword) {
-        if (hashedPassword == null || !hashedPassword.startsWith("pbkdf2:")) {
+        logger.debug("Checking password against hash");
+        if (hashedPassword == null) {
+            logger.warn("Hashed password is null");
+            return false;
+        }
+        if (!hashedPassword.startsWith("pbkdf2:")) {
+            logger.warn("Unsupported hash format: {}", hashedPassword.split(":")[0]);
             return false;
         }
 
         // Parse PBKDF2 hash: pbkdf2:salt:hash
         String[] parts = hashedPassword.split(":");
         if (parts.length != 3) {
+            logger.warn("Invalid hash format: expected 3 parts, got {}", parts.length);
             return false;
         }
 
@@ -78,6 +95,7 @@ public class EncryptionService {
 
             // Compare hashes using constant-time comparison to prevent timing attacks
             if (expectedHash.length != actualHash.length) {
+                logger.debug("Hash length mismatch: expected {} bytes, got {}", expectedHash.length, actualHash.length);
                 return false;
             }
 
@@ -86,7 +104,9 @@ public class EncryptionService {
                 result |= expectedHash[i] ^ actualHash[i];
             }
 
-            return result == 0;
+            boolean match = result == 0;
+            logger.trace("Password check result: {}", match ? "MATCH" : "NO MATCH");
+            return match;
         } catch (Exception e) {
             return false;
         }
@@ -99,6 +119,7 @@ public class EncryptionService {
      * @return String containing the hashed password with salt
      */
     public String hashPassword(String password) {
+        logger.debug("Hashing password using default algorithm (PBKDF2)");
         return hashPasswordPBKDF2(password);
     }
 
@@ -110,6 +131,9 @@ public class EncryptionService {
      * @return true if the password matches the hash, false otherwise
      */
     public boolean verifyPassword(String plainPassword, String hashedPassword) {
-        return checkPassword(plainPassword, hashedPassword);
+        logger.debug("Verifying password against hash");
+        boolean result = checkPassword(plainPassword, hashedPassword);
+        logger.debug("Password verification {}", result ? "succeeded" : "failed");
+        return result;
     }
 }

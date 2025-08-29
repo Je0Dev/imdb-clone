@@ -7,7 +7,6 @@ import com.papel.imdb_clone.model.Content;
 import com.papel.imdb_clone.service.SearchService;
 import com.papel.imdb_clone.service.ServiceLocator;
 import com.papel.imdb_clone.util.UIUtils;
-import javafx.application.Platform;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -18,7 +17,6 @@ import javafx.scene.control.cell.PropertyValueFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -57,7 +55,9 @@ public class AdvancedSearchController {
     @FXML
     private ComboBox<String> sortByCombo;
     @FXML
-    private TextField descriptionField;
+    private CheckBox movieCheckBox;
+    @FXML
+    private CheckBox seriesCheckBox;
 
     // Results display
     @FXML
@@ -80,13 +80,12 @@ public class AdvancedSearchController {
     private Label resultsCountLabel;
     @FXML
     private ProgressIndicator searchProgressIndicator;
-    @FXML
-    private CheckBox movieCheckBox;
-    @FXML
-    private CheckBox seriesCheckBox;
+    private final String query;
+    private Double minRating;
 
     public AdvancedSearchController() {
         this.searchService = ServiceLocator.getInstance().getService(SearchService.class);
+        this.query = "";  // Initialize query with empty string
     }
 
     @FXML
@@ -144,6 +143,10 @@ public class AdvancedSearchController {
         sortByCombo.getSelectionModel().selectFirst();
     }
 
+    /**
+     * Handles the search button click event.
+     * Performs a search based on the current criteria and updates the results table.
+     */
     @FXML
     private void handleSearch() {
         try {
@@ -154,155 +157,144 @@ public class AdvancedSearchController {
 
             // Show loading indicator
             searchProgressIndicator.setVisible(true);
-
-            // Update status label if it exists
             if (statusLabel != null) {
                 statusLabel.setText("Searching...");
             }
 
-            // Create a new search task
-            currentSearchTask = new SearchTask();
+            // Create and configure the search task
+            currentSearchTask = new Task<ObservableList<Content>>() {
+                @Override
+                protected ObservableList<Content> call() throws Exception {
+                    SearchCriteria criteria = buildSearchCriteria();
+                    if (criteria == null) {
+                        return FXCollections.observableArrayList();
+                    }
+                    List<Content> results = searchService.searchContent(criteria);
+                    return FXCollections.observableArrayList(results);
+                }
+            };
 
-            // Handle task completion
+            // Handle successful search completion
             currentSearchTask.setOnSucceeded(event -> {
                 ObservableList<Content> results = currentSearchTask.getValue();
                 resultsTable.setItems(results);
                 updateResultsCount(results.size());
                 searchProgressIndicator.setVisible(false);
 
-                // Update status label if it exists
                 if (statusLabel != null) {
                     statusLabel.setText("");
                 }
+
+                if (results.isEmpty()) {
+                    UIUtils.showInfo("No Results", "No content found matching your criteria.");
+                }
             });
 
-            // Handle task failure
+            // Handle search failure
             currentSearchTask.setOnFailed(event -> {
-                Throwable exception = currentSearchTask.getException();
-                logger.error("Search failed", exception);
-
-                // Show error alert
-                Platform.runLater(() -> {
-                    UIUtils.showError("Search Error", "An error occurred while performing the search: " + exception.getMessage());
-
-                    // Update status label if it exists
-                    if (statusLabel != null) {
-                        statusLabel.setText("Search failed");
-                    }
-                });
-            });
-
-            // Start the task in a background thread
-            new Thread(currentSearchTask).start();
-        } catch (Exception e) {
-            logger.error("Error performing search: {}", e.getMessage(), e);
-
-            // Show error alert
-            Platform.runLater(() -> {
-                UIUtils.showError("Search Error", "An error occurred while performing the search: " + e.getMessage());
-
-                // Update status label if it exists
+                searchProgressIndicator.setVisible(false);
                 if (statusLabel != null) {
                     statusLabel.setText("Search failed");
                 }
+
+                Throwable exception = currentSearchTask.getException();
+                logger.error("Search failed", exception);
+                UIUtils.showError("Search Error", "An error occurred while performing the search: " +
+                        (exception != null ? exception.getMessage() : "Unknown error"));
             });
+
+            // Start the search in a background thread
+            Thread searchThread = new Thread(currentSearchTask, "Search-Thread");
+            searchThread.setDaemon(true);
+            searchThread.start();
+
+        } catch (Exception e) {
+            searchProgressIndicator.setVisible(false);
+            logger.error("Error performing search: {}", e.getMessage(), e);
+            UIUtils.showError("Error", "Failed to perform search: " + e.getMessage());
         }
     }
 
-    private class SearchTask extends Task<ObservableList<Content>> {
-        @Override
-        protected ObservableList<Content> call() throws Exception {
-            SearchCriteria criteria = buildSearchCriteria();
-            if (criteria == null) {
-                return FXCollections.observableArrayList();
-            }
-
-            List<Content> results = searchService.searchContent(criteria);
-            return FXCollections.observableArrayList(results);
-        }
-    }
-
+    /**
+     * Builds a SearchCriteria object based on the current UI state.
+     *
+     * @return Configured SearchCriteria object or null if there was an error
+     */
     private SearchCriteria buildSearchCriteria() {
         try {
             String keywords = keywordsField.getText().trim();
+            String actorName = actorField.getText().trim();
+            String directorName = directorField.getText().trim();
 
             // Get selected content types
-            List<String> contentTypes = List.of();
+            ContentType contentType = null;
             if (movieCheckBox.isSelected() && seriesCheckBox.isSelected()) {
-                contentTypes = List.of("movie", "series");
+                // Will search both types, so leave contentType as null
             } else if (movieCheckBox.isSelected()) {
-                contentTypes = List.of("movie");
+                contentType = ContentType.MOVIE;
             } else if (seriesCheckBox.isSelected()) {
-                contentTypes = List.of("series");
+                contentType = ContentType.SERIES;
             } else {
                 UIUtils.showError("Error", "Please select at least one content type (Movie/Series)");
                 return null;
             }
 
-            // Validate year inputs
+            // Parse year range
             Integer yearFromValue = null;
-            if (!yearFrom.getText().trim().isEmpty()) {
-                try {
-                    yearFromValue = Integer.parseInt(yearFrom.getText().trim());
-                } catch (NumberFormatException e) {
-                    UIUtils.showError("Invalid Input", "Please enter a valid start year");
-                    return null;
-                }
-            }
-
             Integer yearToValue = null;
-            if (!yearTo.getText().trim().isEmpty()) {
-                try {
-                    yearToValue = Integer.parseInt(yearTo.getText().trim());
-                } catch (NumberFormatException e) {
-                    UIUtils.showError("Invalid Input", "Please enter a valid end year");
-                    return null;
+            try {
+                if (!yearFrom.getText().isEmpty()) {
+                    yearFromValue = Integer.parseInt(yearFrom.getText().trim());
                 }
-            }
-
-            // Validate year range
-            if (yearFromValue != null && yearToValue != null && yearFromValue > yearToValue) {
-                UIUtils.showError("Invalid Range", "Start year cannot be greater than end year");
+                if (!yearTo.getText().isEmpty()) {
+                    yearToValue = Integer.parseInt(yearTo.getText().trim());
+                }
+            } catch (NumberFormatException e) {
+                logger.warn("Invalid year format", e);
+                UIUtils.showError("Invalid Year", "Please enter valid year values");
                 return null;
             }
 
-            // Create SearchCriteria with required parameters
-            SearchCriteria criteria = new SearchCriteria(
-                    keywords,
-                    actorField.getText().trim().isEmpty() ? null : actorField.getText().trim(),
-                    directorField.getText().trim().isEmpty() ? null : directorField.getText().trim(),
-                    ratingSlider.getValue() > 0 ? ratingSlider.getValue() : null,
-                    10.0, // max rating
-                    null, // min user rating
-                    null, // max user rating
-                    null, // min duration
-                    null, // max duration
-                    new ArrayList<>(), // empty genres list for now
-                    descriptionField.getText().trim().isEmpty() ? null : descriptionField.getText().trim(),
-                    yearFromValue,
-                    yearToValue
-            );
+            // Create criteria with basic filters
+            SearchCriteria criteria = new SearchCriteria(query);
+            criteria.setTitle(keywords);
+            criteria.setQuery(keywords); // For backward compatibility
 
-            // Set genres if any selected
+            // Set actor and director names if provided
+            if (!actorName.isEmpty()) {
+                criteria.setActorName(actorName);
+            }
+            if (!directorName.isEmpty()) {
+                criteria.setDirectorName(directorName);
+            }
+
+            // Set year range
+            if (yearFromValue != null) {
+                criteria.setMinYear(yearFromValue);
+            }
+            if (yearToValue != null) {
+                criteria.setMaxYear(yearToValue);
+            }
+
+            // Set rating filter
+            double minRating = ratingSlider.getValue();
+            if (minRating > 0) {
+                criteria.setMinRating(minRating);
+            }
+
+            // Set genre if selected
             if (genreComboBox.getValue() != null && !genreComboBox.getValue().isEmpty()) {
                 try {
-                    Genre genre = Genre.valueOf(genreComboBox.getValue().toUpperCase().replace("-", "_"));
+                    String genreValue = genreComboBox.getValue().toUpperCase().replace("-", "_");
+                    Genre genre = Genre.valueOf(genreValue);
                     criteria.setGenre(genre);
                 } catch (IllegalArgumentException e) {
-                    logger.warn("Invalid genre selected: " + genreComboBox.getValue());
+                    logger.warn("Invalid genre selected: " + genreComboBox.getValue(), e);
                 }
             }
 
-            // Set content type if specified
-            if (!contentTypes.isEmpty()) {
-                try {
-                    String type = contentTypes.get(0); // Get first content type if multiple
-                    ContentType contentType = ContentType.valueOf(type.toUpperCase());
-                    criteria.setContentType(contentType);
-                } catch (IllegalArgumentException e) {
-                    logger.warn("Invalid content type: " + contentTypes);
-                }
-            }
+            // Set content type if specified (null means search both)
+            criteria.setContentType(contentType);
 
             return criteria;
         } catch (Exception e) {

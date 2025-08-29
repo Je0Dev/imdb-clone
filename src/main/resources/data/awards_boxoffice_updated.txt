@@ -9,3 +9,16 @@ series,Game of Thrones,2011-2019,"N/A","59 Emmys, 4 Golden Globes",9.3,Fantasy
 movie,Titanic,1997,"$2,257,884,705","11 Oscars, 4 Golden Globes",7.9,Romance
 movie,The Lord of the Rings: The Return of the King,2003,"$1,147,633,833","11 Oscars, 4 BAFTAs",9.0,Fantasy
 series,Stranger Things,2016-2022,"N/A","7 Emmys, 4 SAG Awards",8.7,Drama
+movie,Everything Everywhere All at Once,2022,"$143,464,651","7 Oscars, 2 Golden Globes",8.1,Action
+movie,The Whale,2022,"54,000,000","2 Oscars, 2 BAFTAs",7.7,Drama
+movie,Tár,2022,"29,000,000","1 Oscar, 1 BAFTA, 1 Golden Globe",7.5,Drama
+movie,Top Gun: Maverick,2022,"1,495,696,292","1 Oscar, 1 BAFTA",8.3,Action
+series,Succession,2018-2023,"N/A","13 Emmys, 5 Golden Globes",8.9,Drama
+series,The Bear,2022-2023,"N/A","10 Emmys, 4 Golden Globes",8.4,Comedy
+movie,RRR,2022,"159,000,000","1 Oscar, 1 Golden Globe",7.9,Action
+movie,Black Panther: Wakanda Forever,2022,"859,208,836","1 Oscar, 5 NAACP Awards",6.7,Action
+movie,Elvis,2022,"287,300,000","1 Oscar, 3 BAFTAs",7.3,Biography
+series,The Last of Us,2023-2023,"N/A","8 Emmys, 2 Golden Globes",8.8,Action
+movie,Avatar: The Way of Water,2022,"2,320,250,281","1 Oscar, 1 Golden Globe",7.6,Adventure
+series,House of the Dragon,2022-2023,"N/A","1 Emmy, 1 Golden Globe",8.5,Fantasy
+movie,The Banshees of Inisherin,2022,"48,000,000","3 Golden Globes, 4 BAFTAs",7.8,Drama

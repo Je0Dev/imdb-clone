@@ -170,27 +170,9 @@ public class Series extends Content {
         return allActors;
     }
 
-    /**
-     * Gets the description/summary of the series.
-     *
-     * @return The series description
-     */
-    public String getDescription() {
-        return getSummary();
-    }
 
-    /**
-     * Compares this {@code Series} object with the specified object for equality.
-     * Returns {@code true} if the given object is also a {@code Series} and
-     * all inherited fields, as well as the {@code seasons} field, are equal.
-     * This method relies on the superclass's {@code equals} implementation
-     * and uses {@link java.util.Objects#equals(Object, Object)} for null-safe comparison
-     * of the {@code seasons} field, assuming proper {@code equals} implementation for
-     * elements within the {@code seasons} collection.
-     *
-     * @param obj The object to be compared for equality.
-     * @return {@code true} if the specified object is equal to this {@code Series}; {@code false} otherwise.
-     */
+
+
 
     @Override
     public boolean equals(Object obj) {
@@ -203,17 +185,7 @@ public class Series extends Content {
                 Objects.equals(awards, series.awards);
     }
 
-    /**
-     * Generates a hash code for this {@code Series} object.
-     * The hash code is computed based on the superclass's hash code and the
-     * hash of the {@code seasons} field.
-     * This method is consistent with {@link #equals(Object)}, ensuring that
-     * equal {@code Series} objects produce the same hash code.
-     * Proper {@code hashCode} implementations are expected for both the superclass
-     * and the elements within the {@code seasons} collection.
-     *
-     * @return A hash code value for this object.
-     */
+
     @Override
     public int hashCode() {
         return Objects.hash(super.hashCode(), seasons, boxOffice, awards);
@@ -243,8 +215,12 @@ public class Series extends Content {
 
     }
 
+    /**
+     * Sets the release year of the series
+     * @param year The release year to set
+     */
     public void setReleaseYear(int year) {
-        this.setReleaseYear(year);
+        this.startYear = year;
     }
 
 

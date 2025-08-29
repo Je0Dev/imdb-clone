@@ -3,6 +3,7 @@ package com.papel.imdb_clone.services;
 import com.papel.imdb_clone.controllers.ContentDetailsController;
 import com.papel.imdb_clone.controllers.RefactoredMainController;
 import com.papel.imdb_clone.controllers.coordinator.UICoordinator;
+import com.papel.imdb_clone.model.Actor;
 import com.papel.imdb_clone.service.ServiceLocator;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
@@ -12,6 +13,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.Stack;
 
 /**
@@ -103,7 +105,7 @@ public class NavigationService {
      * @param cast      The main cast
      */
     public void showContentDetails(String title, String year, String rating, String genre,
-                                   String boxOffice, String awards, String cast) {
+                                   String boxOffice, List<String> awards, List<Actor> cast) {
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/content-details.fxml"));
             Parent root = loader.load();

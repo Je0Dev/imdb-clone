@@ -1,4 +1,4 @@
-package com.papel.imdb_clone.utils;
+package com.papel.imdb_clone.util;
 
 import java.io.BufferedReader;
 import java.io.IOException;

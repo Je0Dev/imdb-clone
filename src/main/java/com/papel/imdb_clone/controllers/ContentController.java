@@ -2,10 +2,15 @@ package com.papel.imdb_clone.controllers;
 
 import com.papel.imdb_clone.data.RefactoredDataManager;
 import com.papel.imdb_clone.enums.Genre;
-import com.papel.imdb_clone.model.*;
+import com.papel.imdb_clone.exceptions.ContentNotFoundException;
+import com.papel.imdb_clone.model.Content;
+import com.papel.imdb_clone.model.Movie;
+import com.papel.imdb_clone.model.Series;
+import com.papel.imdb_clone.model.User;
 import com.papel.imdb_clone.service.*;
 import com.papel.imdb_clone.util.AppEventBus;
 import com.papel.imdb_clone.util.AppStateManager;
+import com.papel.imdb_clone.util.UIUtils;
 import javafx.application.Platform;
 import javafx.beans.property.*;
 import javafx.collections.FXCollections;
@@ -13,18 +18,21 @@ import javafx.collections.ObservableList;
 import javafx.concurrent.Task;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
-import javafx.stage.Popup;
 import javafx.stage.Stage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.net.URL;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -51,20 +59,7 @@ public class ContentController extends BaseController {
     private Label statusLabel;
     @FXML
     private TableView<Movie> movieTable;
-    @FXML
-    private VBox suggestionsContainer;
-    @FXML
-    private Popup searchSuggestions;
-    @FXML
-    private Label movieCountLabel;
-    @FXML
-    private TabPane contentTabPane;
-    @FXML
-    private Tab moviesTab;
-    @FXML
-    private Tab seriesTab;
-    @FXML
-    private VBox contentContainer;
+
 
     // Table columns
     @FXML
@@ -105,10 +100,6 @@ public class ContentController extends BaseController {
     private TextField movieSearchField;
     @FXML
     private TextField seriesSearchField;
-    @FXML
-    private TableView<Season> seasonsTableView;
-    @FXML
-    private TableView<Episode> episodesTableView;
 
     // Search related
     private final ObservableList<Movie> allMovies = FXCollections.observableArrayList();
@@ -217,6 +208,18 @@ public class ContentController extends BaseController {
                 filteredMovies.clear();
                 movieTable.setItems(filteredMovies);
 
+                // Add double-click handler for movie table
+                movieTable.setRowFactory(tv -> {
+                    TableRow<Movie> row = new TableRow<>();
+                    row.setOnMouseClicked(event -> {
+                        if (event.getClickCount() == 2 && !row.isEmpty()) {
+                            Movie movie = row.getItem();
+                            showContentDetails(movie);
+                        }
+                    });
+                    return row;
+                });
+
                 // Set up sorting
                 if (movieSortBy != null) {
                     movieSortBy.getItems().addAll("Title (A-Z)", "Title (Z-A)", "Year (Newest)", "Year (Oldest)", "Rating (High to Low)");
@@ -237,6 +240,18 @@ public class ContentController extends BaseController {
                 filteredSeries.clear();
                 seriesTable.setItems(filteredSeries);
 
+                // Add double-click handler for series table
+                seriesTable.setRowFactory(tv -> {
+                    TableRow<Series> row = new TableRow<>();
+                    row.setOnMouseClicked(event -> {
+                        if (event.getClickCount() == 2 && !row.isEmpty()) {
+                            Series series = row.getItem();
+                            showContentDetails(series);
+                        }
+                    });
+                    return row;
+                });
+
                 // Set up sorting
                 if (seriesSortBy != null) {
                     seriesSortBy.getItems().addAll("Title (A-Z)", "Title (Z-A)", "Year (Newest)", "Year (Oldest)", "Rating (High to Low)");
@@ -256,6 +271,80 @@ public class ContentController extends BaseController {
         } catch (Exception e) {
             logger.error("Error initializing controller: {}", e.getMessage(), e);
             showAlert("Initialization Error", "Failed to initialize the application: " + e.getMessage());
+        }
+    }
+
+    private void showAlert(String title, String message) {
+        UIUtils.showAlert(Alert.AlertType.ERROR, title, message);
+    }
+
+    /**
+     * Shows the content details view for a movie.
+     *
+     * @param movie The movie to show details for
+     */
+    private void showContentDetails(Movie movie) {
+        try {
+            // Load the content details view
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/content-details.fxml"));
+            Parent root = loader.load();
+            
+            // Get the controller and set the movie details
+            ContentDetailsController controller = loader.getController();
+            controller.setContentDetails(
+                movie.getTitle(),
+                String.valueOf(movie.getYear()),
+                String.format("%.1f/10", movie.getImdbRating()),
+                movie.getGenre().toString(),
+                movie.getBoxOffice(),
+                movie.getAwards(),
+                movie.getActors()
+            );
+            
+            // Show the content details in a new stage
+            Stage stage = new Stage();
+            stage.setTitle(movie.getTitle() + " Details");
+            stage.setScene(new Scene(root));
+            stage.show();
+            
+        } catch (IOException e) {
+            logger.error("Error loading content details view: {}", e.getMessage(), e);
+            showAlert("Error", "Failed to load content details: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Shows the content details view for a series.
+     *
+     * @param series The series to show details for
+     */
+    private void showContentDetails(Series series) {
+        try {
+            // Load the content details view
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/content-details.fxml"));
+            Parent root = loader.load();
+            
+            // Get the controller and set the series details
+            ContentDetailsController controller = loader.getController();
+            controller.setContentDetails(
+                series.getTitle(),
+                String.valueOf(series.getYear()),
+                String.format("%.1f/10", series.getImdbRating()),
+                series.getGenre().toString(),
+                "N/A", // Series typically don't have box office
+                series.getAwards(),
+                series.getActors()
+            );
+            
+            // Show the content details in a new stage
+            Stage stage = new Stage();
+            stage.setTitle(series.getTitle() + " Details");
+            stage.setScene(new Scene(root));
+            stage.show();
+            
+        } catch (IOException e) {
+            logger.error("Error loading content details view: {}", e.getMessage(), e);
+            showAlert("Error", "Failed to load content details: " + e.getMessage());
         }
     }
 
@@ -472,7 +561,6 @@ public class ContentController extends BaseController {
             if (seriesTitleColumn != null) {
                 seriesTitleColumn.setCellValueFactory(cellData ->
                         new SimpleStringProperty(cellData.getValue().getTitle()));
-                seriesTable.getColumns().add(seriesTitleColumn);
             }
 
             // Year column
@@ -482,7 +570,6 @@ public class ContentController extends BaseController {
                     int year = releaseDate != null ? releaseDate.getYear() + 1900 : 0;
                     return new SimpleIntegerProperty(year).asObject();
                 });
-                seriesTable.getColumns().add(seriesYearColumn);
             }
 
             // Genre column
@@ -495,7 +582,6 @@ public class ContentController extends BaseController {
                                     .collect(Collectors.joining(", ")) : "";
                     return new SimpleStringProperty(genreText);
                 });
-                seriesTable.getColumns().add(seriesGenreColumn);
             }
 
             // Seasons column
@@ -503,21 +589,18 @@ public class ContentController extends BaseController {
                 seriesSeasonsColumn.setCellValueFactory(cellData ->
                         new SimpleIntegerProperty(cellData.getValue().getSeasons() != null ?
                                 cellData.getValue().getSeasons().size() : 0).asObject());
-                seriesTable.getColumns().add(seriesSeasonsColumn);
             }
 
             // Episodes column
             if (seriesEpisodesColumn != null) {
                 seriesEpisodesColumn.setCellValueFactory(cellData ->
                         new SimpleIntegerProperty(cellData.getValue().getTotalEpisodes()).asObject());
-                seriesTable.getColumns().add(seriesEpisodesColumn);
             }
 
             // Rating column
             if (seriesRatingColumn != null) {
                 seriesRatingColumn.setCellValueFactory(cellData ->
                         new SimpleDoubleProperty(cellData.getValue().getImdbRating()).asObject());
-                seriesTable.getColumns().add(seriesRatingColumn);
             }
 
             // Actions column
@@ -741,6 +824,10 @@ public class ContentController extends BaseController {
                     contentService.deleteContent(selectedSeries);
                     refreshSeriesTable();
                     showSuccess("Success", String.format("Series '%s' has been deleted successfully.", selectedSeries.getTitle()));
+                } catch (ContentNotFoundException e) {
+                    logger.error("Failed to find series with ID {}: {}", selectedSeries.getId(), e.getMessage());
+                    showError("Error", "The selected series could not be found. It may have already been deleted.");
+                    refreshSeriesTable(); // Refresh to show current data
                 } catch (Exception e) {
                     logger.error("Error deleting series: {}", e.getMessage(), e);
                     showError("Error", "Failed to delete series: " + e.getMessage());
@@ -766,9 +853,15 @@ public class ContentController extends BaseController {
                 double rating = showRatingDialog();
 
                 if (rating > 0) {  // User didn't cancel
-                    contentService.rateContent(selectedSeries, (float) rating);
-                    refreshSeriesTable();
-                    showSuccess("Success", String.format("You rated '%s' %.1f", selectedSeries.getTitle(), rating));
+                    try {
+                        contentService.rateContent(selectedSeries, (float) rating);
+                        refreshSeriesTable();
+                        showSuccess("Success", String.format("You rated '%s' %.1f", selectedSeries.getTitle(), rating));
+                    } catch (ContentNotFoundException e) {
+                        logger.error("Failed to find series with ID {}: {}", selectedSeries.getId(), e.getMessage());
+                        showError("Error", "The selected series could not be found. It may have been deleted.");
+                        refreshSeriesTable(); // Refresh to show current data
+                    }
                 }
             } catch (NumberFormatException e) {
                 showError("Invalid Input", "Please enter a valid number between 1.0 and 10.0");
@@ -788,6 +881,7 @@ public class ContentController extends BaseController {
      * @param actionEvent The action event that triggered this method
      */
     public void handleAddSeason(ActionEvent actionEvent) {
+
     }
 
     /**
@@ -952,8 +1046,18 @@ public class ContentController extends BaseController {
         if (selectedMovie != null) {
             double rating = showRatingDialog();
             if (rating > 0) {
-                contentService.rateContent(selectedMovie, (float) rating);
-                refreshMovieTable();
+                try {
+                    contentService.rateContent(selectedMovie, (float) rating);
+                    refreshMovieTable();
+                    showSuccess("Success", String.format("You rated '%s' %.1f", selectedMovie.getTitle(), rating));
+                } catch (ContentNotFoundException e) {
+                    logger.error("Failed to find movie with ID {}: {}", selectedMovie.getId(), e.getMessage());
+                    showError("Error", "The selected movie could not be found. It may have been deleted.");
+                    refreshMovieTable(); // Refresh to show current data
+                } catch (Exception e) {
+                    logger.error("Error rating movie: {}", e.getMessage(), e);
+                    showError("Error", "Failed to rate movie: " + e.getMessage());
+                }
             }
         } else {
             showAlert("No Movie Selected", "Please select a movie to rate.");
@@ -961,17 +1065,31 @@ public class ContentController extends BaseController {
     }
 
     /**
-     * Shows an alert with the specified title and message.
-     *
-     * @param title   The title of the alert
-     * @param message The message to display in the alert
+     * Handles the "Delete Movie" button click event.
+     * Deletes the selected movie after confirmation.
      */
-    private void showAlert(String title, String message) {
-        Alert alert = new Alert(Alert.AlertType.INFORMATION);
-        alert.setTitle(title);
-        alert.setHeaderText(title);
-        alert.setContentText(message);
-        alert.showAndWait();
+    @FXML
+    private void handleDeleteMovie() {
+        Movie selectedMovie = movieTable.getSelectionModel().getSelectedItem();
+        if (selectedMovie != null) {
+            boolean confirmed = showConfirmationDialog("Delete Movie", "Are you sure you want to delete this movie?");
+            if (confirmed) {
+                try {
+                    contentService.deleteContent(selectedMovie);
+                    refreshMovieTable();
+                    showSuccess("Success", String.format("Movie '%s' has been deleted successfully.", selectedMovie.getTitle()));
+                } catch (ContentNotFoundException e) {
+                    logger.error("Failed to find movie with ID {}: {}", selectedMovie.getId(), e.getMessage());
+                    showError("Error", "The selected movie could not be found. It may have already been deleted.");
+                    refreshMovieTable(); // Refresh to show current data
+                } catch (Exception e) {
+                    logger.error("Error deleting movie: {}", e.getMessage(), e);
+                    showError("Error", "Failed to delete movie: " + e.getMessage());
+                }
+            }
+        } else {
+            showAlert("No Movie Selected", "Please select a movie to delete.");
+        }
     }
 
     /**
@@ -1035,24 +1153,6 @@ public class ContentController extends BaseController {
     }
 
     /**
-     * Handles the "Delete Movie" button click event.
-     * Shows a confirmation dialog and deletes the selected movie if confirmed.
-     */
-    @FXML
-    private void handleDeleteMovie() {
-        Movie selectedMovie = movieTable.getSelectionModel().getSelectedItem();
-        if (selectedMovie != null) {
-            boolean confirmed = showConfirmationDialog("Delete Movie", "Are you sure you want to delete this movie?");
-            if (confirmed) {
-                contentService.deleteContent(selectedMovie);
-                refreshMovieTable();
-            }
-        } else {
-            showAlert("No Movie Selected", "Please select a movie to delete.");
-        }
-    }
-
-    /**
      * Shows a confirmation dialog with the specified title and message.
      *
      * @param title   the title of the dialog
@@ -1096,8 +1196,18 @@ public class ContentController extends BaseController {
         if (selectedSeries != null) {
             double rating = showRatingDialog();
             if (rating > 0) {
-                contentService.rateContent(selectedSeries, (float) rating);
-                refreshSeriesTable();
+                try {
+                    contentService.rateContent(selectedSeries, (float) rating);
+                    refreshSeriesTable();
+                    showSuccess("Success", String.format("You rated '%s' %.1f", selectedSeries.getTitle(), rating));
+                } catch (ContentNotFoundException e) {
+                    logger.error("Failed to find series with ID {}: {}", selectedSeries.getId(), e.getMessage());
+                    showError("Error", "The selected series could not be found. It may have been deleted.");
+                    refreshSeriesTable(); // Refresh to show current data
+                } catch (Exception e) {
+                    logger.error("Error rating series: {}", e.getMessage(), e);
+                    showError("Error", "Failed to rate series: " + e.getMessage());
+                }
             }
         } else {
             showAlert("No Series Selected", "Please select a series to rate.");
@@ -1106,7 +1216,7 @@ public class ContentController extends BaseController {
 
     /**
      * Handles the "Delete Series" button click event.
-     * Shows a confirmation dialog and deletes the selected series if confirmed.
+     * Deletes the selected series after confirmation.
      */
     @FXML
     private void handleDeleteSeries() {
@@ -1114,11 +1224,21 @@ public class ContentController extends BaseController {
         if (selectedSeries != null) {
             boolean confirmed = showConfirmationDialog("Delete Series", "Are you sure you want to delete this series?");
             if (confirmed) {
-                contentService.deleteContent(selectedSeries);
-                refreshSeriesTable();
+                try {
+                    contentService.deleteContent(selectedSeries);
+                    refreshSeriesTable();
+                    showSuccess("Success", String.format("Series '%s' has been deleted successfully.", selectedSeries.getTitle()));
+                } catch (ContentNotFoundException e) {
+                    logger.error("Failed to find series with ID {}: {}", selectedSeries.getId(), e.getMessage());
+                    showError("Error", "The selected series could not be found. It may have already been deleted.");
+                    refreshSeriesTable(); // Refresh to show current data
+                } catch (Exception e) {
+                    logger.error("Error deleting series: {}", e.getMessage(), e);
+                    showError("Error", "Failed to delete series: " + e.getMessage());
+                }
             }
         } else {
-            showAlert("No Series Selected", "Please select a series to delete.");
+            showWarning("No Selection", "Please select a series to delete.");
         }
     }
 
@@ -1532,5 +1652,167 @@ public class ContentController extends BaseController {
         this.sessionToken = sessionToken;
     }
 
+
+    /**
+     * Handles the rate movie action from the UI.
+     * Shows a dialog to rate the selected movie.
+     *
+     * @param event The action event that triggered this method
+     */
+    @FXML
+    private void handleRateMovie(ActionEvent event) {
+        Movie selectedMovie = movieTable.getSelectionModel().getSelectedItem();
+        if (selectedMovie != null) {
+            try {
+                // Show rating dialog
+                TextInputDialog dialog = new TextInputDialog("5.0");
+                dialog.setTitle("Rate Movie");
+                dialog.setHeaderText(String.format("Rate '%s' (1.0 - 10.0)", selectedMovie.getTitle()));
+                dialog.setContentText("Rating:");
+
+                Optional<String> result = dialog.showAndWait();
+                if (result.isPresent()) {
+                    try {
+                        double rating = Double.parseDouble(result.get());
+                        if (rating < 1.0 || rating > 10.0) {
+                            throw new NumberFormatException("Rating must be between 1.0 and 10.0");
+                        }
+
+                        // Update rating
+                        contentService.rateContent(selectedMovie, (float) rating);
+                        refreshMovieTable();
+                        showSuccess("Success", String.format("You rated '%s' %.1f", selectedMovie.getTitle(), rating));
+                    } catch (NumberFormatException e) {
+                        showError("Invalid Input", "Please enter a valid number between 1.0 and 10.0");
+                    } catch (ContentNotFoundException e) {
+                        showError("Error", "The selected movie could not be found. It may have been deleted.");
+                        refreshMovieTable();
+                    } catch (Exception e) {
+                        logger.error("Error rating movie: {}", e.getMessage(), e);
+                        showError("Error", "Failed to rate movie: " + e.getMessage());
+                    }
+                }
+            } catch (Exception e) {
+                logger.error("Error showing rating dialog: {}", e.getMessage(), e);
+                showError("Error", "Failed to show rating dialog: " + e.getMessage());
+            }
+        } else {
+            showWarning("No Selection", "Please select a movie to rate.");
+        }
+    }
+
+    /**
+     * Handles the delete movie action from the UI.
+     * Deletes the selected movie after confirmation.
+     *
+     * @param event The action event that triggered this method
+     */
+    @FXML
+    private void handleDeleteMovie(ActionEvent event) {
+        Movie selectedMovie = movieTable.getSelectionModel().getSelectedItem();
+        if (selectedMovie != null) {
+            boolean confirmed = showConfirmationDialog(
+                    "Delete Movie",
+                    String.format("Are you sure you want to delete '%s'? This action cannot be undone.", selectedMovie.getTitle())
+            );
+
+            if (confirmed) {
+                try {
+                    contentService.deleteContent(selectedMovie);
+                    refreshMovieTable();
+                    showSuccess("Success", String.format("Movie '%s' has been deleted successfully.", selectedMovie.getTitle()));
+                } catch (ContentNotFoundException e) {
+                    showError("Error", "The selected movie could not be found. It may have already been deleted.");
+                    refreshMovieTable();
+                } catch (Exception e) {
+                    logger.error("Error deleting movie: {}", e.getMessage(), e);
+                    showError("Error", "Failed to delete movie: " + e.getMessage());
+                }
+            }
+        } else {
+            showWarning("No Selection", "Please select a movie to delete.");
+        }
+    }
+
+    /**
+     * Handles the rate series action from the UI.
+     * Shows a dialog to rate the selected series.
+     *
+     * @param event The action event that triggered this method
+     */
+    @FXML
+    private void handleRateSeries(ActionEvent event) {
+        Series selectedSeries = seriesTable.getSelectionModel().getSelectedItem();
+        if (selectedSeries != null) {
+            try {
+                // Show rating dialog
+                TextInputDialog dialog = new TextInputDialog("5.0");
+                dialog.setTitle("Rate Series");
+                dialog.setHeaderText(String.format("Rate '%s' (1.0 - 10.0)", selectedSeries.getTitle()));
+                dialog.setContentText("Rating:");
+
+                Optional<String> result = dialog.showAndWait();
+                if (result.isPresent()) {
+                    try {
+                        double rating = Double.parseDouble(result.get());
+                        if (rating < 1.0 || rating > 10.0) {
+                            throw new NumberFormatException("Rating must be between 1.0 and 10.0");
+                        }
+
+                        // Update rating
+                        contentService.rateContent(selectedSeries, (float) rating);
+                        refreshSeriesTable();
+                        showSuccess("Success", String.format("You rated '%s' %.1f", selectedSeries.getTitle(), rating));
+                    } catch (NumberFormatException e) {
+                        showError("Invalid Input", "Please enter a valid number between 1.0 and 10.0");
+                    } catch (ContentNotFoundException e) {
+                        showError("Error", "The selected series could not be found. It may have been deleted.");
+                        refreshSeriesTable();
+                    } catch (Exception e) {
+                        logger.error("Error rating series: {}", e.getMessage(), e);
+                        showError("Error", "Failed to rate series: " + e.getMessage());
+                    }
+                }
+            } catch (Exception e) {
+                logger.error("Error showing rating dialog: {}", e.getMessage(), e);
+                showError("Error", "Failed to show rating dialog: " + e.getMessage());
+            }
+        } else {
+            showWarning("No Selection", "Please select a series to rate.");
+        }
+    }
+
+    /**
+     * Handles the delete series action from the UI.
+     * Deletes the selected series after confirmation.
+     *
+     * @param event The action event that triggered this method
+     */
+    @FXML
+    private void handleDeleteSeries(ActionEvent event) {
+        Series selectedSeries = seriesTable.getSelectionModel().getSelectedItem();
+        if (selectedSeries != null) {
+            boolean confirmed = showConfirmationDialog(
+                    "Delete Series",
+                    String.format("Are you sure you want to delete '%s'? This action cannot be undone.", selectedSeries.getTitle())
+            );
+
+            if (confirmed) {
+                try {
+                    contentService.deleteContent(selectedSeries);
+                    refreshSeriesTable();
+                    showSuccess("Success", String.format("Series '%s' has been deleted successfully.", selectedSeries.getTitle()));
+                } catch (ContentNotFoundException e) {
+                    showError("Error", "The selected series could not be found. It may have already been deleted.");
+                    refreshSeriesTable();
+                } catch (Exception e) {
+                    logger.error("Error deleting series: {}", e.getMessage(), e);
+                    showError("Error", "Failed to delete series: " + e.getMessage());
+                }
+            }
+        } else {
+            showWarning("No Selection", "Please select a series to delete.");
+        }
+    }
 
 }
