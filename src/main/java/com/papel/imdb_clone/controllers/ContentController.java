@@ -1,15 +1,11 @@
 package com.papel.imdb_clone.controllers;
 
 import com.papel.imdb_clone.data.RefactoredDataManager;
-import com.papel.imdb_clone.data.SearchCriteria;
 import com.papel.imdb_clone.enums.Genre;
 import com.papel.imdb_clone.model.*;
 import com.papel.imdb_clone.service.*;
 import com.papel.imdb_clone.util.AppEventBus;
 import com.papel.imdb_clone.util.AppStateManager;
-import com.papel.imdb_clone.util.PauseTypingDetector;
-import com.papel.imdb_clone.util.UIUtils;
-import javafx.animation.PauseTransition;
 import javafx.application.Platform;
 import javafx.beans.property.*;
 import javafx.collections.FXCollections;
@@ -26,7 +22,6 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.stage.Popup;
 import javafx.stage.Stage;
-import javafx.util.Duration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -44,6 +39,8 @@ public class ContentController extends BaseController {
     private static final Logger logger = LoggerFactory.getLogger(ContentController.class);
 
     // UI Components
+    // Service-related methods
+
     @FXML
     private ComboBox<String> movieSortBy;
     @FXML
@@ -114,9 +111,8 @@ public class ContentController extends BaseController {
     private TableView<Episode> episodesTableView;
 
     // Search related
-    private final PauseTypingDetector pauseTypingDetector = new PauseTypingDetector(300);
-    private ObservableList<Movie> allMovies = FXCollections.observableArrayList();
-    private ObservableList<Movie> filteredMovies = FXCollections.observableArrayList();
+    private final ObservableList<Movie> allMovies = FXCollections.observableArrayList();
+    private final ObservableList<Movie> filteredMovies = FXCollections.observableArrayList();
     private final ObjectProperty<Movie> selectedMovie = new SimpleObjectProperty<>();
     // Add these lines with other field declarations
     private final ObservableList<Series> allSeries = FXCollections.observableArrayList();
@@ -127,6 +123,49 @@ public class ContentController extends BaseController {
     private ContentDataLoader contentDataLoader;
     private SearchService searchService;
 
+    /**
+     * Initializes all services required by the ContentController.
+     * This method should be called during controller initialization.
+     *
+     * @throws IllegalStateException if any required service fails to initialize
+     */
+    private void initializeServices() {
+        logger.info("Initializing ContentController services...");
+
+        try {
+            // 1. Initialize DataManager
+            this.dataManager = RefactoredDataManager.getInstance();
+            if (this.dataManager == null) {
+                throw new IllegalStateException("Failed to initialize DataManager");
+            }
+
+            // 2. Initialize ContentDataLoader with DataManager
+            this.contentDataLoader = ContentDataLoader.getInstance(dataManager);
+            if (this.contentDataLoader == null) {
+                throw new IllegalStateException("Failed to initialize ContentDataLoader");
+            }
+
+            // 3. Initialize SearchService
+            this.searchService = new SearchService(dataManager);
+
+            // 4. Get ContentService from ServiceLocator
+            ServiceLocator serviceLocator = ServiceLocator.getInstance();
+            this.contentService = serviceLocator.getService(ContentService.class, "movie");
+            if (this.contentService == null) {
+                logger.warn("ContentService for 'movie' not found in ServiceLocator");
+            }
+
+            // 5. Initialize EncryptionService if needed
+            this.encryptionService = EncryptionService.getInstance();
+
+            logger.info("All services initialized successfully");
+
+        } catch (Exception e) {
+            String errorMsg = "Failed to initialize services: " + e.getMessage();
+            logger.error(errorMsg, e);
+            throw new IllegalStateException(errorMsg, e);
+        }
+    }
 
     // State variables
     private Stage primaryStage;
@@ -145,11 +184,26 @@ public class ContentController extends BaseController {
         logger.info("Initializing ContentController...");
 
         try {
-            // Initialize UI components if they exist
-            if (globalSearchField != null) {
-                setupSearchFunctionality();
-            } else {
-                logger.warn("globalSearchField is not available. Search functionality will be disabled.");
+            // Initialize services first
+            try {
+                initializeServices();
+                logger.info("Services initialized successfully");
+
+                // Load initial data if dataManager is available
+                if (dataManager != null) {
+                    Platform.runLater(this::loadInitialData);
+                } else {
+                    logger.error("DataManager initialization failed. Content loading will be skipped.");
+                }
+            } catch (Exception e) {
+                logger.error("Failed to initialize services: {}", e.getMessage(), e);
+                Platform.runLater(() ->
+                        showAlert("Initialization Error",
+                                "Failed to initialize required services.\n" +
+                                        "Please restart the application.\n\n" +
+                                        "Error: " + e.getMessage())
+                );
+                return; // Stop further initialization if services can't be initialized
             }
 
             // Initialize tables and columns
@@ -159,51 +213,49 @@ public class ContentController extends BaseController {
             // Initialize movie table if it exists
             if (movieTable != null) {
                 movieTable.setPlaceholder(new Label("No movies found"));
-
-                // Initialize the ObservableLists
-                allMovies = FXCollections.observableArrayList();
-                filteredMovies = FXCollections.observableArrayList();
-
-                // Set the items to the table
+                allMovies.clear();
+                filteredMovies.clear();
                 movieTable.setItems(filteredMovies);
 
-                // Load initial data
-                loadInitialData();
-            } else {
-                logger.warn("movieTable is not initialized. Please check your FXML file.");
+                // Set up sorting
+                if (movieSortBy != null) {
+                    movieSortBy.getItems().addAll("Title (A-Z)", "Title (Z-A)", "Year (Newest)", "Year (Oldest)", "Rating (High to Low)");
+                    movieSortBy.setValue("Title (A-Z)");
+                    movieSortBy.getSelectionModel().selectedItemProperty().addListener((obs, oldVal, newVal) -> {
+                        if (newVal != null) {
+                            sortMovieTable(newVal);
+                        }
+                    });
+                }
+
             }
 
             // Initialize series table if it exists
             if (seriesTable != null) {
                 seriesTable.setPlaceholder(new Label("No series found"));
-
-                // Initialize the ObservableLists
-                ObservableList<Series> allSeries = FXCollections.observableArrayList();
-                ObservableList<Series> filteredSeries = FXCollections.observableArrayList();
-
-                // Set the items to the table
+                allSeries.clear();
+                filteredSeries.clear();
                 seriesTable.setItems(filteredSeries);
 
-                // Set up sorting if sort controls exist
+                // Set up sorting
                 if (seriesSortBy != null) {
                     seriesSortBy.getItems().addAll("Title (A-Z)", "Title (Z-A)", "Year (Newest)", "Year (Oldest)", "Rating (High to Low)");
                     seriesSortBy.setValue("Title (A-Z)");
-
-                    // Add listener for sort changes
                     seriesSortBy.getSelectionModel().selectedItemProperty().addListener((obs, oldVal, newVal) -> {
                         if (newVal != null) {
                             sortSeriesTable(newVal);
                         }
                     });
                 }
+
             }
 
-            // Update UI based on initial auth state
-            updateUIForAuthState();
-            logger.info("ContentController initialized successfully");
+            // Load initial data
+            loadInitialData();
+
         } catch (Exception e) {
-            logger.error("Error initializing ContentController: {}", e.getMessage(), e);
-            UIUtils.showError("Initialization Error", "Failed to initialize content management");
+            logger.error("Error initializing controller: {}", e.getMessage(), e);
+            showAlert("Initialization Error", "Failed to initialize the application: " + e.getMessage());
         }
     }
 
@@ -285,40 +337,6 @@ public class ContentController extends BaseController {
         }
     }
 
-    private void setupSearchFunctionality() {
-        // Check if globalSearchField is available
-        if (globalSearchField == null) {
-            logger.warn("globalSearchField is not available. Search functionality will be disabled.");
-            return;
-        }
-
-        // Setup search field listener
-        globalSearchField.textProperty().addListener((observable, oldValue, newValue) -> {
-            if (newValue != null && !newValue.trim().isEmpty()) {
-                pauseTypingDetector.runOnPause(() -> {
-                    Platform.runLater(() -> performSearch(newValue.trim()));
-                });
-            } else {
-                clearSearch();
-            }
-        });
-
-        // Handle search field focus
-        globalSearchField.focusedProperty().addListener((obs, oldVal, newVal) -> {
-            if (newVal && !globalSearchField.getText().isEmpty()) {
-                showSearchSuggestions();
-            } else if (!newVal && searchSuggestions != null) {
-                // Small delay to allow for clicking on a suggestion
-                PauseTransition delay = new PauseTransition(Duration.millis(200));
-                delay.setOnFinished(event -> {
-                    if (searchSuggestions != null) {
-                        searchSuggestions.hide();
-                    }
-                });
-                delay.play();
-            }
-        });
-    }
 
     private void setupTableColumns() {
         // Setup movie table columns if they exist
@@ -333,7 +351,7 @@ public class ContentController extends BaseController {
                         try {
                             return new SimpleStringProperty(cellData.getValue().getTitle());
                         } catch (Exception e) {
-                            logger.warn("Error getting movie title: " + e.getMessage());
+                            logger.warn("Error getting movie title: {}", e.getMessage());
                             return new SimpleStringProperty("");
                         }
                     });
@@ -350,7 +368,7 @@ public class ContentController extends BaseController {
                                 return new SimpleStringProperty(String.valueOf(cal.get(Calendar.YEAR)));
                             }
                         } catch (Exception e) {
-                            logger.warn("Error getting movie year: " + e.getMessage());
+                            logger.warn("Error getting movie year: {}", e.getMessage());
                         }
                         return new SimpleStringProperty("");
                     });
@@ -364,7 +382,7 @@ public class ContentController extends BaseController {
                             Double rating = movie != null ? Movie.getRating(movie) : 0.0;
                             return new SimpleDoubleProperty(rating).asObject();
                         } catch (Exception e) {
-                            logger.warn("Error getting movie rating: " + e.getMessage());
+                            logger.warn("Error getting movie rating: {}", e.getMessage());
                             return new SimpleDoubleProperty(0.0).asObject();
                         }
                     });
@@ -379,7 +397,7 @@ public class ContentController extends BaseController {
                     selectedMovie.set(newSelection);
                 });
             } catch (Exception e) {
-                logger.error("Error setting up movie table columns: " + e.getMessage(), e);
+                logger.error("Error setting up movie table columns: {}", e.getMessage(), e);
             }
         }
 
@@ -395,7 +413,7 @@ public class ContentController extends BaseController {
                         try {
                             return new SimpleStringProperty(cellData.getValue().getTitle());
                         } catch (Exception e) {
-                            logger.warn("Error getting series title: " + e.getMessage());
+                            logger.warn("Error getting series title: {}", e.getMessage());
                             return new SimpleStringProperty("");
                         }
                     });
@@ -407,7 +425,7 @@ public class ContentController extends BaseController {
                         try {
                             return new SimpleIntegerProperty().asObject();
                         } catch (Exception e) {
-                            logger.warn("Error getting series year: " + e.getMessage());
+                            logger.warn("Error getting series year: {}", e.getMessage());
                             return new SimpleIntegerProperty(0).asObject();
                         }
                     });
@@ -421,90 +439,139 @@ public class ContentController extends BaseController {
                             Double rating = series != null ? series.getRating() : 0.0;
                             return new SimpleDoubleProperty(rating).asObject();
                         } catch (Exception e) {
-                            logger.warn("Error getting series rating: " + e.getMessage());
+                            logger.warn("Error getting series rating: {}", e.getMessage());
                             return new SimpleDoubleProperty(0.0).asObject();
                         }
                     });
                     seriesTable.getColumns().add(seriesRatingColumn);
                 }
             } catch (Exception e) {
-                logger.error("Error setting up series table columns: " + e.getMessage(), e);
+                logger.error("Error setting up series table columns: {}", e.getMessage(), e);
             }
         }
     }
 
     /**
-     * Performs a search based on the provided query and updates the UI with results.
-     *
-     * @param query The search term entered by the user
+     * Initializes the columns for the series table.
+     * Sets up cell value factories and cell factories for each column.
      */
-    private void performSearch(String query) {
-        if (query == null || query.trim().isEmpty()) {
-            filteredMovies.setAll(allMovies);
+    private void initializeSeriesTableColumns() {
+        if (seriesTable == null) {
+            logger.warn("Cannot initialize columns: seriesTable is null");
             return;
         }
 
         try {
-            // Assuming searchService has a search method that takes a query and returns List<Content>
-            SearchCriteria criteria = new SearchCriteria(query);
-            List<Content> results = searchService.search(criteria);
-            List<Movie> movieResults = new ArrayList<>();
-            for (Content content : results) {
-                if (content instanceof Movie) {
-                    movieResults.add((Movie) content);
-                }
+            // Clear existing columns to prevent duplicates
+            seriesTable.getColumns().clear();
+
+            // Set the items to the filtered list
+            seriesTable.setItems(filteredSeries);
+
+            // Title column
+            if (seriesTitleColumn != null) {
+                seriesTitleColumn.setCellValueFactory(cellData ->
+                        new SimpleStringProperty(cellData.getValue().getTitle()));
+                seriesTable.getColumns().add(seriesTitleColumn);
             }
-            filteredMovies.setAll(movieResults);
-            updateStatusLabel(movieResults.size());
+
+            // Year column
+            if (seriesYearColumn != null) {
+                seriesYearColumn.setCellValueFactory(cellData -> {
+                    Date releaseDate = cellData.getValue().getYear();
+                    int year = releaseDate != null ? releaseDate.getYear() + 1900 : 0;
+                    return new SimpleIntegerProperty(year).asObject();
+                });
+                seriesTable.getColumns().add(seriesYearColumn);
+            }
+
+            // Genre column
+            if (seriesGenreColumn != null) {
+                seriesGenreColumn.setCellValueFactory(cellData -> {
+                    List<Genre> genres = cellData.getValue().getGenres();
+                    String genreText = genres != null ?
+                            genres.stream()
+                                    .map(Genre::name)
+                                    .collect(Collectors.joining(", ")) : "";
+                    return new SimpleStringProperty(genreText);
+                });
+                seriesTable.getColumns().add(seriesGenreColumn);
+            }
+
+            // Seasons column
+            if (seriesSeasonsColumn != null) {
+                seriesSeasonsColumn.setCellValueFactory(cellData ->
+                        new SimpleIntegerProperty(cellData.getValue().getSeasons() != null ?
+                                cellData.getValue().getSeasons().size() : 0).asObject());
+                seriesTable.getColumns().add(seriesSeasonsColumn);
+            }
+
+            // Episodes column
+            if (seriesEpisodesColumn != null) {
+                seriesEpisodesColumn.setCellValueFactory(cellData ->
+                        new SimpleIntegerProperty(cellData.getValue().getTotalEpisodes()).asObject());
+                seriesTable.getColumns().add(seriesEpisodesColumn);
+            }
+
+            // Rating column
+            if (seriesRatingColumn != null) {
+                seriesRatingColumn.setCellValueFactory(cellData ->
+                        new SimpleDoubleProperty(cellData.getValue().getImdbRating()).asObject());
+                seriesTable.getColumns().add(seriesRatingColumn);
+            }
+
+            // Actions column
+            if (seriesActionsColumn != null) {
+                seriesActionsColumn.setCellFactory(param -> new TableCell<>() {
+                    private final Button editButton = new Button("Edit");
+                    private final Button deleteButton = new Button("Delete");
+
+                    {
+                        editButton.setOnAction(event -> {
+                            Series series = getTableView().getItems().get(getIndex());
+                            // TODO: Implement edit functionality
+                            logger.info("Edit series: {}", series.getTitle());
+                        });
+
+                        deleteButton.setOnAction(event -> {
+                            Series series = getTableView().getItems().get(getIndex());
+                            handleDeleteSeries();
+                        });
+                    }
+
+                    @Override
+                    protected void updateItem(Void item, boolean empty) {
+                        super.updateItem(item, empty);
+                        if (empty) {
+                            setGraphic(null);
+                        } else {
+                            HBox buttons = new HBox(5, editButton, deleteButton);
+                            buttons.setAlignment(Pos.CENTER);
+                            setGraphic(buttons);
+                        }
+                    }
+                });
+            }
+
+            logger.debug("Series table columns initialized successfully");
         } catch (Exception e) {
-            logger.error("Error performing search: " + e.getMessage(), e);
-            updateStatusLabel(0);
+            logger.error("Error initializing series table columns: {}", e.getMessage(), e);
         }
     }
 
 
     /**
-     * Displays the search suggestions popup near the search field.
-     * The popup will be positioned relative to the global search field.
-     */
-    private void showSearchSuggestions() {
-        if (searchSuggestions == null) {
-            logger.warn("searchSuggestions is not initialized");
-            return;
-        }
-
-        if (!suggestionsContainer.getChildren().isEmpty()) {
-            if (!searchSuggestions.isShowing()) {
-                searchSuggestions.show(globalSearchField,
-                        javafx.stage.Screen.getPrimary().getVisualBounds().getMinX() + globalSearchField.localToScene(0, 0).getX() + globalSearchField.getScene().getX() + globalSearchField.getScene().getWindow().getX(),
-                        javafx.stage.Screen.getPrimary().getVisualBounds().getMinY() + globalSearchField.localToScene(0, 0).getY() + globalSearchField.getScene().getY() + globalSearchField.getScene().getWindow().getY() + globalSearchField.getHeight()
-                );
-            }
-        } else {
-            searchSuggestions.hide();
-        }
-    }
-
-    /**
-     * Clears the current search and resets the movie list to show all items.
-     * Also hides the search suggestions popup if it's visible.
-     */
-    private void clearSearch() {
-        filteredMovies.setAll(allMovies);
-        suggestionsContainer.getChildren().clear();
-        if (searchSuggestions != null) {
-            searchSuggestions.hide();
-        }
-        updateStatusLabel(allMovies.size());
-    }
-
-    /**
-     * Updates the status label with the current movie count.
+     * Updates the status label with the current item count.
+     * If statusLabel is not initialized, the method will safely exit.
      *
-     * @param count The number of movies currently displayed
+     * @param count The number of items currently displayed
      */
     private void updateStatusLabel(int count) {
-        statusLabel.setText(String.format("Showing %d %s", count, count == 1 ? "item" : "items"));
+        if (statusLabel != null) {
+            statusLabel.setText(String.format("Showing %d %s", count, count == 1 ? "item" : "items"));
+        } else {
+            logger.debug("statusLabel is not initialized. Skipping status update.");
+        }
     }
 
 
@@ -521,31 +588,6 @@ public class ContentController extends BaseController {
         logger.debug("initializeController called with userId: {}", currentUserId);
     }
 
-    /**
-     * Initializes all services required by this controller.
-     * Package-private to allow initialization from UICoordinator.
-     */
-    public void initializeServices() {
-        try {
-            this.dataManager = RefactoredDataManager.getInstance();
-            this.contentDataLoader = ContentDataLoader.getInstance(dataManager);
-            this.searchService = new SearchService(dataManager);
-
-            // Initialize content service with movie service as default
-            ServiceLocator serviceLocator = ServiceLocator.getInstance();
-            this.contentService = serviceLocator.getService(ContentService.class, "movie");
-
-            logger.debug("Services initialized successfully");
-        } catch (Exception e) {
-            logger.error("Error initializing services: {}", e.getMessage(), e);
-            throw new RuntimeException("Failed to initialize services", e);
-        }
-    }
-
-
-    /**
-     * Updates the UI based on the current authentication state.
-     */
     private void updateUIForAuthState() {
         boolean isAuthenticated = UserService.getInstance(RefactoredDataManager.getInstance(), EncryptionService.getInstance()).isAuthenticated();
 
@@ -1187,77 +1229,83 @@ public class ContentController extends BaseController {
      */
     private void loadInitialData() {
         if (dataManager == null) {
-            logger.error("DataManager is not initialized. Cannot load movies.");
+            logger.error("DataManager is not initialized. Cannot load content.");
             return;
+        }
+
+        // Show loading indicator
+        if (statusLabel != null) {
+            statusLabel.setText("Loading data...");
         }
 
         Task<Void> task = new Task<>() {
             @Override
-            protected Void call() throws Exception {
+            protected Void call() {
                 try {
-                    // Load movies from the data manager
+                    // Load movies
                     List<Movie> movies = dataManager.getAllMovies();
-                    List<Series> series = dataManager.getAllSeries();
+                    logger.debug("Loaded {} movies from data manager", movies.size());
 
+                    // Load series
+                    List<Series> series = dataManager.getAllSeries();
+                    logger.debug("Loaded {} series from data manager", series.size());
+
+                    // Update UI on JavaFX Application Thread
                     Platform.runLater(() -> {
                         try {
                             // Update movies
-                            if (allMovies != null) {
-                                allMovies.setAll(movies);
-                                filteredMovies.setAll(movies);
-                                if (movieTable != null) {
-                                    movieTable.setItems(filteredMovies);
+                            allMovies.clear();
+                            allMovies.addAll(movies);
+                            filteredMovies.clear();
+                            filteredMovies.addAll(movies);
+
+                            // Initialize movie table if not already done
+                            if (movieTable != null) {
+                                if (movieTable.getColumns() == null || movieTable.getColumns().isEmpty()) {
+                                    initializeMovieTableColumns();
                                 }
-                                updateStatusLabel(movies.size());
-                                logger.info("Successfully loaded {} movies into the table", movies.size());
+                                // Set movie table items after initializing columns
+                                movieTable.setItems(filteredMovies);
+                                logger.debug("Set {} movies to movie table", filteredMovies.size());
                             }
 
                             // Update series
-                            if (allSeries != null) {
-                                allSeries.setAll(series);
-                                filteredSeries.setAll(series);
-                                if (seriesTable != null) {
-                                    seriesTable.setItems(filteredSeries);
+                            allSeries.clear();
+                            allSeries.addAll(series);
+                            filteredSeries.clear();
+                            filteredSeries.addAll(series);
+
+                            // Initialize series table columns if not already done
+                            if (seriesTable != null) {
+                                if (seriesTable.getColumns() == null || seriesTable.getColumns().isEmpty()) {
+                                    initializeSeriesTableColumns();
                                 }
-                                logger.info("Successfully loaded {} series into the table", series.size());
+                                // Set series table items after initializing columns
+                                seriesTable.setItems(filteredSeries);
+                                logger.debug("Set {} series to series table", filteredSeries.size());
                             }
 
-                            // Apply initial sort
-                            if (movieSortBy != null) {
-                                sortMovieTable(movieSortBy.getValue());
-                            }
-                            if (seriesSortBy != null) {
-                                sortSeriesTable(seriesSortBy.getValue());
-                            }
-
+                            // Update status
+                            updateStatusLabel(movies.size() + series.size());
+                            logger.info("Successfully loaded {} movies and {} series", movies.size(), series.size());
                         } catch (Exception e) {
                             logger.error("Error updating UI with loaded data: {}", e.getMessage(), e);
-                            Platform.runLater(() ->
-                                    showError("Error", "Failed to update UI with loaded data: " + e.getMessage())
-                            );
+                            showAlert("Error", "Failed to load content: " + e.getMessage());
                         }
                     });
 
-                    return null;
                 } catch (Exception e) {
                     logger.error("Error loading initial data: {}", e.getMessage(), e);
-                    throw e;
+                    Platform.runLater(() -> {
+                        showAlert("Error", "Failed to load content: " + e.getMessage());
+                        if (statusLabel != null) {
+                            statusLabel.setText("Error loading data");
+                        }
+                    });
                 }
+                return null;
             }
         };
-
-        task.setOnSucceeded(event -> {
-            logger.info("Successfully loaded initial data");
-        });
-
-        task.setOnFailed(event -> {
-            Throwable ex = task.getException();
-            logger.error("Error loading initial data: {}", ex != null ? ex.getMessage() : "Unknown error", ex);
-            Platform.runLater(() ->
-                    showError("Loading Error", "Failed to load initial data: " +
-                            (ex != null ? ex.getMessage() : "Unknown error"))
-            );
-        });
 
         // Start the task in a background thread
         Thread thread = new Thread(task);
@@ -1270,12 +1318,91 @@ public class ContentController extends BaseController {
      * This method should be called after any changes to the movie data.
      */
     private void refreshMovieTable() {
-        // Refresh the movie table with updated data
-        List<Movie> movies = contentService.getAllMovies();
-        movieTable.setItems(FXCollections.observableArrayList(movies));
-        if (movieSortBy != null) {
-            sortMovieTable(movieSortBy.getSelectionModel().getSelectedItem());
+        if (dataManager == null) {
+            logger.error("DataManager is not initialized. Cannot refresh movie data.");
+            return;
         }
+
+        // Show loading indicator if available
+        if (statusLabel != null) {
+            statusLabel.setText("Loading movie data...");
+        }
+
+        Task<Void> task = new Task<>() {
+            @Override
+            protected Void call() {
+                try {
+                    // Get the latest movies from the service
+                    List<Movie> updatedMovies = dataManager.getAllMovies();
+
+                    // Update UI on JavaFX Application Thread
+                    Platform.runLater(() -> {
+                        try {
+                            // Update the observable lists
+                            allMovies.setAll(updatedMovies);
+
+                            // Get current search text
+                            String searchText = (movieSearchField != null && movieSearchField.getText() != null)
+                                    ? movieSearchField.getText().trim()
+                                    : "";
+
+
+                            // Make sure the table has been initialized
+                            if (movieTable != null) {
+                                if (movieTable.getColumns() == null || movieTable.getColumns().isEmpty()) {
+                                    initializeMovieTableColumns();
+                                }
+
+                                // Apply sorting if sort is active
+                                if (movieSortBy != null && movieSortBy.getValue() != null) {
+                                    sortMovieTable(movieSortBy.getValue());
+                                }
+
+                                // Refresh the table to show the updated data
+                                movieTable.refresh();
+                            }
+
+                            logger.info("Refreshed movie table with {} items", updatedMovies.size());
+
+                            // Update status
+                            if (statusLabel != null) {
+                                statusLabel.setText("");
+                            }
+                        } catch (Exception e) {
+                            logger.error("Error updating movie table: {}", e.getMessage(), e);
+                            showAlert("Error", "Failed to refresh movie data: " + e.getMessage());
+                        }
+                    });
+                } catch (Exception e) {
+                    logger.error("Error refreshing movie data: {}", e.getMessage(), e);
+                    Platform.runLater(() -> {
+                        showAlert("Error", "Failed to refresh movie data: " + e.getMessage());
+                        if (statusLabel != null) {
+                            statusLabel.setText("Error loading movie data");
+                        }
+                    });
+                }
+                return null;
+            }
+        };
+
+        // Handle task completion
+        task.setOnSucceeded(e -> {
+            if (statusLabel != null) {
+                statusLabel.setText("");
+            }
+        });
+
+        task.setOnFailed(e -> {
+            if (statusLabel != null) {
+                statusLabel.setText("Error loading movie data");
+            }
+        });
+
+        // Start the task in a background thread
+        Thread thread = new Thread(task);
+        thread.setDaemon(true);
+        thread.start();
     }
 
     /**
@@ -1283,8 +1410,105 @@ public class ContentController extends BaseController {
      * This method should be called after any changes to the series data.
      */
     private void refreshSeriesTable() {
-        // Refresh the series table with updated data
-        seriesTable.setItems(FXCollections.observableArrayList(contentService.getAllSeries()));
+        if (dataManager == null) {
+            logger.error("DataManager is not initialized. Cannot refresh series data.");
+            return;
+        }
+
+        // Show loading indicator if available
+        if (statusLabel != null) {
+            statusLabel.setText("Loading series data...");
+        }
+
+        Task<Void> task = new Task<>() {
+            @Override
+            protected Void call() {
+                try {
+                    // Get the latest series from the service
+                    List<Series> updatedSeries = dataManager.getAllSeries();
+
+                    // Update UI on JavaFX Application Thread
+                    Platform.runLater(() -> {
+                        try {
+                            // Update the observable lists
+                            allSeries.setAll(updatedSeries);
+
+                            // Get current search text safely
+                            String searchText = (seriesSearchField != null && seriesSearchField.getText() != null)
+                                    ? seriesSearchField.getText().trim()
+                                    : "";
+
+                            // Apply any active filters
+                            if (!searchText.isEmpty()) {
+                                // If there's a search filter, apply it
+                                List<Series> filtered = updatedSeries.stream()
+                                        .filter(series -> series.getTitle().toLowerCase().contains(searchText.toLowerCase()))
+                                        .collect(Collectors.toList());
+                                filteredSeries.setAll(filtered);
+                            } else {
+                                // Otherwise, show all series
+                                filteredSeries.setAll(updatedSeries);
+                            }
+
+                            // Make sure the table has been initialized
+                            if (seriesTable != null) {
+                                if (seriesTable.getColumns() == null || seriesTable.getColumns().isEmpty()) {
+                                    initializeSeriesTableColumns();
+                                }
+
+                                // Set the items on the table
+                                seriesTable.setItems(filteredSeries);
+
+                                // Apply sorting if sort is active
+                                if (seriesSortBy != null && seriesSortBy.getValue() != null) {
+                                    sortSeriesTable(seriesSortBy.getValue());
+                                }
+
+                                // Refresh the table to show the updated data
+                                seriesTable.refresh();
+                            }
+
+                            logger.info("Refreshed series table with {} items", updatedSeries.size());
+
+                            // Update status
+                            if (statusLabel != null) {
+                                statusLabel.setText("");
+                            }
+                        } catch (Exception e) {
+                            logger.error("Error updating series table: {}", e.getMessage(), e);
+                            showAlert("Error", "Failed to refresh series data: " + e.getMessage());
+                        }
+                    });
+                } catch (Exception e) {
+                    logger.error("Error refreshing series data: {}", e.getMessage(), e);
+                    Platform.runLater(() -> {
+                        showAlert("Error", "Failed to refresh series data: " + e.getMessage());
+                        if (statusLabel != null) {
+                            statusLabel.setText("Error loading series data");
+                        }
+                    });
+                }
+                return null;
+            }
+        };
+
+        // Handle task completion
+        task.setOnSucceeded(e -> {
+            if (statusLabel != null) {
+                statusLabel.setText("");
+            }
+        });
+
+        task.setOnFailed(e -> {
+            if (statusLabel != null) {
+                statusLabel.setText("Error loading series data");
+            }
+        });
+
+        // Start the task in a background thread
+        Thread thread = new Thread(task);
+        thread.setDaemon(true);
+        thread.start();
     }
 
     /**
@@ -1307,4 +1531,6 @@ public class ContentController extends BaseController {
         this.currentUser = currentUser;
         this.sessionToken = sessionToken;
     }
+
+
 }

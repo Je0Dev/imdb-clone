@@ -4,6 +4,7 @@ import com.papel.imdb_clone.controllers.coordinator.UICoordinator;
 import com.papel.imdb_clone.data.RefactoredDataManager;
 import com.papel.imdb_clone.model.User;
 import com.papel.imdb_clone.service.ServiceLocator;
+import com.papel.imdb_clone.services.NavigationService;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -17,6 +18,8 @@ import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
+import javafx.fxml.FXMLLoader;
+import java.io.IOException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -153,10 +156,6 @@ public class RefactoredMainController {
      */
     @FXML
     public void initialize() {
-        if (isInitialized || isInitializing) {
-            logger.debug("Already initialized or initializing");
-            return;
-        }
 
         logger.info("Initializing RefactoredMainController...");
 
@@ -366,6 +365,28 @@ public class RefactoredMainController {
     }
 
     @FXML
+    private void showTVShows(ActionEvent event) {
+        try {
+            if (uiCoordinator == null) {
+                logger.error("UICoordinator is not initialized");
+                showError("Navigation Error", "Application not properly initialized. Please restart the application.");
+                return;
+            }
+
+            Node seriesView = uiCoordinator.getSeriesView();
+            if (seriesView != null) {
+                mainBorderPane.setCenter(seriesView);
+            } else {
+                logger.error("Failed to load series view");
+                showError("Navigation Error", "Failed to load TV shows. Please try again later.");
+            }
+        } catch (Exception e) {
+            logger.error("Error navigating to TV shows: ", e);
+            showError("Navigation Error", "An error occurred while loading TV shows. Please try again.");
+        }
+    }
+
+    @FXML
     private void showMovies(ActionEvent event) {
         try {
             if (uiCoordinator == null) {
@@ -383,44 +404,8 @@ public class RefactoredMainController {
             }
         } catch (Exception e) {
             logger.error("Error showing movies: {}", e.getMessage(), e);
-            showError("Navigation Error", "An unexpected error occurred: " + e.getMessage());
         }
     }
-
-    /**
-     * Handles the action event for showing the TV shows view.
-     *
-     * @param actionEvent the event that triggered this method
-     */
-    @FXML
-    public void showTVShows(ActionEvent actionEvent) {
-        try {
-            if (uiCoordinator == null) {
-                logger.error("UICoordinator is not initialized");
-                showError("Navigation Error", "Application not properly initialized. Please restart the application.");
-                return;
-            }
-
-            Node seriesView = uiCoordinator.getSeriesView();
-            if (seriesView == null) {
-                logger.error("Failed to load TV shows view - view is null");
-                showError("Navigation Error", "Failed to load TV shows view. The view could not be initialized.");
-                return;
-            }
-
-            mainBorderPane.setCenter(seriesView);
-            logger.info("Successfully navigated to TV shows view");
-        } catch (Exception e) {
-            logger.error("Error showing TV shows view: {}", e.getMessage(), e);
-            showError("Navigation Error", "An error occurred while loading the TV shows view: " + e.getMessage());
-        }
-    }
-
-    /**
-     * Handles the action event for showing the advanced search view.
-     *
-     * @param actionEvent the event that triggered this method
-     */
     @FXML
     public void showAdvancedSearch(ActionEvent actionEvent) {
         try {
@@ -463,14 +448,14 @@ public class RefactoredMainController {
             // Create a new container for the home view content
             BorderPane homeContainer = new BorderPane();
             homeContainer.setId("homeContainer");
-            
+
             // Add the sidebar (which contains the navigation buttons)
             if (sidebar != null) {
                 homeContainer.setLeft(sidebar);
             } else {
                 logger.warn("Sidebar is not initialized");
             }
-            
+
             // Add featured content to the center
             if (featuredContent != null) {
                 // Create a scrollable container for the featured content
@@ -479,16 +464,16 @@ public class RefactoredMainController {
                 scrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
                 scrollPane.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
                 scrollPane.setStyle("-fx-background: #0f0f0f; -fx-background-color: #0f0f0f;");
-                
+
                 homeContainer.setCenter(scrollPane);
             } else {
                 logger.warn("Featured content is not initialized");
             }
-            
+
             // Set the home container as the center of the main border pane
             mainBorderPane.setCenter(homeContainer);
             logger.info("Successfully navigated to home view with sidebar and featured content");
-            
+
         } catch (Exception e) {
             String errorMsg = "An error occurred while navigating to home: " + e.getMessage();
             logger.error(errorMsg, e);
@@ -556,5 +541,9 @@ public class RefactoredMainController {
         } else if (uiCoordinator != null) {
             uiCoordinator.setPrimaryStage(primaryStage);
         }
+    }
+
+    public void showCelebrities(ActionEvent actionEvent) {
+        NavigationService.getInstance().showCelebrities();
     }
 }

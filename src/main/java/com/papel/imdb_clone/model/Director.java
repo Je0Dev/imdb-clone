@@ -4,12 +4,15 @@ import com.papel.imdb_clone.enums.Ethnicity;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 public class Director extends Celebrity {
     private final List<String> bestWorks;
     private Ethnicity ethnicity;
+    private String notableWorks;
 
 
     public Director(String firstName, String lastName, LocalDate birthDate, char gender) {
@@ -125,4 +128,10 @@ public class Director extends Celebrity {
         this.lastName = lastName;
     }
 
+    public List<String> getNotableWorks() {
+        if (notableWorks == null || notableWorks.trim().isEmpty()) {
+            return new ArrayList<>();
+        }
+        return Arrays.stream(notableWorks.split(",")).map(String::trim).collect(Collectors.toList());
+    }
 }

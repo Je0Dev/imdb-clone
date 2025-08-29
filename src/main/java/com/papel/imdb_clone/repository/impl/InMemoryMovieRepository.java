@@ -22,9 +22,9 @@ import java.util.stream.Collectors;
 public class InMemoryMovieRepository implements MovieRepository {
     private static final Logger logger = LoggerFactory.getLogger(InMemoryMovieRepository.class);
 
-    private final List<Movie> movies = new CopyOnWriteArrayList<>();
-    private final AtomicInteger nextId = new AtomicInteger(1);
-    private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
+    private static final List<Movie> movies = new CopyOnWriteArrayList<>();
+    private static final AtomicInteger nextId = new AtomicInteger(1);
+    private static final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
 
     @Override
     public Optional<Movie> findById(int id) {
@@ -129,7 +129,7 @@ public class InMemoryMovieRepository implements MovieRepository {
      *
      * @param movie The movie to add
      */
-    public void addMovie(Movie movie) {
+    public static void addMovie(Movie movie) {
         if (movie == null) return;
 
         lock.writeLock().lock();

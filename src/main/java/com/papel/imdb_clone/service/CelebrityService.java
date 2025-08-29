@@ -37,22 +37,6 @@ public class CelebrityService<T extends Celebrity> {
         this.celebrityType = celebrityType;
     }
 
-    /**
-     * Finds a celebrity by their ID.
-     *
-     * @param id The celebrity ID
-     * @return Optional containing the celebrity if found
-     */
-    public Optional<T> findById(int id) {
-        lock.readLock().lock();
-        try {
-            return celebrities.stream()
-                    .filter(celebrity -> celebrity.getId() == id)
-                    .findFirst();
-        } finally {
-            lock.readLock().unlock();
-        }
-    }
 
     /**
      * Finds celebrities by name (partial match).
@@ -60,7 +44,7 @@ public class CelebrityService<T extends Celebrity> {
      * @param name The name to search for
      * @return List of celebrities matching the name
      */
-    public List<? extends Object> findByName(String name) {
+    public List<?> findByName(String name) {
         if (name == null || name.trim().isEmpty()) {
             return List.of();
         }
@@ -117,20 +101,6 @@ public class CelebrityService<T extends Celebrity> {
         }
     }
 
-    /**
-     * Deletes a celebrity by ID.
-     *
-     * @param id The ID of the celebrity to delete
-     * @return true if the celebrity was found and deleted, false otherwise
-     */
-    public boolean delete(int id) {
-        lock.writeLock().lock();
-        try {
-            return celebrities.removeIf(celebrity -> celebrity.getId() == id);
-        } finally {
-            lock.writeLock().unlock();
-        }
-    }
 
     /**
      * Finds a celebrity by their full name (first and last name).

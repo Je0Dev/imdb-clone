@@ -20,6 +20,7 @@ public class DataLoaderFactory {
     private final Map<Class<?>, Object> loaders = new HashMap<>();
     private final InMemoryUserRepository userRepository;
     private final InMemoryMovieRepository movieRepository;
+    private ContentService<com.papel.imdb_clone.model.Movie> movieService;
     private final ContentService<com.papel.imdb_clone.model.Series> seriesService;
     private final CelebrityService<com.papel.imdb_clone.model.Actor> actorService;
     private final CelebrityService<com.papel.imdb_clone.model.Director> directorService;
@@ -39,7 +40,6 @@ public class DataLoaderFactory {
             InMemoryUserRepository userRepository,
             InMemoryMovieRepository movieRepository,
             InMemorySeriesRepository seriesRepository,
-
             ContentService<Movie> movieService,
             ContentService<Series> seriesService,
             CelebrityService<Actor> actorService,
@@ -47,7 +47,7 @@ public class DataLoaderFactory {
         this.userRepository = userRepository;
         this.movieRepository = movieRepository;
         this.seriesRepository = seriesRepository;
-
+        this.movieService = movieService;
         this.seriesService = seriesService;
         this.actorService = actorService;
         this.directorService = directorService;
@@ -80,7 +80,7 @@ public class DataLoaderFactory {
         } else if (loaderClass.equals(DirectorDataLoader.class)) {
             loaders.put(loaderClass, new DirectorDataLoader(directorService));
         } else if (loaderClass.equals(MovieDataLoader.class)) {
-            loaders.put(loaderClass, new MovieDataLoader(movieRepository, actorService, directorService));
+            loaders.put(loaderClass, new MovieDataLoader(movieService, actorService, directorService));
         } else if (loaderClass.equals(SeriesDataLoader.class)) {
             loaders.put(loaderClass, new SeriesDataLoader(seriesService, actorService, directorService));
         } else if (loaderClass.equals(UserDataLoader.class)) {

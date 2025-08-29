@@ -1,41 +1,75 @@
-# 🎬 IMDB Clone
+# IMDB Clone
 
-A JavaFX-based clone of the Internet Movie Database (IMDB) that allows users to browse, search, and manage movies, TV series, actors, and directors with a modern UI.
+A JavaFX-based clone of the Internet Movie Database (IMDB) that provides a modern UI for browsing and managing movies,
+TV series, and celebrity information.
 
-## ✨ Key Features
+## Key Features
 
-### 🎥 Content Management
+### Content Management
+
 - **Movie & TV Show Browsing**: View detailed information about movies and TV series
 - **Advanced Search**: Search across movies, TV shows, actors, and directors
-- **Content Filtering**: Filter by genre, year, rating, and more
-- **Data Import**: Load initial data from text files
+- **User Authentication**: Secure login with session management
+- **Content Rating**: Rate and review movies and shows
+- **Responsive UI**: Modern JavaFX interface with FXML
 
-### 🔐 Authentication & User Management
-- **Secure Login/Registration**: BCrypt password hashing
-- **Session Management**: Token-based authentication
+## Project Structure
 
-### 🏗️ Technical Architecture
-- **MVC Pattern**: Clear separation of concerns
-- **Service Layer**: Business logic encapsulation
-- **Repository Pattern**: Data access abstraction
-- **Dependency Injection**: Using custom ServiceLocator
+```
+src/main/java/com/papel/imdb_clone/
+├── config/               # Application configuration
+├── controllers/          # JavaFX controllers
+│   ├── coordinator/      # UI coordination
+│   ├── AuthController.java
+│   ├── ContentController.java
+│   └── RefactoredMainController.java
+├── data/                 # Data management
+│   └── RefactoredDataManager.java
+├── enums/                # Enumerations
+│   ├── ContentType.java
+│   ├── UserRole.java
+│   └── ViewType.java
+├── exceptions/           # Custom exceptions
+├── gui/                  # Main application GUI
+│   └── ImprovedMovieApp.java
+├── model/                # Domain models
+│   ├── Actor.java
+│   ├── Celebrity.java
+│   ├── Content.java
+│   ├── Director.java
+│   ├── Episode.java
+│   ├── Movie.java
+│   ├── Rating.java
+│   ├── Season.java
+│   ├── Series.java
+│   ├── User.java
+│   └── UserRating.java
+├── repository/           # Data access
+│   └── impl/             # Repository implementations
+├── service/              # Business logic services
+│   ├── data/             # Data loading services
+│   ├── validation/       # Input validation
+│   ├── AuthService.java
+│   ├── CelebrityService.java
+│   ├── ContentService.java
+│   ├── EncryptionService.java
+│   ├── SearchService.java
+│   ├── ServiceLocator.java
+│   ├── UserService.java
+│   └── UserStorageService.java
+├── tools/                # Utility tools
+└── util/                 # Utility classes
+   └── AppStateManager.java
+```
 
-## 🚀 Getting Started
+## Getting Started
 
 ### Prerequisites
 
 - Java 17 or higher
 - Maven 3.8.0 or higher
-- Git (for version control)
 
-### System Requirements
-- Minimum 2GB RAM (4GB recommended)
-- 1GB free disk space
-- 1366x768 display resolution or higher
-
-## ⚙️ Installation
-
-### Development Setup
+### Installation
 
 1. Clone the repository:
    ```bash
@@ -43,7 +77,7 @@ A JavaFX-based clone of the Internet Movie Database (IMDB) that allows users to 
    cd imdb-clone
    ```
 
-2. Build the project with Maven:
+2. Build the project:
    ```bash
    mvn clean install
    ```
@@ -53,76 +87,8 @@ A JavaFX-based clone of the Internet Movie Database (IMDB) that allows users to 
    mvn javafx:run
    ```
 
-### Production Deployment
-
-1. Create an executable JAR:
-   ```bash
-   mvn clean package
-   ```
-
-2. Run the application:
-   ```bash
-   java -jar target/imdb-clone-1.0.0-jar-with-dependencies.jar
-   ```
-
-### Initial Setup
-
-1. On first run, the application will create necessary data files in the `data/` directory
-2. Default admin credentials:
-   - Username: admin
-   - Password: admin123 (change immediately after first login)
-3. Sample data will be loaded automatically from `src/main/resources/data/`
-
-### Core Components
-
-1. **Controllers**
-   - `RefactoredMainController`: Main application controller
-   - `AuthController`: Handles user authentication
-   - `ContentController`: Manages content display and search
-   - `UICoordinator`: Coordinates UI components
-
-2. **Services**
-   - `AuthService`: User authentication and session management
-   - `ContentService`: Manages movie and TV show data
-   - `DataManager`: Handles data loading and persistence
-   - `ServiceLocator`: Central service locator
-
-3. **Models**
-   - `User`: User information and authentication
-   - `Movie`: Movie details and metadata
-   - `Series`: TV series information
-   - `Celebrity`: Base class for actors/directors
-   - `Actor`/`Director`: Specific celebrity types
-
-## 📊 Data Management
-
-The application loads initial data from text files in `src/main/resources/data/`:
-
-- `movies_updated.txt`: Movie information
-- `series_updated.txt`: TV series information
-- `actors_updated.txt`: Actor profiles
-- `directors_updated.txt`: Director information
-- `awards_boxoffice_updated.txt`: Awards data
-- `users_updated.txt`: User accounts
-
-### Key Classes
-
-#### Movie
-```java
-public class Movie {
-    private String id;
-    private String title;
-    private int year;
-    private String genre;
-    private String director;
-    private List<String> actors;
-    private String plot;
-    private double rating;
-    // Getters and setters
-}
-```
-
 #### User
+
 ```java
 public class User {
     private String id;
@@ -134,6 +100,7 @@ public class User {
 ```
 
 #### Celebrity (Base Class)
+
 ```java
 public abstract class Celebrity {
     private String id;
@@ -165,6 +132,7 @@ public abstract class Celebrity {
    ```
 
 ### Code Style
+
 - Follow standard Java naming conventions
 - Use meaningful variable and method names
 - Add Javadoc for public APIs
@@ -173,16 +141,19 @@ public abstract class Celebrity {
 ### Testing
 
 Run the complete test suite:
+
 ```bash
 mvn test
 ```
 
 Run specific test class:
+
 ```bash
 mvn test -Dtest=ForumServiceTest
 ```
 
 Generate test coverage report:
+
 ```bash
 mvn jacoco:report
 ```
@@ -192,28 +163,32 @@ mvn jacoco:report
 ### Common Issues
 
 #### Application Won't Start
+
 - Ensure Java 17+ is installed
 - Check if required ports are available
 - Verify data files exist in `src/main/resources/data/`
 
 #### Data Loading Issues
+
 - Check console for error messages
 - Ensure data files are properly formatted
 - Verify file permissions
 
 #### UI Problems
+
 - Try resizing the window
 - Check for error dialogs
 - Restart the application
 
 ### Getting Help
+
 1. Check the [Wiki](../../wiki) for known issues
 2. Search existing issues
 3. Open a new issue with:
-   - Steps to reproduce
-   - Expected vs actual behavior
-   - Screenshots if applicable
-   - Log files (remove sensitive data)
+    - Steps to reproduce
+    - Expected vs actual behavior
+    - Screenshots if applicable
+    - Log files (remove sensitive data)
 
 ## 🤝 Contributing
 
@@ -240,4 +215,4 @@ For support, please open an issue in the repository.
 
 ---
 
-*Last updated: August 2025 @mastro*
+*Last updated: August 2025*

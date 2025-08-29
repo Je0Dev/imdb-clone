@@ -4,7 +4,9 @@ import com.papel.imdb_clone.data.RefactoredDataManager;
 import com.papel.imdb_clone.data.SearchCriteria;
 import com.papel.imdb_clone.exceptions.ContentNotFoundException;
 import com.papel.imdb_clone.exceptions.EntityNotFoundException;
-import com.papel.imdb_clone.model.*;
+import com.papel.imdb_clone.model.Content;
+import com.papel.imdb_clone.model.Rating;
+import com.papel.imdb_clone.model.Series;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -71,10 +73,9 @@ public class ContentService<T extends Content> {
      * Finds content by its ID.
      *
      * @param id The content ID
-     * @return The content if found
      * @throws ContentNotFoundException if content is not found
      */
-    public T findById(int id) throws ContentNotFoundException {
+    public void findById(int id) throws ContentNotFoundException {
         // Search in the content list
         lock.readLock().lock();
         try {
@@ -83,7 +84,8 @@ public class ContentService<T extends Content> {
                     .findFirst();
 
             if (found.isPresent()) {
-                return found.get();
+                found.get();
+                return;
             }
         } finally {
             lock.readLock().unlock();
@@ -92,28 +94,6 @@ public class ContentService<T extends Content> {
         throw new ContentNotFoundException("Content with ID " + id + " not found");
     }
 
-
-    /**
-     * Finds content by title (partial match).
-     *
-     * @param title The title to search for
-     * @return List of content matching the title
-     */
-    public List<T> findByTitle(String title) {
-        if (title == null || title.trim().isEmpty()) {
-            return List.of();
-        }
-
-        String searchTerm = title.toLowerCase().trim();
-        lock.readLock().lock();
-        try {
-            return contentList.stream()
-                    .filter(content -> content.getTitle().toLowerCase().contains(searchTerm))
-                    .collect(Collectors.toList());
-        } finally {
-            lock.readLock().unlock();
-        }
-    }
 
     /**
      * Saves content (creates or updates).
@@ -160,13 +140,11 @@ public class ContentService<T extends Content> {
      * Deletes content by ID.
      *
      * @param id The ID of the content to delete
-     * @return true if the content was found and deleted, false otherwise
      */
-    public boolean delete(int id) {
+    public void delete(int id) {
         lock.writeLock().lock();
         try {
             boolean removed = contentList.removeIf(content -> content.getId() == id);
-            return removed;
         } finally {
             lock.writeLock().unlock();
         }
@@ -201,7 +179,13 @@ public class ContentService<T extends Content> {
         // Perform search if not in cache
         lock.readLock().lock();
         try {
-            List<T> results = contentList.stream()
+            // Filter by title if provided
+            // Filter by year range if provided
+            // Convert char[] release year to int for comparison
+            // Check if content is before start year (if start year is specified)
+            // Check if content is after end year (if end year is specified)
+
+            return contentList.stream()
                     .filter(content -> {
                         // Filter by title if provided
                         if (criteria.getTitle() != null && !criteria.getTitle().isEmpty()) {
@@ -225,8 +209,6 @@ public class ContentService<T extends Content> {
                         return endYear == null || endYear <= 0 || contentYear <= endYear;
                     })
                     .collect(Collectors.toList());
-
-            return results;
         } finally {
             lock.readLock().unlock();
         }
@@ -267,28 +249,6 @@ public class ContentService<T extends Content> {
         save((T) series);
     }
 
-    /**
-     * Saves a Movie to the content list.
-     *
-     * @param movie The movie to save
-     */
-    public void saveContent(Movie movie) {
-        if (movie.getId() == 0) {
-            movie.setId(nextId.getAndIncrement());
-        }
-        save((T) movie);
-    }
-
-    /**
-     * Saves an Episode to the content list.
-     *
-     * @param episode The episode to save
-     */
-    public void saveContent(Episode episode) {
-        if (episode.getId() == 0) {
-            episode.setId(nextId.getAndIncrement());
-        }
-    }
 
     /**
      * Adds new content to the service.
@@ -337,33 +297,6 @@ public class ContentService<T extends Content> {
         saveContent((Series) selectedMovie);
 
     }
-
-    /**
-     * Gets all movies from the content list.
-     *
-     * @return List of all movies
-     */
-    @SuppressWarnings("unchecked")
-    public List<Movie> getAllMovies() {
-        return contentList.stream()
-                .filter(content -> content instanceof Movie)
-                .map(content -> (Movie) content)
-                .collect(Collectors.toList());
-    }
-
-    /**
-     * Gets all series from the content list.
-     *
-     * @return List of all series
-     */
-    @SuppressWarnings("unchecked")
-    public List<Series> getAllSeries() {
-        return contentList.stream()
-                .filter(content -> content instanceof Series)
-                .map(content -> (Series) content)
-                .collect(Collectors.toList());
-    }
-
 
     public Optional<T> findByTitleAndYear(String title, int startYear) {
         return contentList.stream()

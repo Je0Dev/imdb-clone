@@ -267,4 +267,8 @@ public class Series extends Content {
     public String getNominations() {
         return nominations;
     }
+
+    public int getTotalEpisodes() {
+        return seasons.stream().mapToInt(Season::getTotalEpisodes).sum();
+    }
 }

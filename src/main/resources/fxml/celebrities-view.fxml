@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.Font?>
+<VBox style="-fx-background-color: #121212; -fx-font-family: 'Segoe UI', Arial, sans-serif;"
+      xmlns="http://javafx.com/javafx/17.0.12"
+      xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="com.papel.imdb_clone.controllers.CelebritiesController">
+
+    <!-- Top Navigation Bar -->
+    <VBox style="-fx-background-color: #1a1a1a; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.3), 8, 0, 0, 2);">
+        <!-- Top Navigation -->
+        <HBox style="-fx-padding: 10 20; -fx-background-color: #1e1e1e; -fx-alignment: center-left;">
+            <HBox style="-fx-padding: 0 0 0 10; -fx-spacing: 0; -fx-alignment: center-left;">
+                <Label onMouseClicked="#goToHome"
+                       style="-fx-text-fill: #ffd700; -fx-font-size: 24px; -fx-font-weight: bold; -fx-padding: 0 2 0 5; -fx-cursor: hand;"
+                       text="IMDb">
+                    <font>
+                        <Font size="11.0"/>
+                    </font>
+                </Label>
+                <Label onMouseClicked="#goToHome"
+                       style="-fx-text-fill: #e0e0e0; -fx-font-size: 24px; -fx-font-weight: bold; -fx-cursor: hand;"
+                       text="Clone"/>
+            </HBox>
+        </HBox>
+    </VBox>
+
+    <!-- Main Content -->
+    <VBox style="-fx-padding: 24; -fx-spacing: 24; -fx-background-color: #121212;">
+        <TabPane tabClosingPolicy="UNAVAILABLE" style="-fx-background-color: #1a1a1a;">
+            <!-- Actors Tab -->
+            <Tab text="Actors" style="-fx-background-color: #1a1a1a;">
+                <VBox style="-fx-background-color: #0f0f0f; -fx-padding: 15; -fx-spacing: 10;">
+                    <HBox style="-fx-spacing: 10; -fx-alignment: center-left;">
+                        <TextField fx:id="actorSearchField" promptText="Search actors..." style="-fx-pref-width: 300px; -fx-background-color: #2d2d2d; -fx-text-fill: #e0e0e0; -fx-prompt-text-fill: #9e9e9e; -fx-border-color: #444; -fx-border-radius: 4; -fx-padding: 8 12;" />
+                    </HBox>
+                    <TableView fx:id="actorsTable" style="-fx-background-color: #1e1e1e; -fx-table-cell-border-color: transparent;" VBox.vgrow="ALWAYS">
+                        <columns>
+                            <TableColumn fx:id="actorNameColumn" prefWidth="200" text="Name"
+                                         style="-fx-text-fill: #e0e0e0; -fx-background-color: #1e1e1e;">
+                                <style>
+                                    -fx-text-fill: #f5c518;
+                                    -fx-font-weight: bold;
+                                </style>
+                            </TableColumn>
+                            <TableColumn fx:id="actorBirthDateColumn" prefWidth="100" text="Birth Date"
+                                         style="-fx-text-fill: #ffffff;">
+                                <style>
+                                    -fx-text-fill: #f5c518;
+                                    -fx-font-weight: bold;
+                                </style>
+                            </TableColumn>
+                            <TableColumn fx:id="actorGenderColumn" prefWidth="80" text="Gender"
+                                         style="-fx-text-fill: #ffffff;">
+                                <style>
+                                    -fx-text-fill: #f5c518;
+                                    -fx-font-weight: bold;
+                                </style>
+                            </TableColumn>
+                            <TableColumn fx:id="actorNationalityColumn" prefWidth="120" text="Nationality"
+                                         style="-fx-text-fill: #ffffff;">
+                                <style>
+                                    -fx-text-fill: #f5c518;
+                                    -fx-font-weight: bold;
+                                </style>
+                            </TableColumn>
+                            <TableColumn fx:id="actorNotableWorksColumn" prefWidth="300" text="Notable Works"
+                                         style="-fx-text-fill: #ffffff;">
+                                <style>
+                                    -fx-text-fill: #f5c518;
+                                    -fx-font-weight: bold;
+                                </style>
+                            </TableColumn>
+                        </columns>
+                        <style>
+                            -fx-text-fill: #ffffff;
+                            -fx-table-cell-border-color: #333333;
+                            -fx-table-header-border-color: #333333;
+                        </style>
+                    </TableView>
+                </VBox>
+            </Tab>
+
+            <!-- Directors Tab -->
+            <Tab text="Directors" style="-fx-background-color: #0a0a0a;">
+                <VBox style="-fx-background-color: #0f0f0f; -fx-padding: 15; -fx-spacing: 10;">
+                    <HBox style="-fx-spacing: 10; -fx-alignment: center-left;">
+                        <TextField fx:id="directorSearchField" promptText="Search directors..." style="-fx-pref-width: 300px; -fx-background-color: #1a1a1a; -fx-text-fill: white; -fx-prompt-text-fill: #666666; -fx-border-color: #333333; -fx-border-radius: 4; -fx-padding: 5 10;" />
+                    </HBox>
+                    <TableView fx:id="directorsTable" style="-fx-background-color: #1a1a1a;" VBox.vgrow="ALWAYS">
+                        <columns>
+                            <TableColumn fx:id="directorNameColumn" prefWidth="200" text="Name"
+                                         style="-fx-text-fill: #ffffff;">
+                                <style>
+                                    -fx-text-fill: #f5c518;
+                                    -fx-font-weight: bold;
+                                </style>
+                            </TableColumn>
+                            <TableColumn fx:id="directorBirthDateColumn" prefWidth="100" text="Birth Date"
+                                         style="-fx-text-fill: #ffffff;">
+                                <style>
+                                    -fx-text-fill: #f5c518;
+                                    -fx-font-weight: bold;
+                                </style>
+                            </TableColumn>
+                            <TableColumn fx:id="directorGenderColumn" prefWidth="80" text="Gender"
+                                         style="-fx-text-fill: #ffffff;">
+                                <style>
+                                    -fx-text-fill: #f5c518;
+                                    -fx-font-weight: bold;
+                                </style>
+                            </TableColumn>
+                            <TableColumn fx:id="directorNationalityColumn" prefWidth="120" text="Nationality"
+                                         style="-fx-text-fill: #ffffff;">
+                                <style>
+                                    -fx-text-fill: #f5c518;
+                                    -fx-font-weight: bold;
+                                </style>
+                            </TableColumn>
+                            <TableColumn fx:id="directorNotableWorksColumn" prefWidth="300" text="Notable Works"
+                                         style="-fx-text-fill: #ffffff;">
+                                <style>
+                                    -fx-text-fill: #f5c518;
+                                    -fx-font-weight: bold;
+                                </style>
+                            </TableColumn>
+                        </columns>
+                        <style>
+                            -fx-text-fill: #ffffff;
+                            -fx-table-cell-border-color: #333333;
+                            -fx-table-header-border-color: #333333;
+                        </style>
+                    </TableView>
+                </VBox>
+            </Tab>
+        </TabPane>
+        <Label fx:id="statusLabel" style="-fx-text-fill: #f5c518; -fx-padding: 5 0 0 0;"/>
+    </VBox>
+</VBox>

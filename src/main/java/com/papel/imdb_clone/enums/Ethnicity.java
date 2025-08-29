@@ -37,4 +37,8 @@ public enum Ethnicity {
         }
         throw new IllegalArgumentException("Unknown ethnicity: " + input);
     }
+
+    public String toLowerCase() {
+        return label.toLowerCase();
+    }
 }

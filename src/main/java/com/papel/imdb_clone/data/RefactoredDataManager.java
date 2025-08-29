@@ -176,4 +176,12 @@ public class RefactoredDataManager {
     public Object getSeriesRepository() {
         return seriesRepository;
     }
+
+    public CelebrityService<Actor> getActorService() {
+        return actorService;
+    }
+
+    public CelebrityService<Director> getDirectorService() {
+        return directorService;
+    }
 }

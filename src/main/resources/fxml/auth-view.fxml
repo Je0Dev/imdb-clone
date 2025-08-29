@@ -6,7 +6,8 @@
 <?import javafx.scene.layout.*?>
 <?import javafx.scene.text.*?>
 <StackPane style="-fx-background-color: #0f0f0f;" xmlns="http://javafx.com/javafx/17.0.12"
-           xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.papel.imdb_clone.controllers.AuthController">
+           xmlns:fx="http://javafx.com/fxml/1"
+           fx:controller="com.papel.imdb_clone.controllers.AuthController">
 
 
     <!-- Login Form -->

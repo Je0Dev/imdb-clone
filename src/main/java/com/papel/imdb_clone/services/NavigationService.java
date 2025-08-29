@@ -1,5 +1,6 @@
 package com.papel.imdb_clone.services;
 
+import com.papel.imdb_clone.controllers.ContentDetailsController;
 import com.papel.imdb_clone.controllers.RefactoredMainController;
 import com.papel.imdb_clone.controllers.coordinator.UICoordinator;
 import com.papel.imdb_clone.service.ServiceLocator;
@@ -11,6 +12,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.util.Stack;
 
 /**
  * Service for handling navigation between views.
@@ -18,6 +20,8 @@ import java.io.IOException;
 public class NavigationService {
     private static final Logger logger = LoggerFactory.getLogger(NavigationService.class);
     private static NavigationService instance;
+    private final Stack<Scene> sceneStack = new Stack<>();
+    private String posterUrl;
 
     private NavigationService() {
         // Private constructor to enforce singleton pattern
@@ -80,5 +84,55 @@ public class NavigationService {
             logger.error("Failed to navigate to main app: {}", e.getMessage(), e);
             throw new RuntimeException("Failed to initialize application: " + e.getMessage(), e);
         }
+    }
+
+    public void showCelebrities() {
+        navigateTo("/fxml/celebrities-view.fxml", ServiceLocator.getPrimaryStage(), "Celebrities");
+    }
+
+
+    /**
+     * Shows the content details view.
+     *
+     * @param title     The title of the content
+     * @param year      The release year(s)
+     * @param rating    The content rating
+     * @param genre     The content genre
+     * @param boxOffice The box office earnings
+     * @param awards    The awards received
+     * @param cast      The main cast
+     */
+    public void showContentDetails(String title, String year, String rating, String genre,
+                                   String boxOffice, String awards, String cast) {
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/content-details.fxml"));
+            Parent root = loader.load();
+            ContentDetailsController controller = loader.getController();
+            controller.setContentDetails(title, year, rating, genre, boxOffice, awards, cast);
+            Stage currentStage = ServiceLocator.getPrimaryStage();
+            sceneStack.push(currentStage.getScene());
+
+            Scene newScene = new Scene(root);
+            currentStage.setScene(newScene);
+        } catch (IOException e) {
+            logger.error("Failed to load content details view", e);
+            throw new RuntimeException("Failed to load content details: " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Navigates back to the previous view.
+     */
+    public void goBack() {
+        if (!sceneStack.isEmpty()) {
+            Scene previousScene = sceneStack.pop();
+            if (previousScene != null) {
+                ServiceLocator.getPrimaryStage().setScene(previousScene);
+            }
+        }
+    }
+
+    public void showHome() {
+        navigateTo("/fxml/main-refactored.fxml", ServiceLocator.getPrimaryStage(), "IMDB Clone App");
     }
 }

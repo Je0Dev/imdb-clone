@@ -3,7 +3,11 @@ package com.papel.imdb_clone.model;
 import com.papel.imdb_clone.enums.Ethnicity;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 public class Actor extends Celebrity {
     private Ethnicity ethnicity;
@@ -77,16 +81,19 @@ public class Actor extends Celebrity {
         this.notableWorks = notableWorks;
     }
 
-
-    //TODO: implement this method
-    public void addMovie(Movie movie) {
-    }
-
     public void setFirstName(String firstName) {
         this.firstName = firstName;
     }
 
     public void setLastName(String lastName) {
         this.lastName = lastName;
+    }
+
+
+    public List<String> getNotableWorks() {
+        if (notableWorks == null || notableWorks.trim().isEmpty()) {
+            return new ArrayList<>();
+        }
+        return Arrays.stream(notableWorks.split(",")).map(String::trim).collect(Collectors.toList());
     }
 }

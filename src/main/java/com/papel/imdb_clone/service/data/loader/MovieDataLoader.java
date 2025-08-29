@@ -7,6 +7,7 @@ import com.papel.imdb_clone.model.Director;
 import com.papel.imdb_clone.model.Movie;
 import com.papel.imdb_clone.repository.impl.InMemoryMovieRepository;
 import com.papel.imdb_clone.service.CelebrityService;
+import com.papel.imdb_clone.service.ContentService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -25,7 +26,7 @@ import java.util.Optional;
  */
 public class MovieDataLoader extends BaseDataLoader {
     private static final Logger logger = LoggerFactory.getLogger(MovieDataLoader.class);
-    private final InMemoryMovieRepository movieRepository;
+    private final ContentService<Movie> movieService;
     private final CelebrityService<Actor> actorService;
     private final CelebrityService<Director> directorService;
     private char gender;
@@ -33,11 +34,19 @@ public class MovieDataLoader extends BaseDataLoader {
     private LocalDate birthDate;
 
     public MovieDataLoader(
-            InMemoryMovieRepository movieRepository,
-
+            ContentService<Movie> movieService,
             CelebrityService<Actor> actorService,
             CelebrityService<Director> directorService) {
-        this.movieRepository = movieRepository;
+        if (movieService == null) {
+            throw new IllegalArgumentException("movieService cannot be null");
+        }
+        if (actorService == null) {
+            throw new IllegalArgumentException("actorService cannot be null");
+        }
+        if (directorService == null) {
+            throw new IllegalArgumentException("directorService cannot be null");
+        }
+        this.movieService = movieService;
         this.actorService = actorService;
         this.directorService = directorService;
     }
@@ -134,6 +143,9 @@ public class MovieDataLoader extends BaseDataLoader {
                             movie.setReleaseDate(releaseDate);
                             movie.setRating(rating);
                             movie.setDuration(duration);
+
+                            // Save through service only (which will handle repository saving)
+                            movie = movieService.save(movie);
 
                             // Set genres with improved handling
                             for (String genreName : genreNames) {
@@ -240,8 +252,7 @@ public class MovieDataLoader extends BaseDataLoader {
 
 
                             try {
-                                // Add the movie using addMovie() to preserve pre-defined IDs
-                                movieRepository.addMovie(movie);
+                                InMemoryMovieRepository.addMovie(movie);
                                 count++;
                                 logger.debug("Successfully loaded movie: {} ({}), ID: {}",
                                         movie.getTitle(), movie.getReleaseYear(), movie.getId());

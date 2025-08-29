@@ -1,64 +1,92 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <?import javafx.scene.control.*?>
+<?import javafx.scene.effect.DropShadow?>
 <?import javafx.scene.layout.*?>
-<?import javafx.scene.text.Text?>
-<SplitPane dividerPositions="0.3" xmlns:fx="http://javafx.com/fxml/1"
-           fx:controller="com.papel.imdb_clone.controllers.ContentController">
+<?import javafx.scene.text.*?>
+<SplitPane dividerPositions="0.3" minHeight="700" minWidth="1200" prefHeight="700" prefWidth="1200"
+           style="-fx-background-color: #121212;" xmlns="http://javafx.com/javafx/17.0.12"
+           xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.papel.imdb_clone.controllers.ContentController">
 
     <!-- Left Pane: Series List -->
-
-    <VBox style="-fx-padding: 10;">
-        <HBox spacing="10" style="-fx-padding: 0 0 10 0;">
-            <Label text="TV Series" style="-fx-font-size: 18; -fx-font-weight: bold;"/>
-            />
-            <Button text="Add Series" onAction="#handleAddSeries" styleClass="action-button"/>
+    <VBox spacing="15" style="-fx-padding: 20; -fx-background-color: #1E1E1E;" VBox.vgrow="ALWAYS">
+        <HBox alignment="CENTER_LEFT" spacing="20" style="-fx-padding: 0 0 15 0;">
+            <Text style="-fx-fill: #FFD700; -fx-font-size: 24px; -fx-font-weight: bolder;" text="SERIES MANAGEMENT">
+                <effect>
+                    <DropShadow color="rgba(255,215,0,0.5)" radius="10" spread="0.3"/>
+                </effect>
+            </Text>
         </HBox>
 
-        <TableView fx:id="seriesTable" style="-fx-fixed-cell-size: 35;" VBox.vgrow="ALWAYS">
+        <!-- Series List -->
+        <TableView fx:id="seriesTable"
+                   style="-fx-background-color: transparent; -fx-text-fill: #FFFFFF;                           -fx-table-cell-border-color: transparent; -fx-selection-bar: #2D2D2D;"
+                   VBox.vgrow="ALWAYS">
             <columns>
-                <TableColumn fx:id="seriesTitleColumn" text="Title" prefWidth="150"/>
-                <TableColumn fx:id="seriesYearColumn" text="Year" prefWidth="60"/>
-                <TableColumn fx:id="seriesGenreColumn" text="Genre" prefWidth="100"/>
-                <TableColumn fx:id="seriesSeasonsColumn" text="Seasons" prefWidth="70"/>
+                <TableColumn fx:id="seriesTitleColumn" prefWidth="300" sortable="true"
+                             style="-fx-text-fill: #00B0FF; -fx-font-weight: bold;" text="TITLE"/>
+                <TableColumn fx:id="seriesYearColumn" prefWidth="100" sortable="true" style="-fx-text-fill: #4FC3F7;"
+                             text="YEAR"/>
+                <TableColumn fx:id="seriesSeasonsColumn" prefWidth="100" sortable="true" style="-fx-text-fill: #FFAB91;"
+                             text="SEASONS"/>
+                <TableColumn fx:id="seriesRatingColumn" prefWidth="120" sortable="true" style="-fx-text-fill: #FFD54F;"
+                             text="RATING"/>
             </columns>
+            <columnResizePolicy>
+                <TableView fx:constant="CONSTRAINED_RESIZE_POLICY"/>
+            </columnResizePolicy>
+            <placeholder>
+                <VBox alignment="CENTER" prefHeight="414.0" prefWidth="327.0" spacing="10">
+                    <Text style="-fx-fill: #777; -fx-font-size: 14;" text="No TV series found"/>
+                    <Text style="-fx-fill: #555; -fx-font-size: 12;" text="Click 'Add New Series' to get started"/>
+                </VBox>
+            </placeholder>
         </TableView>
     </VBox>
 
     <!-- Right Pane: Series Details -->
-    <VBox style="-fx-padding: 10;" spacing="10">
-
+    <VBox spacing="15" style="-fx-padding: 20; -fx-background-color: #1E1E1E;" VBox.vgrow="ALWAYS">
         <!-- Series Header -->
-        <HBox spacing="10" style="-fx-padding: 0 0 10 0; -fx-border-color: #e0e0e0; -fx-border-width: 0 0 1 0;">
-            <VBox spacing="5">
-                <Text fx:id="seriesTitleLabel" style="-fx-font-size: 24; -fx-font-weight: bold;"/>
-                <HBox spacing="20">
-                    <Label fx:id="yearLabel" style="-fx-text-fill: #666;"/>
-                    <Label fx:id="genreLabel" style="-fx-text-fill: #666;"/>
-                    <Label fx:id="seasonsCountLabel" style="-fx-text-fill: #666;"/>
-                </HBox>
-            </VBox>
-            />
-            <VBox spacing="5" alignment="CENTER_RIGHT">
-                <HBox spacing="5">
-                    <Button text="Edit" onAction="#handleEditSeries" styleClass="action-button"/>
-                    <Button text="Delete" onAction="#handleDeleteSeries" styleClass="delete-button"/>
-                </HBox>
-                <Button text="Rate" onAction="#handleRateSeries" styleClass="action-button"/>
-            </VBox>
-        </HBox>
-
-
-        <!-- Seasons and Episodes -->
-        <VBox spacing="5" VBox.vgrow="ALWAYS">
-            <HBox spacing="10" alignment="CENTER_LEFT">
-                <Label text="Seasons &amp; Episodes" style="-fx-font-weight: bold;"/>
-                />
-                <Button text="Add Season" onAction="#handleAddSeason" styleClass="small-button"/>
-                <Button text="Add Episode" onAction="#handleAddEpisode" styleClass="small-button"/>
+        <VBox spacing="10" style="-fx-padding: 0 0 15 0; -fx-border-color: #333; -fx-border-width: 0 0 1 0;">
+            <HBox alignment="CENTER_LEFT" spacing="15">
+                <Text fx:id="seriesTitleLabel" style="-fx-font-size: 24; -fx-font-weight: bold; -fx-fill: #FFFFFF;"/>
+                <Text fx:id="seriesYearLabel" style="-fx-fill: #AAAAAA; -fx-font-size: 20;"/>
             </HBox>
-            <TreeView fx:id="seasonsTreeView" VBox.vgrow="ALWAYS" showRoot="false"/>
+            <Text style="-fx-fill: #FFD700; -fx-font-weight: bold; -fx-font-size: 16;" text="SEASONS">
+                <effect>
+                    <DropShadow color="rgba(255,215,0,0.2)" radius="5" spread="0.2"/>
+                </effect>
+            </Text>
+            <Text fx:id="seriesDescriptionLabel" style="-fx-fill: #CCCCCC; -fx-font-size: 13; -fx-wrap-text: true;"/>
+            <Button onAction="#handleAddSeason"
+                    style="-fx-background-color: transparent; -fx-text-fill: #00B0FF;                                -fx-border-color: #00B0FF; -fx-border-width: 1.5; -fx-border-radius: 15;                                -fx-padding: 5 12; -fx-cursor: hand; -fx-font-size: 12;"
+                    text="+ Add Season"/>
+            <Button onAction="#handleAddSeries"
+                    style="-fx-background-color: #00B0FF; -fx-text-fill: #000000; -fx-font-weight: bold;                            -fx-font-size: 14; -fx-padding: 8 20; -fx-background-radius: 20;                            -fx-cursor: hand; -fx-effect: dropshadow(gaussian, rgba(0,176,255,0.3), 10, 0, 0, 3);"
+                    text="+ Add New Series">
+            </Button>
+
+            <!-- Action Buttons -->
+            <HBox spacing="10" style="-fx-padding: 10 0 0 0;"/>
+        </VBox>
+
+        <!-- Seasons and Episodes Section -->
+        <VBox spacing="10" VBox.vgrow="ALWAYS">
+            <HBox alignment="CENTER_LEFT" spacing="15" style="-fx-padding: 5 0;">
+                <children>
+
+                    <TreeView fx:id="seasonsTreeView" prefHeight="534.0" prefWidth="376.0" showRoot="false"
+                              style="-fx-background-color: #2D2D2D; -fx-text-fill: #FFFFFF;                              -fx-border-color: #333; -fx-border-radius: 8; -fx-padding: 5;">
+                    </TreeView>
+                </children>
+            </HBox>
+
+            <!-- Add Episode Button (positioned at the bottom) -->
+            <HBox alignment="CENTER_RIGHT" style="-fx-padding: 10 0 0 0;">
+                <Button onAction="#handleAddEpisode"
+                        style="-fx-background-color: #00B0FF; -fx-text-fill: #000000;                                -fx-font-weight: bold; -fx-padding: 8 20; -fx-background-radius: 15;                                -fx-cursor: hand; -fx-font-size: 13;"
+                        text="+ Add Episode to Selected Season"/>
+            </HBox>
         </VBox>
     </VBox>
-
 </SplitPane>

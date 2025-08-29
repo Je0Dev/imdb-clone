@@ -118,4 +118,8 @@ public class Season {
     public <E> void setEpisodes(List<Episode> episodes) {
         this.episodes = episodes;
     }
+
+    public int getTotalEpisodes() {
+        return episodes.size();
+    }
 }

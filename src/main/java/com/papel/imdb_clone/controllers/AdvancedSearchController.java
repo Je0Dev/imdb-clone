@@ -7,6 +7,7 @@ import com.papel.imdb_clone.model.Content;
 import com.papel.imdb_clone.service.SearchService;
 import com.papel.imdb_clone.service.ServiceLocator;
 import com.papel.imdb_clone.util.UIUtils;
+import javafx.application.Platform;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -18,7 +19,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -35,7 +35,6 @@ public class AdvancedSearchController {
     private final long defaultCacheExpiration = 30;
     private final TimeUnit timeUnit = TimeUnit.MINUTES;
 
-    // Search form fields
     // Search form fields
     @FXML
     private TextField titleField;
@@ -86,18 +85,6 @@ public class AdvancedSearchController {
     @FXML
     private CheckBox seriesCheckBox;
 
-    // Pagination
-    @FXML
-    private Button prevPageButton;
-    @FXML
-    private Button nextPageButton;
-    @FXML
-    private Label pageInfoLabel;
-
-    private int currentPage = 1;
-    private final int itemsPerPage = 10;
-    private final int totalItems = 0;
-
     public AdvancedSearchController() {
         this.searchService = ServiceLocator.getInstance().getService(SearchService.class);
     }
@@ -107,7 +94,6 @@ public class AdvancedSearchController {
         setupTableColumns();
         setupGenreComboBox();
         setupRatingSlider();
-        updatePageInfo();
         setupSortOptions();
     }
 
@@ -161,51 +147,78 @@ public class AdvancedSearchController {
     @FXML
     private void handleSearch() {
         try {
-            if (currentSearchTask != null && !currentSearchTask.isDone()) {
-                currentSearchTask.cancel(true);
+            // Cancel any existing search
+            if (currentSearchTask != null && currentSearchTask.isRunning()) {
+                currentSearchTask.cancel();
             }
 
-            SearchCriteria criteria = buildSearchCriteria();
-            if (criteria == null) {
-                return; // Validation failed
-            }
-
+            // Show loading indicator
             searchProgressIndicator.setVisible(true);
-            statusLabel.setText("Searching...");
 
-            currentSearchTask = new Task<>() {
-                @Override
-                protected ObservableList<Content> call() throws Exception {
-                    List<Content> results = searchService.searchContent(criteria);
-                    // Apply pagination
-                    int fromIndex = (currentPage - 1) * itemsPerPage;
-                    int toIndex = Math.min(fromIndex + itemsPerPage, results.size());
-                    return FXCollections.observableArrayList(
-                            fromIndex < toIndex ? results.subList(fromIndex, toIndex) : Collections.emptyList()
-                    );
-                }
-            };
+            // Update status label if it exists
+            if (statusLabel != null) {
+                statusLabel.setText("Searching...");
+            }
 
-            currentSearchTask.setOnSucceeded(e -> {
+            // Create a new search task
+            currentSearchTask = new SearchTask();
+
+            // Handle task completion
+            currentSearchTask.setOnSucceeded(event -> {
                 ObservableList<Content> results = currentSearchTask.getValue();
                 resultsTable.setItems(results);
                 updateResultsCount(results.size());
                 searchProgressIndicator.setVisible(false);
-                statusLabel.setText("");
+
+                // Update status label if it exists
+                if (statusLabel != null) {
+                    statusLabel.setText("");
+                }
             });
 
-            currentSearchTask.setOnFailed(e -> {
-                Throwable ex = currentSearchTask.getException();
-                logger.error("Search failed", ex);
-                statusLabel.setText("Search failed: " + ex.getMessage());
-                searchProgressIndicator.setVisible(false);
+            // Handle task failure
+            currentSearchTask.setOnFailed(event -> {
+                Throwable exception = currentSearchTask.getException();
+                logger.error("Search failed", exception);
+
+                // Show error alert
+                Platform.runLater(() -> {
+                    UIUtils.showError("Search Error", "An error occurred while performing the search: " + exception.getMessage());
+
+                    // Update status label if it exists
+                    if (statusLabel != null) {
+                        statusLabel.setText("Search failed");
+                    }
+                });
             });
 
+            // Start the task in a background thread
             new Thread(currentSearchTask).start();
         } catch (Exception e) {
-            logger.error("Error in handleSearch", e);
-            statusLabel.setText("Error: " + e.getMessage());
-            searchProgressIndicator.setVisible(false);
+            logger.error("Error performing search: {}", e.getMessage(), e);
+
+            // Show error alert
+            Platform.runLater(() -> {
+                UIUtils.showError("Search Error", "An error occurred while performing the search: " + e.getMessage());
+
+                // Update status label if it exists
+                if (statusLabel != null) {
+                    statusLabel.setText("Search failed");
+                }
+            });
+        }
+    }
+
+    private class SearchTask extends Task<ObservableList<Content>> {
+        @Override
+        protected ObservableList<Content> call() throws Exception {
+            SearchCriteria criteria = buildSearchCriteria();
+            if (criteria == null) {
+                return FXCollections.observableArrayList();
+            }
+
+            List<Content> results = searchService.searchContent(criteria);
+            return FXCollections.observableArrayList(results);
         }
     }
 
@@ -299,19 +312,9 @@ public class AdvancedSearchController {
         }
     }
 
-    @FXML
-    private void nextPage() {
-        currentPage++;
-        updatePageInfo();
-        handleSearch();
-    }
-
-    @FXML
-    private void previousPage() {
-        if (currentPage > 1) {
-            currentPage--;
-            updatePageInfo();
-            handleSearch();
+    private void updateResultsCount(int count) {
+        if (resultsCountLabel != null) {
+            resultsCountLabel.setText(String.valueOf(count));
         }
     }
 
@@ -325,18 +328,5 @@ public class AdvancedSearchController {
         genreComboBox.getSelectionModel().clearSelection();
         ratingSlider.setValue(0);
         sortByCombo.getSelectionModel().selectFirst();
-        currentPage = 1;
-        updatePageInfo();
     }
-
-
-    private void updateResultsCount(int count) {
-        resultsCountLabel.setText(String.valueOf(count));
-    }
-
-    private void updatePageInfo() {
-        pageInfoLabel.setText(String.format("Page %d", currentPage));
-        prevPageButton.setDisable(currentPage <= 1);
-    }
-
 }

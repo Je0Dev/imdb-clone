@@ -63,6 +63,28 @@
                                                    blue="0.6000000238418579"/>
                                         </color>
                                     </Stop>
+                                </stops>
+                            </RadialGradient>
+                        </textFill>
+                    </Button>
+                    <Button onAction="#showTVShows"
+                            style="-fx-background-color: #f5c518; -fx-text-fill: #000000; -fx-font-size: 18px; -fx-font-weight: bold; -fx-padding: 15 40; -fx-cursor: hand; -fx-background-radius: 5;"
+                            text="TV SHOWS">
+                        <textFill>
+                            <RadialGradient centerX="0.47237569060773477" centerY="0.5" cycleMethod="REFLECT"
+                                            radius="0.5">
+                                <stops>
+                                    <Stop>
+                                        <color>
+                                            <Color/>
+                                        </color>
+                                    </Stop>
+                                    <Stop offset="0.5533436031125331">
+                                        <color>
+                                            <Color red="0.1379999965429306" green="0.5769000053405762"
+                                                   blue="0.6000000238418579"/>
+                                        </color>
+                                    </Stop>
                                     <Stop offset="1.0">
                                         <color>
                                             <Color red="0.7236841917037964" green="0.16081871092319489"
@@ -73,9 +95,9 @@
                             </RadialGradient>
                         </textFill>
                     </Button>
-                    <Button onAction="#showTVShows"
-                            style="-fx-background-color: #f5c518; -fx-text-fill: #000000; -fx-font-size: 18px; -fx-font-weight: bold; -fx-padding: 15 40; -fx-cursor: hand; -fx-background-radius: 5;"
-                            text="SERIES">
+                    <Button onAction="#showCelebrities"
+                            style="-fx-background-color: #f5c518; -fx-text-fill: #000000; -fx-font-size: 18px; -fx-font-weight: bold; -fx-padding: 15 20; -fx-cursor: hand; -fx-background-radius: 5;"
+                            text="CELEBRITIES">
                         <textFill>
                             <LinearGradient cycleMethod="REFLECT" endX="1.0" endY="1.0" startX="0.971563981042654">
                                 <stops>

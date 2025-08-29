@@ -11,6 +11,7 @@ import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
+import javafx.scene.layout.Pane;
 import javafx.stage.Stage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -169,21 +170,30 @@ public class ImprovedMovieApp extends Application {
             controller.setPrimaryStage(primaryStage);
             System.out.println("[Startup] Primary stage set in controller");
 
-            // Set up the scene
-            Scene scene = new Scene(root, config.getMinWidth(), config.getMinHeight());
+            // Set up the scene with initial size
+            double initialWidth = config.getMinWidth() * 1.5; // Start with a bit more than minimum
+            double initialHeight = config.getMinHeight() * 1.5;
+            
+            Scene scene = new Scene(root, initialWidth, initialHeight);
             primaryStage.setScene(scene);
             primaryStage.setTitle(config.getAppTitle() + (currentUser != null ? " - " + currentUser.getUsername() : ""));
+            
+            // Set minimum size constraints
             primaryStage.setMinWidth(config.getMinWidth());
             primaryStage.setMinHeight(config.getMinHeight());
+            
+            // Allow window resizing
+            primaryStage.setResizable(true);
+            
+            // Center the window on screen
             primaryStage.centerOnScreen();
-
-            // Publish session globally
-            try {
-                AppStateManager.getInstance().setSession(currentUser, currentSessionToken);
-                System.out.println("[Startup] Session published");
-            } catch (Exception e) {
-                logger.warn("Failed to publish session via AppStateManager", e);
-                System.err.println("[Startup][WARN] Failed to publish session: " + e);
+            
+            // Apply CSS for better resizing behavior
+            scene.getStylesheets().add(getClass().getResource("/css/styles.css").toExternalForm());
+            
+            // Make root container resizable
+            if (root instanceof Pane) {
+                ((Pane) root).setMinSize(config.getMinWidth(), config.getMinHeight());
             }
 
             // Show the main application

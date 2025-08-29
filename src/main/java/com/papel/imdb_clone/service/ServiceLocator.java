@@ -65,6 +65,10 @@ public class ServiceLocator {
         }
     }
 
+    public static Stage getPrimaryStage() {
+        return primaryStage;
+    }
+
     private void initializeServices() {
         if (servicesInitialized) {
             return;

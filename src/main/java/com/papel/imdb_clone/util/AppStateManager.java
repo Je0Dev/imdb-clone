@@ -74,44 +74,6 @@ public class AppStateManager {
         properties.setProperty(KEY_LAST_TAB_INDEX, "0");
     }
 
-    // ========== Session Management ==========
-
-    public static AppStateManager getInstance() {
-        return INSTANCE;
-    }
-
-    public synchronized void setSession(User user, String token) {
-        this.currentUser = user;
-        this.sessionToken = token;
-        AppEventBus.getInstance().publish(EVT_USER_LOGGED_IN, user);
-    }
-
-    public synchronized void clearSession() {
-        this.currentUser = null;
-        this.sessionToken = null;
-        AppEventBus.getInstance().publish(EVT_USER_LOGGED_OUT, null);
-    }
-
-
-    /**
-     * Updates the current user in the application state.
-     * This is a convenience method that updates the current user
-     * without changing the session token.
-     *
-     * @param user The updated user object
-     */
-    public void setCurrentUser(User user) {
-        this.currentUser = user;
-        // Notify listeners that user data was updated
-        if (user != null) {
-            AppEventBus.getInstance().publish(EVT_USER_LOGGED_IN, user);
-        } else {
-            AppEventBus.getInstance().publish(EVT_USER_LOGGED_OUT, null);
-        }
-    }
-
-
-    // ========== Settings Management ==========
 
     private void saveSettings() {
         try (var out = Files.newOutputStream(settingsFile)) {

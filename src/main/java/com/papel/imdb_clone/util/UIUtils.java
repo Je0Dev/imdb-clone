@@ -90,17 +90,6 @@ public class UIUtils {
     }
 
 
-    /**
-     * Creates a standardized alert dialog with consistent styling.
-     * The alert is configured with the specified type, title, header, and content.
-     *
-     * @param type    The type of alert (e.g., ERROR, WARNING, INFORMATION)
-     * @param title   The title of the alert
-     * @param header  The header text (optional, can be null)
-     * @param content The content message
-     * @return A configured Alert instance
-     * @throws IllegalArgumentException if type, title, or content is null
-     */
     private static Alert createAlert(Alert.AlertType type, String title, String header, String content) {
         Alert alert = new Alert(type);
         alert.setTitle(title);
@@ -118,16 +107,7 @@ public class UIUtils {
         return alert;
     }
 
-    /**
-     * Displays a simple alert with the specified type, title, and message.
-     * This is a convenience method that creates and shows an alert in one call.
-     *
-     * @param type    The type of alert (e.g., ERROR, WARNING, INFORMATION)
-     * @param title   The title of the alert
-     * @param message The message to display
-     * @throws IllegalArgumentException if any parameter is null
-     */
-    private static void showAlert(Alert.AlertType type, String title, String message) {
+    public static void showAlert(Alert.AlertType type, String title, String message) {
         Alert alert = createAlert(type, title, null, message);
         alert.showAndWait();
     }

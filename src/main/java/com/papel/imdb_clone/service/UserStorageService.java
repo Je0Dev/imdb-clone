@@ -7,13 +7,23 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.ConsoleHandler;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class UserStorageService {
     private static final String USER_DATA_FILE = "user_data.ser";
     private static UserStorageService instance;
+    private final Logger logger;
 
     private UserStorageService() {
         // Private constructor to enforce singleton pattern
+        logger = Logger.getLogger(UserStorageService.class.getName());
+        logger.setLevel(Level.INFO);
+        logger.setUseParentHandlers(false);
+        logger.addHandler(new ConsoleHandler());
+        logger.setUseParentHandlers(false);
+
     }
 
     public static synchronized UserStorageService getInstance() {
