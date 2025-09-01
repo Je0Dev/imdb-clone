@@ -1,5 +1,6 @@
 package com.papel.imdb_clone.service.data.loader;
 
+import com.papel.imdb_clone.util.DataFileLoader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -27,77 +28,20 @@ public abstract class BaseDataLoader {
         if (filename == null || filename.trim().isEmpty()) {
             throw new IllegalArgumentException("Filename cannot be null or empty");
         }
-
-        // Normalize the filename
-        String normalizedFilename = normalizeFilename(filename);
-        logger.debug("Attempting to load file: {}", normalizedFilename);
-
-        // Try different approaches to load the resource
-        String[] resourcePaths = {
-            "/data/" + normalizedFilename,  // Standard Maven resources directory (with leading slash)
-            "data/" + normalizedFilename,   // Standard Maven resources directory (without leading slash)
-            "/" + normalizedFilename,       // Root of resources
-            normalizedFilename,              // Direct path
-            "/src/main/resources/data/" + normalizedFilename, // Common Maven source path
-            "src/main/resources/data/" + normalizedFilename   // Common Maven source path (relative)
-        };
-
-        // Try classpath resources first
-        for (String path : resourcePaths) {
-            // Try with context class loader first
-            InputStream stream = Thread.currentThread().getContextClassLoader().getResourceAsStream(path);
-            if (stream != null) {
-                logger.info("Successfully loaded resource from classpath: {}", path);
-                return stream;
-            }
-
-            // Try with this class's class loader
-            stream = getClass().getResourceAsStream(path);
-            if (stream != null) {
-                logger.info("Successfully loaded resource using class loader: {}", path);
-                return stream;
-            }
-        }
-
-        // Try direct file paths (for development and testing)
-        String[] filePaths = {
-            "src/main/resources/data/" + normalizedFilename,
-            "resources/data/" + normalizedFilename,
-            "data/" + normalizedFilename,
-            "./" + normalizedFilename,
-            "./data/" + normalizedFilename,
-            System.getProperty("user.dir") + "/src/main/resources/data/" + normalizedFilename,
-            System.getProperty("user.dir") + "/data/" + normalizedFilename,
-            System.getProperty("user.dir") + "/target/classes/data/" + normalizedFilename
-        };
-
-        for (String path : filePaths) {
-            try {
-                File file = new File(path).getCanonicalFile();
-                if (file.exists() && file.isFile()) {
-                    logger.info("Successfully loaded resource from file system: {}", file.getAbsolutePath());
-                    return new FileInputStream(file);
-                }
-                logger.debug("File not found: {}", file.getAbsolutePath());
-            } catch (IOException e) {
-                logger.debug("Error checking file path {}: {}", path, e.getMessage());
-            }
-        }
-
-        // If we get here, we couldn't find the file anywhere
-        String errorMsg = String.format("""
-            Failed to load resource '%s'. Checked the following locations:\n"
-            - Classpath: /data/%s, data/%s, /%s, %s\n"
-            - File system: %s/src/main/resources/data/%s, %s/data/%s, etc.
-            """,
-            normalizedFilename, 
-            normalizedFilename, normalizedFilename, normalizedFilename, normalizedFilename,
-            System.getProperty("user.dir"), normalizedFilename,
-            System.getProperty("user.dir"), normalizedFilename
-        );
         
-        logger.error(errorMsg);
-        throw new FileNotFoundException(errorMsg);
+        // Use our utility class to handle the file loading
+        try {
+            // First try with the filename as is
+            return DataFileLoader.getResourceAsStream(filename);
+        } catch (FileNotFoundException e) {
+            logger.warn("Could not load file '{}' directly, trying with 'data/' prefix", filename);
+            
+            // If that fails, try with 'data/' prefix
+            if (!filename.startsWith("data/")) {
+                return DataFileLoader.getResourceAsStream("data/" + filename);
+            }
+            throw e;
+        }
     }
 
     /**

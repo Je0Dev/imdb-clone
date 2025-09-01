@@ -7,7 +7,6 @@ import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
 
 /**
  * Handles loading and initializing content data from various sources.
@@ -18,11 +17,7 @@ public class ContentDataLoader<T extends Content> {
     private static ContentDataLoader instance;
 
     private final RefactoredDataManager dataManager;
-    private ContentService<T> contentService;
     private final ExecutorService executorService;
-    private TimeUnit timeUnit;
-    private long defaultExpirationTime;
-    private int endYear;
 
     public ContentDataLoader(RefactoredDataManager dataManager) {
         this.dataManager = dataManager;

@@ -271,15 +271,7 @@ public class ServiceLocator {
 
         // Shutdown services in reverse order of dependency
         try {
-            // Stop background executors first to prevent new tasks from scheduling
-            try {
-                logger.debug("AsyncExecutor shut down");
-            } catch (Exception e) {
-                logger.warn("Failed to shutdown AsyncExecutor", e);
-            }
-
             if (hasService(RefactoredDataManager.class)) {
-                // RefactoredDataManager might need cleanup
                 logger.debug("Shutting down RefactoredDataManager");
             }
         } catch (Exception e) {

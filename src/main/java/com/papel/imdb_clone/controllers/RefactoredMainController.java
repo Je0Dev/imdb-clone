@@ -3,8 +3,8 @@ package com.papel.imdb_clone.controllers;
 import com.papel.imdb_clone.controllers.coordinator.UICoordinator;
 import com.papel.imdb_clone.data.RefactoredDataManager;
 import com.papel.imdb_clone.model.User;
+import com.papel.imdb_clone.service.NavigationService;
 import com.papel.imdb_clone.service.ServiceLocator;
-import com.papel.imdb_clone.services.NavigationService;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -18,8 +18,6 @@ import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
-import javafx.fxml.FXMLLoader;
-import java.io.IOException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -50,14 +48,9 @@ public class RefactoredMainController {
     private Stage primaryStage;
     private User currentUser;
     private String sessionToken;
-    private final boolean isSidebarCollapsed = false;
     private String initializationError;
-    private String s;
     private boolean isInitializing = false;
     private boolean isInitialized = false;
-
-    // Static field to track if FXML loading is in progress
-    private static final boolean isFxmlLoading = false;
 
     /**
      * Default constructor for FXML loader.
@@ -289,19 +282,6 @@ public class RefactoredMainController {
         }
     }
 
-    /**
-     * Displays an error dialog with the specified title and message.
-     *
-     * @param title   the title of the error dialog
-     * @param message the error message to display
-     */
-    private void showErrorDialog(String title, String message) {
-        Alert alert = new Alert(Alert.AlertType.ERROR);
-        alert.setTitle("Error");
-        alert.setHeaderText(initializationError);
-        alert.setContentText(s);
-        alert.showAndWait();
-    }
 
     /**
      * Updates UI elements that depend on the current user/session state and refreshes views.
@@ -406,6 +386,7 @@ public class RefactoredMainController {
             logger.error("Error showing movies: {}", e.getMessage(), e);
         }
     }
+
     @FXML
     public void showAdvancedSearch(ActionEvent actionEvent) {
         try {

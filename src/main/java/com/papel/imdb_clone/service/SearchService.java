@@ -3,7 +3,6 @@ package com.papel.imdb_clone.service;
 import com.papel.imdb_clone.data.RefactoredDataManager;
 import com.papel.imdb_clone.data.SearchCriteria;
 import com.papel.imdb_clone.enums.ContentType;
-import com.papel.imdb_clone.model.Actor;
 import com.papel.imdb_clone.model.Content;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -14,17 +13,16 @@ import java.util.Collections;
 import java.util.List;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 /**
  * Service for searching content with filtering capabilities.
  */
 public class SearchService {
+
     private static final Logger logger = LoggerFactory.getLogger(SearchService.class);
     private static SearchService instance;
 
     private final RefactoredDataManager dataManager;
-    private Predicate<? super Actor> nonNull;
 
     /**
      * Creates a new SearchService.
@@ -43,95 +41,121 @@ public class SearchService {
      * @return List of matching content
      */
     public List<Content> search(SearchCriteria criteria) {
-        if (criteria == null || criteria.getQuery() == null || criteria.getQuery().trim().isEmpty()) {
-            logger.debug("Empty search query, returning empty results");
+        logger.debug("Starting search with criteria: {}", criteria);
+
+        if (criteria == null) {
+            logger.debug("Null criteria, returning empty results");
             return Collections.emptyList();
         }
 
-        String query = criteria.getQuery().trim();
-        logger.debug("Performing search for query: {}", query);
+        // Log all criteria for debugging
+        logger.debug("Search criteria - Query: '{}', Title: '{}', MinYear: {}, MaxYear: {}, MinRating: {}, Genre: {}",
+                criteria.getQuery(),
+                criteria.getTitle(),
+                criteria.getMinYear(),
+                criteria.getMaxYear(),
+                criteria.getMinRating(),
+                criteria.getGenre());
 
         // Perform search
-        return performSearch(criteria);
+        List<Content> results = performSearch(criteria);
+        logger.debug("Search returned {} results", results.size());
+        return results;
     }
 
     /**
      * Performs the actual search operation.
      */
     private List<Content> performSearch(SearchCriteria criteria) {
-        String query = criteria.getQuery().toLowerCase();
+
+        String query = criteria.getQuery() != null ? criteria.getQuery().toLowerCase() : "";
         ContentType type = criteria.getContentType();
 
+        logger.debug("Performing search with type: {}", type);
+
         // Get content based on type
-        Stream<Content> contentStream;
+        List<Content> contentList;
         if (type == ContentType.MOVIE) {
-            contentStream = dataManager.getAllMovies().stream()
-                    .map(m -> m);
+            contentList = new ArrayList<>(dataManager.getAllMovies());
+            logger.debug("Found {} movies to search through", contentList.size());
         } else if (type == ContentType.SERIES) {
-            contentStream = dataManager.getAllSeries().stream()
-                    .map(s -> s);
+            contentList = new ArrayList<>(dataManager.getAllSeries());
+            logger.debug("Found {} series to search through", contentList.size());
         } else {
+
             // Search all content types
-            contentStream = Stream.concat(
-                    dataManager.getAllMovies().stream().map(m -> (Content) m),
-                    dataManager.getAllSeries().stream().map(s -> (Content) s)
-            );
+            List<Content> movies = new ArrayList<>(dataManager.getAllMovies());
+            List<Content> series = new ArrayList<>(dataManager.getAllSeries());
+            contentList = new ArrayList<>();
+            contentList.addAll(movies);
+            contentList.addAll(series);
+            logger.debug("Found {} total items to search through ({} movies, {} series)",
+                    contentList.size(), movies.size(), series.size());
         }
 
         // Apply search filters
         List<Predicate<Content>> filters = createSearchFilters(criteria);
+        logger.debug("Created {} filters to apply", filters.size());
 
         // Apply all filters and collect results
-        return contentStream
-                .filter(content -> filters.stream().allMatch(filter -> filter.test(content)))
+        List<Content> results = contentList.stream()
+                .filter(content -> {
+                    boolean matches = filters.stream().allMatch(filter -> {
+                        boolean result = filter.test(content);
+                        if (!result) {
+                            logger.trace("Content '{}' filtered out by a filter",
+                                    content != null ? content.getTitle() : "null");
+                        }
+                        return result;
+                    });
+                    if (matches) {
+                        logger.trace("Content '{}' passed all filters",
+                                content != null ? content.getTitle() : "null");
+                    }
+                    return matches;
+                })
                 .collect(Collectors.toList());
+
+        logger.debug("After applying filters, found {} matching items", results.size());
+        return results;
     }
 
 
     private List<Predicate<Content>> createSearchFilters(SearchCriteria criteria) {
         List<Predicate<Content>> filters = new ArrayList<>();
         if (criteria == null) {
+            logger.debug("Null criteria in createSearchFilters, returning empty filters");
             return filters;
         }
 
-        // Text search filter (title or summary)
-        String searchText = criteria.getQuery() != null ? criteria.getQuery().trim().toLowerCase() : "";
+        // Log all criteria for debugging
+        logger.debug("Creating filters with criteria - Title: '{}', Query: '{}', MinYear: {}, MaxYear: {}, MinRating: {}",
+                criteria.getTitle(), criteria.getQuery(), criteria.getMinYear(), criteria.getMaxYear(), criteria.getMinRating());
+
+        // Text search filter - check both query and title
+        String searchText = "";
+        if (criteria.getTitle() != null && !criteria.getTitle().trim().isEmpty()) {
+            searchText = criteria.getTitle().trim().toLowerCase();
+        } else if (criteria.getQuery() != null && !criteria.getQuery().trim().isEmpty()) {
+            searchText = criteria.getQuery().trim().toLowerCase();
+        }
+
         if (!searchText.isEmpty()) {
+            final String finalSearchText = searchText; // Need final for lambda
+            logger.debug("Adding text search filter for: '{}'", finalSearchText);
             filters.add(content -> {
-                if (content == null) return false;
-                String title = content.getTitle() != null ? content.getTitle().toLowerCase() : "";
-                String summary = content.getSummary() != null ? content.getSummary().toLowerCase() : "";
-                return title.contains(searchText) || summary.contains(searchText);
+                if (content == null || content.getTitle() == null) {
+                    logger.trace("Content or title is null in text search filter");
+                    return false;
+                }
+                String title = content.getTitle().toLowerCase();
+                boolean matches = title.contains(finalSearchText);
+                logger.trace("Text search filter - Title: '{}', Search: '{}', Match: {}",
+                        title, finalSearchText, matches);
+                return matches;
             });
         }
 
-        // Actor filter
-        if (criteria.getActorName() != null && !criteria.getActorName().trim().isEmpty()) {
-            String actorName = criteria.getActorName().trim().toLowerCase();
-            filters.add(content -> {
-                if (content == null || content.getActors() == null) return false;
-                return content.getActors().stream()
-                        .filter(nonNull)
-                        .anyMatch(actor -> {
-                            String firstName = actor.getFirstName() != null ? actor.getFirstName().toLowerCase() : "";
-                            String lastName = actor.getLastName() != null ? actor.getLastName().toLowerCase() : "";
-                            String fullName = (firstName + " " + lastName).trim();
-                            return fullName.contains(actorName) ||
-                                    firstName.contains(actorName) ||
-                                    lastName.contains(actorName);
-                        });
-            });
-        }
-
-        // Director filter
-        if (criteria.getDirectorName() != null && !criteria.getDirectorName().trim().isEmpty()) {
-            String directorName = criteria.getDirectorName().trim().toLowerCase();
-            filters.add(content -> {
-                if (content == null) return false;
-                String director = content.getDirector() != null ? content.getDirector().toLowerCase() : "";
-                return director.contains(directorName);
-            });
-        }
 
         // Genre filter
         if (criteria.getGenre() != null) {
@@ -141,30 +165,62 @@ public class SearchService {
             });
         }
 
-        // Year range filter
+        // Year range filter - handle both min and max years
         if (criteria.getMinYear() != null && criteria.getMinYear() > 0) {
+            int minYear = criteria.getMinYear();
+            logger.debug("Adding min year filter: {}", minYear);
             filters.add(content -> {
-                if (content == null || content.getYear() == null) return false;
+                if (content == null) {
+                    logger.trace("Content is null in min year filter");
+                    return false;
+                }
                 try {
-                    Calendar cal = Calendar.getInstance();
-                    cal.setTime(content.getYear());
-                    return cal.get(Calendar.YEAR) >= criteria.getMinYear();
+                    // First try to get year from startYear field
+                    int contentYear = content.getStartYear();
+                    
+                    // If startYear is 0 (default), try to get from the Date field
+                    if (contentYear == 0 && content.getYear() != null) {
+                        Calendar cal = Calendar.getInstance();
+                        cal.setTime(content.getYear());
+                        contentYear = cal.get(Calendar.YEAR);
+                    }
+                    
+                    boolean matches = contentYear >= minYear;
+                    logger.debug("Min Year Check - Title: '{}', Content Year: {}, Min Year: {}, Match: {}",
+                            content.getTitle(), contentYear, minYear, matches);
+                    return matches;
                 } catch (Exception e) {
-                    logger.warn("Error processing year for content: " + content.getTitle(), e);
+                    logger.warn("Error processing year for content: {}", content.getTitle(), e);
                     return false;
                 }
             });
         }
 
         if (criteria.getMaxYear() != null && criteria.getMaxYear() > 0) {
+            int maxYear = criteria.getMaxYear();
+            logger.debug("Adding max year filter: {}", maxYear);
             filters.add(content -> {
-                if (content == null || content.getYear() == null) return false;
+                if (content == null) {
+                    logger.trace("Content is null in max year filter");
+                    return false;
+                }
                 try {
-                    Calendar cal = Calendar.getInstance();
-                    cal.setTime(content.getYear());
-                    return cal.get(Calendar.YEAR) <= criteria.getMaxYear();
+                    // First try to get year from startYear field
+                    int contentYear = content.getStartYear();
+                    
+                    // If startYear is 0 (default), try to get from the Date field
+                    if (contentYear == 0 && content.getYear() != null) {
+                        Calendar cal = Calendar.getInstance();
+                        cal.setTime(content.getYear());
+                        contentYear = cal.get(Calendar.YEAR);
+                    }
+                    
+                    boolean matches = contentYear <= maxYear;
+                    logger.debug("Max Year Check - Title: '{}', Content Year: {}, Max Year: {}, Match: {}",
+                            content.getTitle(), contentYear, maxYear, matches);
+                    return matches;
                 } catch (Exception e) {
-                    logger.warn("Error processing year for content: " + content.getTitle(), e);
+                    logger.warn("Error processing year for content: {}", content.getTitle(), e);
                     return false;
                 }
             });
@@ -172,10 +228,18 @@ public class SearchService {
 
         // Rating filter
         if (criteria.getMinRating() != null && criteria.getMinRating() > 0) {
+            double minRating = criteria.getMinRating();
+            logger.debug("Adding rating filter for min rating: {}", minRating);
             filters.add(content -> {
-                if (content == null) return false;
+                if (content == null) {
+                    logger.trace("Content is null in rating filter");
+                    return false;
+                }
                 Double rating = content.getImdbRating();
-                return rating != null && rating >= criteria.getMinRating();
+                boolean matches = rating != null && rating >= minRating;
+                logger.trace("Rating filter - Content: '{}', Rating: {}, Min: {}, Match: {}",
+                        content.getTitle(), rating, minRating, matches);
+                return matches;
             });
         }
 

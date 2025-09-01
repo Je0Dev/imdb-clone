@@ -145,19 +145,4 @@ public class InMemoryMovieRepository implements MovieRepository {
         }
     }
 
-    /**
-     * Clears all movies (used for testing or data reloading).
-     */
-    public void clear() {
-        lock.writeLock().lock();
-        try {
-            movies.clear();
-            nextId.set(1);
-            logger.debug("Cleared all movies");
-        } finally {
-            lock.writeLock().unlock();
-        }
-    }
-
-
 }

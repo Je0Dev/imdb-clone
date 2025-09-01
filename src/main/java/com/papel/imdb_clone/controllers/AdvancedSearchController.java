@@ -7,6 +7,7 @@ import com.papel.imdb_clone.model.Content;
 import com.papel.imdb_clone.service.SearchService;
 import com.papel.imdb_clone.service.ServiceLocator;
 import com.papel.imdb_clone.util.UIUtils;
+import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -17,6 +18,7 @@ import javafx.scene.control.cell.PropertyValueFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Calendar;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -38,10 +40,6 @@ public class AdvancedSearchController {
     private TextField titleField;
     @FXML
     private ComboBox<String> genreComboBox;
-    @FXML
-    private TextField actorField;
-    @FXML
-    private TextField directorField;
     @FXML
     private Slider ratingSlider;
     @FXML
@@ -73,8 +71,6 @@ public class AdvancedSearchController {
     @FXML
     private TableColumn<Content, String> resultImdbColumn;
     @FXML
-    private TableColumn<Content, String> resultDirectorColumn;
-    @FXML
     private Label statusLabel;
     @FXML
     private Label resultsCountLabel;
@@ -99,22 +95,38 @@ public class AdvancedSearchController {
     private void setupTableColumns() {
         // Set up table columns
         resultTitleColumn.setCellValueFactory(new PropertyValueFactory<>("title"));
+        
+        // Set up type column
         resultTypeColumn.setCellValueFactory(cellData -> {
             String type = cellData.getValue() instanceof com.papel.imdb_clone.model.Movie ? "Movie" : "Series";
             return new SimpleStringProperty(type);
         });
-        resultYearColumn.setCellValueFactory(new PropertyValueFactory<>("year"));
+        
+        // Set up year column to show the correct year value
+        resultYearColumn.setCellValueFactory(cellData -> {
+            Content content = cellData.getValue();
+            int year = content.getStartYear();
+            if (year == 0 && content.getYear() != null) {
+                Calendar cal = Calendar.getInstance();
+                cal.setTime(content.getYear());
+                year = cal.get(Calendar.YEAR);
+            }
+            return new SimpleIntegerProperty(year).asObject();
+        });
+        
+        // Set up genre column
         resultGenreColumn.setCellValueFactory(cellData -> {
             List<Genre> genres = cellData.getValue().getGenres();
             String genreString = genres != null && !genres.isEmpty() ?
                     genres.stream().map(Genre::name).collect(java.util.stream.Collectors.joining(", ")) : "N/A";
             return new SimpleStringProperty(genreString);
         });
-        resultImdbColumn.setCellValueFactory(cellData ->
-                new SimpleStringProperty(String.format("%.1f", cellData.getValue().getImdbRating())));
-        resultDirectorColumn.setCellValueFactory(cellData -> {
-            String director = cellData.getValue().getDirector();
-            return new SimpleStringProperty(director != null ? director : "N/A");
+        
+        // Set up IMDb rating column with proper null check and formatting
+        resultImdbColumn.setCellValueFactory(cellData -> {
+            Double rating = cellData.getValue().getImdbRating();
+            String ratingStr = (rating != null && rating > 0) ? String.format("%.1f", rating) : "N/A";
+            return new SimpleStringProperty(ratingStr);
         });
     }
 
@@ -223,8 +235,6 @@ public class AdvancedSearchController {
     private SearchCriteria buildSearchCriteria() {
         try {
             String keywords = keywordsField.getText().trim();
-            String actorName = actorField.getText().trim();
-            String directorName = directorField.getText().trim();
 
             // Get selected content types
             ContentType contentType = null;
@@ -239,7 +249,7 @@ public class AdvancedSearchController {
                 return null;
             }
 
-            // Parse year range
+            // Parse year range - use null for no filter instead of default values
             Integer yearFromValue = null;
             Integer yearToValue = null;
             try {
@@ -257,15 +267,12 @@ public class AdvancedSearchController {
 
             // Create criteria with basic filters
             SearchCriteria criteria = new SearchCriteria(query);
-            criteria.setTitle(keywords);
-            criteria.setQuery(keywords); // For backward compatibility
 
-            // Set actor and director names if provided
-            if (!actorName.isEmpty()) {
-                criteria.setActorName(actorName);
-            }
-            if (!directorName.isEmpty()) {
-                criteria.setDirectorName(directorName);
+            // Only set title/query if keywords are provided
+            if (keywords != null && !keywords.isEmpty()) {
+                criteria.setTitle(keywords);
+                criteria.setQuery(keywords); // For backward compatibility
+                logger.debug("Setting search keywords: {}", keywords);
             }
 
             // Set year range
@@ -276,10 +283,11 @@ public class AdvancedSearchController {
                 criteria.setMaxYear(yearToValue);
             }
 
-            // Set rating filter
+            // Set rating filter - only apply if slider is moved from 0
             double minRating = ratingSlider.getValue();
-            if (minRating > 0) {
+            if (minRating > 0.1) {  // Small threshold to account for floating point imprecision
                 criteria.setMinRating(minRating);
+                logger.debug("Setting min rating to: {}", minRating);
             }
 
             // Set genre if selected
@@ -289,7 +297,7 @@ public class AdvancedSearchController {
                     Genre genre = Genre.valueOf(genreValue);
                     criteria.setGenre(genre);
                 } catch (IllegalArgumentException e) {
-                    logger.warn("Invalid genre selected: " + genreComboBox.getValue(), e);
+                    logger.warn("Invalid genre selected: {}", genreComboBox.getValue(), e);
                 }
             }
 

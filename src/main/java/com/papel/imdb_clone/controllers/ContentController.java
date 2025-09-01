@@ -18,12 +18,9 @@ import javafx.collections.ObservableList;
 import javafx.concurrent.Task;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
-import javafx.fxml.FXMLLoader;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
-import javafx.scene.Parent;
-import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
@@ -32,7 +29,6 @@ import javafx.stage.Stage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
 import java.net.URL;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -164,11 +160,6 @@ public class ContentController extends BaseController {
     private String sessionToken;
     private int year;
     private EncryptionService encryptionService;
-    private String query;
-    private Object movieDetailsController;
-    private ContentController watchlistService;
-    private ContentController movieService;
-    private ContentController seriesService;
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {
@@ -284,33 +275,17 @@ public class ContentController extends BaseController {
      * @param movie The movie to show details for
      */
     private void showContentDetails(Movie movie) {
-        try {
-            // Load the content details view
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/content-details.fxml"));
-            Parent root = loader.load();
-            
-            // Get the controller and set the movie details
-            ContentDetailsController controller = loader.getController();
-            controller.setContentDetails(
+        // Use NavigationService to show content details
+        NavigationService navigationService = NavigationService.getInstance();
+        navigationService.showContentDetails(
                 movie.getTitle(),
                 String.valueOf(movie.getYear()),
                 String.format("%.1f/10", movie.getImdbRating()),
-                movie.getGenre().toString(),
+                movie.getGenre() != null ? movie.getGenre().toString() : "N/A",
                 movie.getBoxOffice(),
                 movie.getAwards(),
                 movie.getActors()
-            );
-            
-            // Show the content details in a new stage
-            Stage stage = new Stage();
-            stage.setTitle(movie.getTitle() + " Details");
-            stage.setScene(new Scene(root));
-            stage.show();
-            
-        } catch (IOException e) {
-            logger.error("Error loading content details view: {}", e.getMessage(), e);
-            showAlert("Error", "Failed to load content details: " + e.getMessage());
-        }
+        );
     }
 
     /**
@@ -319,33 +294,17 @@ public class ContentController extends BaseController {
      * @param series The series to show details for
      */
     private void showContentDetails(Series series) {
-        try {
-            // Load the content details view
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/content-details.fxml"));
-            Parent root = loader.load();
-            
-            // Get the controller and set the series details
-            ContentDetailsController controller = loader.getController();
-            controller.setContentDetails(
+        // Use NavigationService to show content details
+        NavigationService navigationService = NavigationService.getInstance();
+        navigationService.showContentDetails(
                 series.getTitle(),
                 String.valueOf(series.getYear()),
                 String.format("%.1f/10", series.getImdbRating()),
-                series.getGenre().toString(),
+                series.getGenre() != null ? series.getGenre().toString() : "N/A",
                 "N/A", // Series typically don't have box office
-                series.getAwards(),
-                series.getActors()
-            );
-            
-            // Show the content details in a new stage
-            Stage stage = new Stage();
-            stage.setTitle(series.getTitle() + " Details");
-            stage.setScene(new Scene(root));
-            stage.show();
-            
-        } catch (IOException e) {
-            logger.error("Error loading content details view: {}", e.getMessage(), e);
-            showAlert("Error", "Failed to load content details: " + e.getMessage());
-        }
+                series.getAwards() != null ? series.getAwards() : Collections.singletonList("No awards"),
+                series.getActors() != null ? series.getActors() : List.of()
+        );
     }
 
     private void sortSeriesTable(String newVal) {
@@ -1815,4 +1774,90 @@ public class ContentController extends BaseController {
         }
     }
 
+    /**
+     * Handles the "Manage Series" button click event.
+     * Shows a dialog with options to manage the selected series, including adding seasons and episodes.
+     *
+     * @param event The action event that triggered this method
+     */
+    @FXML
+    private void handleManageSeries(ActionEvent event) {
+        // Get the selected series
+        Series selectedSeries = seriesTable.getSelectionModel().getSelectedItem();
+        if (selectedSeries == null) {
+            showAlert("No Selection", "Please select a series to manage.");
+            return;
+        }
+
+        // Create a custom dialog
+        Dialog<ButtonType> dialog = new Dialog<>();
+        dialog.setTitle("Manage Series: " + selectedSeries.getTitle());
+        dialog.setHeaderText("Manage " + selectedSeries.getTitle());
+
+        // Set the button types
+        ButtonType addSeasonButtonType = new ButtonType("Add Season", ButtonBar.ButtonData.APPLY);
+        ButtonType addEpisodeButtonType = new ButtonType("Add Episode", ButtonBar.ButtonData.APPLY);
+        dialog.getDialogPane().getButtonTypes().addAll(addSeasonButtonType, addEpisodeButtonType, ButtonType.CLOSE);
+
+        // Create the content
+        VBox content = new VBox(10);
+        content.setPadding(new Insets(20, 20, 10, 20));
+
+        // Add series info with null checks
+        String title = selectedSeries.getTitle() != null ? selectedSeries.getTitle() : "Untitled Series";
+        String yearString = "";
+        try {
+            Date releaseDate = selectedSeries.getReleaseDate();
+            if (releaseDate != null) {
+                java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("yyyy");
+                yearString = " (" + sdf.format(releaseDate) + ")";
+            }
+        } catch (Exception e) {
+            logger.warn("Error formatting series year: {}", e.getMessage());
+        }
+        int seasonCount = selectedSeries.getSeasons() != null ? selectedSeries.getSeasons().size() : 0;
+        Label infoLabel = new Label(String.format("Manage %s%s\nSeasons: %d", title, yearString, seasonCount));
+        infoLabel.setStyle("-fx-font-weight: bold; -fx-padding: 0 0 10 0;");
+        content.getChildren().add(infoLabel);
+
+        // Add season selector for adding episodes
+        ComboBox<String> seasonComboBox = new ComboBox<>();
+        if (selectedSeries.getSeasons() != null && !selectedSeries.getSeasons().isEmpty()) {
+            seasonComboBox.getItems().addAll(selectedSeries.getSeasons().stream()
+                    .map(s -> String.format("Season %d", s.getSeasonNumber()))
+                    .toList());
+            seasonComboBox.getSelectionModel().selectFirst();
+        } else {
+            seasonComboBox.setPromptText("No seasons available");
+            seasonComboBox.setDisable(true);
+        }
+
+        content.getChildren().add(new Label("Select Season for Episode:"));
+        content.getChildren().add(seasonComboBox);
+
+        dialog.getDialogPane().setContent(content);
+
+        // Show the dialog and handle the result
+        dialog.showAndWait().ifPresent(buttonType -> {
+            try {
+                if (buttonType == addSeasonButtonType) {
+                    // Handle Add Season
+                    handleAddSeason(new ActionEvent(selectedSeries, null));
+                } else if (buttonType == addEpisodeButtonType) {
+                    // Handle Add Episode
+                    if (seasonComboBox.getSelectionModel().isEmpty()) {
+                        showAlert("No Season Selected", "Please add a season first before adding episodes.");
+                        return;
+                    }
+                    int selectedSeason = Integer.parseInt(seasonComboBox.getSelectionModel().getSelectedItem().replace("Season ", ""));
+                    handleAddEpisode(new ActionEvent());
+                }
+                // Refresh the series table after any changes
+                refreshSeriesTable();
+            } catch (Exception e) {
+                logger.error("Error managing series: {}", e.getMessage(), e);
+                showError("Error", "Failed to perform action: " + e.getMessage());
+            }
+        });
+    }
 }

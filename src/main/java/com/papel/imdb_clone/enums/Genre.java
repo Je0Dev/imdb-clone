@@ -45,13 +45,15 @@ public enum Genre {
         if (value == null || value.trim().isEmpty()) {
             return null;
         }
-        String normalized = value.trim().toUpperCase().replace(" ", "_");
+        // Normalize the input: trim, uppercase, replace spaces and hyphens with underscores
+        String normalized = value.trim().toUpperCase().replace(" ", "_").replace("-", "_");
         try {
             return Genre.valueOf(normalized);
         } catch (IllegalArgumentException e) {
             // Try to find a case-insensitive match
             for (Genre genre : values()) {
-                if (genre.displayName.equalsIgnoreCase(value.trim())) {
+                if (genre.displayName.equalsIgnoreCase(value.trim()) || 
+                    genre.name().equalsIgnoreCase(normalized)) {
                     return genre;
                 }
             }

@@ -55,6 +55,16 @@
                                 text="Delete the selected series"/>
                     </tooltip>
                 </Button>
+
+                <Button onAction="#handleManageSeries"
+                        style="-fx-background-color: #4CAF50; -fx-text-fill: #FFFFFF; -fx-font-weight: bolder; -fx-font-size: 14; -fx-padding: 10 20; -fx-background-radius: 4; -fx-cursor: hand; -fx-effect: dropshadow(gaussian, rgba(76,175,80,0.5), 5, 0, 0, 2);"
+                        text="MANAGE SERIES">
+                    <tooltip>
+                        <Tooltip
+                                style="-fx-background-color: #1E1E1E; -fx-text-fill: #FFFFFF; -fx-font-size: 12; -fx-padding: 8 12; -fx-background-radius: 4; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.5), 5, 0, 0, 2);"
+                                text="Manage series, seasons, and episodes"/>
+                    </tooltip>
+                </Button>
             </HBox>
         </VBox>
     </top>
@@ -123,11 +133,6 @@
                             </placeholder>
                         </TableView>
                     </ScrollPane>
-                </VBox>
-            </Tab>
-            <Tab text="Manage Series">
-                <VBox style="-fx-padding: 0 0 20 0;" VBox.vgrow="ALWAYS">
-                    <fx:include fx:id="seriesManagementView" source="series-management-view.fxml"/>
                 </VBox>
             </Tab>
         </TabPane>

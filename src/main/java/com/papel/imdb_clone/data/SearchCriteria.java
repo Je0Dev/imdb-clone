@@ -10,8 +10,6 @@ import java.util.List;
 public class SearchCriteria {
     private String query;
     private String title;
-    private String actorName;
-    private String directorName;
     private Double minImdbRating;
     private Double maxImdbRating;
     private Double minUserRating;
@@ -29,19 +27,27 @@ public class SearchCriteria {
     private Integer startYear;
     private Integer endYear;
 
-    public SearchCriteria(String query, String actorName, String directorName, Double minImdb, Double maxImdb, Double minUser, Double maxUser, Integer minDuration, Integer maxDuration, List<Genre> selectedGenres, String description, Integer yearFrom, Integer yearTo) {
+    public SearchCriteria(String query, Double minImdb, Double maxImdb, Double minUser, Double maxUser, Integer minDuration, Integer maxDuration, List<Genre> selectedGenres, String description, Integer yearFrom, Integer yearTo) {
         this.query = query;
-        this.minImdbRating = null;
-        this.maxImdbRating = null;
-        this.minUserRating = null;
-        this.maxUserRating = null;
-        this.genres = new ArrayList<>();
+        this.minImdbRating = minImdb;
+        this.maxImdbRating = maxImdb;
+        this.minUserRating = minUser;
+        this.maxUserRating = maxUser;
+        this.minDuration = minDuration;
+        this.maxDuration = maxDuration;
+        this.genres = selectedGenres != null ? new ArrayList<>(selectedGenres) : new ArrayList<>();
+        this.description = description;
+        this.minYear = yearFrom;
+        this.maxYear = yearTo;
         this.sortBy = "title";
         this.sortDescending = false;
     }
 
     public SearchCriteria(String query, String keywords, List<String> contentTypes, Integer yearFromValue, Integer yearToValue) {
-        this.query = query;
+        this.query = query != null ? query : "";
+        this.title = keywords;
+        this.minYear = yearFromValue;
+        this.maxYear = yearToValue;
         this.minImdbRating = null;
         this.maxImdbRating = null;
         this.minUserRating = null;
@@ -49,6 +55,16 @@ public class SearchCriteria {
         this.genres = new ArrayList<>();
         this.sortBy = "title";
         this.sortDescending = false;
+
+        // Set content type if provided
+        if (contentTypes != null && !contentTypes.isEmpty()) {
+            try {
+                this.contentType = ContentType.valueOf(contentTypes.get(0).toUpperCase());
+            } catch (IllegalArgumentException e) {
+                // If content type is invalid, leave it as null
+                this.contentType = null;
+            }
+        }
     }
 
     public SearchCriteria(String sortBy, boolean sortDescending) {
@@ -68,13 +84,6 @@ public class SearchCriteria {
         this.title = title;
     }
 
-    public void setActorName(String actorName) {
-        this.actorName = actorName;
-    }
-
-    public void setDirectorName(String directorName) {
-        this.directorName = directorName;
-    }
 
     public void setMinImdbRating(double rating) {
         this.minImdbRating = rating;
@@ -240,8 +249,6 @@ public class SearchCriteria {
     public String toString() {
         return "SearchCriteria{" +
                 "title='" + title + '\'' +
-                ", actorName='" + actorName + '\'' +
-                ", directorName='" + directorName + '\'' +
                 ", minImdbRating=" + minImdbRating +
                 ", maxImdbRating=" + maxImdbRating +
                 ", minUserRating=" + minUserRating +
@@ -264,13 +271,5 @@ public class SearchCriteria {
     // Assign the provided startYear to the instance variable
     public Integer getEndYear() {
         return endYear;
-    }
-
-    public String getActorName() {
-        return actorName;
-    }
-
-    public String getDirectorName() {
-        return directorName;
     }
 }

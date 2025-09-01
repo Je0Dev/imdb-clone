@@ -63,13 +63,5 @@ public interface SeriesRepository {
      * @return The number of series
      */
     long count();
-    
-    /**
-     * Finds a series by its title and start year.
-     *
-     * @param title The series title
-     * @param year The start year
-     * @return Optional containing the series if found, empty otherwise
-     */
-    Optional<Series> findByTitleAndYear(String title, int year);
+
 }

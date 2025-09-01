@@ -1,6 +1,5 @@
 package com.papel.imdb_clone.util;
 
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -27,16 +26,4 @@ public class AppEventBus {
         listeners.computeIfAbsent(eventKey, k -> new CopyOnWriteArrayList<>()).add(listener);
     }
 
-
-    public void publish(String eventKey, Object payload) {
-        List<Consumer<Object>> list = listeners.get(eventKey);
-        if (list != null) {
-            for (Consumer<Object> l : list) {
-                try {
-                    l.accept(payload);
-                } catch (Exception ignored) {
-                }
-            }
-        }
-    }
 }

@@ -13,7 +13,6 @@ public abstract class Content {
     private final Map<Integer, Integer> userRatings; // userId -> rating
     private Double imdbRating; // IMDb rating
     private Double userRating; // Average user rating
-    private String summary; // Summary/description of the content
     private Date releaseDate;
     private int startYear;
     private List<Genre> genres = new ArrayList<>();
@@ -109,24 +108,6 @@ public abstract class Content {
      */
     public void setTitle(String title) {
         this.title = title;
-    }
-
-    /**
-     * Gets the summary/description of the content
-     *
-     * @return the summary of the content
-     */
-    public String getSummary() {
-        return summary;
-    }
-
-    /**
-     * Sets the summary/description of the content
-     *
-     * @param summary the summary to set
-     */
-    public void setSummary(String summary) {
-        this.summary = summary;
     }
 
 

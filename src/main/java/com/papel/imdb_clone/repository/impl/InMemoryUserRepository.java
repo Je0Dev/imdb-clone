@@ -110,23 +110,6 @@ public class InMemoryUserRepository implements UserRepository {
         }
     }
 
-    public List<User> findAll() {
-        lock.readLock().lock();
-        try {
-            return new CopyOnWriteArrayList<>(users);
-        } finally {
-            lock.readLock().unlock();
-        }
-    }
-
-    public boolean deleteById(int id) {
-        lock.writeLock().lock();
-        try {
-            return users.removeIf(user -> user.getId() == id);
-        } finally {
-            lock.writeLock().unlock();
-        }
-    }
 
     /**
      * Adds a user directly to the repository (used by data loaders).
@@ -146,31 +129,6 @@ public class InMemoryUserRepository implements UserRepository {
             users.add(user);
         } finally {
             lock.writeLock().unlock();
-        }
-    }
-
-    /**
-     * Clears all users (used for testing or data reloading).
-     */
-    public void clear() {
-        lock.writeLock().lock();
-        try {
-            users.clear();
-            nextId.set(1);
-            logger.debug("Cleared all users");
-        } finally {
-            lock.writeLock().unlock();
-        }
-    }
-
-    public Optional<Object> findByEmail(String email) {
-        lock.readLock().lock();
-        try {
-            return Optional.of(users.stream()
-                    .filter(user -> email.equals(user.getEmail()))
-                    .findFirst());
-        } finally {
-            lock.readLock().unlock();
         }
     }
 }

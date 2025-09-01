@@ -1,10 +1,9 @@
-package com.papel.imdb_clone.services;
+package com.papel.imdb_clone.service;
 
 import com.papel.imdb_clone.controllers.ContentDetailsController;
 import com.papel.imdb_clone.controllers.RefactoredMainController;
 import com.papel.imdb_clone.controllers.coordinator.UICoordinator;
 import com.papel.imdb_clone.model.Actor;
-import com.papel.imdb_clone.service.ServiceLocator;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;

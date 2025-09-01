@@ -5,7 +5,7 @@ import com.papel.imdb_clone.enums.Ethnicity;
 import com.papel.imdb_clone.model.Actor;
 import com.papel.imdb_clone.model.Director;
 import com.papel.imdb_clone.service.CelebrityService;
-import com.papel.imdb_clone.services.NavigationService;
+import com.papel.imdb_clone.service.NavigationService;
 import javafx.application.Platform;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
@@ -59,7 +59,7 @@ public class CelebritiesController implements Initializable {
     private TableColumn<Director, String> directorNotableWorksColumn;
     @FXML
     private TextField directorSearchField;
-    
+
     @FXML
     private TextField unifiedSearchField;
 
@@ -87,7 +87,7 @@ public class CelebritiesController implements Initializable {
 
             // Initialize director table
             initializeDirectorTable();
-            
+
             // Initialize unified search
             initializeUnifiedSearch();
 
@@ -177,6 +177,7 @@ public class CelebritiesController implements Initializable {
 
     /**
      * Filters the actors based on the search text
+     *
      * @param searchText The text to search for in actor names, ethnicities, and notable works
      */
     private void filterActors(String searchText) {
@@ -187,16 +188,17 @@ public class CelebritiesController implements Initializable {
             filteredActors.setPredicate(actor -> {
                 String fullName = (actor.getFirstName() + " " + actor.getLastName()).toLowerCase();
                 return fullName.contains(lowerCaseFilter) ||
-                       (actor.getEthnicity() != null && actor.getEthnicity().getLabel().toLowerCase().contains(lowerCaseFilter)) ||
-                       (actor.getNotableWorks() != null &&
-                               actor.getNotableWorks().stream()
-                                       .anyMatch(work -> work != null && work.toLowerCase().contains(lowerCaseFilter)));
+                        (actor.getEthnicity() != null && actor.getEthnicity().getLabel().toLowerCase().contains(lowerCaseFilter)) ||
+                        (actor.getNotableWorks() != null &&
+                                actor.getNotableWorks().stream()
+                                        .anyMatch(work -> work != null && work.toLowerCase().contains(lowerCaseFilter)));
             });
         }
     }
 
     /**
      * Filters the directors based on the search text
+     *
      * @param searchText The text to search for in director names, nationalities, and notable works
      */
     private void filterDirectors(String searchText) {
@@ -214,7 +216,7 @@ public class CelebritiesController implements Initializable {
             });
         }
     }
-    
+
     /**
      * Initializes the unified search functionality that searches both actors and directors
      */
@@ -223,7 +225,7 @@ public class CelebritiesController implements Initializable {
             // Update both actor and director filters
             filterActors(newValue);
             filterDirectors(newValue);
-            
+
             // Update the tab-specific search fields to keep them in sync
             if (!newValue.equals(actorSearchField.getText())) {
                 actorSearchField.setText(newValue);
@@ -232,14 +234,14 @@ public class CelebritiesController implements Initializable {
                 directorSearchField.setText(newValue);
             }
         });
-        
+
         // Update unified search when tab-specific searches change
         actorSearchField.textProperty().addListener((observable, oldValue, newValue) -> {
             if (!newValue.equals(unifiedSearchField.getText())) {
                 unifiedSearchField.setText(newValue);
             }
         });
-        
+
         directorSearchField.textProperty().addListener((observable, oldValue, newValue) -> {
             if (!newValue.equals(unifiedSearchField.getText())) {
                 unifiedSearchField.setText(newValue);

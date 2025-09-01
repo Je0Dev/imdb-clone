@@ -101,21 +101,16 @@
                 </VBox>
 
 
-                <StackPane>
-                    <PasswordField fx:id="passwordField" promptText="Password" styleClass="auth-field">
-                        <padding>
-                            <Insets right="30"/>
-                        </padding>
-                    </PasswordField>
-                </StackPane>
-                <StackPane>
-                    <PasswordField fx:id="confirmPasswordField" promptText="Confirm Password" styleClass="auth-field">
-                        <padding>
-                            <Insets right="30"/>
-                        </padding>
-                    </PasswordField>
-
-                </StackPane>
+                <VBox spacing="5">
+                    <Label style="-fx-text-fill: #e0e0e0; -fx-font-weight: bold; -fx-font-size: 14;" text="Password"/>
+                    <PasswordField fx:id="passwordField" promptText="Enter your password"
+                                 style="-fx-background-color: #2d2d2d; -fx-text-fill: #ffffff; -fx-prompt-text-fill: #888; -fx-background-radius: 5; -fx-padding: 10; -fx-font-size: 14; -fx-border-color: #3d3d3d; -fx-border-radius: 5; -fx-border-width: 1;"/>
+                </VBox>
+                <VBox spacing="5">
+                    <Label style="-fx-text-fill: #e0e0e0; -fx-font-weight: bold; -fx-font-size: 14;" text="Confirm Password"/>
+                    <PasswordField fx:id="confirmPasswordField" promptText="Confirm your password"
+                                 style="-fx-background-color: #2d2d2d; -fx-text-fill: #ffffff; -fx-prompt-text-fill: #888; -fx-background-radius: 5; -fx-padding: 10; -fx-font-size: 14; -fx-border-color: #3d3d3d; -fx-border-radius: 5; -fx-border-width: 1;"/>
+                </VBox>
                 <Label fx:id="passwordStrengthLabel" style="-fx-font-size: 11; -fx-text-fill: #b3b3b3;"/>
 
                 <Label fx:id="registerErrorLabel" style="-fx-text-fill: #ff4444; -fx-padding: 5 0 0 0;"

@@ -51,12 +51,24 @@ public class MovieDataLoader extends BaseDataLoader {
         this.directorService = directorService;
     }
 
+
     /**
-     * Loads movies from the specified file.
+     * Normalizes text by fixing common encoding issues and trimming whitespace.
      *
-     * @param filename the name of the file to load
-     * @throws IOException if there is an error reading the file
+     * @param text the text to normalize
+     * @return the normalized text
      */
+    private String normalizeText(String text) {
+        if (text == null) {
+            return "";
+        }
+
+        // Fix common encoding issues
+        return text.trim()
+                .replace("Ace", "ée")  // Fix TimothAce -> Timothée
+                .replace("Ac", "é");     // Fix ChloAc -> Chloé
+    }
+
     public void load(String filename) throws IOException {
         logger.info("Loading movies from {}", filename);
         int count = 0;
@@ -81,7 +93,7 @@ public class MovieDataLoader extends BaseDataLoader {
 
                     if (parts.length >= 7) {
                         // Expected format: Title,Year,Genre,Duration,Director,Rating,Actors
-                        String title = parts[0].trim();
+                        String title = normalizeText(parts[0]);
 
                         // Parse year and create release date (using first day of year if only year is provided)
                         int year = 0;
@@ -111,14 +123,18 @@ public class MovieDataLoader extends BaseDataLoader {
                             duration = 0; // Default to 0 if duration is invalid
                         }
 
-                        // Parse director name (handle potential quotes and trim)
-                        String directorName = parts[4].trim().replaceAll("^\"|\"$", "");
+                        // Parse director name (handle multiple directors, potential quotes, and trim)
+                        String directorName = normalizeText(parts[4]).replaceAll("^\"|\"$", "");
+                        // Take only the first director if multiple are listed
+                        if (directorName.contains(";")) {
+                            directorName = directorName.split(";")[0].trim();
+                            logger.debug("Multiple directors found, using first one: {}", directorName);
+                        }
 
                         // Parse rating (0.0 to 10.0 scale)
                         double rating = 0.0;
                         try {
                             rating = Double.parseDouble(parts[5].trim());
-                            // Ensure rating is within valid range
                             if (rating < 0.0) rating = 0.0;
                             if (rating > 10.0) rating = 10.0;
                         } catch (NumberFormatException e) {
@@ -126,8 +142,8 @@ public class MovieDataLoader extends BaseDataLoader {
                             rating = 0.0; // Default to 0.0 if rating is invalid
                         }
 
-                        // Parse actors (semicolon separated)
-                        String[] actorNames = parts[6].trim().split(";");
+                        // Parse actors (semicolon separated) and normalize names
+                        String[] actorNames = normalizeText(parts[6]).split(";");
 
                         // Set default values for missing fields
                         String country = "USA";

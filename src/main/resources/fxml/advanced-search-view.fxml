@@ -5,10 +5,9 @@
 <?import javafx.scene.layout.*?>
 <?import javafx.scene.text.Text?>
 <?import java.lang.String?>
-<BorderPane style="-fx-background-color: #0a0a0a;" xmlns="http://javafx.com/javafx/17.0.12"
-            xmlns:fx="http://javafx.com/fxml/1"
-            fx:controller="com.papel.imdb_clone.controllers.AdvancedSearchController"
-            prefHeight="800" prefWidth="1200">
+<BorderPane prefHeight="800" prefWidth="1200" style="-fx-background-color: #0a0a0a;"
+            xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.papel.imdb_clone.controllers.AdvancedSearchController">
 
     <top>
         <VBox spacing="15.0" style="-fx-padding: 20;" VBox.vgrow="NEVER">
@@ -89,34 +88,6 @@
                     </rowConstraints>
                 </GridPane>
 
-                <!-- Add these new rows for Actor and Director -->
-                <GridPane hgap="15" vgap="10">
-                    <padding>
-                        <Insets bottom="10" left="10" right="10" top="0"/>
-                    </padding>
-                    <Label style="-fx-text-fill: #FFFFFF; -fx-font-weight: bold;" text="Actor:" GridPane.columnIndex="0"
-                           GridPane.rowIndex="0"/>
-                    <TextField fx:id="actorField" promptText="Actor name..."
-                               style="-fx-background-color: #2A2A2A; -fx-text-fill: #FFFFFF; -fx-prompt-text-fill: #888; -fx-background-radius: 4; -fx-border-color: #444; -fx-border-radius: 4; -fx-padding: 8 12;"
-                               GridPane.columnIndex="1" GridPane.columnSpan="3" GridPane.rowIndex="0"/>
-
-                    <Label style="-fx-text-fill: #FFFFFF; -fx-font-weight: bold;" text="Director:"
-                           GridPane.columnIndex="0" GridPane.rowIndex="1"/>
-                    <TextField fx:id="directorField" promptText="Director name..."
-                               style="-fx-background-color: #2A2A2A; -fx-text-fill: #FFFFFF; -fx-prompt-text-fill: #888; -fx-background-radius: 4; -fx-border-color: #444; -fx-border-radius: 4; -fx-padding: 8 12;"
-                               GridPane.columnIndex="1" GridPane.columnSpan="3" GridPane.rowIndex="1"/>
-                    <columnConstraints>
-                        <ColumnConstraints/>
-                        <ColumnConstraints/>
-                        <ColumnConstraints/>
-                        <ColumnConstraints/>
-                    </columnConstraints>
-                    <rowConstraints>
-                        <RowConstraints/>
-                        <RowConstraints/>
-                    </rowConstraints>
-                </GridPane>
-
                 <HBox alignment="CENTER_RIGHT" spacing="15" style="-fx-padding: 0 10 10 0;">
                     <Button onAction="#resetFilters"
                             style="-fx-background-color: transparent; -fx-text-fill: #FF9800; -fx-border-color: #FF9800; -fx-border-width: 1.5; -fx-border-radius: 4; -fx-padding: 8 15; -fx-font-weight: bold; -fx-cursor: hand; -fx-effect: dropshadow(gaussian, rgba(255,152,0,0.3), 5, 0, 0, 1);"
@@ -147,7 +118,8 @@
                           HBox.hgrow="NEVER"/>
             </HBox>
 
-            <ScrollPane fitToWidth="true" style="-fx-background-color: transparent; -fx-padding: 0;" VBox.vgrow="ALWAYS">
+            <ScrollPane fitToWidth="true" style="-fx-background-color: transparent; -fx-padding: 0;"
+                        VBox.vgrow="ALWAYS">
                 <TableView fx:id="resultsTable"
                            style="-fx-background-color: #1A1A1A; -fx-text-fill: #FFFFFF; -fx-table-cell-border-color: #333;"
                            styleClass="content-table" VBox.vgrow="ALWAYS">
@@ -160,7 +132,8 @@
                     </columnResizePolicy>
                     <columns>
                         <TableColumn fx:id="resultTitleColumn" prefWidth="200" sortable="true"
-                                     style="-fx-font-weight: bold; -fx-text-fill: #00E5FF; -fx-font-size: 14;" text="TITLE">
+                                     style="-fx-font-weight: bold; -fx-text-fill: #00E5FF; -fx-font-size: 14;"
+                                     text="TITLE">
                             <style>
                                 -fx-alignment: CENTER_LEFT;
                             </style>
@@ -190,12 +163,6 @@
                                     <Label style="-fx-text-fill: #FFD700; -fx-font-size: 14;" text="★"/>
                                 </HBox>
                             </graphic>
-                        </TableColumn>
-                        <TableColumn fx:id="resultDirectorColumn" prefWidth="150" sortable="true"
-                                     style="-fx-text-fill: #E040FB; -fx-font-weight: bold;" text="DIRECTOR">
-                            <style>
-                                -fx-alignment: CENTER_LEFT;
-                            </style>
                         </TableColumn>
                     </columns>
                     <placeholder>

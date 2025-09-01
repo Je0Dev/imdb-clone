@@ -13,6 +13,7 @@ public class Episode {
     private String title;
     private int episodeNumber;
     private int number;
+    private Object season;
 
     public Episode() {
         this.duration = duration;
@@ -117,7 +118,7 @@ public class Episode {
                 Objects.equals(actors, episode.actors);
     }
 
-    
+
     @Override
     public int hashCode() {
         return Objects.hash(id, duration, director, imdbRating, actors);
@@ -148,5 +149,9 @@ public class Episode {
 
     public void setNumber(int number) {
         this.number = number;
+    }
+
+    public void setSeason(Season newSeason) {
+        this.season = season;
     }
 }

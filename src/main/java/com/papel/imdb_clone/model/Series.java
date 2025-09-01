@@ -171,9 +171,6 @@ public class Series extends Content {
     }
 
 
-
-
-
     @Override
     public boolean equals(Object obj) {
         if (this == obj) return true;
@@ -197,7 +194,6 @@ public class Series extends Content {
                 "id=" + getId() +
                 ", title='" + getTitle() + '\'' +
                 ", genre=" + getGenre() +
-                ", summary='" + (getSummary() != null ? getSummary().substring(0, Math.min(20, getSummary().length())) + "..." : "") + '\'' +
                 ", seasons=" + seasons.size() +
                 '}';
     }
@@ -217,6 +213,7 @@ public class Series extends Content {
 
     /**
      * Sets the release year of the series
+     *
      * @param year The release year to set
      */
     public void setReleaseYear(int year) {

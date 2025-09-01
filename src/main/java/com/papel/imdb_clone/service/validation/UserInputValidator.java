@@ -60,9 +60,13 @@ public class UserInputValidator {
         }
 
         if (!errors.isEmpty()) {
-            throw ValidationException.builder()
-                    .message("Validation failed")
-                    .build();
+            ValidationException.Builder builder = ValidationException.builder()
+                    .message("Validation failed");
+            
+            // Add all field errors to the exception
+            errors.forEach(builder::fieldError);
+            
+            throw builder.build();
         }
     }
 
@@ -81,9 +85,13 @@ public class UserInputValidator {
         }
 
         if (!errors.isEmpty()) {
-            throw ValidationException.builder()
-                    .message("Login validation failed")
-                    .build();
+            ValidationException.Builder builder = ValidationException.builder()
+                    .message("Login validation failed");
+            
+            // Add all field errors to the exception
+            errors.forEach(builder::fieldError);
+            
+            throw builder.build();
         }
     }
 

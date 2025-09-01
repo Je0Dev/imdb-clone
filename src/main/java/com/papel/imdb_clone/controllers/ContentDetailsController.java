@@ -26,8 +26,6 @@ public class ContentDetailsController {
     @FXML
     private Label castLabel;
     @FXML
-    private ImageView posterImage;
-    @FXML
     private VBox root;
 
     private String title;
@@ -37,8 +35,6 @@ public class ContentDetailsController {
     private String boxOffice;
     private List<String> awards;
     private List<Actor> cast;
-
-    private ContentDetailsController NavigationService;
 
     @FXML
     public void initialize() {
@@ -68,7 +64,7 @@ public class ContentDetailsController {
         if (yearLabel != null) yearLabel.setText(year != null ? "(" + year + ")" : "(Year not available)");
         if (ratingLabel != null) ratingLabel.setText(rating != null ? rating : "N/A");
         if (genreLabel != null) genreLabel.setText(genre != null ? genre : "Genre not specified");
-        
+
         // Handle box office
         String boxOfficeText = "Not available";
         if (boxOffice != null && !boxOffice.trim().isEmpty() && !boxOffice.equalsIgnoreCase("N/A")) {
@@ -87,15 +83,15 @@ public class ContentDetailsController {
         String castText = "Cast information not available";
         if (cast != null && !cast.isEmpty()) {
             castText = cast.stream()
-                .filter(Objects::nonNull)
-                .map(actor -> actor.getFirstName() + " " + actor.getLastName())
-                .collect(Collectors.joining(", "));
+                    .filter(Objects::nonNull)
+                    .map(actor -> actor.getFirstName() + " " + actor.getLastName())
+                    .collect(Collectors.joining(", "));
         }
         if (castLabel != null) castLabel.setText(castText);
     }
 
     @FXML
     private void goBack() {
-        com.papel.imdb_clone.services.NavigationService.getInstance().goBack();
+        com.papel.imdb_clone.service.NavigationService.getInstance().goBack();
     }
 }

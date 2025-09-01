@@ -3,8 +3,8 @@ package com.papel.imdb_clone.controllers;
 import com.papel.imdb_clone.exceptions.ValidationException;
 import com.papel.imdb_clone.model.User;
 import com.papel.imdb_clone.service.AuthService;
+import com.papel.imdb_clone.service.NavigationService;
 import com.papel.imdb_clone.service.validation.UserInputValidator;
-import com.papel.imdb_clone.services.NavigationService;
 import com.papel.imdb_clone.util.UIUtils;
 import javafx.beans.binding.Bindings;
 import javafx.event.ActionEvent;
@@ -208,17 +208,30 @@ public class AuthController extends BaseController {
     }
 
     private void handleValidationError(ValidationException e, Label errorLabel) {
+        StringBuilder errorMessage = new StringBuilder();
+        
         if (e.hasFieldErrors()) {
-            // Display the first field error
+            // Collect all field errors
             Map<String, List<String>> fieldErrors = e.getFieldErrors();
-            String firstError = fieldErrors.values().iterator().next().getFirst();
-            errorLabel.setText(firstError);
+            fieldErrors.forEach((field, errors) -> 
+                errors.forEach(error -> 
+                    errorMessage.append("• ").append(error).append("\n")
+                )
+            );
         } else {
-            errorLabel.setText(e.getMessage());
+            errorMessage.append(e.getMessage());
         }
-        errorLabel.setStyle("-fx-text-fill: #d32f2f;");
+        
+        // Remove the last newline if present
+        if (errorMessage.length() > 0 && errorMessage.charAt(errorMessage.length() - 1) == '\n') {
+            errorMessage.setLength(errorMessage.length() - 1);
+        }
+        
+        errorLabel.setText(errorMessage.toString());
+        errorLabel.setStyle("-fx-text-fill: #d32f2f; -fx-wrap-text: true;");
         errorLabel.setVisible(true);
-        logger.warn("Validation error: {}", e.getMessage());
+        errorLabel.setManaged(true);
+        logger.warn("Validation error: {}", errorMessage);
     }
 
 
@@ -295,17 +308,22 @@ public class AuthController extends BaseController {
             // Register user
             authService.register(newUser, password);
 
-            // Show success message and switch to log in
-            successMessage = "Registration successful! Please log in.";
+            // Show success message and switch to login form
+            loginErrorLabel.setStyle("-fx-text-fill: #2e7d32;");
+            loginErrorLabel.setText("Registration successful! Please log in.");
+            loginErrorLabel.setVisible(true);
 
-
-            // Clear form
+            // Clear form and switch to login
             clearRegistrationForm();
+            showLoginForm(null);
 
         } catch (ValidationException e) {
             handleValidationError(e, registerErrorLabel);
         } catch (Exception e) {
-            handleUnexpectedError("registration", e);
+            registerErrorLabel.setStyle("-fx-text-fill: #d32f2f;");
+            registerErrorLabel.setText("Registration failed: " + e.getMessage());
+            registerErrorLabel.setVisible(true);
+            logger.error("Registration error: {}", e.getMessage(), e);
         }
     }
 
@@ -317,17 +335,18 @@ public class AuthController extends BaseController {
 
 
     private void clearRegistrationForm() {
-        firstNameField.clear();
-        lastNameField.clear();
-        registerUsernameField.clear();
-        emailField.clear();
-        passwordField.clear();
-        passwordVisibleField.clear();
-        confirmPasswordField.clear();
-        confirmPasswordVisibleField.clear();
-        passwordStrengthLabel.setText("");
+        // Clear text fields if they're not null
+        if (firstNameField != null) firstNameField.clear();
+        if (lastNameField != null) lastNameField.clear();
+        if (registerUsernameField != null) registerUsernameField.clear();
+        if (emailField != null) emailField.clear();
+        if (passwordField != null) passwordField.clear();
+        if (passwordVisibleField != null) passwordVisibleField.clear();
+        if (confirmPasswordField != null) confirmPasswordField.clear();
+        if (confirmPasswordVisibleField != null) confirmPasswordVisibleField.clear();
+        if (passwordStrengthLabel != null) passwordStrengthLabel.setText("");
 
-        if (genderToggleGroup.getSelectedToggle() != null) {
+        if (genderToggleGroup != null && genderToggleGroup.getSelectedToggle() != null) {
             genderToggleGroup.getSelectedToggle().setSelected(false);
         }
     }

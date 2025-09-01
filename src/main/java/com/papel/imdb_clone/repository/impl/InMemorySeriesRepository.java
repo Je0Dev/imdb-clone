@@ -131,40 +131,4 @@ public abstract class InMemorySeriesRepository implements SeriesRepository {
     public long count() {
         return seriesList.size();
     }
-
-
-    /**
-     * Adds a series directly to the repository (used by data loaders).
-     *
-     * @param series The series to add
-     */
-    public void addSeries(Series series) {
-        if (series == null) return;
-
-        lock.writeLock().lock();
-        try {
-            if (series.getId() > 0) {
-                nextId.getAndUpdate(current -> Math.max(current, series.getId() + 1));
-            } else {
-                series.setId(nextId.getAndIncrement());
-            }
-            seriesList.add(series);
-        } finally {
-            lock.writeLock().unlock();
-        }
-    }
-
-    /**
-     * Clears all series (used for testing or data reloading).
-     */
-    public void clear() {
-        lock.writeLock().lock();
-        try {
-            seriesList.clear();
-            nextId.set(1);
-            logger.debug("Cleared all series");
-        } finally {
-            lock.writeLock().unlock();
-        }
-    }
 }
