@@ -19,11 +19,9 @@ import javafx.concurrent.Task;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.geometry.Insets;
-import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.control.*;
 import javafx.scene.layout.GridPane;
-import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import org.slf4j.Logger;
@@ -562,39 +560,6 @@ public class ContentController extends BaseController {
                         new SimpleDoubleProperty(cellData.getValue().getImdbRating()).asObject());
             }
 
-            // Actions column
-            if (seriesActionsColumn != null) {
-                seriesActionsColumn.setCellFactory(param -> new TableCell<>() {
-                    private final Button editButton = new Button("Edit");
-                    private final Button deleteButton = new Button("Delete");
-
-                    {
-                        editButton.setOnAction(event -> {
-                            Series series = getTableView().getItems().get(getIndex());
-                            // TODO: Implement edit functionality
-                            logger.info("Edit series: {}", series.getTitle());
-                        });
-
-                        deleteButton.setOnAction(event -> {
-                            Series series = getTableView().getItems().get(getIndex());
-                            handleDeleteSeries();
-                        });
-                    }
-
-                    @Override
-                    protected void updateItem(Void item, boolean empty) {
-                        super.updateItem(item, empty);
-                        if (empty) {
-                            setGraphic(null);
-                        } else {
-                            HBox buttons = new HBox(5, editButton, deleteButton);
-                            buttons.setAlignment(Pos.CENTER);
-                            setGraphic(buttons);
-                        }
-                    }
-                });
-            }
-
             logger.debug("Series table columns initialized successfully");
         } catch (Exception e) {
             logger.error("Error initializing series table columns: {}", e.getMessage(), e);
@@ -626,7 +591,6 @@ public class ContentController extends BaseController {
     @Override
     protected void initializeController(int currentUserId) throws Exception {
         // This method is called by BaseController.initialize(int)
-        // For now, we'll use the parameterless initialize method above
         logger.debug("initializeController called with userId: {}", currentUserId);
     }
 
@@ -676,14 +640,7 @@ public class ContentController extends BaseController {
 
         TextField directorField = new TextField();
         directorField.setPromptText("Director");
-
-        TextField durationField = new TextField();
-        durationField.setPromptText("Duration in minutes");
-
-        TextArea descriptionArea = new TextArea();
-        descriptionArea.setPromptText("Description");
-        descriptionArea.setWrapText(true);
-        descriptionArea.setPrefRowCount(3);
+        
 
         // Create and configure the form layout
         GridPane grid = new GridPane();
@@ -700,10 +657,6 @@ public class ContentController extends BaseController {
         grid.add(genreField, 1, 2);
         grid.add(new Label("Director:"), 0, 3);
         grid.add(directorField, 1, 3);
-        grid.add(new Label("Duration (min):"), 0, 4);
-        grid.add(durationField, 1, 4);
-        grid.add(new Label("Description:"), 0, 5);
-        grid.add(descriptionArea, 1, 5);
 
         // Enable/Disable add button depending on whether a title was entered
         Node addButton = dialog.getDialogPane().lookupButton(addButtonType);
@@ -737,17 +690,6 @@ public class ContentController extends BaseController {
                         movie.setDirector(directorField.getText().trim());
                     }
 
-                    // Parse duration with validation
-                    try {
-                        if (!durationField.getText().trim().isEmpty()) {
-                            int duration = Integer.parseInt(durationField.getText().trim());
-                            movie.setDuration(duration);
-                        }
-                    } catch (NumberFormatException e) {
-                        showAlert("Invalid Duration", "Please enter a valid duration in minutes");
-                        return null;
-                    }
-
                     return movie;
                 } catch (Exception e) {
                     logger.error("Error creating movie: {}", e.getMessage(), e);
@@ -763,75 +705,6 @@ public class ContentController extends BaseController {
         return result.orElse(null);
     }
 
-    /**
-     * Handles the delete series action from the UI.
-     * Deletes the selected series after confirmation.
-     *
-     * @param actionEvent The action event that triggered this method
-     */
-    @FXML
-    private void handleDeleteSeriesAction(ActionEvent actionEvent) {
-        Series selectedSeries = seriesTable.getSelectionModel().getSelectedItem();
-        if (selectedSeries != null) {
-            boolean confirmed = showConfirmationDialog(
-                    "Delete Series",
-                    String.format("Are you sure you want to delete '%s'? This action cannot be undone.", selectedSeries.getTitle())
-            );
-
-            if (confirmed) {
-                try {
-                    contentService.deleteContent(selectedSeries);
-                    refreshSeriesTable();
-                    showSuccess("Success", String.format("Series '%s' has been deleted successfully.", selectedSeries.getTitle()));
-                } catch (ContentNotFoundException e) {
-                    logger.error("Failed to find series with ID {}: {}", selectedSeries.getId(), e.getMessage());
-                    showError("Error", "The selected series could not be found. It may have already been deleted.");
-                    refreshSeriesTable(); // Refresh to show current data
-                } catch (Exception e) {
-                    logger.error("Error deleting series: {}", e.getMessage(), e);
-                    showError("Error", "Failed to delete series: " + e.getMessage());
-                }
-            }
-        } else {
-            showWarning("No Selection", "Please select a series to delete.");
-        }
-    }
-
-    /**
-     * Handles the rate series action from the UI.
-     * Shows a dialog to rate the selected series.
-     *
-     * @param actionEvent The action event that triggered this method
-     */
-    @FXML
-    private void handleRateSeriesAction(ActionEvent actionEvent) {
-        Series selectedSeries = seriesTable.getSelectionModel().getSelectedItem();
-        if (selectedSeries != null) {
-            try {
-                // Show rating dialog and get the result
-                double rating = showRatingDialog();
-
-                if (rating > 0) {  // User didn't cancel
-                    try {
-                        contentService.rateContent(selectedSeries, (float) rating);
-                        refreshSeriesTable();
-                        showSuccess("Success", String.format("You rated '%s' %.1f", selectedSeries.getTitle(), rating));
-                    } catch (ContentNotFoundException e) {
-                        logger.error("Failed to find series with ID {}: {}", selectedSeries.getId(), e.getMessage());
-                        showError("Error", "The selected series could not be found. It may have been deleted.");
-                        refreshSeriesTable(); // Refresh to show current data
-                    }
-                }
-            } catch (NumberFormatException e) {
-                showError("Invalid Input", "Please enter a valid number between 1.0 and 10.0");
-            } catch (Exception e) {
-                logger.error("Error rating series: {}", e.getMessage(), e);
-                showError("Error", "Failed to rate series: " + e.getMessage());
-            }
-        } else {
-            showWarning("No Selection", "Please select a series to rate.");
-        }
-    }
 
     /**
      * Handles the "Add Season" button click event.
@@ -839,8 +712,12 @@ public class ContentController extends BaseController {
      *
      * @param actionEvent The action event that triggered this method
      */
+    @FXML
     public void handleAddSeason(ActionEvent actionEvent) {
-
+        Series selectedSeries = seriesTable.getSelectionModel().getSelectedItem();
+        if (selectedSeries == null) {
+            showAlert("No Selection", "Please select a series to add a season.");
+        }
     }
 
     /**
@@ -849,8 +726,8 @@ public class ContentController extends BaseController {
      *
      * @param actionEvent The action event that triggered this method
      */
+    @FXML
     public void handleAddEpisode(ActionEvent actionEvent) {
-
     }
 
     /**
@@ -873,7 +750,7 @@ public class ContentController extends BaseController {
         titleField.setPromptText("Title");
 
         TextField yearField = new TextField();
-        yearField.setPromptText("Year (e.g., 2023)");
+        yearField.setPromptText("Year (e.g., 2021)");
 
         TextField genreField = new TextField();
         genreField.setPromptText("Genre (comma-separated)");
@@ -884,10 +761,6 @@ public class ContentController extends BaseController {
         TextField seasonsField = new TextField();
         seasonsField.setPromptText("Number of seasons");
 
-        TextArea descriptionArea = new TextArea();
-        descriptionArea.setPromptText("Description");
-        descriptionArea.setWrapText(true);
-        descriptionArea.setPrefRowCount(3);
 
         // Create and configure the form layout
         GridPane grid = new GridPane();
@@ -906,8 +779,6 @@ public class ContentController extends BaseController {
         grid.add(creatorField, 1, 3);
         grid.add(new Label("Seasons:"), 0, 4);
         grid.add(seasonsField, 1, 4);
-        grid.add(new Label("Description:"), 0, 5);
-        grid.add(descriptionArea, 1, 5);
 
         // Enable/Disable add button depending on whether a title was entered
         Node addButton = dialog.getDialogPane().lookupButton(addButtonType);
@@ -957,7 +828,7 @@ public class ContentController extends BaseController {
                             if (seasons < 0) {
                                 throw new NumberFormatException("Number of seasons cannot be negative");
                             }
-                            // Note: You might want to create Season objects here in a real implementation
+                            //create Season objects here in a real implementation
                         }
                     } catch (NumberFormatException e) {
                         showAlert("Invalid Seasons", "Please enter a valid number of seasons");
@@ -1255,45 +1126,6 @@ public class ContentController extends BaseController {
                 });
             }
 
-            // Duration column
-            if (movieDurationColumn != null) {
-                movieDurationColumn.setCellValueFactory(cellData ->
-                        new SimpleIntegerProperty(cellData.getValue().getDuration()).asObject()
-                );
-            }
-
-            // Actions column
-            if (movieActionsColumn != null) {
-                movieActionsColumn.setCellFactory(param -> new TableCell<>() {
-                    private final Button editButton = new Button("Edit");
-                    private final Button deleteButton = new Button("Delete");
-
-                    {
-                        editButton.setOnAction(event -> {
-                            Movie movie = getTableView().getItems().get(getIndex());
-                            // TODO: Implement edit functionality
-                            logger.info("Edit movie: {}", movie.getTitle());
-                        });
-
-                        deleteButton.setOnAction(event -> {
-                            Movie movie = getTableView().getItems().get(getIndex());
-                            handleDeleteMovie();
-                        });
-                    }
-
-                    @Override
-                    protected void updateItem(Void item, boolean empty) {
-                        super.updateItem(item, empty);
-                        if (empty) {
-                            setGraphic(null);
-                        } else {
-                            HBox buttons = new HBox(5, editButton, deleteButton);
-                            buttons.setAlignment(Pos.CENTER);
-                            setGraphic(buttons);
-                        }
-                    }
-                });
-            }
 
             logger.debug("Movie table columns initialized successfully");
 
@@ -1312,15 +1144,11 @@ public class ContentController extends BaseController {
             return;
         }
 
-        // Show loading indicator
-        if (statusLabel != null) {
-            statusLabel.setText("Loading data...");
-        }
-
         Task<Void> task = new Task<>() {
             @Override
             protected Void call() {
                 try {
+
                     // Load movies
                     List<Movie> movies = dataManager.getAllMovies();
                     logger.debug("Loaded {} movies from data manager", movies.size());
@@ -1335,6 +1163,7 @@ public class ContentController extends BaseController {
                             // Update movies
                             allMovies.clear();
                             allMovies.addAll(movies);
+
                             filteredMovies.clear();
                             filteredMovies.addAll(movies);
 
@@ -1400,11 +1229,6 @@ public class ContentController extends BaseController {
         if (dataManager == null) {
             logger.error("DataManager is not initialized. Cannot refresh movie data.");
             return;
-        }
-
-        // Show loading indicator if available
-        if (statusLabel != null) {
-            statusLabel.setText("Loading movie data...");
         }
 
         Task<Void> task = new Task<>() {
@@ -1494,10 +1318,6 @@ public class ContentController extends BaseController {
             return;
         }
 
-        // Show loading indicator if available
-        if (statusLabel != null) {
-            statusLabel.setText("Loading series data...");
-        }
 
         Task<Void> task = new Task<>() {
             @Override
@@ -1549,10 +1369,6 @@ public class ContentController extends BaseController {
 
                             logger.info("Refreshed series table with {} items", updatedSeries.size());
 
-                            // Update status
-                            if (statusLabel != null) {
-                                statusLabel.setText("");
-                            }
                         } catch (Exception e) {
                             logger.error("Error updating series table: {}", e.getMessage(), e);
                             showAlert("Error", "Failed to refresh series data: " + e.getMessage());
@@ -1562,27 +1378,12 @@ public class ContentController extends BaseController {
                     logger.error("Error refreshing series data: {}", e.getMessage(), e);
                     Platform.runLater(() -> {
                         showAlert("Error", "Failed to refresh series data: " + e.getMessage());
-                        if (statusLabel != null) {
-                            statusLabel.setText("Error loading series data");
-                        }
                     });
                 }
                 return null;
             }
         };
 
-        // Handle task completion
-        task.setOnSucceeded(e -> {
-            if (statusLabel != null) {
-                statusLabel.setText("");
-            }
-        });
-
-        task.setOnFailed(e -> {
-            if (statusLabel != null) {
-                statusLabel.setText("Error loading series data");
-            }
-        });
 
         // Start the task in a background thread
         Thread thread = new Thread(task);
@@ -1590,14 +1391,6 @@ public class ContentController extends BaseController {
         thread.start();
     }
 
-    /**
-     * Handles the "Edit Series" button click event.
-     * Shows a dialog to edit the selected series and refreshes the series table upon success.
-     *
-     * @param actionEvent The action event that triggered this method
-     */
-    public void handleEditSeries(ActionEvent actionEvent) {
-    }
 
     /**
      * Sets the current user session information.

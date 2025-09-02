@@ -302,6 +302,6 @@ public class UICoordinator {
     }
 
     public boolean areViewsLoaded() {
-        return homeView != null && movieView != null && seriesView != null && searchView != null;
+        return homeView == null || movieView == null || seriesView == null || searchView == null;
     }
 }

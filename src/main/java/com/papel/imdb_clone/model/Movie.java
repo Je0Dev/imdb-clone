@@ -8,10 +8,6 @@ public class Movie extends Content {
     private final int duration;
     private final List<Actor> actors;
 
-    // Rich content fields
-    @Deprecated
-    private String description;
-
     private String boxOffice;
     private List<String> awards;
     private List<Genre> genres = new ArrayList<>(); // Multiple genres support
@@ -54,7 +50,6 @@ public class Movie extends Content {
         this.releaseDate = year != null ? new Date(year.getTime()) : null;
         this.duration = duration;
         this.actors = new ArrayList<>(actors != null ? actors : new ArrayList<>());
-        this.description = description;
         this.genres = genres != null ? new ArrayList<>(genres) : new ArrayList<>();
         initializeRichContentFields();
     }
@@ -64,9 +59,6 @@ public class Movie extends Content {
         this.genres.add(getGenre()); // Add the primary genre from parent class
     }
 
-    public int getDuration() {
-        return duration;
-    }
 
     public List<Actor> getActors() {
         return new ArrayList<>(actors);
@@ -96,14 +88,6 @@ public class Movie extends Content {
         }
     }
 
-    public void removeGenre(Genre genre) {
-        this.genres.remove(genre);
-    }
-
-    public boolean hasGenre(Genre genre) {
-        return this.genres.contains(genre);
-    }
-
 
     @Override
     public boolean equals(Object obj) {
@@ -113,7 +97,6 @@ public class Movie extends Content {
         Movie movie = (Movie) obj;
         return duration == movie.duration &&
                 Objects.equals(actors, movie.actors) &&
-                Objects.equals(description, movie.description) &&
                 Objects.equals(boxOffice, movie.boxOffice) &&
                 Objects.equals(awards, movie.awards) &&
                 Objects.equals(genres, movie.genres);
@@ -134,25 +117,7 @@ public class Movie extends Content {
                 ", duration=" + duration +
                 ", actors=" + actors.size() +
                 ", genres=" + genres.size() +
-                ", hasDescription=" + (description != null) +
                 '}';
-    }
-
-    public void setReleaseYear(int year) {
-    }
-
-    public void setDuration(int i) {
-    }
-
-    public void setYear(Date year) {
-        this.year = year;
-    }
-
-    public void setActors(List<Actor> objects) {
-    }
-
-    public void setBoxOffice(String boxOffice) {
-        this.boxOffice = boxOffice;
     }
 
     public void setAwards(String awards) {
@@ -171,11 +136,11 @@ public class Movie extends Content {
         this.actors.add(actor);
     }
 
-    public Arrays getDirectors() {
-        return directors;
-    }
-
     public int getStartYear() {
         return startyear;
+    }
+
+    public void setStartYear(int year) {
+        this.startyear = year;
     }
 }

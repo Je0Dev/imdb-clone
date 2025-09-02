@@ -48,11 +48,6 @@ public class Series extends Content {
         }
     }
 
-    public void removeSeason(Season season) {
-        if (season != null) {
-            this.seasons.remove(season);
-        }
-    }
 
     public int getStartYear() {
         return startYear;
@@ -74,36 +69,6 @@ public class Series extends Content {
     }
 
     /**
-     * Gets the director/creator of the series
-     *
-     * @return the director of the series
-     */
-    public Director getSeriesDirector() {
-        return director;
-    }
-
-    /**
-     * Adds an actor to the series
-     *
-     * @param actor the actor to add
-     */
-    public void addActor(Actor actor) {
-        if (actor != null && !actors.contains(actor)) {
-            actors.add(actor);
-        }
-    }
-
-    /**
-     * Removes an actor from the series
-     *
-     * @param actor the actor to remove
-     * @return true if the actor was removed, false otherwise
-     */
-    public boolean removeActor(Actor actor) {
-        return actors.remove(actor);
-    }
-
-    /**
      * Sets the list of actors in the series
      *
      * @param actors the list of actors to set
@@ -114,10 +79,6 @@ public class Series extends Content {
 
     public void setStartYear(int startYear) {
         this.startYear = startYear;
-    }
-
-    public Integer getEndYear() {
-        return endYear;
     }
 
     public void setEndYear(Integer endYear) {
@@ -133,13 +94,6 @@ public class Series extends Content {
         }
     }
 
-    public String getBoxOffice() {
-        return boxOffice;
-    }
-
-    public void setBoxOffice(String boxOffice) {
-        this.boxOffice = boxOffice;
-    }
 
     public List<String> getAwards() {
         return new ArrayList<>(awards);
@@ -147,12 +101,6 @@ public class Series extends Content {
 
     public void setAwards(String awards) {
         this.awards = awards != null ? new ArrayList<>(Collections.singleton(awards)) : new ArrayList<>();
-    }
-
-    public void addAward(String award) {
-        if (award != null && !award.trim().isEmpty()) {
-            this.awards.add(award);
-        }
     }
 
     /**
@@ -199,10 +147,6 @@ public class Series extends Content {
     }
 
 
-    public void setEndYear(int endYear) {
-        this.endYear = endYear;
-    }
-
     public void setCreator(String creator) {
     }
 
@@ -235,10 +179,6 @@ public class Series extends Content {
 
     public void setNominations(String nominations) {
         this.nominations = nominations;
-    }
-
-    public String getNominations() {
-        return nominations;
     }
 
     public int getTotalEpisodes() {

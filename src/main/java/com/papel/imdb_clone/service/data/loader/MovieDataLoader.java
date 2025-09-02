@@ -145,20 +145,14 @@ public class MovieDataLoader extends BaseDataLoader {
                         // Parse actors (semicolon separated) and normalize names
                         String[] actorNames = normalizeText(parts[6]).split(";");
 
-                        // Set default values for missing fields
-                        String country = "USA";
-                        String language = "English";
-                        String description = "No description available";
-                        String imageUrl = "";
-
                         // Create and save the movie
                         try {
                             // Create new movie with required fields
                             Movie movie = new Movie();
                             movie.setTitle(title);
                             movie.setReleaseDate(releaseDate);
+                            movie.setStartYear(year);  // Set the startYear field
                             movie.setRating(rating);
-                            movie.setDuration(duration);
 
                             // Save through service only (which will handle repository saving)
                             movie = movieService.save(movie);

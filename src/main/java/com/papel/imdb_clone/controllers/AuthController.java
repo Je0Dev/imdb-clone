@@ -97,9 +97,6 @@ public class AuthController extends BaseController {
     private Object currentUser;
     private String sessionToken;
 
-    public AuthController() {
-        this.confirmPasswordVisibleField = confirmPasswordVisibleField;
-    }
 
     @Override
     protected void initializeController(int currentUserId) {
@@ -125,8 +122,6 @@ public class AuthController extends BaseController {
         loginPasswordField.setOnKeyPressed(this::handleLoginKeyPress);
         loginPasswordVisibleField.setOnKeyPressed(this::handleLoginKeyPress);
 
-        // Setup password visibility toggle
-        setupPasswordVisibilityToggle(loginPasswordField, loginPasswordVisibleField, toggleLoginPassword);
     }
 
     private void setupRegistrationForm(TextField passwordVisibleField, TextField confirmPasswordVisibleField) {
@@ -149,44 +144,9 @@ public class AuthController extends BaseController {
                                         confirmPasswordField.textProperty())))
         );
 
-        // Setup password visibility toggles
-        setupPasswordVisibilityToggle(passwordField, passwordVisibleField, toggleRegisterPassword);
-        setupPasswordVisibilityToggle(confirmPasswordField, confirmPasswordVisibleField, toggleConfirmPassword);
 
-        // Add password strength indicator
-        passwordField.textProperty().addListener((obs, oldVal, newVal) ->
-                updatePasswordStrengthIndicator(newVal)
-        );
     }
 
-    private void setupPasswordVisibilityToggle(PasswordField passwordField, TextField visibleField, Button toggleButton) {
-        visibleField.managedProperty().bind(visibleField.visibleProperty());
-        passwordField.managedProperty().bind(visibleField.visibleProperty().not());
-        visibleField.visibleProperty().set(false);
-
-        // Bind text between password and visible fields
-        passwordField.textProperty().addListener((obs, oldVal, newVal) -> {
-            if (passwordField.isFocused()) {
-                visibleField.setText(newVal);
-            }
-        });
-
-        visibleField.textProperty().addListener((obs, oldVal, newVal) -> {
-            if (visibleField.isFocused()) {
-                passwordField.setText(newVal);
-                if (passwordField == this.passwordField) {
-                    updatePasswordStrengthIndicator(newVal);
-                }
-            }
-        });
-
-        // Toggle visibility on button click
-        toggleButton.setOnAction(e -> {
-            boolean isVisible = visibleField.isVisible();
-            visibleField.setVisible(!isVisible);
-            toggleButton.setText(isVisible ? "Show" : "Hide");
-        });
-    }
 
     private void updatePasswordStrengthIndicator(String password) {
         int strength = inputValidator.calculatePasswordStrength(password);
@@ -209,24 +169,19 @@ public class AuthController extends BaseController {
 
     private void handleValidationError(ValidationException e, Label errorLabel) {
         StringBuilder errorMessage = new StringBuilder();
-        
+
         if (e.hasFieldErrors()) {
             // Collect all field errors
             Map<String, List<String>> fieldErrors = e.getFieldErrors();
-            fieldErrors.forEach((field, errors) -> 
-                errors.forEach(error -> 
-                    errorMessage.append("• ").append(error).append("\n")
-                )
+            fieldErrors.forEach((field, errors) ->
+                    errors.forEach(error ->
+                            errorMessage.append("• ").append(error).append("\n")
+                    )
             );
         } else {
             errorMessage.append(e.getMessage());
         }
-        
-        // Remove the last newline if present
-        if (errorMessage.length() > 0 && errorMessage.charAt(errorMessage.length() - 1) == '\n') {
-            errorMessage.setLength(errorMessage.length() - 1);
-        }
-        
+
         errorLabel.setText(errorMessage.toString());
         errorLabel.setStyle("-fx-text-fill: #d32f2f; -fx-wrap-text: true;");
         errorLabel.setVisible(true);

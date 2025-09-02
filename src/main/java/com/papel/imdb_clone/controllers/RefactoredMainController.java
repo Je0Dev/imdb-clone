@@ -161,7 +161,7 @@ public class RefactoredMainController {
             }
 
             // Load views if needed
-            if (!uiCoordinator.areViewsLoaded()) {
+            if (uiCoordinator.areViewsLoaded()) {
                 if (!uiCoordinator.loadAndInitializeViews()) {
                     logger.warn("Some views failed to load");
                 }
@@ -222,7 +222,7 @@ public class RefactoredMainController {
                 }
 
                 // Ensure views are loaded
-                if (!uiCoordinator.areViewsLoaded()) {
+                if (uiCoordinator.areViewsLoaded()) {
                     logger.info("Loading views...");
                     if (!uiCoordinator.loadAndInitializeViews()) {
                         logger.warn("Some views failed to load, but continuing with available views");

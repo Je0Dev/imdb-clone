@@ -52,8 +52,8 @@ public enum Genre {
         } catch (IllegalArgumentException e) {
             // Try to find a case-insensitive match
             for (Genre genre : values()) {
-                if (genre.displayName.equalsIgnoreCase(value.trim()) || 
-                    genre.name().equalsIgnoreCase(normalized)) {
+                if (genre.displayName.equalsIgnoreCase(value.trim()) ||
+                        genre.name().equalsIgnoreCase(normalized)) {
                     return genre;
                 }
             }
@@ -61,4 +61,7 @@ public enum Genre {
         }
     }
 
+    public Object getDisplayName() {
+        return displayName;
+    }
 }
