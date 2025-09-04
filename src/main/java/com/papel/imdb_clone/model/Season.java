@@ -3,7 +3,6 @@ package com.papel.imdb_clone.model;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import java.util.Objects;
 
 
 public class Season {
@@ -78,21 +77,6 @@ public class Season {
         this.year = year;
     }
 
-    @Override
-    public boolean equals(Object obj) {
-        if (this == obj) return true;
-        if (obj == null || getClass() != obj.getClass()) return false;
-        Season season = (Season) obj;
-        return id == season.id &&
-                year == season.year &&
-                Objects.equals(episodes, season.episodes);
-    }
-
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(id, year, episodes);
-    }
 
     @Override
     public String toString() {

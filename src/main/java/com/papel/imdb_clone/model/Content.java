@@ -171,26 +171,6 @@ public abstract class Content {
     }
 
 
-    @Override
-    public int hashCode() {
-        return Objects.hash(id, title, genre, imdbRating);
-    }
-
-    @Override
-    public String toString() {
-        return "Content{" +
-                "id=" + id +
-                ", title='" + title + '\'' +
-                ", genre=" + genre +
-                ", averageRating=" + calculateAverageUserRating() +
-                ", imdbRating=" + imdbRating +
-                '}';
-    }
-
-    public Double getUserRating() {
-        return userRating;
-    }
-
     public void setUserRating(Double userRating) {
         this.userRating = userRating;
     }
@@ -202,6 +182,8 @@ public abstract class Content {
     public void setActors(List<Actor> actors) {
         this.actors = actors != null ? new ArrayList<>(actors) : new ArrayList<>();
     }
+
+    public abstract void setStartYear(int startYear);
 
     public int getStartYear() {
         return startYear;

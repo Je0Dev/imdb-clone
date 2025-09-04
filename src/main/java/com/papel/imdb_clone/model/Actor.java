@@ -6,7 +6,6 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Objects;
 import java.util.stream.Collectors;
 
 public class Actor extends Celebrity {
@@ -44,22 +43,6 @@ public class Actor extends Celebrity {
         return raceLabel;
     }
 
-
-    @Override
-    public boolean equals(Object obj) {
-        if (this == obj) return true;
-        if (obj == null || getClass() != obj.getClass()) return false;
-        if (!super.equals(obj)) return false;
-        Actor actor = (Actor) obj;
-        return Objects.equals(this.getRace(), actor.getRace()) && Objects.equals(getFirstName(), actor.getFirstName())
-                && Objects.equals(getLastName(), actor.getLastName()) && Objects.equals(getBirthDate(), actor.getBirthDate())
-                && getGender() == actor.getGender();
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(super.hashCode(), getRace());
-    }
 
     @Override
     public String toString() {

@@ -14,8 +14,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
 /**
@@ -81,19 +81,19 @@ public class SeriesDataLoader extends BaseDataLoader {
                         int startYear = 0;
                         Integer endYear = null;
                         try {
-                            String yearStr = parts[3].trim();
-                            logger.debug("Parsing startYear from '{}' for series: {}", yearStr, title);
-                            startYear = Integer.parseInt(yearStr);
-                            logger.debug("Successfully parsed startYear: {} for series: {}", startYear, title);
-                            
-                            if (parts.length > 4 && !parts[4].trim().isEmpty()) {
+                            startYear = Integer.parseInt(parts[3].trim());
+                            logger.debug("Parsed startYear: {} for series: {}", startYear, title);
+                        } catch (NumberFormatException e) {
+                            logger.warn("Invalid start year format for series: " + title, e);
+                        }
+
+                        if (parts.length > 4 && !parts[4].trim().isEmpty()) {
+                            try {
                                 endYear = Integer.parseInt(parts[4].trim());
                                 logger.debug("Parsed endYear: {} for series: {}", endYear, title);
+                            } catch (NumberFormatException e) {
+                                logger.warn("Invalid end year format for series: " + title, e);
                             }
-                        } catch (NumberFormatException e) {
-                            logger.warn("Invalid year format at line {}: {}", lineNumber, line, e);
-                            errors++;
-                            continue;
                         }
 
                         double rating = 0.0;
@@ -149,22 +149,50 @@ public class SeriesDataLoader extends BaseDataLoader {
                             continue;
                         }
 
-                        // Create or update the series
-                        logger.debug("Creating new Series: {}, startYear: {}, endYear: {}", title, startYear, endYear);
+                        // Create the series
                         Series series = new Series(title);
-                        series.setTitle(title);
-                        logger.debug("Before setStartYear: {}", series);
-                        series.setStartYear(startYear);
-                        logger.debug("After setStartYear: {}", series);
-                        series.setEndYear(endYear);
+
+                        // Set the start year (this will also update the release date)
+                        if (startYear > 0) {
+                            try {
+                                // Create a date from the start year (set to January 1st of that year)
+                                Calendar cal = Calendar.getInstance();
+                                cal.set(Calendar.YEAR, startYear);
+                                cal.set(Calendar.MONTH, Calendar.JANUARY);
+                                cal.set(Calendar.DAY_OF_MONTH, 1);
+                                
+                                // Set the release date first (which will also set startYear)
+                                series.setReleaseDate(cal.getTime());
+                                logger.debug("Set release date to {}-01-01 for series: {}", startYear, title);
+                                
+                                // Explicitly set startYear as well to ensure consistency
+                                series.setStartYear(startYear);
+                                logger.debug("Set startYear to {} for series: {}", startYear, title);
+                            } catch (Exception e) {
+                                logger.error("Error setting release date for series: " + title, e);
+                                // Fall back to just setting the year if date creation fails
+                                series.setStartYear(startYear);
+                            }
+                        } else {
+                            logger.warn("No valid start year found for series: " + title);
+                        }
+
+                        // Set end year if available
+                        if (endYear != null && endYear > 0) {
+                            series.setEndYear(endYear);
+                        }
+
                         series.setRating(rating);
                         logger.debug("Final series object: {}", series);
 
                         // Set genres - this will also set the primary genre to the first one
                         if (!genres.isEmpty()) {
                             series.setGenres(new ArrayList<>(genres));
-                            // Log the genres for debugging
-                            logger.debug("Set genres for {}: {}", title, genres);
+                            // Log the created series for debugging
+                            logger.debug("Created series: {} (startYear: {}, endYear: {})",
+                                    series.getTitle(),
+                                    series.getStartYear(),
+                                    series.getEndYear());
                         } else {
                             logger.warn("No valid genres found for series: {}", title);
                         }
@@ -205,87 +233,83 @@ public class SeriesDataLoader extends BaseDataLoader {
                             }
                         }
 
+                        // Ensure series has seasons list
+                        if (series.getSeasons() == null) {
+                            series.setSeasons(new ArrayList<>());
+                        }
+
+                        // Add seasons
+                        for (int i = 1; i <= seasonsCount; i++) {
+                            try {
+                                Season season = new Season(i, series);
+                                season.setSeasonNumber(i);
+                                season.setTitle("Season " + i);
+                                season.setEpisodes(new ArrayList<>());
+
+                                // Add a default episode to each season
+                                Episode episode = new Episode();
+                                episode.setTitle("Episode 1");
+                                episode.setDuration(45); // Default duration
+                                episode.setEpisodeNumber(1);
+                                episode.setReleaseDate(new java.util.Date());
+                                season.getEpisodes().add(episode);
+
+                                series.getSeasons().add(season);
+                            } catch (Exception e) {
+                                logger.warn("Error creating season {} for series '{}' at line {}: {}",
+                                        i, title, lineNumber, e.getMessage());
+                            }
+                        }
+
                         // Add actors
                         for (String actorName : actorNames) {
                             if (!actorName.trim().isEmpty()) {
                                 try {
                                     String[] nameParts = actorName.trim().split("\\s+", 2);
+                                    String firstName, lastName;
+
                                     if (nameParts.length >= 2) {
-                                        String firstName = nameParts[0].trim();
-                                        String lastName = nameParts[1].trim();
-
-                                        // Find or create actor
-                                        Actor actor = actorService.findByFullName(firstName, lastName)
-                                                .orElseGet(() -> {
-                                                    Actor newActor = new Actor(
-                                                            firstName,
-                                                            lastName,
-                                                            null, // birthdate unknown
-                                                            'U',  // gender unknown
-                                                            Ethnicity.CAUCASOID // default ethnicity
-                                                    );
-                                                    return actorService.save(newActor);
-                                                });
-
-                                        // Ensure series has seasons list
-                                        if (series.getSeasons() == null) {
-                                            series.setSeasons(new ArrayList<>());
-                                        }
-
-                                        // Ensure series has at least one season
-                                        if (series.getSeasons().isEmpty()) {
-                                            Season season = new Season(1, 1, "Season 1", series);
-                                            series.getSeasons().add(season);
-
-                                            // Create a new episode with required parameters
-                                            Episode episode = new Episode();
-                                            episode.setTitle("Pilot");
-                                            episode.setDuration(0); // 0 duration for now
-                                            episode.setEpisodeNumber(1);
-
-                                            // Add episode to season
-                                            season.addEpisode(episode);
-                                        }
-
-                                        // Get the first season and its episodes
-                                        Season firstSeason = series.getSeasons().get(0);
-
-                                        // Ensure the first season has at least one episode
-                                        if (firstSeason.getEpisodes().isEmpty()) {
-                                            Episode episode = new Episode();
-                                            episode.setTitle("Pilot");
-                                            episode.setDuration(0);
-                                            episode.setEpisodeNumber(1);
-                                            firstSeason.addEpisode(episode);
-                                        }
-
-                                        // Add actor to the first episode's cast
-                                        Episode firstEpisode = firstSeason.getEpisodes().get(0);
-                                        List<Actor> episodeActors = firstEpisode.getActors();
-                                        if (episodeActors == null) {
-                                            episodeActors = new ArrayList<>();
-                                            // Note: We can't directly set the actors list, so we'll add them one by one
-                                        }
-
-                                        // Add actor if not already in the list
-                                        if (!episodeActors.contains(actor)) {
-                                            episodeActors.add(actor);
-                                        }
+                                        firstName = nameParts[0].trim();
+                                        lastName = nameParts[1].trim();
                                     } else {
-                                        // If we can't split into first and last name, use full name as last name
-                                        // Create actor with empty first name and full name as last name
-                                        Actor actor = new Actor(
-                                                "",
-                                                actorName.trim(),
-                                                null, // birthdate unknown
-                                                'U',  // gender unknown
-                                                Ethnicity.CAUCASOID  // default to Caucasoid as fallback
-                                        );
-                                        actorService.save(actor);
-                                        if (series.getActors() == null) {
-                                            series.setActors(new ArrayList<>());
-                                        }
+                                        // If only one name is provided, use it as last name
+                                        firstName = "";
+                                        lastName = nameParts[0].trim();
+                                    }
+
+                                    // Find or create actor
+                                    Actor actor = actorService.findByFullName(firstName, lastName)
+                                            .orElseGet(() -> {
+                                                Actor newActor = new Actor(
+                                                        firstName,
+                                                        lastName,
+                                                        null, // birthdate unknown
+                                                        'U',  // gender unknown
+                                                        Ethnicity.CAUCASOID // default ethnicity
+                                                );
+                                                return actorService.save(newActor);
+                                            });
+
+                                    // Add actor to series
+                                    if (series.getActors() == null) {
+                                        series.setActors(new ArrayList<>());
+                                    }
+                                    if (!series.getActors().contains(actor)) {
                                         series.getActors().add(actor);
+                                    }
+
+                                    // Add actor to first episode of first season
+                                    if (!series.getSeasons().isEmpty()) {
+                                        Season firstSeason = series.getSeasons().get(0);
+                                        if (firstSeason != null && !firstSeason.getEpisodes().isEmpty()) {
+                                            Episode firstEpisode = firstSeason.getEpisodes().get(0);
+                                            if (firstEpisode.getActors() == null) {
+                                                firstEpisode.setActors(new ArrayList<>());
+                                            }
+                                            if (!firstEpisode.getActors().contains(actor)) {
+                                                firstEpisode.getActors().add(actor);
+                                            }
+                                        }
                                     }
                                 } catch (Exception e) {
                                     logger.warn("Error processing actor '{}' at line {}: {}",
@@ -294,19 +318,6 @@ public class SeriesDataLoader extends BaseDataLoader {
                             }
                         }
 
-                        // Add seasons
-                        for (int i = 1; i <= seasonsCount; i++) {
-                            try {
-                                Season season = new Season(seasonNumber, series);
-                                season.setSeasonNumber(i);
-                                // Create empty episodes list for the season
-                                season.setEpisodes(new ArrayList<>());
-                                series.getSeasons().add(season);
-                            } catch (Exception e) {
-                                logger.warn("Error creating season {} for series '{}' at line {}: {}",
-                                        i, title, lineNumber, e.getMessage());
-                            }
-                        }
 
                         // Save the series
                         try {

@@ -4,7 +4,10 @@ import com.papel.imdb_clone.enums.Genre;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
 
 public class Series extends Content {
     private List<Season> seasons;
@@ -141,22 +144,6 @@ public class Series extends Content {
         return new ArrayList<>(genres);
     }
 
-    @Override
-    public boolean equals(Object obj) {
-        if (this == obj) return true;
-        if (obj == null || getClass() != obj.getClass()) return false;
-        if (!super.equals(obj)) return false;
-        Series series = (Series) obj;
-        return Objects.equals(seasons, series.seasons) &&
-                Objects.equals(boxOffice, series.boxOffice) &&
-                Objects.equals(awards, series.awards);
-    }
-
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(super.hashCode(), seasons, boxOffice, awards);
-    }
 
     @Override
     public String toString() {

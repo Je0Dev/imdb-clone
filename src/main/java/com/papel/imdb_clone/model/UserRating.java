@@ -1,7 +1,6 @@
 package com.papel.imdb_clone.model;
 
 import java.time.LocalDateTime;
-import java.util.Objects;
 
 /**
  * Represents a detailed user rating and review for a movie or series.
@@ -36,14 +35,6 @@ public class UserRating {
         this.id = id;
     }
 
-    public int getUserId() {
-        return userId;
-    }
-
-
-    public int getContentId() {
-        return contentId;
-    }
 
     public double getRating() {
         return rating;
@@ -65,29 +56,6 @@ public class UserRating {
         this.title = title;
     }
 
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
-
-    public boolean hasTitle() {
-        return title != null && !title.trim().isEmpty();
-    }
-
-
-    @Override
-    public boolean equals(Object obj) {
-        if (this == obj) return true;
-        if (obj == null || getClass() != obj.getClass()) return false;
-        UserRating that = (UserRating) obj;
-        return id == that.id &&
-                userId == that.userId &&
-                contentId == that.contentId;
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(id, userId, contentId);
-    }
 
     @Override
     public String toString() {

@@ -90,25 +90,6 @@ public class Movie extends Content {
 
 
     @Override
-    public boolean equals(Object obj) {
-        if (this == obj) return true;
-        if (obj == null || getClass() != obj.getClass()) return false;
-        if (!super.equals(obj)) return false;
-        Movie movie = (Movie) obj;
-        return duration == movie.duration &&
-                Objects.equals(actors, movie.actors) &&
-                Objects.equals(boxOffice, movie.boxOffice) &&
-                Objects.equals(awards, movie.awards) &&
-                Objects.equals(genres, movie.genres);
-    }
-
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(super.hashCode(), duration, actors, boxOffice, awards, genres);
-    }
-
-    @Override
     public String toString() {
         return "Movie{" +
                 "id=" + getId() +

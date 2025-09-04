@@ -3,7 +3,6 @@ package com.papel.imdb_clone.model;
 import com.papel.imdb_clone.enums.Ethnicity;
 
 import java.time.LocalDate;
-import java.util.Objects;
 
 public abstract class Celebrity {
     int id;
@@ -48,24 +47,6 @@ public abstract class Celebrity {
         this.birthDate = birthDate;
     }
 
-
-    @Override
-    public boolean equals(Object obj) {
-        if (this == obj) return true;
-        if (obj == null || getClass() != obj.getClass()) return false;
-        Celebrity celebrity = (Celebrity) obj;
-        return id == celebrity.id &&
-                gender == celebrity.gender &&
-                Objects.equals(firstName, celebrity.firstName) &&
-                Objects.equals(lastName, celebrity.lastName) &&
-                Objects.equals(birthDate, celebrity.birthDate);
-    }
-
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(id, firstName, lastName, birthDate, gender);
-    }
 
     @Override
     public String toString() {

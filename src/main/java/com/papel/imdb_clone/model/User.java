@@ -5,7 +5,6 @@ import com.papel.imdb_clone.exceptions.InvalidEntityException;
 import java.io.Serial;
 import java.io.Serializable;
 import java.time.LocalDate;
-import java.util.Objects;
 import java.util.regex.Pattern;
 
 public class User implements Serializable {
@@ -92,24 +91,6 @@ public class User implements Serializable {
 
 
     @Override
-    public boolean equals(Object obj) {
-        if (this == obj) return true;
-        if (obj == null || getClass() != obj.getClass()) return false;
-        User user = (User) obj;
-        return id == user.id &&
-                gender == user.gender &&
-                Objects.equals(username, user.username) &&
-                Objects.equals(firstName, user.firstName) &&
-                Objects.equals(lastName, user.lastName) &&
-                Objects.equals(email, user.email);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(id, firstName, lastName, username, email, gender);
-    }
-
-    @Override
     public String toString() {
         String base = "User{" +
                 "id=" + id +
@@ -129,16 +110,9 @@ public class User implements Serializable {
         this.active = active;
     }
 
-    public boolean isActive() {
-        return active;
-    }
 
     public void setAdmin(boolean admin) {
         this.admin = admin;
-    }
-
-    public boolean isAdmin() {
-        return admin;
     }
 
     public void setJoinDate(LocalDate joinDate) {

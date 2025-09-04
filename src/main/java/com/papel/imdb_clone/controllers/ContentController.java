@@ -527,80 +527,17 @@ public class ContentController extends BaseController {
             // Year column
             if (seriesYearColumn != null) {
                 seriesYearColumn.setCellValueFactory(cellData -> {
-                    try {
-                        Series series = cellData.getValue();
-                        if (series == null) {
-                            logger.warn("Series is null in cell value factory");
-                            return new SimpleIntegerProperty(0).asObject();
-                        }
-
-                        // Log the series object to see its state
-                        logger.debug("Processing series: {}", series);
-                        
-                        // Try to get the year using direct field access first
-                        int year = 0;
-                        try {
-                            // Try to get the startYear field value
-                            java.lang.reflect.Field startYearField = Series.class.getDeclaredField("startYear");
-                            startYearField.setAccessible(true);
-                            year = startYearField.getInt(series);
-                            logger.debug("Got year from startYear field: {}", year);
-                            
-                            // If we got a valid year, use it
-                            if (year > 0) {
-                                return new SimpleIntegerProperty(year).asObject();
-                            }
-                        } catch (Exception e) {
-                            logger.debug("Could not access startYear field directly: {}", e.getMessage());
-                        }
-                        
-                        // Try to get the year using the getter method
-                        try {
-                            year = series.getStartYear();
-                            logger.debug("Got year from getStartYear(): {}", year);
-                            if (year > 0) {
-                                return new SimpleIntegerProperty(year).asObject();
-                            }
-                        } catch (Exception e) {
-                            logger.debug("Could not get year using getStartYear(): {}", e.getMessage());
-                        }
-                        
-                        // Try to get the first season's year as a fallback
-                        try {
-                            List<Season> seasons = series.getSeasons();
-                            if (seasons != null && !seasons.isEmpty()) {
-                                Season firstSeason = seasons.get(0);
-                                if (firstSeason != null) {
-                                    Date firstAired = firstSeason.getReleaseDate();
-                                    if (firstAired != null) {
-                                        year = 1900 + firstAired.getYear();
-                                        logger.debug("Got year from first season release date: {}", year);
-                                        // Try to update the series with this year for future reference
-                                        try {
-                                            series.setStartYear(year);
-                                        } catch (Exception e) {
-                                            logger.debug("Could not update startYear: {}", e.getMessage());
-                                        }
-                                        return new SimpleIntegerProperty(year).asObject();
-                                    }
-                                }
-                            }
-                        } catch (Exception e) {
-                            logger.debug("Error getting year from seasons: {}", e.getMessage());
-                        }
-                        
-                        // If we still don't have a year, log a warning
-                        logger.warn("Could not determine year for series: {}", series.getTitle());
-                        logger.debug("Series details: {}", series);
-                        
-                        return new SimpleIntegerProperty(0).asObject();
-                    } catch (Exception e) {
-                        logger.error("Unexpected error getting series year: {}", e.getMessage(), e);
+                    Series series = cellData.getValue();
+                    if (series == null) {
                         return new SimpleIntegerProperty(0).asObject();
                     }
+
+                    // Simply get the year using the getter which has all the fallback logic
+                    int year = series.getStartYear();
+                    return new SimpleIntegerProperty(year > 0 ? year : 0).asObject();
                 });
-                
-                // Set cell factory to handle display
+
+                // Set cell factory to display "N/A" for invalid years
                 seriesYearColumn.setCellFactory(column -> new TableCell<Series, Integer>() {
                     @Override
                     protected void updateItem(Integer year, boolean empty) {
@@ -612,22 +549,13 @@ public class ContentController extends BaseController {
                         }
                     }
                 });
-                
-                // Add a listener to log when the table is populated
-                seriesTable.itemsProperty().addListener((obs, oldValue, newValue) -> {
-                    if (newValue != null) {
-                        logger.info("Series table populated with {} items", newValue.size());
-                        if (!newValue.isEmpty()) {
-                            logger.info("First series in table: {}", newValue.get(0));
-                        }
-                    }
-                });
             }
 
             // Genre column
             if (seriesGenreColumn != null) {
                 seriesGenreColumn.setCellValueFactory(cellData -> {
-                    List<Genre> genres = cellData.getValue().getGenres();
+                    Series series = cellData.getValue();
+                    List<Genre> genres = series.getGenres();
                     String genreText = genres != null ?
                             genres.stream()
                                     .map(Genre::name)

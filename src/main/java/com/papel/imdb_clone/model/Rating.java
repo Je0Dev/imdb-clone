@@ -1,7 +1,6 @@
 package com.papel.imdb_clone.model;
 
 import java.time.LocalDateTime;
-import java.util.Objects;
 
 public class Rating {
     private int id;
@@ -85,25 +84,6 @@ public class Rating {
         return createdAt;
     }
 
-
-    @Override
-    public boolean equals(Object obj) {
-        if (this == obj) return true;
-        if (obj == null || getClass() != obj.getClass()) return false;
-        Rating rating1 = (Rating) obj;
-        return id == rating1.id &&
-                userId == rating1.userId &&
-                contentId == rating1.contentId &&
-                Double.compare(rating1.score, score) == 0 &&
-                Objects.equals(review, rating1.review) &&
-                Objects.equals(createdAt, rating1.createdAt);
-    }
-
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(id, userId, contentId, score, review, createdAt);
-    }
 
     @Override
     public String toString() {

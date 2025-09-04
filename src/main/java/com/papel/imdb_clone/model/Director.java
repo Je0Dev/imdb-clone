@@ -6,7 +6,6 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Objects;
 import java.util.stream.Collectors;
 
 public class Director extends Celebrity {
@@ -66,20 +65,6 @@ public class Director extends Celebrity {
         return ethnicity != null ? ethnicity.getLabel() : null;
     }
 
-    @Override
-    public boolean equals(Object obj) {
-        if (this == obj) return true;
-        if (obj == null || getClass() != obj.getClass()) return false;
-        if (!super.equals(obj)) return false;
-        Director director = (Director) obj;
-        return Objects.equals(bestWorks, director.bestWorks) && ethnicity == director.ethnicity;
-    }
-
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(super.hashCode(), bestWorks, ethnicity);
-    }
 
     @Override
     public String toString() {
