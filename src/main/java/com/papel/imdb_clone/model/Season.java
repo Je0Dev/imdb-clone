@@ -1,6 +1,7 @@
 package com.papel.imdb_clone.model;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Objects;
 
@@ -12,12 +13,13 @@ public class Season {
     private List<Episode> episodes;
     private int seasonNumber;
     private Object title;
+    private Date releaseDate;
 
     /**
      * Default constructor for Season.
      * Initializes an empty list of episodes.
      */
-    public Season() {
+    public Season(int seasonNumber, Series series) {
         this.episodes = new ArrayList<>();
     }
 
@@ -27,9 +29,10 @@ public class Season {
      * @param seasonNumber the season number
      * @param episodeCount the episode count (not used in this implementation)
      * @param title        the title of the season
+     * @param series
      */
-    public Season(int seasonNumber, int episodeCount, String title) {
-        this();
+    public Season(int seasonNumber, int episodeCount, String title, Series series) {
+        this(seasonNumber, series);
         this.seasonNumber = seasonNumber;
         this.title = title;
         this.episodeCount = episodeCount;
@@ -121,5 +124,9 @@ public class Season {
 
     public int getTotalEpisodes() {
         return episodes.size();
+    }
+
+    public Date getReleaseDate() {
+        return releaseDate;
     }
 }

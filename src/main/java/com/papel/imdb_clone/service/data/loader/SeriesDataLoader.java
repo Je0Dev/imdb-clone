@@ -26,6 +26,7 @@ public class SeriesDataLoader extends BaseDataLoader {
     private final ContentService<Series> seriesService;
     private final CelebrityService<Actor> actorService;
     private final CelebrityService<Director> directorService;
+    private int seasonNumber;
 
     public SeriesDataLoader(
             ContentService<Series> seriesService,
@@ -80,12 +81,17 @@ public class SeriesDataLoader extends BaseDataLoader {
                         int startYear = 0;
                         Integer endYear = null;
                         try {
-                            startYear = Integer.parseInt(parts[3].trim());
+                            String yearStr = parts[3].trim();
+                            logger.debug("Parsing startYear from '{}' for series: {}", yearStr, title);
+                            startYear = Integer.parseInt(yearStr);
+                            logger.debug("Successfully parsed startYear: {} for series: {}", startYear, title);
+                            
                             if (parts.length > 4 && !parts[4].trim().isEmpty()) {
                                 endYear = Integer.parseInt(parts[4].trim());
+                                logger.debug("Parsed endYear: {} for series: {}", endYear, title);
                             }
                         } catch (NumberFormatException e) {
-                            logger.warn("Invalid year format at line {}: {}", lineNumber, line);
+                            logger.warn("Invalid year format at line {}: {}", lineNumber, line, e);
                             errors++;
                             continue;
                         }
@@ -99,18 +105,43 @@ public class SeriesDataLoader extends BaseDataLoader {
                         }
 
                         String creatorName = parts[6].trim();
-                        String[] actorNames = parts[7].split(";");
+                        String[] genreArray = parts[1].trim().split(",");
                         Set<Genre> genres = new HashSet<>();
-                        try {
-                            genres.add(Genre.valueOf(genreStr.toUpperCase()));
-                        } catch (IllegalArgumentException e) {
-                            logger.warn("Unknown genre '{}' at line {}: {}", genreStr, lineNumber, line);
-                        }
-                        String description = "";
-                        String country = "";
-                        String language = "English";
-                        String imageUrl = "";
 
+                        for (String genreItem : genreArray) {
+                            try {
+                                // Normalize the genre string
+                                String normalizedGenre = genreItem.trim().toUpperCase()
+                                        .replace("-", "_")
+                                        .replace(" ", "_")
+                                        .replace("&", "AND")
+                                        .replace("/", "_")
+                                        .replace("'", "");
+
+                                // Handle special cases
+                                if (normalizedGenre.equals("SCIFI")) {
+                                    normalizedGenre = "SCI_FI";
+                                } else if (normalizedGenre.equals("SCIFANTASY")) {
+                                    normalizedGenre = "SCIENCE_FANTASY";
+                                } else if (normalizedGenre.equals("ACTION")) {
+                                    normalizedGenre = "ACTION_ADVENTURE";
+                                } else if (normalizedGenre.equals("ADVENTURE")) {
+                                    normalizedGenre = "ACTION_ADVENTURE";
+                                }
+
+                                // Only add if it's a valid genre
+                                try {
+                                    Genre genre = Genre.valueOf(normalizedGenre);
+                                    genres.add(genre);
+                                } catch (IllegalArgumentException e) {
+                                    logger.warn("Unknown genre '{}' at line {}: {}", genreItem, lineNumber, line);
+                                }
+                            } catch (Exception e) {
+                                logger.warn("Error processing genre '{}' at line {}: {}", genreItem, lineNumber, e.getMessage());
+                            }
+                        }
+
+                        String[] actorNames = parts[7].split(";");
                         // Check if series already exists by title and year
                         if (seriesService.findByTitleAndYear(title, startYear).isPresent()) {
                             logger.debug("Series '{}' from {} already exists", title, startYear);
@@ -119,12 +150,24 @@ public class SeriesDataLoader extends BaseDataLoader {
                         }
 
                         // Create or update the series
+                        logger.debug("Creating new Series: {}, startYear: {}, endYear: {}", title, startYear, endYear);
                         Series series = new Series(title);
                         series.setTitle(title);
+                        logger.debug("Before setStartYear: {}", series);
                         series.setStartYear(startYear);
+                        logger.debug("After setStartYear: {}", series);
                         series.setEndYear(endYear);
                         series.setRating(rating);
-                        series.setGenres(new ArrayList<>(genres));
+                        logger.debug("Final series object: {}", series);
+
+                        // Set genres - this will also set the primary genre to the first one
+                        if (!genres.isEmpty()) {
+                            series.setGenres(new ArrayList<>(genres));
+                            // Log the genres for debugging
+                            logger.debug("Set genres for {}: {}", title, genres);
+                        } else {
+                            logger.warn("No valid genres found for series: {}", title);
+                        }
 
                         // Add creator as director if not empty
                         if (!creatorName.trim().isEmpty()) {
@@ -191,7 +234,7 @@ public class SeriesDataLoader extends BaseDataLoader {
 
                                         // Ensure series has at least one season
                                         if (series.getSeasons().isEmpty()) {
-                                            Season season = new Season(1, 1, "Season 1");
+                                            Season season = new Season(1, 1, "Season 1", series);
                                             series.getSeasons().add(season);
 
                                             // Create a new episode with required parameters
@@ -254,7 +297,7 @@ public class SeriesDataLoader extends BaseDataLoader {
                         // Add seasons
                         for (int i = 1; i <= seasonsCount; i++) {
                             try {
-                                Season season = new Season();
+                                Season season = new Season(seasonNumber, series);
                                 season.setSeasonNumber(i);
                                 // Create empty episodes list for the season
                                 season.setEpisodes(new ArrayList<>());

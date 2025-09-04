@@ -1,6 +1,8 @@
 package com.papel.imdb_clone.model;
 
 import com.papel.imdb_clone.enums.Genre;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.*;
 
@@ -17,6 +19,8 @@ public class Series extends Content {
     private double rating;
     private String nominations;
 
+    private List<Genre> genres = new ArrayList<>();
+    private static final Logger logger = LoggerFactory.getLogger(Series.class);
 
     /**
      * Creates a new Series with the given title and summary.
@@ -99,8 +103,18 @@ public class Series extends Content {
         return new ArrayList<>(awards);
     }
 
-    public void setAwards(String awards) {
-        this.awards = awards != null ? new ArrayList<>(Collections.singleton(awards)) : new ArrayList<>();
+    /**
+     * Sets the list of genres for this series.
+     *
+     * @param genres the list of genres to set
+     */
+    public void setGenres(List<Genre> genres) {
+        this.genres = genres != null ? new ArrayList<>(genres) : new ArrayList<>();
+
+        // Set the primary genre to the first one if available
+        if (!this.genres.isEmpty()) {
+            setGenre(this.genres.get(0));
+        }
     }
 
     /**
@@ -118,6 +132,14 @@ public class Series extends Content {
         return allActors;
     }
 
+    /**
+     * Gets all genres for this series
+     *
+     * @return List of genres
+     */
+    public List<Genre> getGenres() {
+        return new ArrayList<>(genres);
+    }
 
     @Override
     public boolean equals(Object obj) {
@@ -147,14 +169,6 @@ public class Series extends Content {
     }
 
 
-    public void setCreator(String creator) {
-    }
-
-
-    public void addGenre(String genreName) {
-
-    }
-
     /**
      * Sets the release year of the series
      *
@@ -183,5 +197,14 @@ public class Series extends Content {
 
     public int getTotalEpisodes() {
         return seasons.stream().mapToInt(Season::getTotalEpisodes).sum();
+    }
+
+    public List<String> setAwards(String awards) {
+        this.awards = new ArrayList<>();
+        return Arrays.asList(awards.split(","));
+    }
+
+    public int getEndYear() {
+        return endYear;
     }
 }

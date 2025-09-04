@@ -148,25 +148,6 @@ public class AuthController extends BaseController {
     }
 
 
-    private void updatePasswordStrengthIndicator(String password) {
-        int strength = inputValidator.calculatePasswordStrength(password);
-
-        String[] strengthTexts = {"Very Weak", "Weak", "Moderate", "Strong", "Very Strong"};
-        String[] colors = {"#ff4444", "#ff8800", "#ffbb33", "#00C851", "#007E33"};
-
-        if (password == null || password.isEmpty()) {
-            passwordStrengthLabel.setText("");
-            return;
-        }
-
-        int index = Math.min(strength - 1, strengthTexts.length - 1);
-        String strengthText = strength > 0 ? strengthTexts[index] : "";
-        String color = strength > 0 ? colors[index] : "#b3b3b3";
-
-        passwordStrengthLabel.setText("Password: " + strengthText);
-        passwordStrengthLabel.setStyle("-fx-text-fill: " + color + "; -fx-font-size: 11;");
-    }
-
     private void handleValidationError(ValidationException e, Label errorLabel) {
         StringBuilder errorMessage = new StringBuilder();
 

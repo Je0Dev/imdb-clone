@@ -118,7 +118,10 @@ public class AdvancedSearchController {
         resultGenreColumn.setCellValueFactory(cellData -> {
             List<Genre> genres = cellData.getValue().getGenres();
             String genreString = genres != null && !genres.isEmpty() ?
-                    genres.stream().map(Genre::name).collect(java.util.stream.Collectors.joining(", ")) : "N/A";
+                    genres.stream()
+                          .map(Genre::getDisplayName)
+                          .map(Object::toString)
+                          .collect(java.util.stream.Collectors.joining(", ")) : "N/A";
             return new SimpleStringProperty(genreString);
         });
         
@@ -249,6 +252,9 @@ public class AdvancedSearchController {
                 return null;
             }
 
+            // Create criteria with basic filters
+            SearchCriteria criteria = new SearchCriteria(keywords);
+
             // Parse year range - use null for no filter instead of default values
             Integer yearFromValue = null;
             Integer yearToValue = null;
@@ -263,16 +269,6 @@ public class AdvancedSearchController {
                 logger.warn("Invalid year format", e);
                 UIUtils.showError("Invalid Year", "Please enter valid year values");
                 return null;
-            }
-
-            // Create criteria with basic filters
-            SearchCriteria criteria = new SearchCriteria(query);
-
-            // Only set title/query if keywords are provided
-            if (keywords != null && !keywords.isEmpty()) {
-                criteria.setTitle(keywords);
-                criteria.setQuery(keywords); // For backward compatibility
-                logger.debug("Setting search keywords: {}", keywords);
             }
 
             // Set year range

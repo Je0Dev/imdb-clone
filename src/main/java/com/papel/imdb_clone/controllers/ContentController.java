@@ -3,10 +3,7 @@ package com.papel.imdb_clone.controllers;
 import com.papel.imdb_clone.data.RefactoredDataManager;
 import com.papel.imdb_clone.enums.Genre;
 import com.papel.imdb_clone.exceptions.ContentNotFoundException;
-import com.papel.imdb_clone.model.Content;
-import com.papel.imdb_clone.model.Movie;
-import com.papel.imdb_clone.model.Series;
-import com.papel.imdb_clone.model.User;
+import com.papel.imdb_clone.model.*;
 import com.papel.imdb_clone.service.*;
 import com.papel.imdb_clone.util.AppEventBus;
 import com.papel.imdb_clone.util.AppStateManager;
@@ -22,6 +19,7 @@ import javafx.geometry.Insets;
 import javafx.scene.Node;
 import javafx.scene.control.*;
 import javafx.scene.layout.GridPane;
+import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import org.slf4j.Logger;
@@ -51,6 +49,12 @@ public class ContentController extends BaseController {
     private ComboBox<String> seriesSortBy;
     @FXML
     private Label statusLabel;
+
+    @FXML
+    private StackPane loadingIndicatorContainer;
+
+    @FXML
+    private ProgressIndicator movieLoadingIndicator;
     @FXML
     private TableView<Movie> movieTable;
 
@@ -523,9 +527,100 @@ public class ContentController extends BaseController {
             // Year column
             if (seriesYearColumn != null) {
                 seriesYearColumn.setCellValueFactory(cellData -> {
-                    Date releaseDate = cellData.getValue().getYear();
-                    int year = releaseDate != null ? releaseDate.getYear() + 1900 : 0;
-                    return new SimpleIntegerProperty(year).asObject();
+                    try {
+                        Series series = cellData.getValue();
+                        if (series == null) {
+                            logger.warn("Series is null in cell value factory");
+                            return new SimpleIntegerProperty(0).asObject();
+                        }
+
+                        // Log the series object to see its state
+                        logger.debug("Processing series: {}", series);
+                        
+                        // Try to get the year using direct field access first
+                        int year = 0;
+                        try {
+                            // Try to get the startYear field value
+                            java.lang.reflect.Field startYearField = Series.class.getDeclaredField("startYear");
+                            startYearField.setAccessible(true);
+                            year = startYearField.getInt(series);
+                            logger.debug("Got year from startYear field: {}", year);
+                            
+                            // If we got a valid year, use it
+                            if (year > 0) {
+                                return new SimpleIntegerProperty(year).asObject();
+                            }
+                        } catch (Exception e) {
+                            logger.debug("Could not access startYear field directly: {}", e.getMessage());
+                        }
+                        
+                        // Try to get the year using the getter method
+                        try {
+                            year = series.getStartYear();
+                            logger.debug("Got year from getStartYear(): {}", year);
+                            if (year > 0) {
+                                return new SimpleIntegerProperty(year).asObject();
+                            }
+                        } catch (Exception e) {
+                            logger.debug("Could not get year using getStartYear(): {}", e.getMessage());
+                        }
+                        
+                        // Try to get the first season's year as a fallback
+                        try {
+                            List<Season> seasons = series.getSeasons();
+                            if (seasons != null && !seasons.isEmpty()) {
+                                Season firstSeason = seasons.get(0);
+                                if (firstSeason != null) {
+                                    Date firstAired = firstSeason.getReleaseDate();
+                                    if (firstAired != null) {
+                                        year = 1900 + firstAired.getYear();
+                                        logger.debug("Got year from first season release date: {}", year);
+                                        // Try to update the series with this year for future reference
+                                        try {
+                                            series.setStartYear(year);
+                                        } catch (Exception e) {
+                                            logger.debug("Could not update startYear: {}", e.getMessage());
+                                        }
+                                        return new SimpleIntegerProperty(year).asObject();
+                                    }
+                                }
+                            }
+                        } catch (Exception e) {
+                            logger.debug("Error getting year from seasons: {}", e.getMessage());
+                        }
+                        
+                        // If we still don't have a year, log a warning
+                        logger.warn("Could not determine year for series: {}", series.getTitle());
+                        logger.debug("Series details: {}", series);
+                        
+                        return new SimpleIntegerProperty(0).asObject();
+                    } catch (Exception e) {
+                        logger.error("Unexpected error getting series year: {}", e.getMessage(), e);
+                        return new SimpleIntegerProperty(0).asObject();
+                    }
+                });
+                
+                // Set cell factory to handle display
+                seriesYearColumn.setCellFactory(column -> new TableCell<Series, Integer>() {
+                    @Override
+                    protected void updateItem(Integer year, boolean empty) {
+                        super.updateItem(year, empty);
+                        if (empty || year == null || year <= 0) {
+                            setText("N/A");
+                        } else {
+                            setText(String.valueOf(year));
+                        }
+                    }
+                });
+                
+                // Add a listener to log when the table is populated
+                seriesTable.itemsProperty().addListener((obs, oldValue, newValue) -> {
+                    if (newValue != null) {
+                        logger.info("Series table populated with {} items", newValue.size());
+                        if (!newValue.isEmpty()) {
+                            logger.info("First series in table: {}", newValue.get(0));
+                        }
+                    }
                 });
             }
 
@@ -640,7 +735,7 @@ public class ContentController extends BaseController {
 
         TextField directorField = new TextField();
         directorField.setPromptText("Director");
-        
+
 
         // Create and configure the form layout
         GridPane grid = new GridPane();
@@ -713,24 +808,217 @@ public class ContentController extends BaseController {
      * @param actionEvent The action event that triggered this method
      */
     @FXML
-    public void handleAddSeason(ActionEvent actionEvent) {
+    private void handleAddSeason(ActionEvent actionEvent) {
         Series selectedSeries = seriesTable.getSelectionModel().getSelectedItem();
         if (selectedSeries == null) {
-            showAlert("No Selection", "Please select a series to add a season.");
+            showError("Error", "No series selected");
+            return;
         }
+
+        handleAddSeason(selectedSeries);
+    }
+
+    private void handleAddSeason(Series series) {
+        if (series == null) {
+            showError("Error", "No series selected");
+            return;
+        }
+
+        // Create a dialog to get season number
+        TextInputDialog dialog = new TextInputDialog("1");
+        dialog.setTitle("Add Season");
+        dialog.setHeaderText("Add a new season to " + series.getTitle());
+        dialog.setContentText("Season number:");
+
+        // Convert the result to an integer
+        Optional<String> result = dialog.showAndWait();
+        result.ifPresent(seasonNumberStr -> {
+            try {
+                int seasonNumber = Integer.parseInt(seasonNumberStr);
+
+                // Check if season already exists
+                if (series.getSeasons() != null && series.getSeasons().stream()
+                        .anyMatch(s -> s.getSeasonNumber() == seasonNumber)) {
+                    showError("Error", "A season with this number already exists");
+                    return;
+                }
+
+                // Create and add the new season
+                try {
+                    if (seasonNumber <= 0) {
+                        throw new IllegalArgumentException("Season number must be greater than 0");
+                    }
+
+                    // Initialize seasons list if null
+                    if (series.getSeasons() == null) {
+                        series.setSeasons(new ArrayList<>());
+                    }
+
+                    // Check for duplicate season number
+                    boolean seasonExists = series.getSeasons().stream()
+                            .anyMatch(s -> s.getSeasonNumber() == seasonNumber);
+
+                    if (seasonExists) {
+                        throw new IllegalArgumentException("A season with this number already exists");
+                    }
+
+                    // Create and add the new season
+                    Season newSeason = new Season(seasonNumber, series);
+                    newSeason.setEpisodes(new ArrayList<>());
+                    series.getSeasons().add(newSeason);
+
+                    // Sort seasons by number
+                    series.getSeasons().sort(Comparator.comparingInt(Season::getSeasonNumber));
+
+                    // Save the series
+                    contentService.save(series);
+                    refreshSeriesTable();
+
+                    showAlert("Success", String.format("Season %d added successfully", seasonNumber));
+                } catch (Exception e) {
+                    logger.error("Error adding season {} to series {}: {}",
+                            seasonNumber, series.getTitle(), e.getMessage(), e);
+                    throw e; // Re-throw to be caught by the outer try-catch
+                }
+            } catch (NumberFormatException e) {
+                showError("Error", "Please enter a valid season number");
+            } catch (Exception e) {
+                logger.error("Error adding season: {}", e.getMessage(), e);
+                showError("Error", "Failed to add season: " + e.getMessage());
+            }
+        });
+    }
+
+    private void handleAddEpisode(Series series, Season season) {
+        if (series == null || season == null) {
+            showError("Error", "Series or season not selected");
+            return;
+        }
+
+        // Create a dialog to get episode details
+        Dialog<Episode> dialog = new Dialog<>();
+        dialog.setTitle("Add Episode");
+        dialog.setHeaderText(String.format("Add a new episode to %s - Season %d",
+                series.getTitle(), season.getSeasonNumber()));
+
+        // Set the button types
+        ButtonType addButtonType = new ButtonType("Add", ButtonBar.ButtonData.OK_DONE);
+        dialog.getDialogPane().getButtonTypes().addAll(addButtonType, ButtonType.CANCEL);
+
+        // Create the content
+        GridPane grid = new GridPane();
+        grid.setHgap(10);
+        grid.setVgap(10);
+        grid.setPadding(new Insets(20, 150, 10, 10));
+
+        TextField episodeNumberField = new TextField();
+        episodeNumberField.setPromptText("1");
+        TextField titleField = new TextField();
+        titleField.setPromptText("Episode Title");
+        TextArea descriptionArea = new TextArea();
+        descriptionArea.setPromptText("Episode description");
+        descriptionArea.setWrapText(true);
+        descriptionArea.setPrefRowCount(3);
+
+        grid.add(new Label("Episode Number:"), 0, 0);
+        grid.add(episodeNumberField, 1, 0);
+        grid.add(new Label("Title:"), 0, 1);
+        grid.add(titleField, 1, 1);
+        grid.add(new Label("Description:"), 0, 2);
+        grid.add(descriptionArea, 1, 2);
+
+        dialog.getDialogPane().setContent(grid);
+
+        // Request focus on the episode number field by default
+        Platform.runLater(episodeNumberField::requestFocus);
+
+        // Convert the result to an Episode object when the add button is clicked
+        dialog.setResultConverter(dialogButton -> {
+            if (dialogButton == addButtonType) {
+                try {
+                    int episodeNumber = Integer.parseInt(episodeNumberField.getText().trim());
+                    String title = titleField.getText().trim();
+                    String description = descriptionArea.getText().trim();
+
+                    // Validate input
+                    if (title.isEmpty()) {
+                        showError("Error", "Please enter a title for the episode");
+                        return null;
+                    }
+
+                    // Check if episode already exists
+                    if (season.getEpisodes() != null && season.getEpisodes().stream()
+                            .anyMatch(e -> e.getEpisodeNumber() == episodeNumber)) {
+                        showError("Error", "An episode with this number already exists in this season");
+                        return null;
+                    }
+
+                    // Create and return the new episode
+                    Episode episode = new Episode();
+                    episode.setEpisodeNumber(episodeNumber);
+                    episode.setTitle(title);
+                    episode.setDescription(description);
+                    episode.setSeason(season);
+
+                    return episode;
+                } catch (NumberFormatException e) {
+                    showError("Error", "Please enter a valid episode number");
+                    return null;
+                }
+            }
+            return null;
+        });
+
+        Optional<Episode> result = dialog.showAndWait();
+        result.ifPresent(episode -> {
+            try {
+                // Add the episode to the season
+                try {
+                    if (episode.getEpisodeNumber() <= 0) {
+                        throw new IllegalArgumentException("Episode number must be greater than 0");
+                    }
+
+                    // Initialize episodes list if null
+                    if (season.getEpisodes() == null) {
+                        season.setEpisodes(new ArrayList<>());
+                    }
+
+                    // Check for duplicate episode number
+                    boolean episodeExists = season.getEpisodes().stream()
+                            .anyMatch(e -> e.getEpisodeNumber() == episode.getEpisodeNumber());
+
+                    if (episodeExists) {
+                        throw new IllegalArgumentException("An episode with this number already exists in this season");
+                    }
+
+                    // Add the episode
+                    season.getEpisodes().add(episode);
+
+                    // Sort episodes by number
+                    season.getEpisodes().sort(Comparator.comparingInt(Episode::getEpisodeNumber));
+
+                    // Save the series
+                    contentService.save(series);
+                    refreshSeriesTable();
+
+                    showAlert("Success", String.format("Episode %d added successfully", episode.getEpisodeNumber()));
+                } catch (Exception e) {
+                    logger.error("Error adding episode to season {} of series {}: {}",
+                            season.getSeasonNumber(), series.getTitle(), e.getMessage(), e);
+                    throw e; // Re-throw to be caught by the outer try-catch
+                }
+            } catch (Exception e) {
+                logger.error("Error adding episode: {}", e.getMessage(), e);
+                showError("Error", "Failed to add episode: " + e.getMessage());
+            }
+        });
     }
 
     /**
      * Handles the "Add Episode" button click event.
      * Shows a dialog to add a new episode to the selected season.
-     *
-     * @param actionEvent The action event that triggered this method
-     */
-    @FXML
-    public void handleAddEpisode(ActionEvent actionEvent) {
-    }
-
-    /**
+     * <p>
+     * /**
      * Shows a dialog to add a new series and returns the created series.
      *
      * @return the newly created Series, or null if cancelled
@@ -738,6 +1026,8 @@ public class ContentController extends BaseController {
     private Series showAddSeriesDialog() {
         // Create a custom dialog
         Dialog<Series> dialog = new Dialog<>();
+        dialog.setTitle("Add New Series");
+        dialog.setHeaderText("Enter series details");
         dialog.setTitle("Add New Series");
         dialog.setHeaderText("Enter series details");
 
@@ -818,7 +1108,7 @@ public class ContentController extends BaseController {
 
                     // Set creator if provided
                     if (!creatorField.getText().trim().isEmpty()) {
-                        series.setCreator(creatorField.getText().trim());
+                        series.setDirector(creatorField.getText().trim());
                     }
 
                     // Parse number of seasons with validation
@@ -1098,11 +1388,20 @@ public class ContentController extends BaseController {
             // Genre column
             if (movieGenreColumn != null) {
                 movieGenreColumn.setCellValueFactory(cellData -> {
-                    List<Genre> genres = cellData.getValue().getGenres();
-                    String genreText = genres.stream()
-                            .map(Genre::name)
-                            .collect(Collectors.joining(", "));
-                    return new SimpleStringProperty(genreText);
+                    try {
+                        List<Genre> genres = cellData.getValue().getGenres();
+                        if (genres == null || genres.isEmpty()) {
+                            return new SimpleStringProperty("N/A");
+                        }
+                        String genreText = genres.stream()
+                                .filter(Objects::nonNull)
+                                .map(genre -> genre.name().charAt(0) + genre.name().substring(1).toLowerCase())
+                                .collect(Collectors.joining(", "));
+                        return new SimpleStringProperty(genreText.isEmpty() ? "N/A" : genreText);
+                    } catch (Exception e) {
+                        logger.debug("Error getting genres for movie: {}", e.getMessage());
+                        return new SimpleStringProperty("N/A");
+                    }
                 });
             }
 
@@ -1231,7 +1530,34 @@ public class ContentController extends BaseController {
             return;
         }
 
+        // Show loading indicator
+        if (loadingIndicatorContainer != null && movieLoadingIndicator != null) {
+            loadingIndicatorContainer.setVisible(true);
+            movieLoadingIndicator.setProgress(ProgressIndicator.INDETERMINATE_PROGRESS);
+        }
+
         Task<Void> task = new Task<>() {
+            {
+                // Set up task completion handlers
+                setOnSucceeded(e -> {
+                    if (loadingIndicatorContainer != null) {
+                        loadingIndicatorContainer.setVisible(false);
+                    }
+                    if (statusLabel != null) {
+                        statusLabel.setText("");
+                    }
+                });
+
+                setOnFailed(e -> {
+                    if (loadingIndicatorContainer != null) {
+                        loadingIndicatorContainer.setVisible(false);
+                    }
+                    if (statusLabel != null) {
+                        statusLabel.setText("Error loading movie data");
+                    }
+                });
+            }
+
             @Override
             protected Void call() {
                 try {
@@ -1288,19 +1614,6 @@ public class ContentController extends BaseController {
                 return null;
             }
         };
-
-        // Handle task completion
-        task.setOnSucceeded(e -> {
-            if (statusLabel != null) {
-                statusLabel.setText("");
-            }
-        });
-
-        task.setOnFailed(e -> {
-            if (statusLabel != null) {
-                statusLabel.setText("Error loading movie data");
-            }
-        });
 
         // Start the task in a background thread
         Thread thread = new Thread(task);
@@ -1600,33 +1913,96 @@ public class ContentController extends BaseController {
         String title = selectedSeries.getTitle() != null ? selectedSeries.getTitle() : "Untitled Series";
         String yearString = "";
         try {
-            Date releaseDate = selectedSeries.getReleaseDate();
-            if (releaseDate != null) {
-                java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("yyyy");
-                yearString = " (" + sdf.format(releaseDate) + ")";
+            int startYear = selectedSeries.getStartYear();
+            if (startYear > 0) {
+                yearString = " (" + startYear;
+                try {
+                    int endYear = selectedSeries.getEndYear();
+                    if (endYear > 0 && endYear >= startYear) {
+                        yearString += "-" + endYear;
+                    }
+                } catch (Exception e) {
+                    logger.debug("No end year or invalid end year for series: {}", title);
+                }
+                yearString += ")";
             }
         } catch (Exception e) {
-            logger.warn("Error formatting series year: {}", e.getMessage());
+            logger.warn("Error formatting series year for {}: {}", title, e.getMessage());
         }
-        int seasonCount = selectedSeries.getSeasons() != null ? selectedSeries.getSeasons().size() : 0;
+
+        // Get seasons count safely
+        int seasonCount = 0;
+        try {
+            seasonCount = selectedSeries.getSeasons() != null ? selectedSeries.getSeasons().size() : 0;
+        } catch (Exception e) {
+            logger.error("Error getting seasons count: {}", e.getMessage());
+        }
+
         Label infoLabel = new Label(String.format("Manage %s%s\nSeasons: %d", title, yearString, seasonCount));
         infoLabel.setStyle("-fx-font-weight: bold; -fx-padding: 0 0 10 0;");
         content.getChildren().add(infoLabel);
 
         // Add season selector for adding episodes
-        ComboBox<String> seasonComboBox = new ComboBox<>();
-        if (selectedSeries.getSeasons() != null && !selectedSeries.getSeasons().isEmpty()) {
-            seasonComboBox.getItems().addAll(selectedSeries.getSeasons().stream()
-                    .map(s -> String.format("Season %d", s.getSeasonNumber()))
-                    .toList());
-            seasonComboBox.getSelectionModel().selectFirst();
-        } else {
-            seasonComboBox.setPromptText("No seasons available");
+        ComboBox<Season> seasonComboBox = new ComboBox<>();
+        try {
+            if (selectedSeries.getSeasons() != null && !selectedSeries.getSeasons().isEmpty()) {
+                seasonComboBox.getItems().addAll(selectedSeries.getSeasons());
+                seasonComboBox.setCellFactory(param -> new ListCell<Season>() {
+                    @Override
+                    protected void updateItem(Season season, boolean empty) {
+                        super.updateItem(season, empty);
+                        if (empty || season == null) {
+                            setText(null);
+                        } else {
+                            setText(String.format("Season %d (%d episodes)",
+                                    season.getSeasonNumber(),
+                                    season.getEpisodes() != null ? season.getEpisodes().size() : 0));
+                        }
+                    }
+                });
+                seasonComboBox.setButtonCell(new ListCell<Season>() {
+                    @Override
+                    protected void updateItem(Season season, boolean empty) {
+                        super.updateItem(season, empty);
+                        if (empty || season == null) {
+                            setText("Select a season");
+                        } else {
+                            setText(String.format("Season %d", season.getSeasonNumber()));
+                        }
+                    }
+                });
+                seasonComboBox.getSelectionModel().selectFirst();
+            } else {
+                seasonComboBox.setPromptText("No seasons available");
+                seasonComboBox.setDisable(true);
+            }
+        } catch (Exception e) {
+            logger.error("Error populating seasons: {}", e.getMessage(), e);
+            seasonComboBox.setPromptText("Error loading seasons");
             seasonComboBox.setDisable(true);
         }
 
         content.getChildren().add(new Label("Select Season for Episode:"));
         content.getChildren().add(seasonComboBox);
+
+        // Add episode count label
+        Label episodeCountLabel = new Label("");
+        if (seasonComboBox.getSelectionModel().getSelectedItem() != null) {
+            Season selectedSeason = seasonComboBox.getSelectionModel().getSelectedItem();
+            int episodeCount = selectedSeason.getEpisodes() != null ? selectedSeason.getEpisodes().size() : 0;
+            episodeCountLabel.setText(String.format("Episodes in selected season: %d", episodeCount));
+        }
+        content.getChildren().add(episodeCountLabel);
+
+        // Update episode count when selection changes
+        seasonComboBox.getSelectionModel().selectedItemProperty().addListener((obs, oldVal, newVal) -> {
+            if (newVal != null) {
+                int count = newVal.getEpisodes() != null ? newVal.getEpisodes().size() : 0;
+                episodeCountLabel.setText(String.format("Episodes in selected season: %d", count));
+            } else {
+                episodeCountLabel.setText("No season selected");
+            }
+        });
 
         dialog.getDialogPane().setContent(content);
 
@@ -1638,12 +2014,12 @@ public class ContentController extends BaseController {
                     handleAddSeason(new ActionEvent(selectedSeries, null));
                 } else if (buttonType == addEpisodeButtonType) {
                     // Handle Add Episode
-                    if (seasonComboBox.getSelectionModel().isEmpty()) {
+                    Season selectedSeason = seasonComboBox.getSelectionModel().getSelectedItem();
+                    if (selectedSeason == null) {
                         showAlert("No Season Selected", "Please add a season first before adding episodes.");
                         return;
                     }
-                    int selectedSeason = Integer.parseInt(seasonComboBox.getSelectionModel().getSelectedItem().replace("Season ", ""));
-                    handleAddEpisode(new ActionEvent());
+                    handleAddEpisode(selectedSeries, selectedSeason);
                 }
                 // Refresh the series table after any changes
                 refreshSeriesTable();

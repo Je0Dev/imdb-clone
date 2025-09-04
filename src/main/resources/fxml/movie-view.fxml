@@ -68,6 +68,11 @@
 
     <center>
         <VBox style="-fx-padding: 0 20 20 20; -fx-spacing: 15;">
+            <!-- Loading Indicator -->
+            <StackPane alignment="CENTER" visible="false" fx:id="loadingIndicatorContainer" style="-fx-padding: 20 0;">
+                <ProgressIndicator style="-fx-progress-color: #FFD700; -fx-scale-x: 1.5; -fx-scale-y: 1.5;" fx:id="movieLoadingIndicator"/>
+            </StackPane>
+            
             <!-- Movie Table -->
             <TableView fx:id="movieTable" style="-fx-background-color: white; -fx-table-cell-border-color: #e0e0e0;" VBox.vgrow="ALWAYS">
                 <columns>
