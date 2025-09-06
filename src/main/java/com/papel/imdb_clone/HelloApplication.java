@@ -9,11 +9,7 @@ import javafx.application.Application;
  */
 public class HelloApplication {
 
-    /**
-     * Main method that launches the JavaFX application.
-     *
-     * @param args Command line arguments (not used)
-     */
+
     public static void main(String[] args) {
         Application.launch(ImprovedMovieApp.class, args);
     }

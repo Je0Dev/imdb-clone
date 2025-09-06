@@ -22,11 +22,7 @@ public class NavigationService {
     private static final Logger logger = LoggerFactory.getLogger(NavigationService.class);
     private static NavigationService instance;
     private final Stack<Scene> sceneStack = new Stack<>();
-    private String posterUrl;
 
-    private NavigationService() {
-        // Private constructor to enforce singleton pattern
-    }
 
     public static synchronized NavigationService getInstance() {
         if (instance == null) {
@@ -60,6 +56,7 @@ public class NavigationService {
             currentStage.setTitle(title);
             currentStage.show();
             currentStage.centerOnScreen();
+
         } catch (IOException e) {
             logger.error("Failed to load FXML: {}", fxmlPath, e);
             throw new RuntimeException("Failed to load view: " + e.getMessage(), e);
@@ -76,8 +73,6 @@ public class NavigationService {
             // Set the primary stage in ServiceLocator first
             ServiceLocator.setPrimaryStage(currentStage);
 
-            // Get the UICoordinator to ensure it's initialized
-            UICoordinator uiCoordinator = ServiceLocator.getInstance().getUICoordinator();
 
             // Navigate to main view
             navigateTo("/fxml/main-refactored.fxml", currentStage, "IMDB Clone App");

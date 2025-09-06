@@ -29,21 +29,11 @@ public class Rating {
         this.id = id;
     }
 
-    public int getUserId() {
-        return userId;
-    }
-
-    public void setUserId(int userId) {
-        this.userId = userId;
-    }
 
     public int getContentId() {
         return contentId;
     }
 
-    public void setContentId(int contentId) {
-        this.contentId = contentId;
-    }
 
     public double getScore() {
         return score;
@@ -55,34 +45,10 @@ public class Rating {
         }
     }
 
-    public String getReview() {
-        return review;
-    }
-
-    public void setReview(String review) {
-        this.review = review;
-    }
-
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
-
-    public void setCreatedAt(LocalDateTime createdAt) {
-        this.createdAt = createdAt;
-    }
-
-    // Legacy method for backward compatibility
-    public int getRating() {
-        return (int) Math.round(score);
-    }
-
     public void setRating(int rating) {
         setScore(rating);
     }
 
-    public LocalDateTime getTimestamp() {
-        return createdAt;
-    }
 
 
     @Override

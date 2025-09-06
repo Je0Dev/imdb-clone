@@ -28,11 +28,7 @@ public class CelebrityService<T extends Celebrity> {
     private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
     private final Class<T> celebrityType;
 
-    /**
-     * Creates a new CelebrityService for the specified celebrity type.
-     *
-     * @param celebrityType The class object representing the celebrity type (e.g., Actor.class, Director.class)
-     */
+
     public CelebrityService(Class<T> celebrityType) {
         this.celebrityType = celebrityType;
     }

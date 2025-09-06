@@ -42,17 +42,4 @@ public class UserService {
         return instance;
     }
 
-
-    /**
-     * Gets the currently logged-in user.
-     *
-     * @return Current user or null if not logged in
-     */
-    public User getCurrentUser() {
-        return currentUser;
-    }
-
-    public boolean isAuthenticated() {
-        return authenticated;
-    }
 }

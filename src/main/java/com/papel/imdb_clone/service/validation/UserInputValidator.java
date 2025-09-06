@@ -60,8 +60,7 @@ public class UserInputValidator {
         }
 
         if (!errors.isEmpty()) {
-            ValidationException.Builder builder = ValidationException.builder()
-                    .message("Validation failed");
+            ValidationException.Builder builder = ValidationException.builder().message("Validation failed");
             
             // Add all field errors to the exception
             errors.forEach(builder::fieldError);
@@ -105,20 +104,5 @@ public class UserInputValidator {
 
     public boolean isValidPassword(String password) {
         return password != null && PASSWORD_PATTERN.matcher(password).matches();
-    }
-
-    public int calculatePasswordStrength(String password) {
-        if (password == null || password.isEmpty()) {
-            return 0;
-        }
-
-        int strength = 0;
-        if (password.length() >= 8) strength++;
-        if (password.matches(".*[A-Z].*")) strength++;
-        if (password.matches(".*[a-z].*")) strength++;
-        if (password.matches(".*[0-9].*")) strength++;
-        if (password.matches(".*[^A-Za-z0-9].*")) strength++;
-
-        return strength;
     }
 }

@@ -1,5 +1,6 @@
 package com.papel.imdb_clone.service.data.loader;
 
+import com.papel.imdb_clone.enums.Ethnicity;
 import com.papel.imdb_clone.enums.Genre;
 import com.papel.imdb_clone.exceptions.FileParsingException;
 import com.papel.imdb_clone.model.Actor;
@@ -32,6 +33,7 @@ public class MovieDataLoader extends BaseDataLoader {
     private char gender;
     private String ethnicity;
     private LocalDate birthDate;
+    private Ethnicity Ethnicity;
 
     public MovieDataLoader(
             ContentService<Movie> movieService,
@@ -114,14 +116,6 @@ public class MovieDataLoader extends BaseDataLoader {
                         // Parse genres (handle both comma and semicolon separated values)
                         String[] genreNames = parts[2].trim().split("[,;]");
 
-                        // Parse duration (in minutes)
-                        int duration = 0;
-                        try {
-                            duration = Integer.parseInt(parts[3].trim());
-                        } catch (NumberFormatException e) {
-                            logger.warn("Invalid duration format '{}' at line {}", parts[3], lineNumber);
-                            duration = 0; // Default to 0 if duration is invalid
-                        }
 
                         // Parse director name (handle multiple directors, potential quotes, and trim)
                         String directorName = normalizeText(parts[4]).replaceAll("^\"|\"$", "");
@@ -131,15 +125,15 @@ public class MovieDataLoader extends BaseDataLoader {
                             logger.debug("Multiple directors found, using first one: {}", directorName);
                         }
 
-                        // Parse rating (0.0 to 10.0 scale)
-                        double rating = 0.0;
+                        // Parse rating
+                        int rating = 0;
                         try {
-                            rating = Double.parseDouble(parts[5].trim());
-                            if (rating < 0.0) rating = 0.0;
-                            if (rating > 10.0) rating = 10.0;
+                            rating = Integer.parseInt(parts[5].trim());
+                            if (rating < 0.0) rating = 0;
+                            if (rating > 10.0) rating = 10;
                         } catch (NumberFormatException e) {
                             logger.warn("Invalid rating format '{}' at line {}", parts[5].trim(), lineNumber);
-                            rating = 0.0; // Default to 0.0 if rating is invalid
+                            rating = 0; // Default to 0.0 if rating is invalid
                         }
 
                         // Parse actors (semicolon separated) and normalize names
@@ -197,7 +191,7 @@ public class MovieDataLoader extends BaseDataLoader {
                             }
 
                             // Set director with improved error handling
-                            if (directorName != null && !directorName.trim().isEmpty()) {
+                            if (!directorName.trim().isEmpty()) {
                                 try {
                                     // Split director name into first and last name
                                     String[] nameParts = directorName.trim().split("\\s+", 2);
@@ -208,10 +202,10 @@ public class MovieDataLoader extends BaseDataLoader {
                                     List<Director> directorOpt = (List<Director>) directorService.findByName(directorName);
 
                                     if (!directorOpt.isEmpty()) {
-                                        movie.setDirector(String.valueOf(directorOpt.get(directorOpt.size() - 1)));
+                                        movie.setDirector(String.valueOf(directorOpt.getLast()));
                                     } else {
                                         // Create new director if not found
-                                        Director newDirector = new Director(firstName, lastName, birthDate, gender);
+                                        Director newDirector = new Director(firstName, lastName, birthDate, gender,Ethnicity);
                                         newDirector.setFirstName(firstName);
                                         if (!lastName.isEmpty()) {
                                             newDirector.setLastName(lastName);

@@ -14,29 +14,13 @@ public class Director extends Celebrity {
     private String notableWorks;
 
 
-    public Director(String firstName, String lastName, LocalDate birthDate, char gender) {
-        super(firstName, lastName, birthDate, gender);
-        this.bestWorks = new ArrayList<>();
-    }
-
     public Director(String firstName, String lastName, LocalDate birthDate, char gender, Ethnicity ethnicity) {
         super(firstName, lastName, birthDate, gender);
         this.bestWorks = new ArrayList<>();
         this.ethnicity = ethnicity;
     }
 
-    // Backward-compatible constructor accepting label
-    public Director(String firstName, String lastName, LocalDate birthDate, char gender, String ethnicityLabel) {
-        super(firstName, lastName, birthDate, gender);
-        this.bestWorks = new ArrayList<>();
-        if (ethnicityLabel != null && !ethnicityLabel.isBlank()) {
-            try {
-                this.ethnicity = Ethnicity.fromLabel(ethnicityLabel);
-            } catch (IllegalArgumentException ignored) {
-                this.ethnicity = null;
-            }
-        }
-    }
+
 
     public List<String> getBestWorks() {
         return new ArrayList<>(bestWorks);
@@ -52,9 +36,6 @@ public class Director extends Celebrity {
         return ethnicity;
     }
 
-    public void setEthnicity(Ethnicity ethnicity) {
-        this.ethnicity = ethnicity;
-    }
 
     /**
      * Gets the nationality/ethnicity as a string.
@@ -83,16 +64,6 @@ public class Director extends Celebrity {
         this.id = id;
     }
 
-    public void setNationality(String nationality) {
-        this.ethnicity = null;
-        if (nationality != null && !nationality.trim().isEmpty()) {
-            try {
-                this.ethnicity = Ethnicity.fromLabel(nationality);
-            } catch (IllegalArgumentException ignored) {
-                this.ethnicity = null;
-            }
-        }
-    }
 
     public void setNotableWorks(String notableWorks) {
         this.bestWorks.clear();
@@ -103,7 +74,6 @@ public class Director extends Celebrity {
             }
         }
     }
-
 
     public void setFirstName(String firstName) {
         this.firstName = firstName;

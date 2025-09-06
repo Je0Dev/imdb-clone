@@ -13,6 +13,7 @@ public class Season {
     private int seasonNumber;
     private Object title;
     private Date releaseDate;
+    private Series series;
 
     /**
      * Default constructor for Season.
@@ -22,14 +23,7 @@ public class Season {
         this.episodes = new ArrayList<>();
     }
 
-    /**
-     * Constructor for Season with season number, episode count, and title.
-     *
-     * @param seasonNumber the season number
-     * @param episodeCount the episode count (not used in this implementation)
-     * @param title        the title of the season
-     * @param series
-     */
+   
     public Season(int seasonNumber, int episodeCount, String title, Series series) {
         this(seasonNumber, series);
         this.seasonNumber = seasonNumber;
@@ -52,18 +46,7 @@ public class Season {
     public List<Episode> getEpisodes() {
         return new ArrayList<>(episodes);
     }
-
-    public void addEpisode(Episode episode) {
-        if (episode != null) {
-            episodes.add(episode);
-        }
-    }
-
-    public void removeEpisode(Episode episode) {
-        if (episode != null) {
-            episodes.remove(episode);
-        }
-    }
+    
 
     public int getSeasonNumber() {
         return seasonNumber;
@@ -86,10 +69,7 @@ public class Season {
                 ", episodes=" + episodes.size() +
                 '}';
     }
-
-    public void setSeriesId(int id) {
-        this.id = id;
-    }
+    
 
     public void setTitle(String format) {
         this.title = format;
@@ -100,6 +80,7 @@ public class Season {
     }
 
     public void setSeries(Series series) {
+        this.series = series;
     }
 
     public <E> void setEpisodes(List<Episode> episodes) {
@@ -109,8 +90,5 @@ public class Season {
     public int getTotalEpisodes() {
         return episodes.size();
     }
-
-    public Date getReleaseDate() {
-        return releaseDate;
-    }
+    
 }

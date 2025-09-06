@@ -70,7 +70,7 @@ public class ActorDataLoader extends BaseDataLoader {
 
                         // Parse gender (first character, uppercase)
                         char gender = 'U'; // Default to Unknown
-                        if (parts.length > 3 && !parts[3].trim().isEmpty()) {
+                        if (!parts[3].trim().isEmpty()) {
                             String genderStr = parts[3].trim().toUpperCase();
                             gender = genderStr.charAt(0);
                         }
@@ -84,7 +84,7 @@ public class ActorDataLoader extends BaseDataLoader {
                         // Create and save the actor
                         try {
                             Actor actor = new Actor(firstName, lastName, birthDate, gender, nationality);
-                            if (notableWorks != null && !notableWorks.isEmpty()) {
+                            if (!notableWorks.isEmpty()) {
                                 actor.setNotableWorks(notableWorks);
                             }
 

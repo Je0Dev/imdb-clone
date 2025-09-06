@@ -9,11 +9,11 @@ public class UserRating {
     private int id;
     private final int userId;
     private final int contentId;
-    private double rating; // 1.0 to 10.0
+    private Integer rating; // 1-10
     private String title;
     private final LocalDateTime createdAt;
 
-    public UserRating(int userId, int contentId, double rating) {
+    public UserRating(int userId, int contentId, int rating) {
         this.userId = userId;
         this.contentId = contentId;
         this.rating = rating;
@@ -21,7 +21,7 @@ public class UserRating {
     }
 
 
-    public UserRating(int userId, int contentId, double rating, String title) {
+    public UserRating(int userId, int contentId, int rating, String title) {
         this(userId, contentId, rating);
         this.title = title;
     }
@@ -40,8 +40,8 @@ public class UserRating {
         return rating;
     }
 
-    public void setRating(double rating) {
-        if (rating >= 1.0 && rating <= 10.0) {
+    public void setRating(int rating) {
+        if (rating >= 1 && rating <= 10) {
             this.rating = rating;
         } else {
             throw new IllegalArgumentException("Rating must be between 1.0 and 10.0");

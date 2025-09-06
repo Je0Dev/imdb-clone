@@ -289,10 +289,6 @@ public class RefactoredMainController {
     private void updateUserInterface() {
         try {
             updateUserLabel();
-            // Initialize featured content if needed
-            if (featuredContent != null && featuredContent.getChildren().isEmpty()) {
-                initializeFeaturedContent();
-            }
         } catch (Exception e) {
             logger.warn("Failed to update user interface state", e);
         }
@@ -303,25 +299,11 @@ public class RefactoredMainController {
      * If no user is logged in, it may clear or hide the user label.
      */
     private void updateUserLabel() {
-    }
-
-    /**
-     * Initializes and populates the featured content section of the UI.
-     * This typically includes loading and displaying featured movies or TV shows.
-     */
-    private void initializeFeaturedContent() {
-        // Add some placeholder content
-        Label title = new Label("Featured Content");
-        title.setStyle("-fx-text-fill: white; -fx-font-size: 24px; -fx-font-weight: bold;");
-
-        Label subtitle = new Label("Check out our latest additions");
-        subtitle.setStyle("-fx-text-fill: #999; -fx-font-size: 14px;");
-
-        VBox content = new VBox(10, title, subtitle);
-        content.setAlignment(Pos.CENTER);
-        content.setPadding(new Insets(20));
-
-        featuredContent.getChildren().add(content);
+        if (currentUser != null) {
+            userLabel.setText(currentUser.getUsername());
+        } else {
+            userLabel.setText("Guest");
+        }
     }
 
 

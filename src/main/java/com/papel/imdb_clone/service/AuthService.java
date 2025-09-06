@@ -63,13 +63,6 @@ public class AuthService {
         return instance;
     }
 
-    @Deprecated
-    public static synchronized AuthService getInstance(User user) {
-        if (instance == null) {
-            instance = new AuthService(user);
-        }
-        return instance;
-    }
 
     /**
      * Registers a new user with the system.
@@ -245,7 +238,6 @@ public class AuthService {
         if (username == null || username.trim().isEmpty()) {
             throw new IllegalArgumentException("Username cannot be empty");
         }
-
         User user = usersByUsername.get(username);
         if (user != null) {
             // Generate and store a password reset token

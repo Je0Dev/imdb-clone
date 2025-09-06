@@ -65,7 +65,7 @@ public class InMemoryMovieRepository implements MovieRepository {
             if (movie.getId() == 0) {
                 // New movie - check for duplicate title
                 if (existsByTitle(movie.getTitle())) {
-                    throw new DuplicateEntryException("Movie already exists: " + movie.getTitle());
+                    throw new DuplicateEntryException("Movie", movie.getId(), "title", movie.getTitle());
                 }
                 movie.setId(nextId.getAndIncrement());
                 movies.add(movie);
@@ -77,7 +77,7 @@ public class InMemoryMovieRepository implements MovieRepository {
                     // Check if title is being changed and if it conflicts
                     if (!existing.get().getTitle().equals(movie.getTitle()) &&
                             existsByTitle(movie.getTitle())) {
-                        throw new DuplicateEntryException("Movie title already exists: " + movie.getTitle());
+                        throw new DuplicateEntryException("Movie", movie.getId(), "title", movie.getTitle());
                     }
                     movies.remove(existing.get());
                     movies.add(movie);
@@ -119,10 +119,18 @@ public class InMemoryMovieRepository implements MovieRepository {
                             movie.getStartYear() == startYear)
                     .findFirst()
                     .orElse(null);
-        } finally {
-            lock.readLock().unlock();
+        }
+        catch (Exception e) {
+            throw new RuntimeException(e);
         }
     }
+
+    @Override
+    public void add(Movie movie) {
+        addMovie(movie);
+        logger.info("Added new movie: {} with ID: {}", movie.getTitle(), movie.getId());
+    }
+
 
     /**
      * Adds a movie directly to the repository (used by data loaders).
@@ -145,4 +153,7 @@ public class InMemoryMovieRepository implements MovieRepository {
         }
     }
 
+    public List<Movie> getAll() {
+        return movies;
+    }
 }

@@ -5,18 +5,18 @@ import com.papel.imdb_clone.enums.Genre;
 import java.util.*;
 
 public abstract class Content {
-    Date year;
+    public Date year;
     private String director;
     private int id;
     public String title;
     protected Genre genre;
     private final Map<Integer, Integer> userRatings; // userId -> rating
     private Double imdbRating; // IMDb rating
-    private Double userRating; // Average user rating
     private Date releaseDate;
     private int startYear;
     private List<Genre> genres = new ArrayList<>();
     private List<Actor> actors = new ArrayList<>();
+    private Integer userRating;
 
 
     public Content(String title, Date year, Genre genre, String director, Map<Integer, Integer> userRatings, Double imdbRating) {
@@ -93,14 +93,6 @@ public abstract class Content {
     }
 
 
-    public double calculateAverageUserRating() {
-        if (userRatings.isEmpty()) {
-            return 0.0;
-        }
-        double sum = userRatings.values().stream().mapToInt(Integer::intValue).sum();
-        return sum / userRatings.size();
-    }
-
     /**
      * Sets the title of the content
      *
@@ -135,7 +127,7 @@ public abstract class Content {
     public void setGenres(List<Genre> genres) {
         this.genres = new ArrayList<>(genres);
         if (!genres.isEmpty()) {
-            this.genre = genres.get(0);
+            this.genre = genres.getFirst();
         } else {
             this.genre = null;
         }
@@ -159,21 +151,6 @@ public abstract class Content {
         this.releaseDate = releaseDate != null ? new Date(releaseDate.getTime()) : null;
     }
 
-    @Override
-    public boolean equals(Object obj) {
-        if (this == obj) return true;
-        if (obj == null || getClass() != obj.getClass()) return false;
-        Content content = (Content) obj;
-        return id == content.id &&
-                Objects.equals(title, content.title) &&
-                genre == content.genre &&
-                Objects.equals(imdbRating, content.imdbRating);
-    }
-
-
-    public void setUserRating(Double userRating) {
-        this.userRating = userRating;
-    }
 
     public List<Actor> getActors() {
         return actors != null ? List.copyOf(actors) : List.of(); // Updated to return an unmodifiable list

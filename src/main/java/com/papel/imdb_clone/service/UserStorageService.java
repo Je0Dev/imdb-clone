@@ -49,24 +49,17 @@ public class UserStorageService {
         }
     }
 
+
     @SuppressWarnings("unchecked")
     public Map<String, User>[] loadUsers() {
-        File file = new File(USER_DATA_FILE);
-        if (!file.exists()) {
-            // Return empty maps if the file doesn't exist yet
-            return new Map[]{new HashMap<String, User>(), new HashMap<String, User>()};
-        }
-
         try (ObjectInputStream ois = new ObjectInputStream(
                 new FileInputStream(USER_DATA_FILE))) {
-
             List<Map<String, User>> data = (List<Map<String, User>>) ois.readObject();
-            return new Map[]{data.get(0), data.get(1)};
-
+            return data.toArray(new Map[0]);
         } catch (IOException | ClassNotFoundException e) {
-            System.err.println("Error loading user data: " + e.getMessage());
-            return new Map[]{new HashMap<String, User>(), new HashMap<String, User>()};
+            logger.log(Level.SEVERE, "Error loading user data", e);
+            // Return an array of two empty maps if loading fails
+            return new Map[] { new HashMap<>(), new HashMap<>() };
         }
     }
-
 }

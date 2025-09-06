@@ -47,4 +47,6 @@ public interface MovieRepository {
     long count();
 
     Movie findByTitleAndReleaseYear(String title, int startYear);
+
+    void add(Movie movie);
 }

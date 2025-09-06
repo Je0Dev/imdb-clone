@@ -8,7 +8,7 @@ public abstract class Celebrity {
     int id;
     String firstName;
     public String lastName;
-    private LocalDate birthDate;
+    private final LocalDate birthDate;
     private final char gender;
     private Ethnicity ethnicity;
 
@@ -41,10 +41,6 @@ public abstract class Celebrity {
 
     public String getFullName() {
         return firstName + " " + lastName;
-    }
-
-    public void setBirthDate(LocalDate birthDate) {
-        this.birthDate = birthDate;
     }
 
 

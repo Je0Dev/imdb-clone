@@ -35,6 +35,7 @@ public class FileDataLoaderService implements DataLoaderService {
             InMemoryUserRepository userRepository,
             InMemoryMovieRepository movieRepository,
             InMemorySeriesRepository seriesRepository,
+
             ContentService<Series> seriesService,
             CelebrityService<Actor> actorService,
             CelebrityService<Director> directorService,
@@ -59,11 +60,8 @@ public class FileDataLoaderService implements DataLoaderService {
         // Check common locations for the data directory
         String[] possiblePaths = {
                 "src/main/resources/data",
-                "resources/data",
-                "data",
                 "target/classes/data",
                 System.getProperty("user.dir") + "/src/main/resources/data",
-                System.getProperty("user.dir") + "/data",
                 System.getProperty("user.dir") + "/target/classes/data"
         };
 

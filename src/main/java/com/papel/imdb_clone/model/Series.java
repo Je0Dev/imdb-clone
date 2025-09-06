@@ -12,11 +12,9 @@ import java.util.List;
 public class Series extends Content {
     private List<Season> seasons;
     private int startYear;
-    private Integer endYear;
     private Director director;
     private List<Actor> actors;
 
-    // Rich content fields
     private String boxOffice;
     private List<String> awards;
     private double rating;
@@ -88,10 +86,6 @@ public class Series extends Content {
         this.startYear = startYear;
     }
 
-    public void setEndYear(Integer endYear) {
-        this.endYear = endYear;
-    }
-
     public void setSeasons(List<Season> seasons) {
         this.seasons = new ArrayList<>();
         if (seasons != null) {
@@ -116,7 +110,7 @@ public class Series extends Content {
 
         // Set the primary genre to the first one if available
         if (!this.genres.isEmpty()) {
-            setGenre(this.genres.get(0));
+            setGenre(this.genres.getFirst());
         }
     }
 
@@ -155,24 +149,10 @@ public class Series extends Content {
                 '}';
     }
 
-
-    /**
-     * Sets the release year of the series
-     *
-     * @param year The release year to set
-     */
-    public void setReleaseYear(int year) {
-        this.startYear = year;
-    }
-
-
     public void setRating(double rating) {
         this.rating = rating;
     }
 
-    public boolean isPresent() {
-        return true;
-    }
 
     public Double getRating() {
         return rating;
@@ -191,7 +171,4 @@ public class Series extends Content {
         return Arrays.asList(awards.split(","));
     }
 
-    public int getEndYear() {
-        return endYear;
-    }
 }

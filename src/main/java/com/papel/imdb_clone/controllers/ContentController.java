@@ -18,9 +18,7 @@ import javafx.fxml.FXML;
 import javafx.geometry.Insets;
 import javafx.scene.Node;
 import javafx.scene.control.*;
-import javafx.scene.layout.GridPane;
-import javafx.scene.layout.StackPane;
-import javafx.scene.layout.VBox;
+import javafx.scene.layout.*;
 import javafx.stage.Stage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -47,6 +45,129 @@ public class ContentController extends BaseController {
     private TextField globalSearchField;
     @FXML
     private ComboBox<String> seriesSortBy;
+    
+    /**
+     * Handles the Add Movie button click event.
+     * Opens a dialog to add a new movie.
+     */
+    @FXML
+    private void handleAddMovie(ActionEvent event) {
+        try {
+            // Create a dialog for adding a new movie
+            Dialog<Movie> dialog = new Dialog<>();
+            dialog.setTitle("Add New Movie");
+            dialog.setHeaderText("Enter Movie Details");
+            
+            // Set the button types
+            ButtonType addButton = new ButtonType("Add", ButtonBar.ButtonData.OK_DONE);
+            dialog.getDialogPane().getButtonTypes().addAll(addButton, ButtonType.CANCEL);
+            
+            // Create form fields
+            TextField titleField = new TextField();
+            TextArea descriptionArea = new TextArea();
+            descriptionArea.setPrefRowCount(3);
+            TextField yearField = new TextField();
+            TextField durationField = new TextField();
+            TextField imageUrlField = new TextField();
+            
+            // Set up the grid
+            GridPane grid = new GridPane();
+            grid.setHgap(10);
+            grid.setVgap(10);
+            grid.setPadding(new Insets(20, 150, 10, 10));
+            
+            // Add fields to grid
+            grid.add(new Label("Title:"), 0, 0);
+            grid.add(titleField, 1, 0);
+            grid.add(new Label("Description:"), 0, 1);
+            grid.add(descriptionArea, 1, 1);
+            grid.add(new Label("Year:"), 0, 2);
+            grid.add(yearField, 1, 2);
+            grid.add(new Label("Duration (minutes):"), 0, 3);
+            grid.add(durationField, 1, 3);
+            grid.add(new Label("Image URL:"), 0, 4);
+            grid.add(imageUrlField, 1, 4);
+            
+            dialog.getDialogPane().setContent(grid);
+            
+            // Request focus on the title field by default
+            Platform.runLater(titleField::requestFocus);
+            
+            // Convert the result to a Movie object when the Add button is clicked
+            dialog.setResultConverter(dialogButton -> {
+                if (dialogButton == addButton) {
+                    try {
+                        Movie movie = new Movie();
+                        movie.setTitle(titleField.getText().trim());
+                        movie.setStartYear(Integer.parseInt(yearField.getText().trim()));
+                        return movie;
+                    } catch (NumberFormatException e) {
+                        showError("Invalid Input", "Please enter valid numbers for year and duration.");
+                        return null;
+                    }
+                }
+                return null;
+            });
+            
+            // Show the dialog and process the result
+            Optional<Movie> result = dialog.showAndWait();
+            
+            result.ifPresent(movie -> {
+                // Add the movie to the data manager
+
+                RefactoredDataManager dataManager = ServiceLocator.getInstance().getDataManager();
+                dataManager.addMovie(movie);
+                
+                // Show success message
+                showSuccess("Movie Added", String.format("Movie '%s' has been added successfully.", movie.getTitle()));
+                
+                // Refresh the movie list
+                loadMovies();
+            });
+            
+        } catch (Exception e) {
+            logger.error("Error adding movie", e);
+            showError("Error", "An error occurred while adding the movie: " + e.getMessage());
+        }
+    }
+
+    private void loadMovies() {
+        try {
+            movieLoadingIndicator.setVisible(true);
+            statusLabel.setText("Loading movies...");
+            
+            // Get movies from data manager
+            RefactoredDataManager dataManager = ServiceLocator.getInstance().getDataManager();
+            List<Movie> movies = dataManager.getMovies();
+            
+            // Update UI on JavaFX Application Thread
+            Platform.runLater(() -> {
+                try {
+                    // Clear existing items and add all movies
+                    movieTable.getItems().setAll(movies);
+                    
+                    // Update status
+                    statusLabel.setText(String.format("Loaded %d movies", movies.size()));
+                    logger.info("Successfully loaded {} movies", movies.size());
+                } catch (Exception e) {
+                    logger.error("Error updating movie table", e);
+                    statusLabel.setText("Error loading movies");
+                    showError("Error", "Failed to load movies: " + e.getMessage());
+                } finally {
+                    movieLoadingIndicator.setVisible(false);
+                }
+            });
+            
+        } catch (Exception e) {
+            logger.error("Error in loadMovies", e);
+            Platform.runLater(() -> {
+                statusLabel.setText("Error loading movies");
+                showError("Error", "Failed to load movies: " + e.getMessage());
+                movieLoadingIndicator.setVisible(false);
+            });
+        }
+    }
+
     @FXML
     private Label statusLabel;
 
@@ -92,6 +213,68 @@ public class ContentController extends BaseController {
     private TableColumn<Series, Double> seriesRatingColumn;
     @FXML
     private TableColumn<Series, Void> seriesActionsColumn;
+
+    @FXML
+    public void initialize() {
+        // Initialize movie table columns
+        movieTitleColumn.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().getTitle()));
+        movieYearColumn.setCellValueFactory(cellData -> new SimpleStringProperty(String.valueOf(cellData.getValue().getStartYear())));
+        
+        // Set up cell value factories for other columns
+        movieGenreColumn.setCellValueFactory(cellData -> new SimpleStringProperty(
+            cellData.getValue().getGenres().stream()
+                .map(Genre::name)
+                .collect(Collectors.joining(", "))
+        ));
+        
+        movieRatingColumn.setCellValueFactory(cellData -> {
+            Double rating = cellData.getValue().getImdbRating();
+            return new SimpleDoubleProperty(rating != null ? rating : 0.0).asObject();
+        });
+
+        
+        // Set up action buttons for each row
+        setupActionButtons();
+        
+        // Load initial data
+        loadMovies();
+    }
+    
+    private void setupActionButtons() {
+        // Add action buttons to the actions column
+        movieActionsColumn.setCellFactory(param -> new TableCell<>() {
+            private final Button editButton = new Button("Edit");
+            private final Button deleteButton = new Button("Delete");
+            
+            {
+                editButton.getStyleClass().add("edit-button");
+                deleteButton.getStyleClass().add("delete-button");
+                
+                editButton.setOnAction(event -> {
+                    Movie movie = getTableView().getItems().get(getIndex());
+                    // Handle edit action
+                    logger.info("Edit movie: {}", movie.getTitle());
+                });
+                
+                deleteButton.setOnAction(event -> {
+                    Movie movie = getTableView().getItems().get(getIndex());
+                    // Handle delete action
+                    logger.info("Delete movie: {}", movie.getTitle());
+                });
+            }
+            
+            @Override
+            protected void updateItem(Void item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty) {
+                    setGraphic(null);
+                } else {
+                    HBox buttons = new HBox(5, editButton, deleteButton);
+                    setGraphic(buttons);
+                }
+            }
+        });
+    }
 
     // Search fields
     @FXML
@@ -342,8 +525,7 @@ public class ContentController extends BaseController {
     private void setupEventListeners() {
         AppEventBus eventBus = AppEventBus.getInstance();
         eventBus.subscribe(AppStateManager.EVT_USER_LOGGED_IN, event -> {
-            logger.debug("User logged in, updating UI");
-            Platform.runLater(this::updateUIForAuthState);
+            logger.debug("User logged in");
         });
     }
 
@@ -534,7 +716,7 @@ public class ContentController extends BaseController {
 
                     // Simply get the year using the getter which has all the fallback logic
                     int year = series.getStartYear();
-                    return new SimpleIntegerProperty(year > 0 ? year : 0).asObject();
+                    return new SimpleIntegerProperty(Math.max(year, 0)).asObject();
                 });
 
                 // Set cell factory to display "N/A" for invalid years
@@ -591,21 +773,6 @@ public class ContentController extends BaseController {
 
 
     /**
-     * Updates the status label with the current item count.
-     * If statusLabel is not initialized, the method will safely exit.
-     *
-     * @param count The number of items currently displayed
-     */
-    private void updateStatusLabel(int count) {
-        if (statusLabel != null) {
-            statusLabel.setText(String.format("Showing %d %s", count, count == 1 ? "item" : "items"));
-        } else {
-            logger.debug("statusLabel is not initialized. Skipping status update.");
-        }
-    }
-
-
-    /**
      * Initializes the controller with the specified user ID.
      * This method should be called after the controller is created.
      *
@@ -617,205 +784,6 @@ public class ContentController extends BaseController {
         logger.debug("initializeController called with userId: {}", currentUserId);
     }
 
-    private void updateUIForAuthState() {
-        boolean isAuthenticated = UserService.getInstance(RefactoredDataManager.getInstance(), EncryptionService.getInstance()).isAuthenticated();
-
-        // Update UI elements based on authentication state
-        if (isAuthenticated) {
-            User currentUser = UserService.getInstance(RefactoredDataManager.getInstance(), EncryptionService.getInstance()).getCurrentUser();
-            logger.debug("Updating UI for authenticated user: {}", currentUser.getUsername());
-
-            // Enable/disable UI components based on user role if needed
-            // Example: adminMenu.setVisible(currentUser.isAdmin());
-
-        } else {
-            logger.debug("Updating UI for unauthenticated user");
-            // Reset UI for logged out state
-        }
-    }
-
-
-    /**
-     * Shows a dialog to add a new movie and returns the created movie.
-     *
-     * @return the newly created Movie, or null if cancelled
-     */
-    @FXML
-    private Movie showAddMovieDialog() {
-        // Create a custom dialog
-        Dialog<Movie> dialog = new Dialog<>();
-        dialog.setTitle("Add New Movie");
-        dialog.setHeaderText("Enter movie details");
-
-        // Set the button types
-        ButtonType addButtonType = new ButtonType("Add", ButtonBar.ButtonData.OK_DONE);
-        dialog.getDialogPane().getButtonTypes().addAll(addButtonType, ButtonType.CANCEL);
-
-        // Create the form fields
-        TextField titleField = new TextField();
-        titleField.setPromptText("Title");
-
-        TextField yearField = new TextField();
-        yearField.setPromptText("Year (e.g., 2023)");
-
-        TextField genreField = new TextField();
-        genreField.setPromptText("Genre (comma-separated)");
-
-        TextField directorField = new TextField();
-        directorField.setPromptText("Director");
-
-
-        // Create and configure the form layout
-        GridPane grid = new GridPane();
-        grid.setHgap(10);
-        grid.setVgap(10);
-        grid.setPadding(new Insets(20, 150, 10, 10));
-
-        // Add fields to the grid
-        grid.add(new Label("Title:"), 0, 0);
-        grid.add(titleField, 1, 0);
-        grid.add(new Label("Year:"), 0, 1);
-        grid.add(yearField, 1, 1);
-        grid.add(new Label("Genre:"), 0, 2);
-        grid.add(genreField, 1, 2);
-        grid.add(new Label("Director:"), 0, 3);
-        grid.add(directorField, 1, 3);
-
-        // Enable/Disable add button depending on whether a title was entered
-        Node addButton = dialog.getDialogPane().lookupButton(addButtonType);
-        addButton.setDisable(true);
-
-        // Do some validation
-        titleField.textProperty().addListener((observable, oldValue, newValue) -> {
-            addButton.setDisable(newValue.trim().isEmpty());
-        });
-
-        // Set the dialog content
-        dialog.getDialogPane().setContent(grid);
-
-        // Request focus on the title field by default
-        Platform.runLater(titleField::requestFocus);
-
-        // Convert the result to a Movie object when the add button is clicked
-        dialog.setResultConverter(dialogButton -> {
-            if (dialogButton == addButtonType) {
-                try {
-                    Movie movie = new Movie();
-                    movie.setTitle(titleField.getText().trim());
-
-                    // Set genres (comma-separated)
-                    if (!genreField.getText().trim().isEmpty()) {
-                        movie.setGenre(Genre.valueOf(genreField.getText().trim()));
-                    }
-
-                    // Set director if provided
-                    if (!directorField.getText().trim().isEmpty()) {
-                        movie.setDirector(directorField.getText().trim());
-                    }
-
-                    return movie;
-                } catch (Exception e) {
-                    logger.error("Error creating movie: {}", e.getMessage(), e);
-                    showAlert("Error", "Failed to create movie: " + e.getMessage());
-                    return null;
-                }
-            }
-            return null;
-        });
-
-        // Show the dialog and return the result
-        Optional<Movie> result = dialog.showAndWait();
-        return result.orElse(null);
-    }
-
-
-    /**
-     * Handles the "Add Season" button click event.
-     * Shows a dialog to add a new season to the selected series.
-     *
-     * @param actionEvent The action event that triggered this method
-     */
-    @FXML
-    private void handleAddSeason(ActionEvent actionEvent) {
-        Series selectedSeries = seriesTable.getSelectionModel().getSelectedItem();
-        if (selectedSeries == null) {
-            showError("Error", "No series selected");
-            return;
-        }
-
-        handleAddSeason(selectedSeries);
-    }
-
-    private void handleAddSeason(Series series) {
-        if (series == null) {
-            showError("Error", "No series selected");
-            return;
-        }
-
-        // Create a dialog to get season number
-        TextInputDialog dialog = new TextInputDialog("1");
-        dialog.setTitle("Add Season");
-        dialog.setHeaderText("Add a new season to " + series.getTitle());
-        dialog.setContentText("Season number:");
-
-        // Convert the result to an integer
-        Optional<String> result = dialog.showAndWait();
-        result.ifPresent(seasonNumberStr -> {
-            try {
-                int seasonNumber = Integer.parseInt(seasonNumberStr);
-
-                // Check if season already exists
-                if (series.getSeasons() != null && series.getSeasons().stream()
-                        .anyMatch(s -> s.getSeasonNumber() == seasonNumber)) {
-                    showError("Error", "A season with this number already exists");
-                    return;
-                }
-
-                // Create and add the new season
-                try {
-                    if (seasonNumber <= 0) {
-                        throw new IllegalArgumentException("Season number must be greater than 0");
-                    }
-
-                    // Initialize seasons list if null
-                    if (series.getSeasons() == null) {
-                        series.setSeasons(new ArrayList<>());
-                    }
-
-                    // Check for duplicate season number
-                    boolean seasonExists = series.getSeasons().stream()
-                            .anyMatch(s -> s.getSeasonNumber() == seasonNumber);
-
-                    if (seasonExists) {
-                        throw new IllegalArgumentException("A season with this number already exists");
-                    }
-
-                    // Create and add the new season
-                    Season newSeason = new Season(seasonNumber, series);
-                    newSeason.setEpisodes(new ArrayList<>());
-                    series.getSeasons().add(newSeason);
-
-                    // Sort seasons by number
-                    series.getSeasons().sort(Comparator.comparingInt(Season::getSeasonNumber));
-
-                    // Save the series
-                    contentService.save(series);
-                    refreshSeriesTable();
-
-                    showAlert("Success", String.format("Season %d added successfully", seasonNumber));
-                } catch (Exception e) {
-                    logger.error("Error adding season {} to series {}: {}",
-                            seasonNumber, series.getTitle(), e.getMessage(), e);
-                    throw e; // Re-throw to be caught by the outer try-catch
-                }
-            } catch (NumberFormatException e) {
-                showError("Error", "Please enter a valid season number");
-            } catch (Exception e) {
-                logger.error("Error adding season: {}", e.getMessage(), e);
-                showError("Error", "Failed to add season: " + e.getMessage());
-            }
-        });
-    }
 
     private void handleAddEpisode(Series series, Season season) {
         if (series == null || season == null) {
@@ -885,7 +853,6 @@ public class ContentController extends BaseController {
                     Episode episode = new Episode();
                     episode.setEpisodeNumber(episodeNumber);
                     episode.setTitle(title);
-                    episode.setDescription(description);
                     episode.setSeason(season);
 
                     return episode;
@@ -942,203 +909,6 @@ public class ContentController extends BaseController {
         });
     }
 
-    /**
-     * Handles the "Add Episode" button click event.
-     * Shows a dialog to add a new episode to the selected season.
-     * <p>
-     * /**
-     * Shows a dialog to add a new series and returns the created series.
-     *
-     * @return the newly created Series, or null if cancelled
-     */
-    private Series showAddSeriesDialog() {
-        // Create a custom dialog
-        Dialog<Series> dialog = new Dialog<>();
-        dialog.setTitle("Add New Series");
-        dialog.setHeaderText("Enter series details");
-        dialog.setTitle("Add New Series");
-        dialog.setHeaderText("Enter series details");
-
-        // Set the button types
-        ButtonType addButtonType = new ButtonType("Add", ButtonBar.ButtonData.OK_DONE);
-        dialog.getDialogPane().getButtonTypes().addAll(addButtonType, ButtonType.CANCEL);
-
-        // Create the form fields
-        TextField titleField = new TextField();
-        titleField.setPromptText("Title");
-
-        TextField yearField = new TextField();
-        yearField.setPromptText("Year (e.g., 2021)");
-
-        TextField genreField = new TextField();
-        genreField.setPromptText("Genre (comma-separated)");
-
-        TextField creatorField = new TextField();
-        creatorField.setPromptText("Creator");
-
-        TextField seasonsField = new TextField();
-        seasonsField.setPromptText("Number of seasons");
-
-
-        // Create and configure the form layout
-        GridPane grid = new GridPane();
-        grid.setHgap(10);
-        grid.setVgap(10);
-        grid.setPadding(new Insets(20, 150, 10, 10));
-
-        // Add fields to the grid
-        grid.add(new Label("Title:"), 0, 0);
-        grid.add(titleField, 1, 0);
-        grid.add(new Label("Year:"), 0, 1);
-        grid.add(yearField, 1, 1);
-        grid.add(new Label("Genre:"), 0, 2);
-        grid.add(genreField, 1, 2);
-        grid.add(new Label("Creator:"), 0, 3);
-        grid.add(creatorField, 1, 3);
-        grid.add(new Label("Seasons:"), 0, 4);
-        grid.add(seasonsField, 1, 4);
-
-        // Enable/Disable add button depending on whether a title was entered
-        Node addButton = dialog.getDialogPane().lookupButton(addButtonType);
-        addButton.setDisable(true);
-
-        // Do some validation
-        titleField.textProperty().addListener((observable, oldValue, newValue) -> {
-            addButton.setDisable(newValue.trim().isEmpty());
-        });
-
-        // Set the dialog content
-        dialog.getDialogPane().setContent(grid);
-
-        // Request focus on the title field by default
-        Platform.runLater(titleField::requestFocus);
-
-        // Convert the result to a Series object when the add button is clicked
-        dialog.setResultConverter(dialogButton -> {
-            if (dialogButton == addButtonType) {
-                try {
-                    Series series = new Series(titleField.getText().trim());
-                    series.setTitle(titleField.getText().trim());
-
-                    // Parse year with validation
-                    try {
-                        int year = Integer.parseInt(yearField.getText().trim());
-                        series.setReleaseYear(year);
-                    } catch (NumberFormatException e) {
-                        showAlert("Invalid Year", "Please enter a valid year (e.g., 2023)");
-                        return null;
-                    }
-
-                    // Set genres (comma-separated)
-                    if (!genreField.getText().trim().isEmpty()) {
-                        series.setGenre(Genre.valueOf(genreField.getText().trim()));
-                    }
-
-                    // Set creator if provided
-                    if (!creatorField.getText().trim().isEmpty()) {
-                        series.setDirector(creatorField.getText().trim());
-                    }
-
-                    // Parse number of seasons with validation
-                    try {
-                        if (!seasonsField.getText().trim().isEmpty()) {
-                            int seasons = Integer.parseInt(seasonsField.getText().trim());
-                            if (seasons < 0) {
-                                throw new NumberFormatException("Number of seasons cannot be negative");
-                            }
-                            //create Season objects here in a real implementation
-                        }
-                    } catch (NumberFormatException e) {
-                        showAlert("Invalid Seasons", "Please enter a valid number of seasons");
-                        return null;
-                    }
-
-
-                    return series;
-                } catch (Exception e) {
-                    logger.error("Error creating series: {}", e.getMessage(), e);
-                    showAlert("Error", "Failed to create series: " + e.getMessage());
-                    return null;
-                }
-            }
-            return null;
-        });
-
-        // Show the dialog and return the result
-        Optional<Series> result = dialog.showAndWait();
-        return result.orElse(null);
-    }
-
-    /**
-     * Handles the "Add Movie" button click event.
-     * Shows a dialog to add a new movie and refreshes the movie table upon success.
-     */
-    @FXML
-    private void handleAddMovie() {
-        // Open a dialog to add a new movie
-        Movie newMovie = showAddMovieDialog();
-        if (newMovie != null) {
-            contentService.addContent(newMovie);
-            refreshMovieTable();
-        }
-
-    }
-
-    /**
-     * Handles the "Rate Movie" button click event.
-     * Shows a rating dialog for the selected movie and updates the rating if confirmed.
-     */
-    @FXML
-    private void handleRateMovie() {
-        Movie selectedMovie = movieTable.getSelectionModel().getSelectedItem();
-        if (selectedMovie != null) {
-            double rating = showRatingDialog();
-            if (rating > 0) {
-                try {
-                    contentService.rateContent(selectedMovie, (float) rating);
-                    refreshMovieTable();
-                    showSuccess("Success", String.format("You rated '%s' %.1f", selectedMovie.getTitle(), rating));
-                } catch (ContentNotFoundException e) {
-                    logger.error("Failed to find movie with ID {}: {}", selectedMovie.getId(), e.getMessage());
-                    showError("Error", "The selected movie could not be found. It may have been deleted.");
-                    refreshMovieTable(); // Refresh to show current data
-                } catch (Exception e) {
-                    logger.error("Error rating movie: {}", e.getMessage(), e);
-                    showError("Error", "Failed to rate movie: " + e.getMessage());
-                }
-            }
-        } else {
-            showAlert("No Movie Selected", "Please select a movie to rate.");
-        }
-    }
-
-    /**
-     * Handles the "Delete Movie" button click event.
-     * Deletes the selected movie after confirmation.
-     */
-    @FXML
-    private void handleDeleteMovie() {
-        Movie selectedMovie = movieTable.getSelectionModel().getSelectedItem();
-        if (selectedMovie != null) {
-            boolean confirmed = showConfirmationDialog("Delete Movie", "Are you sure you want to delete this movie?");
-            if (confirmed) {
-                try {
-                    contentService.deleteContent(selectedMovie);
-                    refreshMovieTable();
-                    showSuccess("Success", String.format("Movie '%s' has been deleted successfully.", selectedMovie.getTitle()));
-                } catch (ContentNotFoundException e) {
-                    logger.error("Failed to find movie with ID {}: {}", selectedMovie.getId(), e.getMessage());
-                    showError("Error", "The selected movie could not be found. It may have already been deleted.");
-                    refreshMovieTable(); // Refresh to show current data
-                } catch (Exception e) {
-                    logger.error("Error deleting movie: {}", e.getMessage(), e);
-                    showError("Error", "Failed to delete movie: " + e.getMessage());
-                }
-            }
-        } else {
-            showAlert("No Movie Selected", "Please select a movie to delete.");
-        }
-    }
 
     /**
      * Shows a dialog to input a rating value.
@@ -1220,19 +990,6 @@ public class ContentController extends BaseController {
         return result.isPresent() && result.get() == ButtonType.OK;
     }
 
-    /**
-     * Handles the "Add Series" button click event.
-     * Shows a dialog to add a new TV series and refreshes the series table upon success.
-     */
-    @FXML
-    private void handleAddSeries() {
-        // Open a dialog to add a new series
-        Series newSeries = showAddSeriesDialog();
-        if (newSeries != null) {
-            contentService.addContent(newSeries);
-            refreshSeriesTable();
-        }
-    }
 
     /**
      * Handles the "Rate Series" button click event.
@@ -1262,33 +1019,7 @@ public class ContentController extends BaseController {
         }
     }
 
-    /**
-     * Handles the "Delete Series" button click event.
-     * Deletes the selected series after confirmation.
-     */
-    @FXML
-    private void handleDeleteSeries() {
-        Series selectedSeries = seriesTable.getSelectionModel().getSelectedItem();
-        if (selectedSeries != null) {
-            boolean confirmed = showConfirmationDialog("Delete Series", "Are you sure you want to delete this series?");
-            if (confirmed) {
-                try {
-                    contentService.deleteContent(selectedSeries);
-                    refreshSeriesTable();
-                    showSuccess("Success", String.format("Series '%s' has been deleted successfully.", selectedSeries.getTitle()));
-                } catch (ContentNotFoundException e) {
-                    logger.error("Failed to find series with ID {}: {}", selectedSeries.getId(), e.getMessage());
-                    showError("Error", "The selected series could not be found. It may have already been deleted.");
-                    refreshSeriesTable(); // Refresh to show current data
-                } catch (Exception e) {
-                    logger.error("Error deleting series: {}", e.getMessage(), e);
-                    showError("Error", "Failed to delete series: " + e.getMessage());
-                }
-            }
-        } else {
-            showWarning("No Selection", "Please select a series to delete.");
-        }
-    }
+
 
     /**
      * Initializes the columns for the movie table.
@@ -1419,9 +1150,6 @@ public class ContentController extends BaseController {
                                 seriesTable.setItems(filteredSeries);
                                 logger.debug("Set {} series to series table", filteredSeries.size());
                             }
-
-                            // Update status
-                            updateStatusLabel(movies.size() + series.size());
                             logger.info("Successfully loaded {} movies and {} series", movies.size(), series.size());
                         } catch (Exception e) {
                             logger.error("Error updating UI with loaded data: {}", e.getMessage(), e);
@@ -1634,181 +1362,6 @@ public class ContentController extends BaseController {
 
 
     /**
-     * Sets the current user session information.
-     * Updates the UI to reflect the current user's authentication state.
-     *
-     * @param currentUser  The currently logged-in user, or null if no user is logged in
-     * @param sessionToken The session token for the current user, or null if no user is logged in
-     */
-    public void setUserSession(User currentUser, String sessionToken) {
-        this.currentUser = currentUser;
-        this.sessionToken = sessionToken;
-    }
-
-
-    /**
-     * Handles the rate movie action from the UI.
-     * Shows a dialog to rate the selected movie.
-     *
-     * @param event The action event that triggered this method
-     */
-    @FXML
-    private void handleRateMovie(ActionEvent event) {
-        Movie selectedMovie = movieTable.getSelectionModel().getSelectedItem();
-        if (selectedMovie != null) {
-            try {
-                // Show rating dialog
-                TextInputDialog dialog = new TextInputDialog("5.0");
-                dialog.setTitle("Rate Movie");
-                dialog.setHeaderText(String.format("Rate '%s' (1.0 - 10.0)", selectedMovie.getTitle()));
-                dialog.setContentText("Rating:");
-
-                Optional<String> result = dialog.showAndWait();
-                if (result.isPresent()) {
-                    try {
-                        double rating = Double.parseDouble(result.get());
-                        if (rating < 1.0 || rating > 10.0) {
-                            throw new NumberFormatException("Rating must be between 1.0 and 10.0");
-                        }
-
-                        // Update rating
-                        contentService.rateContent(selectedMovie, (float) rating);
-                        refreshMovieTable();
-                        showSuccess("Success", String.format("You rated '%s' %.1f", selectedMovie.getTitle(), rating));
-                    } catch (NumberFormatException e) {
-                        showError("Invalid Input", "Please enter a valid number between 1.0 and 10.0");
-                    } catch (ContentNotFoundException e) {
-                        showError("Error", "The selected movie could not be found. It may have been deleted.");
-                        refreshMovieTable();
-                    } catch (Exception e) {
-                        logger.error("Error rating movie: {}", e.getMessage(), e);
-                        showError("Error", "Failed to rate movie: " + e.getMessage());
-                    }
-                }
-            } catch (Exception e) {
-                logger.error("Error showing rating dialog: {}", e.getMessage(), e);
-                showError("Error", "Failed to show rating dialog: " + e.getMessage());
-            }
-        } else {
-            showWarning("No Selection", "Please select a movie to rate.");
-        }
-    }
-
-    /**
-     * Handles the delete movie action from the UI.
-     * Deletes the selected movie after confirmation.
-     *
-     * @param event The action event that triggered this method
-     */
-    @FXML
-    private void handleDeleteMovie(ActionEvent event) {
-        Movie selectedMovie = movieTable.getSelectionModel().getSelectedItem();
-        if (selectedMovie != null) {
-            boolean confirmed = showConfirmationDialog(
-                    "Delete Movie",
-                    String.format("Are you sure you want to delete '%s'? This action cannot be undone.", selectedMovie.getTitle())
-            );
-
-            if (confirmed) {
-                try {
-                    contentService.deleteContent(selectedMovie);
-                    refreshMovieTable();
-                    showSuccess("Success", String.format("Movie '%s' has been deleted successfully.", selectedMovie.getTitle()));
-                } catch (ContentNotFoundException e) {
-                    showError("Error", "The selected movie could not be found. It may have already been deleted.");
-                    refreshMovieTable();
-                } catch (Exception e) {
-                    logger.error("Error deleting movie: {}", e.getMessage(), e);
-                    showError("Error", "Failed to delete movie: " + e.getMessage());
-                }
-            }
-        } else {
-            showWarning("No Selection", "Please select a movie to delete.");
-        }
-    }
-
-    /**
-     * Handles the rate series action from the UI.
-     * Shows a dialog to rate the selected series.
-     *
-     * @param event The action event that triggered this method
-     */
-    @FXML
-    private void handleRateSeries(ActionEvent event) {
-        Series selectedSeries = seriesTable.getSelectionModel().getSelectedItem();
-        if (selectedSeries != null) {
-            try {
-                // Show rating dialog
-                TextInputDialog dialog = new TextInputDialog("5.0");
-                dialog.setTitle("Rate Series");
-                dialog.setHeaderText(String.format("Rate '%s' (1.0 - 10.0)", selectedSeries.getTitle()));
-                dialog.setContentText("Rating:");
-
-                Optional<String> result = dialog.showAndWait();
-                if (result.isPresent()) {
-                    try {
-                        double rating = Double.parseDouble(result.get());
-                        if (rating < 1.0 || rating > 10.0) {
-                            throw new NumberFormatException("Rating must be between 1.0 and 10.0");
-                        }
-
-                        // Update rating
-                        contentService.rateContent(selectedSeries, (float) rating);
-                        refreshSeriesTable();
-                        showSuccess("Success", String.format("You rated '%s' %.1f", selectedSeries.getTitle(), rating));
-                    } catch (NumberFormatException e) {
-                        showError("Invalid Input", "Please enter a valid number between 1.0 and 10.0");
-                    } catch (ContentNotFoundException e) {
-                        showError("Error", "The selected series could not be found. It may have been deleted.");
-                        refreshSeriesTable();
-                    } catch (Exception e) {
-                        logger.error("Error rating series: {}", e.getMessage(), e);
-                        showError("Error", "Failed to rate series: " + e.getMessage());
-                    }
-                }
-            } catch (Exception e) {
-                logger.error("Error showing rating dialog: {}", e.getMessage(), e);
-                showError("Error", "Failed to show rating dialog: " + e.getMessage());
-            }
-        } else {
-            showWarning("No Selection", "Please select a series to rate.");
-        }
-    }
-
-    /**
-     * Handles the delete series action from the UI.
-     * Deletes the selected series after confirmation.
-     *
-     * @param event The action event that triggered this method
-     */
-    @FXML
-    private void handleDeleteSeries(ActionEvent event) {
-        Series selectedSeries = seriesTable.getSelectionModel().getSelectedItem();
-        if (selectedSeries != null) {
-            boolean confirmed = showConfirmationDialog(
-                    "Delete Series",
-                    String.format("Are you sure you want to delete '%s'? This action cannot be undone.", selectedSeries.getTitle())
-            );
-
-            if (confirmed) {
-                try {
-                    contentService.deleteContent(selectedSeries);
-                    refreshSeriesTable();
-                    showSuccess("Success", String.format("Series '%s' has been deleted successfully.", selectedSeries.getTitle()));
-                } catch (ContentNotFoundException e) {
-                    showError("Error", "The selected series could not be found. It may have already been deleted.");
-                    refreshSeriesTable();
-                } catch (Exception e) {
-                    logger.error("Error deleting series: {}", e.getMessage(), e);
-                    showError("Error", "Failed to delete series: " + e.getMessage());
-                }
-            }
-        } else {
-            showWarning("No Selection", "Please select a series to delete.");
-        }
-    }
-
-    /**
      * Handles the "Manage Series" button click event.
      * Shows a dialog with options to manage the selected series, including adding seasons and episodes.
      *
@@ -1844,14 +1397,6 @@ public class ContentController extends BaseController {
             int startYear = selectedSeries.getStartYear();
             if (startYear > 0) {
                 yearString = " (" + startYear;
-                try {
-                    int endYear = selectedSeries.getEndYear();
-                    if (endYear > 0 && endYear >= startYear) {
-                        yearString += "-" + endYear;
-                    }
-                } catch (Exception e) {
-                    logger.debug("No end year or invalid end year for series: {}", title);
-                }
                 yearString += ")";
             }
         } catch (Exception e) {
@@ -1938,8 +1483,7 @@ public class ContentController extends BaseController {
         dialog.showAndWait().ifPresent(buttonType -> {
             try {
                 if (buttonType == addSeasonButtonType) {
-                    // Handle Add Season
-                    handleAddSeason(new ActionEvent(selectedSeries, null));
+
                 } else if (buttonType == addEpisodeButtonType) {
                     // Handle Add Episode
                     Season selectedSeason = seasonComboBox.getSelectionModel().getSelectedItem();

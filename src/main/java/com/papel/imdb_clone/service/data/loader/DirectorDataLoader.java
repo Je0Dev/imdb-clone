@@ -1,5 +1,6 @@
 package com.papel.imdb_clone.service.data.loader;
 
+import com.papel.imdb_clone.enums.Ethnicity;
 import com.papel.imdb_clone.exceptions.FileParsingException;
 import com.papel.imdb_clone.model.Director;
 import com.papel.imdb_clone.service.CelebrityService;
@@ -21,6 +22,7 @@ public class DirectorDataLoader extends BaseDataLoader {
     private static final Logger logger = LoggerFactory.getLogger(DirectorDataLoader.class);
     private final CelebrityService<Director> directorService;
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+    private Ethnicity Ethnicity;
 
     public DirectorDataLoader(CelebrityService<Director> directorService) {
         this.directorService = directorService;
@@ -86,12 +88,8 @@ public class DirectorDataLoader extends BaseDataLoader {
 
                         // Create and save the director
                         try {
-                            Director director = new Director(firstName, lastName, birthDate, gender);
-                            if (nationality != null && !nationality.isEmpty()) {
-                                director.setNationality(nationality);
-                            }
-
-
+                            Director director = new Director(firstName, lastName, birthDate, gender,Ethnicity);
+                            
                             // Check if director already exists
                             if (directorService.findByFullName(firstName, lastName).isPresent()) {
                                 logger.debug("Director already exists: {} {}", firstName, lastName);

@@ -45,28 +45,6 @@ public abstract class BaseDataLoader {
     }
 
     /**
-     * Normalizes the filename by removing leading/trailing whitespace and slashes.
-     */
-    private String normalizeFilename(String filename) {
-        if (filename == null) {
-            return "";
-        }
-        
-        String normalized = filename.trim()
-                .replace("\\", "/")
-                .replaceAll("^[\\/]+", "")  // Remove leading slashes
-                .replaceAll("[\\/]+$", "");   // Remove trailing slashes
-        
-        // Remove any leading data/ from the filename to prevent double slashes
-        if (normalized.startsWith("data/")) {
-            normalized = normalized.substring(5);
-        }
-        
-        logger.debug("Normalized filename '{}' to '{}'", filename, normalized);
-        return normalized;
-    }
-
-    /**
      * Validates the input stream and filename.
      *
      * @param inputStream the input stream to validate

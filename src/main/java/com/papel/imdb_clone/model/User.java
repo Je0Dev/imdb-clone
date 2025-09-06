@@ -17,20 +17,16 @@ public class User implements Serializable {
     private String lastName;
     private String username;
     private String email;
-    private final char gender;
 
 
     private static final Pattern EMAIL_PATTERN = Pattern.compile(
             "^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$");
-    private boolean active;
-    private boolean admin;
     private LocalDate joinDate;
 
     public User(String firstName, String lastName, String username, char gender, String email) {
         this.firstName = firstName;
         this.lastName = lastName;
         this.username = username;
-        this.gender = gender;
         setEmail(email);
     }
 
@@ -97,22 +93,12 @@ public class User implements Serializable {
                 ", firstName='" + firstName + '\'' +
                 ", lastName='" + lastName + '\'' +
                 ", username='" + username + '\'' +
-                ", email='" + email + '\'' +
-                ", gender=" + gender;
+                ", email='" + email + '\'' ;
 
         if (password != null) {
             base += ", password='" + password + '\'';
         }
         return base + '}';
-    }
-
-    public void setActive(boolean active) {
-        this.active = active;
-    }
-
-
-    public void setAdmin(boolean admin) {
-        this.admin = admin;
     }
 
     public void setJoinDate(LocalDate joinDate) {

@@ -5,7 +5,6 @@ import com.papel.imdb_clone.enums.Genre;
 import java.util.*;
 
 public class Movie extends Content {
-    private final int duration;
     private final List<Actor> actors;
 
     private String boxOffice;
@@ -26,7 +25,6 @@ public class Movie extends Content {
 
     public Movie() {
         super("", new Date(), Genre.ACTION, "Unknown", new HashMap<>(), 0.0);
-        this.duration = 0;
         this.actors = new ArrayList<>();
         initializeRichContentFields();
     }
@@ -36,7 +34,6 @@ public class Movie extends Content {
                 Genre.valueOf(genre.toUpperCase().replace(" ", "_")),
                 director, userRatings, imdbRating);
         this.releaseDate = new Date(year - 1900, Calendar.JANUARY, 1);
-        this.duration = 0;
         this.actors = new ArrayList<>();
         initializeRichContentFields();
     }
@@ -48,7 +45,6 @@ public class Movie extends Content {
                 (genres != null && !genres.isEmpty()) ? genres.get(0) : Genre.DRAMA,
                 director, new HashMap<>(), imdbRating);
         this.releaseDate = year != null ? new Date(year.getTime()) : null;
-        this.duration = duration;
         this.actors = new ArrayList<>(actors != null ? actors : new ArrayList<>());
         this.genres = genres != null ? new ArrayList<>(genres) : new ArrayList<>();
         initializeRichContentFields();
@@ -95,7 +91,6 @@ public class Movie extends Content {
                 "id=" + getId() +
                 ", title='" + getTitle() + '\'' +
                 ", genre=" + getGenre() +
-                ", duration=" + duration +
                 ", actors=" + actors.size() +
                 ", genres=" + genres.size() +
                 '}';

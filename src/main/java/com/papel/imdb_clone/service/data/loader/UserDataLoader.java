@@ -55,15 +55,13 @@ public class UserDataLoader extends BaseDataLoader {
                 try {
                     String[] parts = parseCSVLine(line);
                     if (parts.length >= 5) {
-                        // Expected format: id,username,email,password,fullName,gender,dateOfBirth,country
+
                         int id = Integer.parseInt(parts[0].trim());
                         String username = parts[1].trim();
                         String email = parts[2].trim();
                         String password = parts[3].trim();
                         String fullName = parts[4].trim();
                         char gender = parts.length > 5 && !parts[5].trim().isEmpty() ? parts[5].trim().charAt(0) : 'U';
-                        LocalDate birthDate = parts.length > 6 ? parseDate(parts[6].trim()) : null;
-                        String country = parts.length > 7 ? parts[7].trim() : null;
 
                         // Check if user already exists
                         if (userRepository.findByUsername(username).isPresent()) {
@@ -84,9 +82,7 @@ public class UserDataLoader extends BaseDataLoader {
                             user.setId(id);
                             user.setPassword(password); // Set the password (will be hashed by the service)
 
-                            // Set default values
-                            user.setActive(true);
-                            user.setAdmin(false);
+
                             user.setJoinDate(LocalDate.now());
 
                             // Check if user with this ID already exists
@@ -121,15 +117,4 @@ public class UserDataLoader extends BaseDataLoader {
         }
     }
 
-    private LocalDate parseDate(String dateStr) {
-        if (dateStr == null || dateStr.trim().isEmpty()) {
-            return null;
-        }
-        try {
-            return LocalDate.parse(dateStr, DATE_FORMATTER);
-        } catch (DateTimeParseException e) {
-            logger.warn("Invalid date format: {}", dateStr);
-            return null;
-        }
-    }
 }

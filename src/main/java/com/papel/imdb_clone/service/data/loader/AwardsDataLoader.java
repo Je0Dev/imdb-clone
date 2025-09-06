@@ -91,7 +91,7 @@ public class AwardsDataLoader extends BaseDataLoader {
                             if (movieOpt.isPresent()) {
                                 Movie movie = movieOpt.get();
 
-                                if (awards != null && !awards.isEmpty()) {
+                                if (!awards.isEmpty()) {
                                     movie.setAwards(awards);
                                 }
                                 if (boxOffice != null && !boxOffice.isEmpty()) {
@@ -112,7 +112,7 @@ public class AwardsDataLoader extends BaseDataLoader {
                                 Series series = seriesOpt.get();
                                 // Assuming Series class has setAwards and setNominations methods
                                 // If these methods don't exist, you'll need to add them
-                                if (awards != null && !awards.isEmpty()) {
+                                if (!awards.isEmpty()) {
                                     series.setAwards(awards);
                                 }
                                 if (nominations != null && !nominations.isEmpty()) {

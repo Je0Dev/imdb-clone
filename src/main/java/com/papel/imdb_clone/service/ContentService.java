@@ -31,7 +31,7 @@ public class ContentService<T extends Content> {
     private static final Logger logger = LoggerFactory.getLogger(ContentService.class);
     private static final Map<Class<?>, ContentService<?>> instances = new HashMap<>();
 
-    private final Class<T> contentType;
+    public final Class<T> contentType;
 
     public ContentService(Class<T> contentType) {
         this.contentType = contentType;
@@ -136,19 +136,6 @@ public class ContentService<T extends Content> {
         }
     }
 
-    /**
-     * Deletes content by ID.
-     *
-     * @param id The ID of the content to delete
-     */
-    public void delete(int id) {
-        lock.writeLock().lock();
-        try {
-            boolean removed = contentList.removeIf(content -> content.getId() == id);
-        } finally {
-            lock.writeLock().unlock();
-        }
-    }
 
     /**
      * Gets all content of this service's type.
@@ -196,7 +183,6 @@ public class ContentService<T extends Content> {
 
                         // Filter by year range if provided
                         Integer startYear = criteria.getStartYear();
-                        Integer endYear = criteria.getEndYear();
 
                         // Convert char[] release year to int for comparison
                         int contentYear = Integer.parseInt(String.valueOf(content.getReleaseYear()));
@@ -205,8 +191,7 @@ public class ContentService<T extends Content> {
                         if (startYear != null && startYear > 0 && contentYear < startYear) {
                             return false;
                         }
-                        // Check if content is after end year (if end year is specified)
-                        return endYear == null || endYear <= 0 || contentYear <= endYear;
+                        return true;
                     })
                     .collect(Collectors.toList());
         } finally {
@@ -237,66 +222,17 @@ public class ContentService<T extends Content> {
         }
     }
 
-    /**
-     * Saves a Series to the content list.
-     *
-     * @param series The series to save
-     */
-    public void saveContent(Series series) {
-        if (series.getId() == 0) {
-            series.setId(nextId.getAndIncrement());
-        }
-        save((T) series);
-    }
-
-
-    /**
-     * Adds new content to the service.
-     *
-     * @param content The content to add
-     */
-    public void addContent(T content) {
-        if (content.getId() == 0) {
-            content.setId(nextId.getAndIncrement());
-        }
-        contentList.add(content);
-    }
-
-    public void deleteContent(T selectedMovie) {
-        // Check if the content exists
-        findById(selectedMovie.getId());
-
-        // Delete the content
-        delete(selectedMovie.getId());
-    }
 
     public void rateContent(T selectedMovie, float rating) {
         // Check if the content exists
         findById(selectedMovie.getId());
         // Save the rating
         saveRating(new Rating(selectedMovie.getId(), rating));
-        // Update the average user rating
-        updateAverageUserRating(selectedMovie);
         // Update the content
         updateContent(selectedMovie);
 
     }
 
-    private <T extends Content> void updateAverageUserRating(T selectedMovie) {
-        // Calculate the new average user rating
-        float totalUserRatings = selectedMovie.getUserRatings().
-                values().stream()
-                .mapToInt(Integer::intValue)
-                .sum();
-        int userRatingsCount = selectedMovie.getUserRatings().size();
-        double newAverageUserRating = totalUserRatings / userRatingsCount;
-
-        // Set the new average user rating
-        selectedMovie.setUserRating(newAverageUserRating);
-        // Save the updated content
-        saveContent((Series) selectedMovie);
-
-    }
 
     public Optional<T> findByTitleAndYear(String title, int startYear) {
         return contentList.stream()
@@ -305,4 +241,9 @@ public class ContentService<T extends Content> {
                 .findFirst();
     }
 
+    public void add(T movie) {
+        save(movie);
+        contentList.add(movie);
+        logger.info("Added new {}", contentType.getSimpleName());
+    }
 }

@@ -2,10 +2,7 @@ package com.papel.imdb_clone.service;
 
 import com.papel.imdb_clone.controllers.coordinator.UICoordinator;
 import com.papel.imdb_clone.data.RefactoredDataManager;
-import com.papel.imdb_clone.model.Actor;
-import com.papel.imdb_clone.model.Director;
-import com.papel.imdb_clone.model.Movie;
-import com.papel.imdb_clone.model.Series;
+import com.papel.imdb_clone.model.*;
 import com.papel.imdb_clone.repository.impl.InMemoryMovieRepository;
 import com.papel.imdb_clone.repository.impl.InMemorySeriesRepository;
 import com.papel.imdb_clone.repository.impl.InMemoryUserRepository;
@@ -15,6 +12,7 @@ import javafx.stage.Stage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -26,7 +24,7 @@ import java.util.concurrent.ConcurrentMap;
 public class ServiceLocator {
     private static final Logger logger = LoggerFactory.getLogger(ServiceLocator.class);
     private static ServiceLocator instance;
-    private final ConcurrentMap<Object, Object> services = new ConcurrentHashMap<>();
+    private static final ConcurrentMap<Object, Object> services = new ConcurrentHashMap<>();
     private static RefactoredDataManager dataManager;
     private static UICoordinator uiCoordinator;
     private static Stage primaryStage;
@@ -212,51 +210,6 @@ public class ServiceLocator {
     }
 
     /**
-     * Get a service instance with a specific qualifier
-     */
-    @SuppressWarnings("unchecked")
-    public <T> T getService(Class<T> serviceClass, String qualifier) {
-        if (serviceClass == null || qualifier == null) {
-            throw new IllegalArgumentException("Service class and qualifier cannot be null");
-        }
-
-        // Try with qualified key first
-        String qualifiedKey = serviceClass.getName() + "_" + qualifier;
-        T service = (T) services.get(qualifiedKey);
-
-        if (service == null) {
-            // Fallback to unqualified lookup
-            service = (T) services.get(serviceClass);
-        }
-
-        if (service == null) {
-            throw new IllegalStateException("Service not found: " + serviceClass.getSimpleName() + " with qualifier: " + qualifier);
-        }
-
-        return service;
-    }
-
-    /**
-     * Get a service instance (default qualifier)
-     */
-    @SuppressWarnings("unchecked")
-    public <T> T getService(Class<T> serviceClass) {
-        if (serviceClass == null) {
-            throw new IllegalArgumentException("Service class cannot be null");
-        }
-        // Try by class key first
-        T service = (T) services.get(serviceClass);
-        if (service == null) {
-            // Fallback to class name key
-            service = (T) services.get(serviceClass.getName());
-        }
-        if (service == null) {
-            throw new IllegalStateException("Service not found: " + serviceClass.getSimpleName());
-        }
-        return service;
-    }
-
-    /**
      * Check if a service is registered
      */
     public boolean hasService(Class<?> serviceClass) {
@@ -280,5 +233,15 @@ public class ServiceLocator {
 
         services.clear();
         logger.info("Service shutdown complete");
+    }
+
+    @SuppressWarnings("unchecked")
+    public static <T> T getService(Class<T> serviceClass) {
+        return (T) services.get(serviceClass);
+    }
+
+    @SuppressWarnings("unchecked")
+    public static <T> T getService(Class<T> serviceClass, String qualifier) {
+        return (T) services.get(serviceClass.getName() + "_" + qualifier);
     }
 }

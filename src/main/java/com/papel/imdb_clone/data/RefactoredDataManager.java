@@ -73,12 +73,14 @@ public class RefactoredDataManager {
         // Initialize repositories
         this.userRepository = new InMemoryUserRepository();
         this.movieRepository = new InMemoryMovieRepository();
+        this.seriesRepository = new InMemorySeriesRepository();
 
-        // Initialize services with repositories
+        // Initialize services
         this.movieService = new ContentService<>(Movie.class);
         this.seriesService = new ContentService<>(Series.class);
         this.actorService = new CelebrityService<>(Actor.class);
         this.directorService = new CelebrityService<>(Director.class);
+
         // Initialize file data loader service as the DataLoaderService implementation
         this.dataLoaderService = new FileDataLoaderService(
                 userRepository,
@@ -118,6 +120,7 @@ public class RefactoredDataManager {
         // Register repositories
         locator.registerService(InMemoryUserRepository.class, userRepository);
         locator.registerService(InMemoryMovieRepository.class, movieRepository);
+        locator.registerService(InMemorySeriesRepository.class, seriesRepository);
 
         // Register self
         locator.registerService(RefactoredDataManager.class, this);
@@ -154,26 +157,11 @@ public class RefactoredDataManager {
     public InMemoryUserRepository getUserRepository() {
         return userRepository;
     }
-
-    public MovieRepository getMovieRepository() {
+    public InMemoryMovieRepository getMovieRepository() {
         return movieRepository;
     }
 
-    // Backward compatibility methods for controllers
-    public List<Movie> getMovies() {
-        return getAllMovies();
-    }
-
-    public List<Series> getSeries() {
-        return getAllSeries();
-    }
-
-
-    public boolean isDataLoaded() {
-        return dataLoaded;
-    }
-
-    public Object getSeriesRepository() {
+    public InMemorySeriesRepository getSeriesRepository() {
         return seriesRepository;
     }
 
@@ -183,5 +171,19 @@ public class RefactoredDataManager {
 
     public CelebrityService<Director> getDirectorService() {
         return directorService;
+    }
+
+    public boolean isDataLoaded() {
+        return dataLoaded;
+    }
+
+    public void addMovie(Movie movie) {
+        movieService.add(movie);
+        movieRepository.add(movie);
+        dataLoaded = true;
+    }
+
+    public List<Movie> getMovies() {
+        return movieRepository.getAll();
     }
 }

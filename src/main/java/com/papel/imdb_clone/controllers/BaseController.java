@@ -39,12 +39,4 @@ public abstract class BaseController implements Initializable {
     }
 
 
-    /**
-     * Show a warning dialog with the specified title and message.
-     */
-    protected void showWarning(String title, String message) {
-        logger.warn("Showing warning: {} - {}", title, message);
-        UIUtils.showWarning(title, message);
-    }
-
 }

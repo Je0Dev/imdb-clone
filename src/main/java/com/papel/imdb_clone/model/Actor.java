@@ -10,22 +10,20 @@ import java.util.stream.Collectors;
 
 public class Actor extends Celebrity {
     private Ethnicity ethnicity;
+
     // Backward-compatible storage of the original race label used in older tests
-    private String raceLabel;
     private String notableWorks;
 
 
     public Actor(String firstName, String lastName, LocalDate birthDate, char gender, Ethnicity ethnicity) {
         super(firstName, lastName, birthDate, gender);
         this.ethnicity = ethnicity;
-        this.raceLabel = ethnicity != null ? ethnicity.getLabel() : null;
     }
 
     // Backward-compatible constructor accepting a race/ethnicity label
     public Actor(String firstName, String lastName, LocalDate birthDate, char gender, String raceLabel) {
         super(firstName, lastName, birthDate, gender);
         if (raceLabel != null && !raceLabel.isBlank()) {
-            this.raceLabel = raceLabel;
             try {
                 this.ethnicity = Ethnicity.fromLabel(raceLabel);
             } catch (IllegalArgumentException ex) {
@@ -39,10 +37,6 @@ public class Actor extends Celebrity {
     }
 
 
-    public String getRace() {
-        return raceLabel;
-    }
-
 
     @Override
     public String toString() {
@@ -52,7 +46,6 @@ public class Actor extends Celebrity {
                 ", lastName='" + getLastName() + '\'' +
                 ", birthDate=" + getBirthDate() +
                 ", gender=" + getGender() +
-                ", race='" + getRace() + "'" +
                 '}';
     }
 

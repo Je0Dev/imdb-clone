@@ -92,20 +92,8 @@ public class UICoordinator {
     public void setUserSession(User currentUser, String sessionToken) {
         this.currentUser = currentUser;
         this.sessionToken = sessionToken;
-
-        // Update existing controllers if they're already loaded
-        updateControllersWithUserSession();
     }
 
-    /**
-     * Updates all initialized controllers with the current user session information.
-     * This method ensures that all controllers have access to the current user's session data.
-     */
-    private void updateControllersWithUserSession() {
-        if (contentController != null) {
-            contentController.setUserSession(currentUser, sessionToken);
-        }
-    }
 
     /**
      * Loads and initializes all views and their controllers.

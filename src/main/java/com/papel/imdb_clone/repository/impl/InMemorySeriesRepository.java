@@ -17,7 +17,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  * In-memory implementation of SeriesRepository.
  * Thread-safe implementation using CopyOnWriteArrayList and ReentrantReadWriteLock.
  */
-public abstract class InMemorySeriesRepository implements SeriesRepository {
+public class InMemorySeriesRepository implements SeriesRepository {
     private static final Logger logger = LoggerFactory.getLogger(InMemorySeriesRepository.class);
 
     private final List<Series> seriesList = new CopyOnWriteArrayList<>();
@@ -71,7 +71,7 @@ public abstract class InMemorySeriesRepository implements SeriesRepository {
             if (series.getId() == 0) {
                 // New series - check for duplicate title
                 if (existsByTitle(series.getTitle())) {
-                    throw new DuplicateEntryException("Series already exists: " + series.getTitle());
+                    throw new DuplicateEntryException("Series", series.getId(), "title", series.getTitle());
                 }
                 series.setId(nextId.getAndIncrement());
                 seriesList.add(series);
@@ -83,7 +83,7 @@ public abstract class InMemorySeriesRepository implements SeriesRepository {
                     // Check if title is being changed to an existing one
                     if (!existing.get().getTitle().equals(series.getTitle()) &&
                             existsByTitle(series.getTitle())) {
-                        throw new DuplicateEntryException("Series title already exists: " + series.getTitle());
+                        throw new DuplicateEntryException("Series", series.getId(), "title", series.getTitle());
                     }
                     seriesList.remove(existing.get());
                     seriesList.add(series);

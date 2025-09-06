@@ -55,8 +55,6 @@ public class ImprovedMovieApp extends Application {
 
         } catch (Exception e) {
             logger.error("Failed to start application", e);
-            System.err.println("[Startup][ERROR] Exception in start(): " + e);
-            e.printStackTrace();
             Platform.exit();
         }
     }
@@ -202,17 +200,11 @@ public class ImprovedMovieApp extends Application {
 
         } catch (Exception e) {
             System.err.println("[Startup][ERROR] loadMainApplication() failed: " + e);
-            e.printStackTrace();
             showErrorAndExit("Failed to load main application", e);
         }
     }
 
-    // Apply theme and animations
 
-    // Theme selection now handled by ThemeManager
-    private String getThemeStylesheet(String themeKey) {
-        return null;
-    }
 
     private void showErrorAndExit(String message, Exception e) {
         logger.error("{}: {}", message, e.getMessage(), e);
@@ -238,9 +230,5 @@ public class ImprovedMovieApp extends Application {
         logger.info("Application stopping...");
         cleanup();
         super.stop();
-    }
-
-    public static void main(String[] args) {
-        launch(args);
     }
 }

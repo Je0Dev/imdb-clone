@@ -7,6 +7,7 @@ import com.papel.imdb_clone.service.AuthService;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.Objects;
 
 public class UserDataRegenerator {
 
@@ -20,8 +21,9 @@ public class UserDataRegenerator {
      */
     public static void main(String[] args) {
         // Get the base path from classpath resources
-        String usersFile = UserDataRegenerator.class.getClassLoader()
-                .getResource("data/users_updated.txt").getFile();
+        String usersFile = Objects.requireNonNull(UserDataRegenerator.class.getClassLoader()
+                .getResource("data/users_updated.txt")).getFile();
+        // Get the default password from the AuthService
         String defaultPassword = "Password123";
         AuthService authService = AuthService.getInstance();
         int count = 0;

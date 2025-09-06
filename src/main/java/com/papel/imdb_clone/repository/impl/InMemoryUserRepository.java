@@ -46,7 +46,7 @@ public class InMemoryUserRepository implements UserRepository {
             if (user.getId() == 0) {
                 // New user - check for duplicate username
                 if (existsByUsername(user.getUsername())) {
-                    throw new DuplicateEntryException("Username already exists: " + user.getUsername());
+                    throw new DuplicateEntryException("User", user.getId(), "username", user.getUsername());
                 }
                 user.setId(nextId.getAndIncrement());
                 users.add(user);
@@ -58,7 +58,7 @@ public class InMemoryUserRepository implements UserRepository {
                     // Check if username is being changed and if it conflicts
                     if (!existing.get().getUsername().equals(user.getUsername()) &&
                             existsByUsername(user.getUsername())) {
-                        throw new DuplicateEntryException("Username already exists: " + user.getUsername());
+                        throw new DuplicateEntryException("User", user.getId(), "username", user.getUsername());
                     }
                     users.remove(existing.get());
                     users.add(user);

@@ -6,7 +6,6 @@ import java.util.List;
 
 public class Episode {
     private int id;
-    private int duration;
     private Director director;
     private double imdbRating;
     private List<Actor> actors;
@@ -17,7 +16,6 @@ public class Episode {
     private Date releaseDate;
 
     public Episode() {
-        this.duration = 0;
         this.director = null;
         this.imdbRating = 0.0;
         this.actors = new ArrayList<>();
@@ -26,7 +24,6 @@ public class Episode {
     // Additional constructor for simple episode creation
     public Episode(String title, int duration) {
         this.title = title;
-        this.duration = duration;
         this.director = null;
         this.imdbRating = 0.0;
         this.actors = new ArrayList<>();
@@ -36,7 +33,6 @@ public class Episode {
     public Episode(int episodeNumber, String title, int duration, String summary) {
         this.episodeNumber = episodeNumber;
         this.title = title;
-        this.duration = duration;
         this.director = null;
         this.imdbRating = 0.0;
         this.actors = new ArrayList<>();
@@ -80,24 +76,16 @@ public class Episode {
         this.episodeNumber = episodeNumber;
     }
 
-    public void setDuration(int duration) {
-        this.duration = duration;
-    }
 
 
     @Override
     public String toString() {
         return "Episode{" +
                 "id=" + id +
-                ", duration=" + duration +
                 ", director=" + (director != null ? director.getFullName() : "Unknown") +
                 ", imdbRating=" + imdbRating +
                 ", actors=" + actors.size() +
                 '}';
-    }
-
-    public void setDescription(String description) {
-
     }
 
     public void setSeason(Season newSeason) {
