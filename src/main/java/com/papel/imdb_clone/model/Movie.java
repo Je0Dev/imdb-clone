@@ -14,6 +14,7 @@ public class Movie extends Content {
 
     private Arrays directors;
     private int startyear;
+    private Integer userRating;
 
     public Date getReleaseDate() {
         return releaseDate != null ? new Date(releaseDate.getTime()) : null;
@@ -118,5 +119,9 @@ public class Movie extends Content {
 
     public void setStartYear(int year) {
         this.startyear = year;
+    }
+
+    public void setUserRating(int rating) {
+        this.userRating=userRating;
     }
 }

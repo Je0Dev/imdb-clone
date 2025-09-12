@@ -64,11 +64,7 @@ public class ContentController extends BaseController {
             
             // Create form fields
             TextField titleField = new TextField();
-            TextArea descriptionArea = new TextArea();
-            descriptionArea.setPrefRowCount(3);
             TextField yearField = new TextField();
-            TextField durationField = new TextField();
-            TextField imageUrlField = new TextField();
             
             // Set up the grid
             GridPane grid = new GridPane();
@@ -79,14 +75,8 @@ public class ContentController extends BaseController {
             // Add fields to grid
             grid.add(new Label("Title:"), 0, 0);
             grid.add(titleField, 1, 0);
-            grid.add(new Label("Description:"), 0, 1);
-            grid.add(descriptionArea, 1, 1);
-            grid.add(new Label("Year:"), 0, 2);
-            grid.add(yearField, 1, 2);
-            grid.add(new Label("Duration (minutes):"), 0, 3);
-            grid.add(durationField, 1, 3);
-            grid.add(new Label("Image URL:"), 0, 4);
-            grid.add(imageUrlField, 1, 4);
+            grid.add(new Label("Year:"), 0, 1);
+            grid.add(yearField, 1, 1);
             
             dialog.getDialogPane().setContent(grid);
             
@@ -918,13 +908,10 @@ public class ContentController extends BaseController {
             if (seriesYearColumn != null) {
                 seriesYearColumn.setCellValueFactory(cellData -> {
                     Series series = cellData.getValue();
-                    if (series == null) {
+                    if (series == null || series.getStartYear() == 0) {
                         return new SimpleIntegerProperty(0).asObject();
                     }
-
-                    // Simply get the year using the getter which has all the fallback logic
-                    int year = series.getStartYear();
-                    return new SimpleIntegerProperty(Math.max(year, 0)).asObject();
+                    return new SimpleIntegerProperty(series.getStartYear()).asObject();
                 });
 
                 // Set cell factory to display "N/A" for invalid years
@@ -1713,34 +1700,215 @@ public class ContentController extends BaseController {
 
     public void handleRateMovie(ActionEvent actionEvent) {
         Movie selectedMovie = movieTable.getSelectionModel().getSelectedItem();
-        if (selectedMovie == null) {
-            showAlert("No Movie Selected", "Please select a movie first before rating.");
-            return;
-        }
-        float rating = (float) showRatingDialog();
-        if (rating > 0) {
-            contentService.rateContent(selectedMovie, rating);
-            refreshMovieTable();
-        }
-        refreshMovieTable();
-        showSuccess("Success", String.format("You rated '%s' %.1f", selectedMovie.getTitle(), rating));
-    }
-
-    public void handleDeleteMovie(ActionEvent actionEvent) {
-        Movie selectedMovie = movieTable.getSelectionModel().getSelectedItem();
-        if (selectedMovie == null) {
-                contentService.delete(selectedMovie.getId());
+        if (selectedMovie != null) {
+            try {
+                // Show rating dialog
+                Optional<Number> result = Optional.of(showRatingDialog());
+                if (result.isPresent()) {
+                    int rating = result.get().intValue();
+                    
+                    // Get the data manager
+                    RefactoredDataManager dataManager = ServiceLocator.getInstance().getDataManager();
+                    if (dataManager == null) {
+                        throw new IllegalStateException("Unable to access data manager");
+                    }
+                    
+                    // Get the latest version of the movie from the data manager
+                    Movie movieToRate = dataManager.getMovieRepository().findById(selectedMovie.getId())
+                            .orElseThrow(() -> new ContentNotFoundException("Movie with id " + selectedMovie.getId() + " not found"));
+                    
+                    // Update the movie's rating
+                    movieToRate.setUserRating(rating);
+                    
+                    // Save the updated movie using the data manager
+                    dataManager.updateMovie(movieToRate);
+                    
+                    // Refresh the table to show the updated rating
+                    refreshMovieTable();
+                    
+                    showSuccess("Success", String.format("Rated '%s' with %d stars", 
+                        movieToRate.getTitle(), rating));
+                }
+            } catch (ContentNotFoundException e) {
+                logger.error("Content not found while rating movie: {}", e.getMessage());
+                showError("Error", "Failed to rate movie: " + e.getMessage());
+                // Refresh the table to show current state
                 refreshMovieTable();
-                showSuccess("Success", String.format("You deleted '%s'", selectedMovie.getTitle()));
+            } catch (Exception e) {
+                logger.error("Error rating movie: {}", e.getMessage(), e);
+                showError("Error", "Failed to rate movie: " + e.getMessage());
+            }
+        } else {
+            showError("Error", "No movie selected. Please select a movie to rate.");
         }
     }
 
     public void handleAddSeries(ActionEvent actionEvent) {
+        try {
+            // Get the data manager
+            RefactoredDataManager dataManager = ServiceLocator.getInstance().getDataManager();
+            if (dataManager == null) {
+                throw new IllegalStateException("Unable to access data manager");
+            }
+            
+            // Create a new series with default values
+            Series newSeries = new Series("New Series");
+            newSeries.setStartYear(Calendar.getInstance().get(Calendar.YEAR));
+            newSeries.setSeasons(new ArrayList<>());
+            
+            // Set default values for required fields
+            newSeries.setGenre(Genre.DRAMA);
+            newSeries.setActors(new ArrayList<>());
+            newSeries.setGenres(List.of(Genre.DRAMA));
+            
+            // Show a dialog to edit the new series details
+            boolean confirmed = showSeriesEditDialog(newSeries, "Add New Series");
+            
+            if (confirmed) {
+                try {
+                    // Save the new series using the data manager
+                    dataManager.saveSeries(newSeries);
+                    refreshSeriesTable();
+                    showSuccess("Success", String.format("Added new series: '%s'", newSeries.getTitle()));
+                } catch (Exception e) {
+                    logger.error("Error saving series: {}", e.getMessage(), e);
+                    showError("Error", "Failed to save series: " + e.getMessage());
+                }
+            }
+        } catch (Exception e) {
+            logger.error("Error creating series: {}", e.getMessage(), e);
+            showError("Error", "Failed to create series: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Shows a dialog for editing series details.
+     *
+     * @param series The series to edit
+     * @param title The dialog title
+     * @return true if the user clicked OK, false otherwise
+     */
+    private boolean showSeriesEditDialog(Series series, String title) {
+        try {
+            // Create a dialog
+            Dialog<ButtonType> dialog = new Dialog<>();
+            dialog.setTitle(title);
+            dialog.setHeaderText("Edit Series Details");
+
+            // Set the button types
+            ButtonType saveButtonType = new ButtonType("Save", ButtonBar.ButtonData.OK_DONE);
+            dialog.getDialogPane().getButtonTypes().addAll(saveButtonType, ButtonType.CANCEL);
+
+            // Create the form
+            GridPane grid = new GridPane();
+            grid.setHgap(10);
+            grid.setVgap(10);
+            grid.setPadding(new Insets(20, 20, 10, 10));
+
+            // Add form fields
+            TextField titleField = new TextField(series.getTitle());
+            titleField.setPromptText("Title");
+            
+            Spinner<Integer> yearSpinner = new Spinner<>(1900, 2100, 
+                series.getStartYear() > 0 ? series.getStartYear() : Calendar.getInstance().get(Calendar.YEAR));
+            yearSpinner.setEditable(true);
+
+
+            // Add fields to grid
+            grid.add(new Label("Title:"), 0, 0);
+            grid.add(titleField, 1, 0);
+            grid.add(new Label("Year:"), 0, 1);
+            grid.add(yearSpinner, 1, 1);
+            grid.add(new Label("Description:"), 0, 2);
+
+            // Enable/Disable save button depending on whether a title was entered
+            Node saveButton = dialog.getDialogPane().lookupButton(saveButtonType);
+            saveButton.setDisable(true);
+
+            // Do some validation
+            titleField.textProperty().addListener((observable, oldValue, newValue) -> {
+                saveButton.setDisable(newValue.trim().isEmpty());
+            });
+
+            dialog.getDialogPane().setContent(grid);
+            
+            // Request focus on the title field by default
+            Platform.runLater(titleField::requestFocus);
+
+            // Convert the result to a series object when the save button is clicked
+            dialog.setResultConverter(dialogButton -> {
+                if (dialogButton == saveButtonType) {
+                    // Update the series with the new values
+                    series.setTitle(titleField.getText().trim());
+                    series.setStartYear(yearSpinner.getValue());
+                    return ButtonType.OK;
+                }
+                return null;
+            });
+
+            // Show the dialog and wait for user input
+            Optional<ButtonType> result = dialog.showAndWait();
+            return result.isPresent() && result.get() == ButtonType.OK;
+            
+        } catch (Exception e) {
+            logger.error("Error showing series edit dialog: {}", e.getMessage(), e);
+            showError("Error", "Failed to show series editor: " + e.getMessage());
+            return false;
+        }
+    }
+
+    public void handleDeleteSeries(ActionEvent actionEvent) {
         Series selectedSeries = seriesTable.getSelectionModel().getSelectedItem();
-        if (selectedSeries == null) {
-            contentService.save(selectedSeries);
-            refreshSeriesTable();
-            showSuccess("Success", String.format("You added '%s'", selectedSeries.getTitle()));
+        if (selectedSeries != null) {
+            boolean confirmed = showConfirmationDialog("Confirm Delete", 
+                String.format("Are you sure you want to delete '%s'?", selectedSeries.getTitle()));
+            
+            if (confirmed) {
+                try {
+                    // Use dataManager to delete the series directly
+                    RefactoredDataManager dataManager = ServiceLocator.getInstance().getDataManager();
+                    if (dataManager != null) {
+                        dataManager.deleteSeries(selectedSeries);
+                        refreshSeriesTable();
+                        showSuccess("Success", String.format("Successfully deleted '%s'", selectedSeries.getTitle()));
+                    } else {
+                        throw new IllegalStateException("Unable to access data manager");
+                    }
+                } catch (Exception e) {
+                    logger.error("Error deleting series: {}", e.getMessage(), e);
+                    showError("Error", "Failed to delete series: " + e.getMessage());
+                }
+            }
+        } else {
+            showError("Error", "No series selected. Please select a series to delete.");
+        }
+    }
+
+    public void handleDeleteMovie(ActionEvent actionEvent) {
+        Movie selectedMovie = movieTable.getSelectionModel().getSelectedItem();
+        if (selectedMovie != null) {
+            boolean confirmed = showConfirmationDialog("Confirm Delete", 
+                String.format("Are you sure you want to delete '%s'?", selectedMovie.getTitle()));
+            
+            if (confirmed) {
+                try {
+                    // Get the data manager
+                    RefactoredDataManager dataManager = ServiceLocator.getInstance().getDataManager();
+                    if (dataManager != null) {
+                        // Delete the movie using the data manager
+                        dataManager.deleteMovie(selectedMovie);
+                        refreshMovieTable();
+                        showSuccess("Success", String.format("Successfully deleted '%s'", selectedMovie.getTitle()));
+                    } else {
+                        throw new IllegalStateException("Unable to access data manager");
+                    }
+                } catch (Exception e) {
+                    logger.error("Error deleting movie: {}", e.getMessage(), e);
+                    showError("Error", "Failed to delete movie: " + e.getMessage());
+                }
+            }
+        } else {
+            showError("Error", "No movie selected. Please select a movie to delete.");
         }
     }
 }

@@ -5,8 +5,8 @@ import com.papel.imdb_clone.data.SearchCriteria;
 import com.papel.imdb_clone.exceptions.ContentNotFoundException;
 import com.papel.imdb_clone.exceptions.EntityNotFoundException;
 import com.papel.imdb_clone.model.Content;
+import com.papel.imdb_clone.model.Movie;
 import com.papel.imdb_clone.model.Rating;
-import com.papel.imdb_clone.model.Series;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -73,25 +73,17 @@ public class ContentService<T extends Content> {
      * Finds content by its ID.
      *
      * @param id The content ID
-     * @throws ContentNotFoundException if content is not found
+     * @return Optional<T> if content is found, empty otherwise
      */
-    public void findById(int id) throws ContentNotFoundException {
-        // Search in the content list
+    public Optional<T> findById(int id) {
         lock.readLock().lock();
         try {
-            Optional<T> found = contentList.stream()
+            return contentList.stream()
                     .filter(content -> content.getId() == id)
                     .findFirst();
-
-            if (found.isPresent()) {
-                found.get();
-                return;
-            }
         } finally {
             lock.readLock().unlock();
         }
-
-        throw new ContentNotFoundException("Content with ID " + id + " not found");
     }
 
 
@@ -255,7 +247,7 @@ public class ContentService<T extends Content> {
 
     public void delete(int id) {
         findById(id);
-        contentList.remove(id);
+        contentList.removeIf(content -> content.getId() == id);
         logger.info("Deleted {} with ID: {}", contentType.getSimpleName(), id);
     }
 }

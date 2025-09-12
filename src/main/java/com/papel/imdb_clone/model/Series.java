@@ -35,11 +35,15 @@ public class Series extends Content {
         this.awards = new ArrayList<>();
     }
 
-    public Series(String title, String summary, Genre genre, double imdbRating, double userRating) {
+    public Series(String title, String summary, Genre genre, double imdbRating, double userRating, int startYear) {
         super(title, new java.util.Date(), genre, "", new HashMap<>(), imdbRating);
         this.seasons = new ArrayList<>();
         this.actors = new ArrayList<>();
         this.awards = new ArrayList<>();
+        this.startYear = startYear;
+        if (genre != null) {
+            this.genres.add(genre);
+        }
     }
 
     public List<Season> getSeasons() {

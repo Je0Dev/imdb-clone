@@ -1,0 +1,70 @@
+/* Table row hover effects */
+.table-row-cell {
+    -fx-background-color: white;
+    -fx-border-color: transparent transparent #f0f0f0 transparent;
+    -fx-border-width: 0 0 1 0;
+    -fx-padding: 8px 0;
+    -fx-cursor: hand;
+    -fx-transition: all 0.2s ease;
+}
+
+.table-row-cell:filled:hover {
+    -fx-background-color: #f8f8f8;
+    -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.1), 10, 0, 0, 2);
+    -fx-translate-y: -1px;
+    -fx-scale-x: 1.002;
+    -fx-scale-y: 1.002;
+}
+
+.table-row-cell:selected {
+    -fx-background-color: #e8f4f8;
+    -fx-text-fill: #333;
+}
+
+/* Movie card hover effect */
+.movie-card, .series-card {
+    -fx-background-color: white;
+    -fx-background-radius: 8;
+    -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.1), 5, 0, 0, 2);
+    -fx-transition: all 0.2s ease;
+    -fx-cursor: hand;
+}
+
+.movie-card:hover, .series-card:hover {
+    -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.2), 10, 0, 0, 4);
+    -fx-translate-y: -3px;
+    -fx-scale-x: 1.01;
+    -fx-scale-y: 1.01;
+}
+
+/* Button hover effects */
+.action-button {
+    -fx-padding: 10 20;
+    -fx-font-weight: bold;
+    -fx-font-size: 14px;
+    -fx-background-radius: 20;
+    -fx-cursor: hand;
+    -fx-transition: all 0.2s ease;
+}
+
+.action-button:hover {
+    -fx-opacity: 0.9;
+    -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.2), 10, 0, 0, 3);
+    -fx-translate-y: -1px;
+}
+
+/* Table cell styles */
+.table-cell {
+    -fx-padding: 8 12;
+    -fx-border-color: transparent;
+    -fx-text-fill: #333;
+}
+
+/* Header styles */
+.table-view .column-header {
+    -fx-background-color: #f5f5f5;
+    -fx-border-color: #e0e0e0;
+    -fx-text-fill: #333;
+    -fx-font-weight: bold;
+    -fx-padding: 8 12;
+}

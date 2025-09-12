@@ -1,5 +1,6 @@
 package com.papel.imdb_clone.service.data.loader;
 
+import com.papel.imdb_clone.enums.Ethnicity;
 import com.papel.imdb_clone.exceptions.FileParsingException;
 import com.papel.imdb_clone.model.Actor;
 import com.papel.imdb_clone.service.CelebrityService;
@@ -97,16 +98,29 @@ public class ActorDataLoader extends BaseDataLoader {
                             gender = genderStr.charAt(0);
                         }
 
-                        // Nationality (ethnicity in the model)
+                        // Nationality
                         String nationality = parts.length > 4 ? parts[4].trim() : "";
+                        Ethnicity ethnicity = null;
+                        try {
+                            if (!nationality.isEmpty() && !nationality.equalsIgnoreCase("N/A")) {
+                                ethnicity = Ethnicity.fromLabel(nationality);
+                            }
+                        } catch (IllegalArgumentException e) {
+                            logger.warn("Unknown ethnicity '{}' for actor {} {}", nationality, firstName, lastName);
+                        }
 
                         // Notable works (optional)
                         String notableWorks = parts.length > 6 ? parts[6].trim() : "";
 
                         // Create and save the actor
                         try {
-                            Actor actor = new Actor(firstName, lastName, birthDate, gender, nationality);
-                            if (!notableWorks.isEmpty()) {
+                            Actor actor;
+                            if (ethnicity != null) {
+                                actor = new Actor(firstName, lastName, birthDate, gender, ethnicity);
+                            } else {
+                                actor = new Actor(firstName, lastName, birthDate, gender, "");
+                            }
+                            if (!notableWorks.isEmpty() && !notableWorks.equalsIgnoreCase("N/A")) {
                                 actor.setNotableWorks(notableWorks);
                             }
 

@@ -89,7 +89,13 @@ public class AdvancedSearchController {
         setupTableColumns();
         setupGenreComboBox();
         setupRatingSlider();
-        setupSortOptions();
+        
+        // Only setup sort options if sortByCombo is available
+        if (sortByCombo != null) {
+            setupSortOptions();
+        } else {
+            logger.debug("Sort combo box is not available in the view, skipping sort options setup");
+        }
     }
 
     private void setupTableColumns() {
@@ -316,13 +322,30 @@ public class AdvancedSearchController {
 
     @FXML
     private void resetFilters() {
-        keywordsField.clear();
-        movieCheckBox.setSelected(true);
-        seriesCheckBox.setSelected(true);
-        yearFrom.clear();
-        yearTo.clear();
-        genreComboBox.getSelectionModel().clearSelection();
-        ratingSlider.setValue(0);
-        sortByCombo.getSelectionModel().selectFirst();
+        try {
+            keywordsField.clear();
+            movieCheckBox.setSelected(true);
+            seriesCheckBox.setSelected(true);
+            yearFrom.clear();
+            yearTo.clear();
+            
+            if (genreComboBox != null) {
+                genreComboBox.getSelectionModel().clearSelection();
+            }
+            
+            if (ratingSlider != null) {
+                ratingSlider.setValue(0);
+            }
+            
+            if (sortByCombo != null && !sortByCombo.getItems().isEmpty()) {
+                sortByCombo.getSelectionModel().selectFirst();
+            }
+        } catch (Exception e) {
+            logger.error("Error resetting filters: ", e);
+            // Optionally show an error message to the user
+            if (statusLabel != null) {
+                statusLabel.setText("Error resetting filters");
+            }
+        }
     }
 }

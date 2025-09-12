@@ -1,7 +1,6 @@
 package com.papel.imdb_clone.data;
 
 import com.papel.imdb_clone.model.*;
-import com.papel.imdb_clone.repository.MovieRepository;
 import com.papel.imdb_clone.repository.impl.InMemoryMovieRepository;
 import com.papel.imdb_clone.repository.impl.InMemorySeriesRepository;
 import com.papel.imdb_clone.repository.impl.InMemoryUserRepository;
@@ -14,6 +13,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+
 import java.util.List;
 
 /**
@@ -189,12 +189,32 @@ public class RefactoredDataManager {
 
     public void updateMovie(Movie movie) {
         movieService.update(movie);
+        movieRepository.update(movie);
         dataLoaded = true;
     }
 
     public void deleteMovie(int id) {
         movieService.delete(id);
         movieRepository.delete(id);
+        dataLoaded = true;
+    }
+
+    public void deleteSeries(Series selectedSeries) {
+        seriesService.delete(selectedSeries.getId());
+        seriesRepository.delete(selectedSeries.getId());
+        dataLoaded = true;
+    }
+
+    public void saveSeries(Series newSeries) {
+        seriesService.save(newSeries);
+        seriesRepository.save(newSeries);
+        dataLoaded = true;
+    }
+
+
+    public void deleteMovie(Movie selectedMovie) {
+        movieService.delete(selectedMovie.getId());
+        movieRepository.delete(selectedMovie.getId());
         dataLoaded = true;
     }
 }

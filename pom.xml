@@ -107,10 +107,9 @@
                 <version>3.13.0</version>
                 <configuration>
                     <release>21</release>
-                    <source>21</source>
-                    <target>21</target>
-                    <compilerArgs>
-                        <arg>-Xlint:all</arg>
+                    <source>24</source>
+                    <target>24</target>
+                    <compilerArgs>--enable-preview
                         <arg>--add-opens=java.base/java.lang=ALL-UNNAMED</arg>
                         <arg>--add-opens=java.base/java.util=ALL-UNNAMED</arg>
                     </compilerArgs>

@@ -1,6 +1,7 @@
 package com.papel.imdb_clone.repository.impl;
 
 import com.papel.imdb_clone.exceptions.DuplicateEntryException;
+import com.papel.imdb_clone.model.Movie;
 import com.papel.imdb_clone.model.Series;
 import com.papel.imdb_clone.repository.SeriesRepository;
 import org.slf4j.Logger;
@@ -130,5 +131,10 @@ public class InMemorySeriesRepository implements SeriesRepository {
     @Override
     public long count() {
         return seriesList.size();
+    }
+
+    public void delete(int id) {
+        deleteById(id);
+        logger.debug("Deleted series with ID: {}", id);
     }
 }

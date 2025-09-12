@@ -101,6 +101,14 @@ public class DirectorDataLoader extends BaseDataLoader {
 
                         // Nationality
                         String nationality = parts.length > 4 ? parts[4].trim() : "";
+                        Ethnicity ethnicity = null;
+                        try {
+                            if (!nationality.isEmpty() && !nationality.equalsIgnoreCase("N/A")) {
+                                ethnicity = Ethnicity.fromLabel(nationality);
+                            }
+                        } catch (IllegalArgumentException e) {
+                            logger.warn("Unknown ethnicity '{}' for director {} {}", nationality, firstName, lastName);
+                        }
 
                         // Notable works (optional)
                         String notableWorks = parts.length > 5 ? parts[5].trim() : "";
@@ -110,7 +118,16 @@ public class DirectorDataLoader extends BaseDataLoader {
 
                         // Create and save the director
                         try {
-                            Director director = new Director(firstName, lastName, birthDate, gender,Ethnicity);
+                            Director director;
+                            if (ethnicity != null) {
+                                director = new Director(firstName, lastName, birthDate, gender, ethnicity);
+                            } else {
+                                director = new Director(firstName, lastName, birthDate, gender, Ethnicity.ASIAN); // Default ethnicity
+                            }
+                            
+                            if (!notableWorks.isEmpty() && !notableWorks.equalsIgnoreCase("N/A")) {
+                                director.setNotableWorks(notableWorks);
+                            }
                             
                             // Check if director already exists
                             if (directorService.findByFullName(firstName, lastName).isPresent()) {

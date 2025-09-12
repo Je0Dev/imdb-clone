@@ -170,27 +170,52 @@ public class CelebritiesController implements Initializable {
             try {
                 Actor actor = cellData.getValue();
                 if (actor != null) {
-                    Ethnicity ethnicity = actor.getEthnicity();
-                    if (ethnicity != null && ethnicity.getLabel() != null && !ethnicity.getLabel().trim().isEmpty()) {
-                        return new SimpleStringProperty(ethnicity.getLabel());
-                    }
-
-
-                    // Check for country field as a last resort
                     try {
-                        java.lang.reflect.Field countryField = actor.getClass().getDeclaredField("country");
-                        countryField.setAccessible(true);
-                        String country = (String) countryField.get(actor);
-                        if (country != null && !country.trim().isEmpty()) {
-                            return new SimpleStringProperty(country);
+                        // First try the standard getter
+                        Ethnicity ethnicity = actor.getEthnicity();
+                        if (ethnicity != null) {
+                            String label = ethnicity.getLabel();
+                            if (label != null && !label.trim().isEmpty()) {
+                                return new SimpleStringProperty(label);
+                            }
+                        }
+                        
+                        // Try to get nationality directly if available
+                        try {
+                            java.lang.reflect.Field nationalityField = actor.getClass().getDeclaredField("nationality");
+                            nationalityField.setAccessible(true);
+                            Object nationality = nationalityField.get(actor);
+                            if (nationality != null) {
+                                String natStr = nationality.toString();
+                                if (!natStr.trim().isEmpty() && !"null".equalsIgnoreCase(natStr)) {
+                                    return new SimpleStringProperty(natStr);
+                                }
+                            }
+                        } catch (Exception e) {
+                            logger.debug("Could not get nationality field: {}", e.getMessage());
+                        }
+                        
+                        // Fallback to country field
+                        try {
+                            java.lang.reflect.Field countryField = actor.getClass().getDeclaredField("country");
+                            countryField.setAccessible(true);
+                            Object country = countryField.get(actor);
+                            if (country != null) {
+                                String countryStr = country.toString();
+                                if (!countryStr.trim().isEmpty() && !"null".equalsIgnoreCase(countryStr)) {
+                                    return new SimpleStringProperty(countryStr);
+                                }
+                            }
+                        } catch (Exception e) {
+                            logger.debug("Could not get country field: {}", e.getMessage());
                         }
                     } catch (Exception e) {
-                        logger.debug("Could not get country field for actor: {}", e.getMessage());
+                        logger.debug("Error getting ethnicity: {}", e.getMessage());
                     }
                 }
                 return new SimpleStringProperty("N/A");
             } catch (Exception e) {
-                logger.debug("Error getting actor nationality: {}", e.getMessage());
+                logger.error("Error getting actor nationality: {}", e.getMessage(), e);
                 return new SimpleStringProperty("N/A");
             }
         });
