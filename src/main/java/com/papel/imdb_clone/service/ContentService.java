@@ -246,4 +246,16 @@ public class ContentService<T extends Content> {
         contentList.add(movie);
         logger.info("Added new {}", contentType.getSimpleName());
     }
+
+    public void update(T movie) {
+        updateContent(movie);
+        contentList.add(movie);
+        logger.info("Updated {}", contentType.getSimpleName());
+    }
+
+    public void delete(int id) {
+        findById(id);
+        contentList.remove(id);
+        logger.info("Deleted {} with ID: {}", contentType.getSimpleName(), id);
+    }
 }

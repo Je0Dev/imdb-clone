@@ -102,19 +102,36 @@ public class MovieDataLoader extends BaseDataLoader {
                         Date releaseDate = null;
                         try {
                             year = Integer.parseInt(parts[1].trim());
+                            // Validate year is within reasonable range (1888 is when first movie was made)
+                            int currentYear = Calendar.getInstance().get(Calendar.YEAR);
+                            if (year < 1888 || year > currentYear + 2) {
+                                logger.warn("Year {} is out of range (1888-{}). Using current year as fallback.", year, currentYear + 2);
+                                year = currentYear;
+                            }
                             Calendar cal = Calendar.getInstance();
                             cal.set(Calendar.YEAR, year);
                             cal.set(Calendar.MONTH, Calendar.JANUARY);
                             cal.set(Calendar.DAY_OF_MONTH, 1);
                             releaseDate = new Date(cal.getTimeInMillis());
                         } catch (Exception e) {
-                            logger.warn("Invalid year format '{}' at line {}: {}", parts[1], lineNumber, e.getMessage());
-                            errors++;
-                            continue;
+                            logger.warn("Invalid year format '{}' at line {}. Using current year as fallback. Error: {}", 
+                                parts[1], lineNumber, e.getMessage());
+                            // Set to current year as fallback
+                            year = Calendar.getInstance().get(Calendar.YEAR);
+                            Calendar cal = Calendar.getInstance();
+                            cal.set(Calendar.YEAR, year);
+                            cal.set(Calendar.MONTH, Calendar.JANUARY);
+                            cal.set(Calendar.DAY_OF_MONTH, 1);
+                            releaseDate = new Date(cal.getTimeInMillis());
                         }
 
                         // Parse genres (handle both comma and semicolon separated values)
-                        String[] genreNames = parts[2].trim().split("[,;]");
+                        String genreField = parts[2].trim();
+                        if (genreField.isEmpty() || genreField.equalsIgnoreCase("n/a")) {
+                            genreField = "DRAMA"; // Default to DRAMA if no genre specified
+                            logger.warn("No genre specified for movie '{}' at line {}. Defaulting to 'DRAMA'.", title, lineNumber);
+                        }
+                        String[] genreNames = genreField.split("[,;]");
 
 
                         // Parse director name (handle multiple directors, potential quotes, and trim)
@@ -126,14 +143,14 @@ public class MovieDataLoader extends BaseDataLoader {
                         }
 
                         // Parse rating
-                        int rating = 0;
+                        double rating = 0.0;
                         try {
-                            rating = Integer.parseInt(parts[5].trim());
-                            if (rating < 0.0) rating = 0;
-                            if (rating > 10.0) rating = 10;
+                            rating = Double.parseDouble(parts[5].trim());
+                            // Ensure rating is between 0 and 10
+                            rating = Math.max(0.0, Math.min(10.0, rating));
                         } catch (NumberFormatException e) {
                             logger.warn("Invalid rating format '{}' at line {}", parts[5].trim(), lineNumber);
-                            rating = 0; // Default to 0.0 if rating is invalid
+                            rating = 0.0; // Default to 0.0 if rating is invalid
                         }
 
                         // Parse actors (semicolon separated) and normalize names
@@ -146,12 +163,12 @@ public class MovieDataLoader extends BaseDataLoader {
                             movie.setTitle(title);
                             movie.setReleaseDate(releaseDate);
                             movie.setStartYear(year);  // Set the startYear field
-                            movie.setRating(rating);
-
+                            movie.setRating(rating); // Set the rating using the setter that accepts double
                             // Save through service only (which will handle repository saving)
                             movie = movieService.save(movie);
 
                             // Set genres with improved handling
+                            boolean hasValidGenre = false;
                             for (String genreName : genreNames) {
                                 try {
                                     if (genreName != null && !genreName.trim().isEmpty()) {
@@ -167,18 +184,19 @@ public class MovieDataLoader extends BaseDataLoader {
                                         if (normalizedGenre.equals("SCIFI")) {
                                             normalizedGenre = "SCI_FI";
                                         } else if (normalizedGenre.equals("SCIFANTASY")) {
-                                            normalizedGenre = "SCIENCE_FANTASY";
-                                        } else if (normalizedGenre.equals("DOCUMENTARY")) {
-                                            normalizedGenre = "DOCUMENTARY";
+                                            normalizedGenre = "SCI_FI"; // Map to SCI_FI since SCIENCE_FANTASY doesn't exist
                                         } else if (normalizedGenre.matches("^DRAMA.*")) {
                                             normalizedGenre = "DRAMA";
                                         } else if (normalizedGenre.matches("^COMEDY.*")) {
                                             normalizedGenre = "COMEDY";
+                                        } else if (normalizedGenre.equals("DOCUMENTARY")) {
+                                            normalizedGenre = "DOCUMENTARY";
                                         }
 
                                         try {
                                             Genre genre = Genre.valueOf(normalizedGenre);
                                             movie.addGenre(genre);
+                                            hasValidGenre = true;
                                         } catch (IllegalArgumentException e) {
                                             logger.debug("Unknown genre '{}' at line {} (tried as '{}')",
                                                     genreName, lineNumber, normalizedGenre);
@@ -188,6 +206,13 @@ public class MovieDataLoader extends BaseDataLoader {
                                     logger.warn("Error processing genre '{}' at line {}: {}",
                                             genreName, lineNumber, e.getMessage());
                                 }
+                            }
+
+                            // If no valid genre was added, add DRAMA as default
+                            if (!hasValidGenre) {
+                                movie.addGenre(Genre.DRAMA);
+                                logger.debug("No valid genres found for movie '{}' at line {}. Added default genre 'DRAMA'.", 
+                                        title, lineNumber);
                             }
 
                             // Set director with improved error handling

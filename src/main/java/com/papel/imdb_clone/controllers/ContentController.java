@@ -327,8 +327,6 @@ public class ContentController extends BaseController {
                 logger.warn("ContentService for 'movie' not found in ServiceLocator");
             }
 
-            // 5. Initialize EncryptionService if needed
-            this.encryptionService = EncryptionService.getInstance();
 
             logger.info("All services initialized successfully");
 
@@ -344,7 +342,6 @@ public class ContentController extends BaseController {
     private User currentUser;
     private String sessionToken;
     private int year;
-    private EncryptionService encryptionService;
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {
@@ -452,6 +449,175 @@ public class ContentController extends BaseController {
 
     private void showAlert(String title, String message) {
         UIUtils.showAlert(Alert.AlertType.ERROR, title, message);
+    }
+    
+    /**
+     * Shows a dialog to rate a movie
+     * @param movie The movie to rate
+     */
+    private void showRateMovieDialog(Movie movie) {
+        if (movie == null) return;
+        
+        // Create a dialog for rating the movie
+        Dialog<Double> dialog = new Dialog<>();
+        dialog.setTitle("Rate Movie");
+        dialog.setHeaderText(String.format("Rate '%s' (1-10)", movie.getTitle()));
+        
+        // Set the button types
+        ButtonType rateButton = new ButtonType("Rate", ButtonBar.ButtonData.OK_DONE);
+        dialog.getDialogPane().getButtonTypes().addAll(rateButton, ButtonType.CANCEL);
+        
+        // Create form fields
+        TextField ratingField = new TextField();
+        ratingField.setPromptText("Enter rating (1-10)");
+        
+        // Set up the grid
+        GridPane grid = new GridPane();
+        grid.setHgap(10);
+        grid.setVgap(10);
+        grid.setPadding(new Insets(20, 150, 10, 10));
+        grid.add(new Label("Rating:"), 0, 0);
+        grid.add(ratingField, 1, 0);
+        
+        dialog.getDialogPane().setContent(grid);
+        
+        // Request focus on the rating field by default
+        Platform.runLater(ratingField::requestFocus);
+        
+        // Convert the result to a rating value when the Rate button is clicked
+        dialog.setResultConverter(dialogButton -> {
+            if (dialogButton == rateButton) {
+                try {
+                    double rating = Double.parseDouble(ratingField.getText().trim());
+                    if (rating < 1 || rating > 10) {
+                        showError("Invalid Rating", "Please enter a rating between 1 and 10.");
+                        return null;
+                    }
+                    return rating;
+                } catch (NumberFormatException e) {
+                    showError("Invalid Input", "Please enter a valid number for the rating.");
+                    return null;
+                }
+            }
+            return null;
+        });
+        
+        // Show the dialog and process the result
+        Optional<Double> result = dialog.showAndWait();
+        
+        result.ifPresent(rating -> {
+            try {
+                // Get the current user (you'll need to implement this)
+                User currentUser = getCurrentUser();
+                if (currentUser == null) {
+                    showError("Not Logged In", "You must be logged in to rate movies.");
+                    return;
+                }
+                
+                // Update the movie rating
+                movie.setImdbRating(rating);
+                
+                // Save the updated movie (you'll need to implement this)
+                saveMovie(movie);
+                
+                // Show success message
+                showSuccess("Rating Saved", 
+                    String.format("You rated '%s' %.1f/10", movie.getTitle(), rating));
+                
+                // Refresh the movie list
+                loadMovies();
+                
+            } catch (Exception e) {
+                logger.error("Error rating movie", e);
+                showError("Error", "An error occurred while rating the movie: " + e.getMessage());
+            }
+        });
+    }
+    
+    /**
+     * Handles deleting a movie
+     * @param movie The movie to delete
+     */
+    private void handleDeleteMovie(Movie movie) {
+        if (movie == null) return;
+        
+        // Confirm deletion
+        Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+        alert.setTitle("Confirm Deletion");
+        alert.setHeaderText("Delete Movie");
+        alert.setContentText(String.format("Are you sure you want to delete '%s'?", movie.getTitle()));
+        
+        Optional<ButtonType> result = alert.showAndWait();
+        if (result.isPresent() && result.get() == ButtonType.OK) {
+            try {
+                // Delete the movie (you'll need to implement this)
+                deleteMovie(movie);
+                
+                // Show success message
+                showSuccess("Movie Deleted", 
+                    String.format("'%s' has been deleted successfully.", movie.getTitle()));
+                
+                // Refresh the movie list
+                loadMovies();
+                
+            } catch (Exception e) {
+                logger.error("Error deleting movie", e);
+                showError("Error", "An error occurred while deleting the movie: " + e.getMessage());
+            }
+        }
+    }
+    
+    /**
+     * Gets the current logged-in user
+     * @return The current user, or null if not logged in
+     */
+    private User getCurrentUser() {
+        try {
+            // Get the current user from the authentication service
+            AuthService authService = ServiceLocator.getInstance().getService(AuthService.class);
+            if (authService != null) {
+                return authService.getCurrentUser();
+            }
+        } catch (Exception e) {
+            logger.error("Error getting current user", e);
+        }
+        return null;
+    }
+    
+    /**
+     * Saves a movie
+     * @param movie The movie to save
+     */
+    private void saveMovie(Movie movie) {
+        try {
+            // Get the data manager
+            RefactoredDataManager dataManager = ServiceLocator.getInstance().getDataManager();
+            if (dataManager != null) {
+                // Update the movie in the data manager
+                dataManager.updateMovie(movie);
+            }
+        } catch (Exception e) {
+            logger.error("Error saving movie", e);
+            throw new RuntimeException("Failed to save movie", e);
+        }
+    }
+    
+    /**
+     * Deletes a movie
+     * @param movie The movie to delete
+     */
+    private void deleteMovie(Movie movie) {
+        try {
+            // Get the data manager
+            RefactoredDataManager dataManager = ServiceLocator.getInstance().getDataManager();
+            if (dataManager != null) {
+                // Delete the movie from the data manager
+                dataManager.deleteMovie(movie.getId());
+            }
+        } catch (Exception e) {
+            logger.error("Error deleting movie", e);
+            throw new RuntimeException("Failed to delete movie", e);
+        }
     }
 
     /**
@@ -611,7 +777,7 @@ public class ContentController extends BaseController {
                     movieRatingColumn.setCellValueFactory(cellData -> {
                         try {
                             Movie movie = cellData.getValue();
-                            Double rating = movie != null ? Movie.getRating(movie) : 0.0;
+                            Double rating = movie != null ? movie.getImdbRating() : 0.0;
                             return new SimpleDoubleProperty(rating).asObject();
                         } catch (Exception e) {
                             logger.warn("Error getting movie rating: {}", e.getMessage());
@@ -619,6 +785,48 @@ public class ContentController extends BaseController {
                         }
                     });
                     movieTable.getColumns().add(movieRatingColumn);
+                }
+
+                // Add action buttons column
+                if (movieActionsColumn != null) {
+                    movieActionsColumn.setCellFactory(param -> new TableCell<>() {
+                        private final Button rateButton = new Button("Rate");
+                        private final Button deleteButton = new Button("Delete");
+                        private final HBox buttons = new HBox(5, rateButton, deleteButton);
+
+                        {
+                            // Style buttons
+                            rateButton.getStyleClass().add("btn-rate");
+                            deleteButton.getStyleClass().add("btn-delete");
+
+                            // Handle rate button click
+                            rateButton.setOnAction(event -> {
+                                Movie movie = getTableView().getItems().get(getIndex());
+                                if (movie != null) {
+                                    showRateMovieDialog(movie);
+                                }
+                            });
+
+                            // Handle delete button click
+                            deleteButton.setOnAction(event -> {
+                                Movie movie = getTableView().getItems().get(getIndex());
+                                if (movie != null) {
+                                    handleDeleteMovie(movie);
+                                }
+                            });
+                        }
+
+                        @Override
+                        protected void updateItem(Void item, boolean empty) {
+                            super.updateItem(item, empty);
+                            if (empty) {
+                                setGraphic(null);
+                            } else {
+                                setGraphic(buttons);
+                            }
+                        }
+                    });
+                    movieTable.getColumns().add(movieActionsColumn);
                 }
 
                 // Set the items after columns are configured
@@ -1491,6 +1699,7 @@ public class ContentController extends BaseController {
                         showAlert("No Season Selected", "Please add a season first before adding episodes.");
                         return;
                     }
+
                     handleAddEpisode(selectedSeries, selectedSeason);
                 }
                 // Refresh the series table after any changes
@@ -1500,5 +1709,38 @@ public class ContentController extends BaseController {
                 showError("Error", "Failed to perform action: " + e.getMessage());
             }
         });
+    }
+
+    public void handleRateMovie(ActionEvent actionEvent) {
+        Movie selectedMovie = movieTable.getSelectionModel().getSelectedItem();
+        if (selectedMovie == null) {
+            showAlert("No Movie Selected", "Please select a movie first before rating.");
+            return;
+        }
+        float rating = (float) showRatingDialog();
+        if (rating > 0) {
+            contentService.rateContent(selectedMovie, rating);
+            refreshMovieTable();
+        }
+        refreshMovieTable();
+        showSuccess("Success", String.format("You rated '%s' %.1f", selectedMovie.getTitle(), rating));
+    }
+
+    public void handleDeleteMovie(ActionEvent actionEvent) {
+        Movie selectedMovie = movieTable.getSelectionModel().getSelectedItem();
+        if (selectedMovie == null) {
+                contentService.delete(selectedMovie.getId());
+                refreshMovieTable();
+                showSuccess("Success", String.format("You deleted '%s'", selectedMovie.getTitle()));
+        }
+    }
+
+    public void handleAddSeries(ActionEvent actionEvent) {
+        Series selectedSeries = seriesTable.getSelectionModel().getSelectedItem();
+        if (selectedSeries == null) {
+            contentService.save(selectedSeries);
+            refreshSeriesTable();
+            showSuccess("Success", String.format("You added '%s'", selectedSeries.getTitle()));
+        }
     }
 }

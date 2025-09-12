@@ -14,7 +14,6 @@ public class UserService {
     private static UserService instance;
 
     private final RefactoredDataManager dataManager;
-    private final EncryptionService encryptionService;
     private User currentUser;
     private User user;
     private boolean authenticated;
@@ -23,21 +22,18 @@ public class UserService {
      * Private constructor for singleton pattern.
      *
      * @param dataManager       The data manager instance
-     * @param encryptionService The encryption service instance
      */
-    private UserService(RefactoredDataManager dataManager, EncryptionService encryptionService) {
+    private UserService(RefactoredDataManager dataManager) {
         this.dataManager = dataManager;
-        this.encryptionService = encryptionService;
     }
 
     /**
-     * @param dataManager       The data manager instance
-     * @param encryptionService The encryption service instance
+     * @param dataManager       The data manager instanc
      * @return The instance
      */
-    public static synchronized UserService getInstance(RefactoredDataManager dataManager, EncryptionService encryptionService) {
+    public static synchronized UserService getInstance(RefactoredDataManager dataManager) {
         if (instance == null) {
-            instance = new UserService(dataManager, encryptionService);
+            instance = new UserService(dataManager);
         }
         return instance;
     }

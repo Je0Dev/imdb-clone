@@ -186,4 +186,15 @@ public class RefactoredDataManager {
     public List<Movie> getMovies() {
         return movieRepository.getAll();
     }
+
+    public void updateMovie(Movie movie) {
+        movieService.update(movie);
+        dataLoaded = true;
+    }
+
+    public void deleteMovie(int id) {
+        movieService.delete(id);
+        movieRepository.delete(id);
+        dataLoaded = true;
+    }
 }

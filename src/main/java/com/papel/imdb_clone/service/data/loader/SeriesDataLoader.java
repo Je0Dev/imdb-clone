@@ -28,11 +28,12 @@ public class SeriesDataLoader extends BaseDataLoader {
     private final CelebrityService<Actor> actorService;
     private final CelebrityService<Director> directorService;
     private int seasonNumber;
-    private String firstName;
+    // Default values for celebrity fields to prevent NullPointerException
+    private final LocalDate birthDate = LocalDate.now().minusYears(30); // Default to 30 years ago
+    private final char gender = 'U'; // Default to Unknown
+    private final Ethnicity ethnicity = Ethnicity.CAUCASOID; // Default ethnicity
     private String lastName;
-    private LocalDate birthDate;
-    private char gender;
-    private Ethnicity ethnicity;
+    private String firstName;
 
     public SeriesDataLoader(
             ContentService<Series> seriesService,
@@ -74,40 +75,71 @@ public class SeriesDataLoader extends BaseDataLoader {
                     if (parts.length >= 8) {
 
                         String title = parts[0].trim();
+                        // Handle missing or invalid genre
                         String genreStr = parts[1].trim();
+                        if (genreStr.isEmpty() || genreStr.equalsIgnoreCase("n/a")) {
+                            genreStr = "DRAMA"; // Default to DRAMA if no genre specified
+                            logger.warn("No genre specified for series '{}' at line {}. Defaulting to 'DRAMA'.", title, lineNumber);
+                        }
 
                         int seasonsCount = 1;
                         try {
                             seasonsCount = Integer.parseInt(parts[2].trim());
+                            if (seasonsCount < 1) {
+                                logger.warn("Invalid seasons count {} at line {}. Using default value 1.", seasonsCount, lineNumber);
+                                seasonsCount = 1;
+                            }
                         } catch (NumberFormatException e) {
-                            logger.warn("Invalid seasons count at line {}: {}", lineNumber, parts[2].trim());
+                            logger.warn("Invalid seasons count '{}' at line {}. Using default value 1.", parts[2].trim(), lineNumber);
                         }
 
                         // Parse years (handle empty end year)
                         int startYear = 0;
                         Integer endYear = null;
+                        int currentYear = Calendar.getInstance().get(Calendar.YEAR);
+                        
+                        // Parse start year
                         try {
                             startYear = Integer.parseInt(parts[3].trim());
+                            // Validate start year
+                            if (startYear < 1928 || startYear > currentYear + 2) { // 1928 is when first TV broadcast happened
+                                logger.warn("Start year {} for series '{}' is out of range (1928-{}). Using current year as fallback.", 
+                                    startYear, title, currentYear + 2);
+                                startYear = currentYear;
+                            }
                             logger.debug("Parsed startYear: {} for series: {}", startYear, title);
                         } catch (NumberFormatException e) {
-                            logger.warn("Invalid start year format for series: " + title, e);
+                            logger.warn("Invalid start year format for series: {}. Using current year as fallback. Error: {}", 
+                                title, e.getMessage());
+                            startYear = currentYear;
                         }
 
-                        if (!parts[4].trim().isEmpty()) {
+                        // Parse end year if it exists
+                        if (!parts[4].trim().isEmpty() && !parts[4].trim().equalsIgnoreCase("n/a")) {
                             try {
                                 endYear = Integer.parseInt(parts[4].trim());
+                                // Validate end year
+                                if (endYear < startYear || endYear > currentYear + 2) {
+                                    logger.warn("End year {} for series '{}' is invalid (must be between {} and {}). Setting to null.", 
+                                        endYear, title, startYear, currentYear + 2);
+                                    endYear = null;
+                                }
                                 logger.debug("Parsed endYear: {} for series: {}", endYear, title);
                             } catch (NumberFormatException e) {
-                                logger.warn("Invalid end year format for series: {}", title, e);
+                                logger.warn("Invalid end year format '{}' for series: {}. Setting to null. Error: {}", 
+                                    parts[4].trim(), title, e.getMessage());
+                                endYear = null;
                             }
                         }
 
-                        int rating = 0;
+                        double rating = 0.0;
                         try {
-                            rating = Integer.parseInt(parts[5].trim());
+                            rating = Double.parseDouble(parts[5].trim());
+                            // Ensure rating is between 0 and 10
+                            rating = Math.max(0, Math.min(10.0, rating));
                         } catch (NumberFormatException | ArrayIndexOutOfBoundsException e) {
                             logger.warn("Invalid or missing rating at line {}: {}", lineNumber, line);
-                            rating = 0; // Default rating if not provided or invalid
+                            rating = 0.0; // Default rating if not provided or invalid
                         }
 
                         String creatorName = parts[6].trim();
@@ -122,17 +154,30 @@ public class SeriesDataLoader extends BaseDataLoader {
                                         .replace(" ", "_")
                                         .replace("&", "AND")
                                         .replace("/", "_")
-                                        .replace("'", "");
+                                        .replace("'", "")
+                                        .replace("SCI-FI", "SCI_FI"); // Handle hyphenated SCI-FI
 
-                                // Handle special cases
-                                if (normalizedGenre.equals("SCIFI")) {
-                                    normalizedGenre = "SCI_FI";
-                                } else if (normalizedGenre.equals("SCIFANTASY")) {
-                                    normalizedGenre = "SCIENCE_FANTASY";
-                                } else if (normalizedGenre.equals("ACTION")) {
-                                    normalizedGenre = "ACTION_ADVENTURE";
-                                } else if (normalizedGenre.equals("ADVENTURE")) {
-                                    normalizedGenre = "ACTION_ADVENTURE";
+                                // Handle special cases and normalize genre names
+                                switch (normalizedGenre) {
+                                    case "SCIFI":
+                                        normalizedGenre = "SCI_FI";
+                                        break;
+                                    case "SCIFANTASY":
+                                        normalizedGenre = "SCI_FI"; // Map to SCI_FI since SCIENCE_FANTASY doesn't exist
+                                        break;
+                                    case "ACTION":
+                                    case "ADVENTURE":
+                                        normalizedGenre = "ACTION"; // Both map to ACTION
+                                        break;
+                                    case "ROMANCE":
+                                    case "MUSICAL":
+                                        normalizedGenre = "ROMANCE"; // Map musicals to romance
+                                        break;
+                                    case "WAR":
+                                    case "HISTORY":
+                                        normalizedGenre = "HISTORY"; // Map war to history
+                                        break;
+                                    // Add more mappings as needed
                                 }
 
                                 // Only add if it's a valid genre
@@ -209,7 +254,10 @@ public class SeriesDataLoader extends BaseDataLoader {
                                 Director creator = directorService.findByFullName(creatorFirstName, creatorLastName)
                                         .orElseGet(() -> {
                                             Director newDirector = new Director(
-                                                    firstName,lastName,birthDate,gender,
+                                                    creatorFirstName,
+                                                    creatorLastName,
+                                                    birthDate,
+                                                    gender,
                                                     ethnicity
                                             );
                                             return directorService.save(newDirector);

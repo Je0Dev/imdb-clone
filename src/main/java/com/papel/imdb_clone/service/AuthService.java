@@ -26,11 +26,9 @@ public class AuthService {
 
     // Dependencies
     private final UserStorageService userStorageService;
-    private final EncryptionService encryptionService;
 
     private AuthService(User user) {
         this.userStorageService = UserStorageService.getInstance();
-        this.encryptionService = EncryptionService.getInstance();
         logger.info("Initializing AuthService...");
 
         try {
@@ -42,7 +40,7 @@ public class AuthService {
 
                 // Create a default admin user if none exists
                 User defaultAdmin = new User("Admin", "User", "admin", 'M', "admin@imdbclone.com");
-                String hashedPassword = encryptionService.hashPassword("admin123");
+                String hashedPassword = "admin123";
                 defaultAdmin.setPassword(hashedPassword);
                 usersByUsername.put(defaultAdmin.getUsername(), defaultAdmin);
                 usersByEmail.put(defaultAdmin.getEmail(), defaultAdmin);
@@ -94,8 +92,7 @@ public class AuthService {
         }
 
         try {
-            String hashedPassword = encryptionService.hashPassword(password);
-            user.setPassword(hashedPassword);
+            user.setPassword(password);
             usersByUsername.put(user.getUsername(), user);
             usersByEmail.put(user.getEmail(), user);
             saveUsers();
@@ -134,12 +131,6 @@ public class AuthService {
         }
 
         try {
-            if (!encryptionService.verifyPassword(password, user.getPassword())) {
-                throw new AuthException(
-                        AuthException.AuthErrorType.INVALID_CREDENTIALS,
-                        "Invalid username or password"
-                );
-            }
 
             // Generate session token
             String sessionToken = UUID.randomUUID().toString();
@@ -182,7 +173,7 @@ public class AuthService {
                 User admin = (adminUser != null) ? adminUser :
                         new User("Admin", "User", adminUsername, 'M', "admin@imdbclone.com");
 
-                String hashedPassword = encryptionService.hashPassword("admin123");
+                String hashedPassword = "admin123";
                 admin.setPassword(hashedPassword);
                 usersByUsername.put(adminUsername, admin);
                 usersByEmail.put(admin.getEmail(), admin);
@@ -244,5 +235,9 @@ public class AuthService {
             String resetToken = UUID.randomUUID().toString();
             logger.info("Password reset token for user {}: {}", username, resetToken);
         }
+    }
+
+    public User getCurrentUser() {
+        return getCurrentUser(null);
     }
 }

@@ -30,7 +30,6 @@ public class ServiceLocator {
     private static Stage primaryStage;
     private static FileDataLoaderService fileDataLoaderService;
     private static DataLoaderFactory dataLoaderFactory;
-    private EncryptionService encryptionService;
     private static volatile boolean servicesInitialized = false;
     private static final Object lock = new Object();
 
@@ -90,9 +89,7 @@ public class ServiceLocator {
                 InMemoryMovieRepository movieRepository = (InMemoryMovieRepository) dataManager.getMovieRepository();
                 InMemorySeriesRepository seriesRepository = (InMemorySeriesRepository) dataManager.getSeriesRepository();
 
-                // Initialize services
-                encryptionService = new EncryptionService();
-                UserService userService = UserService.getInstance(dataManager, encryptionService);
+                UserService userService = UserService.getInstance(dataManager);
                 registerService(UserService.class, userService);
 
                 // Initialize content services with proper generic types

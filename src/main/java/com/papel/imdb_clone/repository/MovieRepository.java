@@ -49,4 +49,6 @@ public interface MovieRepository {
     Movie findByTitleAndReleaseYear(String title, int startYear);
 
     void add(Movie movie);
+
+    void update(Movie movie);
 }

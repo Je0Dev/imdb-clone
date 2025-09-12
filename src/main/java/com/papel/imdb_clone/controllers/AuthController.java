@@ -33,7 +33,6 @@ public class AuthController extends BaseController {
     private final AuthService authService = AuthService.getInstance();
     private final NavigationService navigationService = NavigationService.getInstance();
     private final UserInputValidator inputValidator = new UserInputValidator();
-    public CheckBox rememberMe;
     public Hyperlink forgotPasswordLink;
 
 

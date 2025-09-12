@@ -131,6 +131,12 @@ public class InMemoryMovieRepository implements MovieRepository {
         logger.info("Added new movie: {} with ID: {}", movie.getTitle(), movie.getId());
     }
 
+    @Override
+    public void update(Movie movie) {
+        save(movie);
+        logger.info("Updated movie: {} with ID: {}", movie.getTitle(), movie.getId());
+    }
+
 
     /**
      * Adds a movie directly to the repository (used by data loaders).
@@ -156,4 +162,12 @@ public class InMemoryMovieRepository implements MovieRepository {
     public List<Movie> getAll() {
         return movies;
     }
+
+    public void delete(int id) {
+        findById(id);
+        movies.remove(id);
+        logger.info("Deleted movie with ID: {}", id);
+    }
+
+
 }
