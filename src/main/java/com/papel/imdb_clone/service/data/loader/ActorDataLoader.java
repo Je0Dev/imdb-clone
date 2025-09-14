@@ -99,7 +99,7 @@ public class ActorDataLoader extends BaseDataLoader {
                         }
 
                         // Nationality
-                        String nationality = parts.length > 4 ? parts[4].trim() : "";
+                        String nationality = parts[4].trim();
                         Ethnicity ethnicity = null;
                         try {
                             if (!nationality.isEmpty() && !nationality.equalsIgnoreCase("N/A")) {

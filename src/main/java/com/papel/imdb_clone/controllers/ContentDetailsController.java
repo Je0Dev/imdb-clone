@@ -46,6 +46,7 @@ public class ContentDetailsController {
 
     public void setContentDetails(String title, String year, String rating, String genre,
                                   String boxOffice, List<String> awards, List<Actor> cast) {
+        // Set the content details
         this.title = title;
         this.year = year;
         this.rating = rating;
@@ -60,6 +61,7 @@ public class ContentDetailsController {
     }
 
     private void updateUI() {
+        // Update the UI with the content detailsq
         if (titleLabel != null) titleLabel.setText(title != null ? title : "No title available");
         if (yearLabel != null) yearLabel.setText(year != null ? "(" + year + ")" : "(Year not available)");
         if (ratingLabel != null) ratingLabel.setText(rating != null ? rating : "N/A");
@@ -82,11 +84,13 @@ public class ContentDetailsController {
         // Handle cast
         String castText = "Cast information not available";
         if (cast != null && !cast.isEmpty()) {
+            // Create a comma separated list of actor names
             castText = cast.stream()
                     .filter(Objects::nonNull)
                     .map(actor -> actor.getFirstName() + " " + actor.getLastName())
                     .collect(Collectors.joining(", "));
         }
+        // Set the cast label
         if (castLabel != null) castLabel.setText(castText);
     }
 

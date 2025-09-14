@@ -1,10 +1,116 @@
-# Format: Title,Genre,Seasons,StartYear,EndYear,Rating,Creator,MainCast
-Breaking Bad,CRIME,5,2008,2013,9.5,Vince Gilligan,Bryan Cranston;Aaron Paul;Anna Gunn
-Game of Thrones,FANTASY,8,2011,2019,9.3,David Benioff;D.B. Weiss,Emilia Clarke;Kit Harington;Peter Dinklage
-Stranger Things,SCI_FI,4,2016,2022,8.7,Matt Duffer;Ross Duffer,Millie Bobby Brown;Finn Wolfhard;Winona Ryder
-The Mandalorian,SCI_FI,3,2019,2023,8.7,Jon Favreau,Pedro Pascal;Gina Carano;Carl Weathers
-The Witcher,FANTASY,3,2019,2023,8.1,Lauren Schmidt Hissrich,Henry Cavill;Anya Chalotra;Freya Allan
-Succession,DRAMA,4,2018,2023,8.9,Jesse Armstrong,Brian Cox;Jeremy Strong;Sarah Snook
+# Format: Title,Genre,Seasons,StartYear-EndYear,Rating,Creator,MainCast
+# Top 150 TV Series of All Time
+
+# Drama & Crime
+Breaking Bad,CRIME,5,2008-2013,9.5,Vince Gilligan,Bryan Cranston;Aaron Paul;Anna Gunn
+Game of Thrones,FANTASY,8,2011-2019,9.2,David Benioff;D.B. Weiss,Emilia Clarke;Kit Harington;Peter Dinklage
+The Sopranos,CRIME,6,1999-2007,9.2,David Chase,James Gandolfini;Lorraine Bracco;Edie Falco
+Better Call Saul,CRIME,6,2015-2022,8.9,Vince Gilligan;Peter Gould,Bob Odenkirk;Rhea Seehorn;Jonathan Banks
+Succession,DRAMA,4,2018-2023,8.8,Jesse Armstrong,Brian Cox;Jeremy Strong;Sarah Snook
+Ozark,CRIME,4,2017-2022,8.5,Bill Dubuque,Jason Bateman;Laura Linney;Julia Garner
+Peaky Blinders,CRIME,6,2013-2022,8.8,Steven Knight,Cillian Murphy;Paul Anderson;Helen McCrory
+The Crown,DRAMA,5,2016-2023,8.6,Peter Morgan,Olivia Colman;Imelda Staunton;Claire Foy
+Yellowstone,DRAMA,5,2018-2023,8.7,Taylor Sheridan,Kevin Costner;Luke Grimes;Kelly Reilly
+Euphoria,DRAMA,2,2019-2023,8.4,Sam Levinson,Zendaya;Hunter Schafer;Jacob Elordi
+This Is Us,DRAMA,6,2016-2022,8.7,Dan Fogelman,Milo Ventimiglia;Mandy Moore;Sterling K. Brown
+The Handmaid's Tale,DRAMA,5,2017-2023,8.4,Bruce Miller,Elisabeth Moss;Yvonne Strahovski;Joseph Fiennes
+Killing Eve,THRILLER,4,2018-2022,8.1,Phoebe Waller-Bridge,Sandra Oh;Jodie Comer;Fiona Shaw
+Mindhunter,CRIME,2,2017-2019,8.6,Joe Penhall,Jonathan Groff;Holt McCallany;Anna Torv
+True Detective,CRIME,3,2014-2019,8.9,Nic Pizzolatto,Matthew McConaughey;Woody Harrelson;Mahershala Ali
+Fargo,CRIME,4,2014-2020,8.9,Noah Hawley,Billy Bob Thornton;Martin Freeman;Ewan McGregor
+The Wire,CRIME,5,2002-2008,9.3,David Simon,Dominic West;Lance Reddick;Michael B. Jordan
+Narcos,CRIME,3,2015-2017,8.8,Chris Brancato;Carlo Bernard;Doug Miro,Wagner Moura;Boyd Holbrook;Pedro Pascal
+Lupin,CRIME,2,2021-2023,7.6,George Kay;François Uzan,Omar Sy;Ludivine Sagnier;Clotilde Hesme
+
+# Sci-Fi & Fantasy
+Stranger Things,SCI_FI,4,2016-2023,8.7,The Duffer Brothers,Millie Bobby Brown;Finn Wolfhard;Winona Ryder
+The Mandalorian,SCI_FI,3,2019-2023,8.7,Jon Favreau,Pedro Pascal;Gina Carano;Carl Weathers
+Dark,SCI_FI,3,2017-2020,8.8,Baran bo Odar;Jantje Friese,Louis Hofmann;Oliver Masucci;Karoline Eichhorn
+The Witcher,FANTASY,3,2019-2023,8.2,Lauren Schmidt Hissrich,Henry Cavill;Anya Chalotra;Freya Allan
+House of the Dragon,FANTASY,1,2022-2023,8.5,Ryan Condal;George R.R. Martin,Matt Smith;Emma D'Arcy;Olivia Cooke
+The Last of Us,ADVENTURE,1,2023-2023,8.8,Craig Mazin;Neil Druckmann,Pedro Pascal;Bella Ramsey;Anna Torv
+The Expanse,SCI_FI,6,2015-2022,8.5,Mark Fergus;Hawk Ostby,Steven Strait;Cas Anvar;Dominique Tipper
+Westworld,SCI_FI,4,2016-2022,8.5,Jonathan Nolan;Lisa Joy,Evan Rachel Wood;Thandiwe Newton;Jeffrey Wright
+Raised by Wolves,SCI_FI,2,2020-2022,7.5,Aaron Guzikowski,Amanda Collin;Abubakar Salim;Winta McGrath
+Altered Carbon,SCI_FI,2,2018-2020,8.0,Laeta Kalogridis,Joel Kinnaman;Anthony Mackie;Renée Elise Goldsberry
+Shadow and Bone,FANTASY,2,2021-2023,7.6,Eric Heisserer,Jessie Mei Li;Archie Renaux;Freddy Carter
+The Wheel of Time,FANTASY,1,2021-2023,7.1,Rafe Judkins,Rosamund Pike;Daniel Henney;Zoë Robins
+His Dark Materials,FANTASY,3,2019-2022,7.8,Jack Thorne,Dafne Keen;James McAvoy;Ruth Wilson
+Severance,SCI_FI,1,2022-2022,8.7,Dan Erickson,Adam Scott;Zach Cherry;Britt Lower
+Andor,SCI_FI,1,2022-2023,8.4,Tony Gilroy,Diego Luna;Kyle Soller;Genevieve O'Reilly
+Star Trek: Discovery,SCI_FI,4,2017-2023,7.0,Bryan Fuller;Alex Kurtzman,Sonequa Martin-Green;Doug Jones;Anthony Rapp
+The Witcher: Blood Origin,FANTASY,1,2022-2022,4.2,Lauren Schmidt Hissrich,Sophia Brown;Laurence O'Fuarain;Michelle Yeoh
+Black Mirror,SCI_FI,6,2011-2023,8.7,Charlie Brooker,Daniel Lapaine;Hannah John-Kamen;Michaela Coel
+
+# Action & Adventure
+The Boys,ACTION,3,2019-2023,8.7,Eric Kripke,Karl Urban;Jack Quaid;Antony Starr
+The Umbrella Academy,ACTION,3,2019-2023,8.0,Steve Blackman,Elliot Page;Tom Hopper;Robert Sheehan
+Daredevil,ACTION,3,2015-2018,8.6,Drew Goddard,Charlie Cox;Vincent D'Onofrio;Deborah Ann Woll
+The Punisher,ACTION,2,2017-2019,8.5,Steve Lightfoot,Jon Bernthal;Ben Barnes;Amber Rose Revah
+Loki,ACTION,2,2021-2023,8.2,Michael Waldron,Tom Hiddleston;Sophia Di Martino;Owen Wilson
+WandaVision,DRAMA,1,2021-2021,8.0,Jac Schaeffer,Elizabeth Olsen;Paul Bettany;Kathryn Hahn
+Moon Knight,ACTION,1,2022-2022,7.3,Jeremy Slater,Oscar Isaac;May Calamawy;Ethan Hawke
+Ms. Marvel,ACTION,1,2022-2022,6.2,Bisha K. Ali,Iman Vellani;Mohan Kapur;Zenobia Shroff
+She-Hulk: Attorney at Law,COMEDY,1,2022-2022,5.2,Jessica Gao,Tatiana Maslany;Jameela Jamil;Ginger Gonzaga
+The Falcon and the Winter Soldier,ACTION,1,2021-2021,7.5,Malcolm Spellman,Anthony Mackie;Sebastian Stan;Wyatt Russell
+
+# Comedy & Animation
+Wednesday,COMEDY,1,2022-2022,8.0,Alfred Gough;Miles Millar,Jenna Ortega;Gwendoline Christie;Christina Ricci
+The Bear,COMEDY,2,2022-2023,8.5,Christopher Storer,Jeremy Allen White;Ebon Moss-Bachrach;Ayo Edebiri
+Ted Lasso,COMEDY,3,2020-2023,8.7,Jason Sudeikis;Bill Lawrence;Bill Wrubel,Jason Sudeikis;Hannah Waddingham;Brett Goldstein
+Barry,COMEDY,4,2018-2023,8.4,Alec Berg;Bill Hader,Bill Hader;Stephen Root;Henry Winkler
+The Marvelous Mrs. Maisel,COMEDY,5,2017-2023,8.7,Amy Sherman-Palladino,Rachel Brosnahan;Alex Borstein;Michael Zegen
+Rick and Morty,ANIMATION,6,2013-2023,9.1,Dan Harmon;Justin Roiland,Justin Roiland;Chris Parnell;Spencer Grammer
+Arcane,ANIMATION,1,2021-2021,9.0,Christian Linke;Alex Yee,Hailee Steinfeld;Kevin Alejandro;Ella Purnell
+BoJack Horseman,ANIMATION,6,2014-2020,8.8,Raphael Bob-Waksberg,Will Arnett;Amy Sedaris;Alison Brie
+What We Do in the Shadows,COMEDY,4,2019-2023,8.6,Jemaine Clement;Taika Waititi,Kayvan Novak;Matt Berry;Natasia Demetriou
+The Good Place,COMEDY,4,2016-2020,8.2,Michael Schur,Kristen Bell;Ted Danson;William Jackson Harper
+Schitt's Creek,COMEDY,6,2015-2020,8.5,Dan Levy;Eugene Levy,Eugene Levy;Catherine O'Hara;Dan Levy
+Fleabag,COMEDY,2,2016-2019,8.7,Phoebe Waller-Bridge,Phoebe Waller-Bridge;Sian Clifford;Olivia Colman
+Russian Doll,COMEDY,2,2019-2022,7.9,Leslye Headland;Natasha Lyonne;Amy Poehler,Naomi Watts;Natasha Lyonne;Charlie Barnett
+Hacks,COMEDY,2,2021-2023,8.2,Paul W. Downs;Lucia Aniello;Jen Statsky,Jean Smart;Hannah Einbinder;Carl Clemons-Hopkins
+Only Murders in the Building,COMEDY,2,2021-2023,8.1,Steve Martin;John Hoffman,Steve Martin;Martin Short;Selena Gomez
+Sex Education,COMEDY,3,2019-2023,8.3,Laurie Nunn,Asa Butterfield;Gillian Anderson;Ncuti Gatwa
+Friends,COMEDY,10,1994-2004,8.9,David Crane;Marta Kauffman,Jennifer Aniston;Courteney Cox;Lisa Kudrow
+The Office,COMEDY,9,2005-2013,9.0,Greg Daniels;Ricky Gervais;Stephen Merchant,Steve Carell;John Krasinski;Jenna Fischer
+Parks and Recreation,COMEDY,7,2009-2015,8.6,Greg Daniels;Michael Schur,Amy Poehler;Nick Offerman;Chris Pratt
+Brooklyn Nine-Nine,COMEDY,8,2013-2021,8.4,Dan Goor;Michael Schur,Andy Samberg;Stephanie Beatriz;Terry Crews
+The Big Bang Theory,COMEDY,12,2007-2019,8.2,Chuck Lorre;Bill Prady;Steven Molaro,Johnny Galecki;Jim Parsons;Kaley Cuoco
+
+# International
+Squid Game,THRILLER,1,2021-2021,8.0,Hwang Dong-hyuk,Lee Jung-jae;Park Hae-soo;Wi Ha-joon
+Money Heist,THRILLER,5,2017-2021,8.2,Álex Pina,Úrsula Corberó;Álvaro Morte;Itziar Ituño
+Pachinko,DRAMA,1,2022-2022,8.3,Soo Hugh,Lee Min-ho;Jin Ha;Anna Sawai
+Kingdom,ACTION,2,2019-2020,8.4,Kim Eun-hee;Kim Seong-hun,Ju Ji-hoon;Ryu Seung-ryong;Bae Doona
+Alice in Borderland,SCI_FI,2,2020-2022,7.6,Shinsuke Sato,Kento Yamazaki;Tao Tsuchiya;Nijiro Murakami
+
+# Limited Series & Anthologies
+The Queen's Gambit,DRAMA,1,2020-2020,8.6,Scott Frank;Allan Scott,Anya Taylor-Joy;Bill Camp;Marielle Heller
+Chernobyl,DRAMA,1,2019-2019,9.4,Craig Mazin,Jared Harris;Stellan Skarsgård;Emily Watson
+The White Lotus,COMEDY,2,2021-2023,7.9,Mike White,Jennifer Coolidge;Murray Bartlett;Alexandra Daddario
+Mare of Easttown,DRAMA,1,2021-2021,8.5,Brad Ingelsby,Kate Winslet;Evan Peters;Julianne Nicholson
+Unbelievable,CRIME,1,2019-2019,8.4,Susannah Grant;Michael Chabon;Ayelet Waldman,Toni Collette;Merritt Wever;Kaitlyn Dever
+Dopesick,DRAMA,1,2021-2021,8.6,Danny Strong,Michael Keaton;Peter Sarsgaard;Michael Stuhlbarg
+The Undoing,DRAMA,1,2020-2020,7.4,David E. Kelley,Nicole Kidman;Hugh Grant;Edgar Ramírez
+Big Little Lies,DRAMA,2,2017-2019,8.5,David E. Kelley,Reese Witherspoon;Nicole Kidman;Shailene Woodley
+Sharp Objects,CRIME,1,2018-2018,8.1,Marti Noxon,Amy Adams;Patricia Clarkson;Chris Messina
+Band of Brothers,WAR,1,2001-2001,9.4,Tom Hanks;Steven Spielberg;Erik Jendresen,Damian Lewis;David Schwimmer;Ron Livingston
+The Pacific,WAR,1,2010-2010,8.3,Steven Spielberg;Tom Hanks;Gary Goetzman,James Badge Dale;Joseph Mazzello;Jon Seda
+
+# Thriller & Mystery
+You,THRILLER,4,2018-2023,7.7,Greg Berlanti;Sera Gamble,Penn Badgley;Victoria Pedretti;Tati Gabrielle
+Yellowjackets,DRAMA,2,2021-2023,7.9,Ashley Lyle;Bart Nickerson,Melanie Lynskey;Tawny Cypress;Sophie Nélisse
+The Morning Show,DRAMA,2,2019-2023,8.3,Jay Carson;Kerry Ehrin,Jennifer Aniston;Reese Witherspoon;Billy Crudup
+Bridgerton,ROMANCE,2,2020-2023,7.4,Chris Van Dusen,Jonathan Bailey;Simone Ashley;Nicola Coughlan
+
+# Classic TV Shows & Additional Notable Series
+Grey's Anatomy,DRAMA,19,2005-2023,7.6,Shonda Rhimes,Ellen Pompeo;Chandra Wilson;James Pickens Jr.
+The Walking Dead,DRAMA,11,2010-2022,8.2,Frank Darabont;Robert Kirkman,Andrew Lincoln;Norman Reedus;Melissa McBride
+Lost,DRAMA,6,2004-2010,8.3,J.J. Abrams;Damon Lindelof;Jeffrey Lieber,Matthew Fox;Jorge Garcia;Josh Holloway
+Mad Men,DRAMA,7,2007-2015,8.6,Matthew Weiner,Jon Hamm;Elisabeth Moss;Vincent Kartheiser
+The Haunting of Hill House,HORROR,1,2018-2018,8.6,Mike Flanagan,Michiel Huisman;Carla Gugino;Henry Thomas
+Cobra Kai,ACTION,5,2018-2023,8.6,Josh Heald;Jon Hurwitz;Hayden Schlossberg,Ralph Macchio;William Zabka;Xolo Maridueña
+Outlander,DRAMA,7,2014-2023,8.4,Ronald D. Moore,Caitriona Balfe;Sam Heughan;Tobias Menzies
 The Crown,DRAMA,5,2016,2022,8.6,Peter Morgan,Claire Foy;Olivia Colman;Imelda Staunton
 Better Call Saul,CRIME,6,2015,2022,8.9,Vince Gilligan;Peter Gould,Bob Odenkirk;Rhea Seehorn;Jonathan Banks
 Money Heist,THRILLER,5,2017,2021,8.2,Álex Pina,Úrsula Corberó;Álvaro Morte;Itziar Ituño

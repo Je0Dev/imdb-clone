@@ -1,6 +1,8 @@
 package com.papel.imdb_clone.model;
 
 import com.papel.imdb_clone.enums.Genre;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.*;
 
@@ -17,15 +19,31 @@ public abstract class Content {
     private List<Genre> genres = new ArrayList<>();
     private List<Actor> actors = new ArrayList<>();
     private Integer userRating;
+    private static final Logger logger = LoggerFactory.getLogger(Content.class);
 
 
     public Content(String title, Date year, Genre genre, String director, Map<Integer, Integer> userRatings, Double imdbRating) {
         this.title = title;
-        this.year = year;
         this.genre = genre;
         this.director = director;
         this.userRatings = new HashMap<>();
         this.imdbRating = imdbRating;
+        
+        // Initialize release date and year
+        if (year != null) {
+            this.year = new Date(year.getTime());
+            // Set the release date based on the year
+            Calendar cal = Calendar.getInstance();
+            cal.setTime(this.year);
+            this.startYear = cal.get(Calendar.YEAR);
+            this.releaseDate = new Date(this.year.getTime());
+        } else {
+            // Default to current date if year is not provided
+            this.year = new Date();
+            Calendar cal = Calendar.getInstance();
+            this.startYear = cal.get(Calendar.YEAR);
+            this.releaseDate = new Date();
+        }
     }
 
     public int getId() {
@@ -143,14 +161,22 @@ public abstract class Content {
     }
 
     /**
-     * Sets the release date of the content
+     * Sets the release date of the content and updates the start year accordingly.
      *
      * @param releaseDate the release date to set
      */
     public void setReleaseDate(Date releaseDate) {
         this.releaseDate = releaseDate != null ? new Date(releaseDate.getTime()) : null;
-    }
 
+        // Update startYear based on the release date
+        if (releaseDate != null) {
+            Calendar cal = Calendar.getInstance();
+            cal.setTime(releaseDate);
+            this.startYear = cal.get(Calendar.YEAR);
+        } else {
+            this.startYear = 0;
+        }
+    }
 
     public List<Actor> getActors() {
         return actors != null ? List.copyOf(actors) : List.of(); // Updated to return an unmodifiable list
@@ -160,9 +186,43 @@ public abstract class Content {
         this.actors = actors != null ? new ArrayList<>(actors) : new ArrayList<>();
     }
 
-    public abstract void setStartYear(int startYear);
+    /**
+     * Sets the start year of the content and updates the release date accordingly.
+     * If the release date is not set or has a different year, it will be updated.
+     *
+     * @param startYear the start year to set (must be a 4-digit year)
+     */
+    public void setStartYear(int startYear) {
+        this.startYear = startYear;
 
+        // Update release date if it's not set or has a different year
+        if (releaseDate == null ||
+                (releaseDate != null &&
+                        new Calendar.Builder().setInstant(releaseDate).build().get(Calendar.YEAR) != startYear)) {
+            try {
+                Calendar cal = Calendar.getInstance();
+                cal.set(Calendar.YEAR, startYear);
+                cal.set(Calendar.MONTH, Calendar.JANUARY);
+                cal.set(Calendar.DAY_OF_MONTH, 1);
+                this.releaseDate = cal.getTime();
+            } catch (Exception e) {
+                logger.error("Error updating release date for year: " + startYear, e);
+            }
+        }
+    }
+
+    /**
+     * Gets the start year of the content.
+     * 
+     * @return the start year, or 0 if not set
+     */
     public int getStartYear() {
+        // If startYear is not set but releaseDate is, derive it from releaseDate
+        if (startYear == 0 && releaseDate != null) {
+            Calendar cal = Calendar.getInstance();
+            cal.setTime(releaseDate);
+            startYear = cal.get(Calendar.YEAR);
+        }
         return startYear;
     }
 }

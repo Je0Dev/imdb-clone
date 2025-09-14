@@ -62,6 +62,13 @@ public class SearchCriteria {
         this.sortDescending = false;
     }
 
+    public SearchCriteria(ContentType contentType, String keywords) {
+        this.contentType = contentType;
+        this.title = keywords;
+        this.sortBy = "title";
+        this.sortDescending = false;
+    }
+
 
     public void setTitle(String title) {
         this.title = title;

@@ -70,15 +70,21 @@ public class AdvancedSearchController {
     private TableColumn<Content, String> resultGenreColumn;
     @FXML
     private TableColumn<Content, String> resultImdbColumn;
+    // labels
     @FXML
     private Label statusLabel;
     @FXML
     private Label resultsCountLabel;
+    // progress indicator
     @FXML
     private ProgressIndicator searchProgressIndicator;
+    // search query
     private final String query;
+    // min and max rating
     private Double minRating;
+    private Double maxRating;
 
+    // constructor
     public AdvancedSearchController() {
         this.searchService = ServiceLocator.getInstance().getService(SearchService.class);
         this.query = "";  // Initialize query with empty string
@@ -86,6 +92,7 @@ public class AdvancedSearchController {
 
     @FXML
     public void initialize() {
+        // setup table columns
         setupTableColumns();
         setupGenreComboBox();
         setupRatingSlider();
@@ -123,6 +130,7 @@ public class AdvancedSearchController {
         // Set up genre column
         resultGenreColumn.setCellValueFactory(cellData -> {
             List<Genre> genres = cellData.getValue().getGenres();
+            // if genres is null or empty, return "N/A"
             String genreString = genres != null && !genres.isEmpty() ?
                     genres.stream()
                           .map(Genre::getDisplayName)
@@ -139,6 +147,7 @@ public class AdvancedSearchController {
         });
     }
 
+    // setup genre combo box
     private void setupGenreComboBox() {
         genreComboBox.getItems().addAll(
                 "", // Empty option
@@ -149,12 +158,14 @@ public class AdvancedSearchController {
         );
     }
 
+    // setup rating slider
     private void setupRatingSlider() {
         ratingSlider.valueProperty().addListener((obs, oldVal, newVal) -> {
             ratingValueLabel.setText(String.format("%.1f", newVal));
         });
     }
 
+    // setup sort options
     private void setupSortOptions() {
         sortByCombo.getItems().addAll(
                 "Relevance", "Title (A-Z)", "Title (Z-A)",
@@ -174,12 +185,6 @@ public class AdvancedSearchController {
             // Cancel any existing search
             if (currentSearchTask != null && currentSearchTask.isRunning()) {
                 currentSearchTask.cancel();
-            }
-
-            // Show loading indicator
-            searchProgressIndicator.setVisible(true);
-            if (statusLabel != null) {
-                statusLabel.setText("Searching...");
             }
 
             // Create and configure the search task
@@ -206,6 +211,7 @@ public class AdvancedSearchController {
                     statusLabel.setText("");
                 }
 
+                // show no results message if no results
                 if (results.isEmpty()) {
                     UIUtils.showInfo("No Results", "No content found matching your criteria.");
                 }
@@ -218,6 +224,7 @@ public class AdvancedSearchController {
                     statusLabel.setText("Search failed");
                 }
 
+                // show error message if search fails
                 Throwable exception = currentSearchTask.getException();
                 logger.error("Search failed", exception);
                 UIUtils.showError("Search Error", "An error occurred while performing the search: " +
@@ -226,11 +233,12 @@ public class AdvancedSearchController {
 
             // Start the search in a background thread
             Thread searchThread = new Thread(currentSearchTask, "Search-Thread");
+            // set thread as daemon,which will not prevent the application from exiting
             searchThread.setDaemon(true);
             searchThread.start();
 
         } catch (Exception e) {
-            searchProgressIndicator.setVisible(false);
+            // show error message if search fails
             logger.error("Error performing search: {}", e.getMessage(), e);
             UIUtils.showError("Error", "Failed to perform search: " + e.getMessage());
         }
@@ -240,12 +248,15 @@ public class AdvancedSearchController {
      * Builds a SearchCriteria object based on the current UI state.
      *
      * @return Configured SearchCriteria object or null if there was an error
+     * @throws IllegalArgumentException if there is an invalid input
+     * @throws RuntimeException if there is an error building the search criteria
      */
-    private SearchCriteria buildSearchCriteria() {
+    private SearchCriteria buildSearchCriteria() throws IllegalArgumentException, RuntimeException {
         try {
+            // Get keywords,which is optional
             String keywords = keywordsField.getText().trim();
 
-            // Get selected content types
+            // Get selected content types,which is optional and can be either movie or series
             ContentType contentType = null;
             if (movieCheckBox.isSelected() && seriesCheckBox.isSelected()) {
                 // Will search both types, so leave contentType as null
@@ -254,17 +265,19 @@ public class AdvancedSearchController {
             } else if (seriesCheckBox.isSelected()) {
                 contentType = ContentType.SERIES;
             } else {
+                // show error message if no content type is selected
                 UIUtils.showError("Error", "Please select at least one content type (Movie/Series)");
                 return null;
             }
 
-            // Create criteria with basic filters
-            SearchCriteria criteria = new SearchCriteria(keywords);
+            // Create criteria with optional keywords and content type
+            SearchCriteria criteria = new SearchCriteria(contentType,keywords);
 
             // Parse year range - use null for no filter instead of default values
             Integer yearFromValue = null;
             Integer yearToValue = null;
             try {
+                // parse year range both from and to values
                 if (!yearFrom.getText().isEmpty()) {
                     yearFromValue = Integer.parseInt(yearFrom.getText().trim());
                 }
@@ -272,12 +285,13 @@ public class AdvancedSearchController {
                     yearToValue = Integer.parseInt(yearTo.getText().trim());
                 }
             } catch (NumberFormatException e) {
+                // show error message if year is not valid
                 logger.warn("Invalid year format", e);
                 UIUtils.showError("Invalid Year", "Please enter valid year values");
                 return null;
             }
 
-            // Set year range
+            // Set year range both for max and min year
             if (yearFromValue != null) {
                 criteria.setMinYear(yearFromValue);
             }
@@ -285,7 +299,7 @@ public class AdvancedSearchController {
                 criteria.setMaxYear(yearToValue);
             }
 
-            // Set rating filter - only apply if slider is moved from 0
+            // Set rating filter - only apply if slider is moved from 0.
             double minRating = ratingSlider.getValue();
             if (minRating > 0.1) {  // Small threshold to account for floating point imprecision
                 criteria.setMinRating(minRating);
@@ -295,7 +309,9 @@ public class AdvancedSearchController {
             // Set genre if selected
             if (genreComboBox.getValue() != null && !genreComboBox.getValue().isEmpty()) {
                 try {
+                    // convert genre to uppercase and replace hyphens with underscores
                     String genreValue = genreComboBox.getValue().toUpperCase().replace("-", "_");
+                    // set genre to criteria
                     Genre genre = Genre.valueOf(genreValue);
                     criteria.setGenre(genre);
                 } catch (IllegalArgumentException e) {
@@ -303,49 +319,49 @@ public class AdvancedSearchController {
                 }
             }
 
-            // Set content type if specified (null means search both)
+            // Set content type if specified (null means search both movies and series)
             criteria.setContentType(contentType);
 
             return criteria;
         } catch (Exception e) {
+            // show error message if search criteria building fails
             logger.error("Error building search criteria", e);
             UIUtils.showError("Error", "An error occurred while building search criteria");
             return null;
         }
     }
 
+    //update results count label,which shows the number of results found
     private void updateResultsCount(int count) {
         if (resultsCountLabel != null) {
             resultsCountLabel.setText(String.valueOf(count));
         }
     }
 
+    //reset all filters to default values
     @FXML
     private void resetFilters() {
         try {
+            //clear all text fields
             keywordsField.clear();
             movieCheckBox.setSelected(true);
             seriesCheckBox.setSelected(true);
             yearFrom.clear();
             yearTo.clear();
-            
+            //clear genre selection
             if (genreComboBox != null) {
                 genreComboBox.getSelectionModel().clearSelection();
             }
-            
+            //reset rating slider to 0
             if (ratingSlider != null) {
                 ratingSlider.setValue(0);
             }
-            
+            //reset sort by combo box to first item,if it's not empty
             if (sortByCombo != null && !sortByCombo.getItems().isEmpty()) {
                 sortByCombo.getSelectionModel().selectFirst();
             }
         } catch (Exception e) {
             logger.error("Error resetting filters: ", e);
-            // Optionally show an error message to the user
-            if (statusLabel != null) {
-                statusLabel.setText("Error resetting filters");
-            }
         }
     }
 }

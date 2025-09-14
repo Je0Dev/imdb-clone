@@ -20,6 +20,7 @@ import java.time.format.DateTimeParseException;
 public class UserDataLoader extends BaseDataLoader {
     private static final Logger logger = LoggerFactory.getLogger(UserDataLoader.class);
     private final InMemoryUserRepository userRepository;
+    //format of the date in the file
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd");
     private char gender;
 
@@ -83,6 +84,7 @@ public class UserDataLoader extends BaseDataLoader {
                             user.setPassword(password); // Set the password (will be hashed by the service)
 
 
+                            //the user's join date is the current date
                             user.setJoinDate(LocalDate.now());
 
                             // Check if user with this ID already exists

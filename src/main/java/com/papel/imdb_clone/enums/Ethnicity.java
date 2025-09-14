@@ -1,15 +1,41 @@
 package com.papel.imdb_clone.enums;
 
 public enum Ethnicity {
-    CAUCASOID("Caucasoid"),
-    NEGROID("Negroid"),
-    MONGOLOID("Mongoloid"),
+    // Regional Ethnicities
+    AFRICAN("African"),
+    ARAB("Arab"),
     ASIAN("Asian"),
-    PACIFIC_ISLAND_AND_AUSTRALIAN("Pacific Island and Australian"),
-    AMERINDIANS_AND_ESKIMOS("Amerindians and Eskimos");
+    CAUCASIAN("Caucasian"),
+    HISPANIC("Hispanic"),
+    INDIAN("Indian"),
+    INDIGENOUS_AMERICAN("Indigenous American"),
+    INDIGENOUS_AUSTRALIAN("Indigenous Australian"),
+    PACIFIC_ISLANDER("Pacific Islander"),
+    
+    // Nationalities (for more specific representation)
+    AMERICAN("American"),
+    BRITISH("British"),
+    CANADIAN("Canadian"),
+    CHINESE("Chinese"),
+    FRENCH("French"),
+    GERMAN("German"),
+    INDIAN_NATIONAL("Indian"),
+    ITALIAN("Italian"),
+    JAPANESE("Japanese"),
+    KOREAN("Korean"),
+    MEXICAN("Mexican"),
+    RUSSIAN("Russian"),
+    SPANISH("Spanish"),
+    
+    // Additional categories
+    MIXED("Mixed"),
+    OTHER("Other"),
+    UNKNOWN("Unknown"),
+    CAUCASOID("Caucasoid");
 
     private final String label;
 
+    //orizo
     Ethnicity(String label) {
         this.label = label;
     }

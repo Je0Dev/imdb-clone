@@ -76,7 +76,7 @@ public class UICoordinator {
             primaryStage.setMinWidth(config.getMinWidth());
             primaryStage.setMinHeight(config.getMinHeight());
 
-            // Set initial window size from config if not already set
+            // Set initial window size from config if not already set by application.properties-ApplicationConfig
             if (primaryStage.getWidth() < config.getMinWidth()) {
                 primaryStage.setWidth(config.getMinWidth());
             }
@@ -99,8 +99,9 @@ public class UICoordinator {
      * Loads and initializes all views and their controllers.
      *
      * @return true if all views were loaded successfully, false otherwise
+     * @throws IllegalArgumentException if primary stage is null
      */
-    public boolean loadAndInitializeViews() {
+    public boolean loadAndInitializeViews() throws IllegalArgumentException {
         if (primaryStage == null) {
             logger.error("Cannot load views: Primary stage is not set");
             return false;
@@ -116,11 +117,11 @@ public class UICoordinator {
                 logger.info("Successfully loaded content view");
             } catch (Exception e) {
                 logger.error("Critical: Failed to load content view: {}", e.getMessage(), e);
-                return false; // Can't continue without content view
+                return false; // Can't continue without content view-main gui view of the project
             }
         }
 
-        // Define views to load with their names for better error reporting
+        // Define views to load with their names for better error reporting:supplier is a functional interface that returns a value
         Map<String, Supplier<Node>> viewsToLoad = Map.of(
                 "movie view", () -> movieView = loadViewSafely("/fxml/movie-view.fxml"),
                 "series view", () -> seriesView = loadViewSafely("/fxml/series-view.fxml"),
@@ -133,19 +134,22 @@ public class UICoordinator {
             logger.debug("Loading {}...", viewName);
 
             try {
+                // Load the view using the supplier
                 Node view = entry.getValue().get();
                 if (view == null) {
                     logger.error("Failed to load {}", viewName);
                     allViewsLoaded = false;
                 } else {
+                    // Log success of loading the view
                     logger.debug("Successfully loaded {}", viewName);
                 }
-            } catch (Exception e) {
+            } catch (IllegalArgumentException e) {
                 logger.error("Error loading {}: {}", viewName, e.getMessage(), e);
                 allViewsLoaded = false;
             }
         }
 
+        // Log the result of the view loading process
         if (!allViewsLoaded) {
             logger.warn("Some views failed to load, but continuing with available views");
         } else {
@@ -158,9 +162,12 @@ public class UICoordinator {
     /**
      * Safely loads a view and returns null if loading fails.
      * Errors are logged but not rethrown.
+     * @param fxmlPath the path to the FXML file relative to the resources directory
+     * @return the loaded JavaFX Node or null if loading fails
      */
     private Node loadViewSafely(String fxmlPath) {
         try {
+            // Load the view using the supplier
             return loadView(fxmlPath);
         } catch (Exception e) {
             logger.error("Failed to load view {}: {}", fxmlPath, e.getMessage(), e);
@@ -181,6 +188,7 @@ public class UICoordinator {
             // Get the resource URL for better error reporting
             java.net.URL resourceUrl = getClass().getResource(fxmlPath);
             if (resourceUrl == null) {
+                // Log the error with a more detailed message
                 String errorMsg = String.format("FXML file not found: %s. Current classpath: %s",
                         fxmlPath,
                         System.getProperty("java.class.path"));
@@ -192,10 +200,12 @@ public class UICoordinator {
             FXMLLoader loader = new FXMLLoader(resourceUrl);
 
             try {
+                // Load the FXML file-duplicate with above. Added this for safety
                 Node view = loader.load();
                 logger.debug("Successfully loaded view: {}", fxmlPath);
                 return view;
             } catch (Exception e) {
+                // Log the error with a more detailed message
                 logger.error("Error loading FXML file {}: {}", fxmlPath, e.getMessage(), e);
                 throw new IOException("Failed to load FXML: " + e.getMessage(), e);
             }
@@ -221,6 +231,7 @@ public class UICoordinator {
             return;
         }
 
+        // Set the loading flag to prevent concurrent loads
         isViewLoading = true;
         try {
             logger.info("Loading main content view...");
@@ -289,6 +300,7 @@ public class UICoordinator {
         return homeView;
     }
 
+    // Checks if all views are loaded
     public boolean areViewsLoaded() {
         return homeView == null || movieView == null || seriesView == null || searchView == null;
     }

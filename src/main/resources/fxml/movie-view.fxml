@@ -1,67 +1,52 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import javafx.scene.AmbientLight?>
+<?import javafx.scene.*?>
 <?import javafx.scene.control.*?>
-<?import javafx.scene.effect.DropShadow?>
+<?import javafx.scene.effect.*?>
 <?import javafx.scene.layout.*?>
-<?import javafx.scene.paint.Color?>
-<?import javafx.scene.shape.Rectangle?>
-<?import javafx.scene.text.Text?>
-<BorderPane style="-fx-background-color: #0a0a0a; -fx-font-family: 'Segoe UI', Arial, sans-serif;"
-            xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1"
-            fx:controller="com.papel.imdb_clone.controllers.ContentController">
+<?import javafx.scene.paint.*?>
+<?import javafx.scene.shape.*?>
+<?import javafx.scene.text.*?>
+
+<BorderPane style="-fx-background-color: #0a0a0a; -fx-font-family: 'Segoe UI', Arial, sans-serif;" xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.papel.imdb_clone.controllers.ContentController">
 
     <!-- Search Suggestions Popup -->
 
     <top>
-        <VBox spacing="15.0"
-              style="-fx-padding: 20; -fx-background-color: #0f0f0f; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.5), 10, 0, 0, 5);">
+        <VBox spacing="15.0" style="-fx-padding: 20; -fx-background-color: #0f0f0f; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.5), 10, 0, 0, 5);">
             <!-- Header Section -->
             <HBox alignment="CENTER_LEFT" spacing="15">
                 <HBox alignment="CENTER_LEFT" spacing="10">
                     <Text style="-fx-fill: #FFD700; -fx-font-size: 26px; -fx-font-weight: bolder;" text="MOVIES">
                         <effect>
-                            <DropShadow color="rgba(255,215,0,0.7)" radius="10" spread="0.3"/>
+                            <DropShadow color="rgba(255,215,0,0.7)" radius="10" spread="0.3" />
                         </effect>
                     </Text>
-                    <Rectangle arcHeight="5" arcWidth="5" fill="#444" height="30" width="3"/>
-                    <Text style="-fx-fill: #888; -fx-font-size: 16; -fx-font-style: italic;"
-                          text="Browse and manage your movie collection"/>
+                    <Rectangle arcHeight="5" arcWidth="5" fill="#444" height="30" width="3" />
+                    <Text style="-fx-fill: #888; -fx-font-size: 16; -fx-font-style: italic;" text="Browse and manage your movie collection" />
                 </HBox>
 
-                <Region HBox.hgrow="ALWAYS"/>
-
-                <HBox alignment="CENTER_RIGHT" spacing="10"
-                      style="-fx-padding: 5 15; -fx-background-color: #1a1a1a; -fx-background-radius: 20;">
-                    <Label fx:id="movieCountLabel"
-                           style="-fx-text-fill: #FFD700; -fx-font-weight: bolder; -fx-font-size: 16;"/>
-                </HBox>
+                <Region HBox.hgrow="ALWAYS" />
             </HBox>
             <AmbientLight lightOn="true">
                 <color>
-                    <Color red="0.6710526347160339" green="0.1149488314986229" blue="0.4115375280380249"/>
+                    <Color red="0.6710526347160339" green="0.1149488314986229" blue="0.4115375280380249" />
                 </color>
             </AmbientLight>
 
             <!-- Search and Filter Section -->
             <VBox spacing="10" style="-fx-padding: 5 0 15 0;">
-                <HBox alignment="CENTER_LEFT" spacing="15"/>
+                <HBox alignment="CENTER_LEFT" spacing="15" />
 
                 <!-- Action Buttons -->
                 <HBox spacing="15" style="-fx-padding: 5 0 0 0;">
-                    <Button onAction="#handleAddMovie"
-                            style="-fx-background-color: #FFD700; -fx-text-fill: #000000; -fx-font-weight: bolder; -fx-font-size: 14px; -fx-padding: 10 20; -fx-background-radius: 20; -fx-cursor: hand; -fx-effect: dropshadow(gaussian, rgba(255,215,0,0.3), 5, 0, 0, 2); -fx-transition: all 0.2s;"
-                            text="ADD MOVIE"/>
+                    <Button onAction="#handleAddMovie" style="-fx-background-color: #FFD700; -fx-text-fill: #000000; -fx-font-weight: bolder; -fx-font-size: 14px; -fx-padding: 10 20; -fx-background-radius: 20; -fx-cursor: hand; -fx-effect: dropshadow(gaussian, rgba(255,215,0,0.3), 5, 0, 0, 2); -fx-transition: all 0.2s;" text="ADD MOVIE" />
 
-                    <Button onAction="#handleRateMovie"
-                            style="-fx-background-color: #4FC3F7; -fx-text-fill: #000000; -fx-font-weight: bolder; -fx-font-size: 14px; -fx-padding: 10 20; -fx-background-radius: 20; -fx-cursor: hand; -fx-effect: dropshadow(gaussian, rgba(79,195,247,0.3), 5, 0, 0, 2); -fx-transition: all 0.2s;"
-                            text="RATE MOVIE"/>
+                    <Button onAction="#handleRateMovie" style="-fx-background-color: #4FC3F7; -fx-text-fill: #000000; -fx-font-weight: bolder; -fx-font-size: 14px; -fx-padding: 10 20; -fx-background-radius: 20; -fx-cursor: hand; -fx-effect: dropshadow(gaussian, rgba(79,195,247,0.3), 5, 0, 0, 2); -fx-transition: all 0.2s;" text="RATE MOVIE" />
 
-                    <Button onAction="#handleDeleteMovie"
-                            style="-fx-background-color: #FF5252; -fx-text-fill: #FFFFFF; -fx-font-weight: bolder; -fx-font-size: 14px; -fx-padding: 10 20; -fx-background-radius: 20; -fx-cursor: hand; -fx-effect: dropshadow(gaussian, rgba(255,82,82,0.3), 5, 0, 0, 2); -fx-transition: all 0.2s;"
-                            text="DELETE MOVIE"/>
+                    <Button onAction="#handleDeleteMovie" style="-fx-background-color: #FF5252; -fx-text-fill: #FFFFFF; -fx-font-weight: bolder; -fx-font-size: 14px; -fx-padding: 10 20; -fx-background-radius: 20; -fx-cursor: hand; -fx-effect: dropshadow(gaussian, rgba(255,82,82,0.3), 5, 0, 0, 2); -fx-transition: all 0.2s;" text="DELETE MOVIE" />
                 </HBox>
-                <AmbientLight color="CHARTREUSE" lightOn="true"/>
+                <AmbientLight color="CHARTREUSE" lightOn="true" />
             </VBox>
         </VBox>
     </top>
@@ -69,8 +54,8 @@
     <center>
         <VBox style="-fx-padding: 0 20 20 20; -fx-spacing: 15;">
             <!-- Loading Indicator -->
-            <StackPane alignment="CENTER" visible="false" fx:id="loadingIndicatorContainer" style="-fx-padding: 20 0;">
-                <ProgressIndicator style="-fx-progress-color: #FFD700; -fx-scale-x: 1.5; -fx-scale-y: 1.5;" fx:id="movieLoadingIndicator"/>
+            <StackPane fx:id="loadingIndicatorContainer" alignment="CENTER" style="-fx-padding: 20 0;" visible="false">
+                <ProgressIndicator fx:id="movieLoadingIndicator" style="-fx-progress-color: #FFD700; -fx-scale-x: 1.5; -fx-scale-y: 1.5;" />
             </StackPane>
             
             <!-- Movie Table -->
@@ -123,22 +108,17 @@
     </center>
 
     <bottom>
-        <HBox alignment="CENTER" spacing="25"
-              style="-fx-background-color: #0f0f0f; -fx-padding: 12 25; -fx-border-color: #222; -fx-border-width: 1 0 0 0;"/>
+        <HBox alignment="CENTER" spacing="25" style="-fx-background-color: #0f0f0f; -fx-padding: 12 25; -fx-border-color: #222; -fx-border-width: 1 0 0 0;" />
         <!-- Status and Pagination -->
         <HBox alignment="CENTER_LEFT" spacing="15">
-            <Label fx:id="statusLabel"
-                   style="-fx-text-fill: #888; -fx-font-size: 13; -fx-font-family: 'Segoe UI', Arial, sans-serif;"
-                   text="Ready"/>
-            <Text style="-fx-fill: #444; -fx-font-size: 14; -fx-font-family: 'Segoe UI', Arial, sans-serif;" text="|"/>
-            <Label fx:id="itemCountLabel"
-                   style="-fx-text-fill: #FFD700; -fx-font-weight: bold; -fx-font-size: 13; -fx-font-family: 'Segoe UI', Arial, sans-serif;"
-                   text="0 items"/>
+            <Label fx:id="statusLabel" style="-fx-text-fill: #888; -fx-font-size: 13; -fx-font-family: 'Segoe UI', Arial, sans-serif;" text="Ready" />
+            <Text style="-fx-fill: #444; -fx-font-size: 14; -fx-font-family: 'Segoe UI', Arial, sans-serif;" text="|" />
+            <Label fx:id="itemCountLabel" style="-fx-text-fill: #FFD700; -fx-font-weight: bold; -fx-font-size: 13; -fx-font-family: 'Segoe UI', Arial, sans-serif;" text="0 items" />
         </HBox>
 
-        <Region HBox.hgrow="ALWAYS"/>
+        <Region HBox.hgrow="ALWAYS" />
 
         <!-- Pagination Controls -->
-        <HBox alignment="CENTER_RIGHT" spacing="10"/>
+        <HBox alignment="CENTER_RIGHT" spacing="10" />
     </bottom>
 </BorderPane>

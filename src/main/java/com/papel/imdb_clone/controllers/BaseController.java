@@ -8,16 +8,20 @@ import org.slf4j.LoggerFactory;
 
 /**
  * Base controller class providing common functionality for all controllers.
+ * This class implements the Initializable interface and provides a common
+ * initialization method for all controllers.
+ * It also provides a common error handling method for all controllers.
  */
 public abstract class BaseController implements Initializable {
     protected final Logger logger = LoggerFactory.getLogger(getClass());
 
-
+    //initialize the controller with the specified user ID
     public void initialize(int currentUserId) {
         try {
             initializeController(currentUserId);
             logger.debug("{} initialized successfully", getClass().getSimpleName());
         } catch (Exception e) {
+            // Log error and show error message
             logger.error("Error initializing {}", getClass().getSimpleName(), e);
             showError("Initialization Error", "Failed to initialize " + getClass().getSimpleName());
             throw new RuntimeException("Failed to initialize " + getClass().getSimpleName(), e);

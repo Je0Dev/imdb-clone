@@ -1,11 +1,11 @@
-# id,username,email,password,fullName,gender,dateOfBirth,country
-1,admin,admin@imdbclone.com,$2a$12$8tL9XqJ0X5x4J1Zz3Y5WUe8QJZ4X7V2B3C4N5M6N7B8V9N0M1Q2W3E4R5T6Y7U,Admin User,M,1985-01-01,USA
-2,johndoe,john.doe@example.com,$2a$12$8tL9XqJ0X5x4J1Zz3Y5WUe8QJZ4X7V2B3C4N5M6N7B8V9N0M1Q2W3E4R5T6Y7U,John Doe,M,1990-05-15,USA
-3,janesmith,jane.smith@email.com,$2a$12$8tL9XqJ0X5x4J1Zz3Y5WUe8QJZ4X7V2B3C4N5M6N7B8V9N0M1Q2W3E4R5T6Y7U,Jane Smith,F,1988-07-22,UK
-4,mike_johnson,mikej@example.com,$2a$12$8tL9XqJ0X5x4J1Zz3Y5WUe8QJZ4X7V2B3C4N5M6N7B8V9N0M1Q2W3E4R5T6Y7U,Mike Johnson,M,1982-11-30,Canada
-5,sarah_williams,sarah.w@email.com,$2a$12$8tL9XqJ0X5x4J1Zz3Y5WUe8QJZ4X7V2B3C4N5M6N7B8V9N0M1Q2W3E4R5T6Y7U,Sarah Williams,F,1992-03-10,Australia
-6,david_brown,david.b@example.com,$2a$12$8tL9XqJ0X5x4J1Zz3Y5WUe8QJZ4X7V2B3C4N5M6N7B8V9N0M1Q2W3E4R5T6Y7U,David Brown,M,1987-09-18,USA
-7,emily_davis,emily.d@email.com,$2a$12$8tL9XqJ0X5x4J1Zz3Y5WUe8QJZ4X7V2B3C4N5M6N7B8V9N0M1Q2W3E4R5T6Y7U,Emily Davis,F,1995-12-05,UK
+# id,username,email,password,fullName,gender,dateOfBirth
+1,admin,admin@imdbclone.com,admin123,Admin User,M,1985-01-01
+2,johndoe,john.doe@example.com,password123,John Doe,M,1990-05-15
+3,janesmith,jane.smith@email.com,password123,Jane Smith,F,1988-07-22
+4,mike_johnson,mikej@example.com,password123,Mike Johnson,M,1982-11-30
+5,sarah_williams,sarah.w@email.com,password123,Sarah Williams,F,1992-03-10
+6,david_brown,david.b@example.com,password123,David Brown,M,1987-09-18
+7,emily_davis,emily.d@email.com,password123,Emily Davis,F,1991-12-052a$12$8tL9XqJ0X5x4J1Zz3Y5WUe8QJZ4X7V2B3C4N5M6N7B8V9N0M1Q2W3E4R5T6Y7U,Emily Davis,F,1995-12-05,UK
 8,robert_taylor,robert.t@example.com,$2a$12$8tL9XqJ0X5x4J1Zz3Y5WUe8QJZ4X7V2B3C4N5M6N7B8V9N0M1Q2W3E4R5T6Y7U,Robert Taylor,M,1980-06-25,Canada
 9,laura_martinez,laura.m@email.com,$2a$12$8tL9XqJ0X5x4J1Zz3Y5WUe8QJZ4X7V2B3C4N5M6N7B8V9N0M1Q2W3E4R5T6Y7U,Laura Martinez,F,1989-04-12,USA
 10,michael_wilson,mike.w@example.com,$2a$12$8tL9XqJ0X5x4J1Zz3Y5WUe8QJZ4X7V2B3C4N5M6N7B8V9N0M1Q2W3E4R5T6Y7U,Michael Wilson,M,1983-08-08,UK

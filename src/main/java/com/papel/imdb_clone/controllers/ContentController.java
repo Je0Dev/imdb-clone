@@ -45,7 +45,7 @@ public class ContentController extends BaseController {
     private TextField globalSearchField;
     @FXML
     private ComboBox<String> seriesSortBy;
-    
+
     /**
      * Handles the Add Movie button click event.
      * Opens a dialog to add a new movie.
@@ -87,6 +87,7 @@ public class ContentController extends BaseController {
             dialog.setResultConverter(dialogButton -> {
                 if (dialogButton == addButton) {
                     try {
+                        //create a new movie object
                         Movie movie = new Movie();
                         movie.setTitle(titleField.getText().trim());
                         movie.setStartYear(Integer.parseInt(yearField.getText().trim()));
@@ -123,8 +124,6 @@ public class ContentController extends BaseController {
 
     private void loadMovies() {
         try {
-            movieLoadingIndicator.setVisible(true);
-            statusLabel.setText("Loading movies...");
             
             // Get movies from data manager
             RefactoredDataManager dataManager = ServiceLocator.getInstance().getDataManager();
@@ -140,20 +139,22 @@ public class ContentController extends BaseController {
                     statusLabel.setText(String.format("Loaded %d movies", movies.size()));
                     logger.info("Successfully loaded {} movies", movies.size());
                 } catch (Exception e) {
+                    // Log error and show error message
                     logger.error("Error updating movie table", e);
                     statusLabel.setText("Error loading movies");
                     showError("Error", "Failed to load movies: " + e.getMessage());
                 } finally {
-                    movieLoadingIndicator.setVisible(false);
+                    statusLabel.setText("Loaded movies");
                 }
             });
             
         } catch (Exception e) {
+            // Log error and show error message
             logger.error("Error in loadMovies", e);
             Platform.runLater(() -> {
+                // Set status label
                 statusLabel.setText("Error loading movies");
                 showError("Error", "Failed to load movies: " + e.getMessage());
-                movieLoadingIndicator.setVisible(false);
             });
         }
     }
@@ -212,11 +213,12 @@ public class ContentController extends BaseController {
         
         // Set up cell value factories for other columns
         movieGenreColumn.setCellValueFactory(cellData -> new SimpleStringProperty(
-            cellData.getValue().getGenres().stream()
+                //if genres is null or empty, return "N/A"
+                cellData.getValue().getGenres().stream()
                 .map(Genre::name)
                 .collect(Collectors.joining(", "))
         ));
-        
+        // Set up cell value factory for rating column
         movieRatingColumn.setCellValueFactory(cellData -> {
             Double rating = cellData.getValue().getImdbRating();
             return new SimpleDoubleProperty(rating != null ? rating : 0.0).asObject();
@@ -237,22 +239,23 @@ public class ContentController extends BaseController {
             private final Button deleteButton = new Button("Delete");
             
             {
+                // Set button styles
                 editButton.getStyleClass().add("edit-button");
                 deleteButton.getStyleClass().add("delete-button");
-                
+                // Set button actions
                 editButton.setOnAction(event -> {
                     Movie movie = getTableView().getItems().get(getIndex());
                     // Handle edit action
                     logger.info("Edit movie: {}", movie.getTitle());
                 });
-                
+                // Set delete button action
                 deleteButton.setOnAction(event -> {
                     Movie movie = getTableView().getItems().get(getIndex());
                     // Handle delete action
                     logger.info("Delete movie: {}", movie.getTitle());
                 });
             }
-            
+            // Set cell value factory
             @Override
             protected void updateItem(Void item, boolean empty) {
                 super.updateItem(item, empty);
@@ -291,7 +294,7 @@ public class ContentController extends BaseController {
      *
      * @throws IllegalStateException if any required service fails to initialize
      */
-    private void initializeServices() {
+    private void initializeServices() throws IllegalStateException {
         logger.info("Initializing ContentController services...");
 
         try {
@@ -321,6 +324,7 @@ public class ContentController extends BaseController {
             logger.info("All services initialized successfully");
 
         } catch (Exception e) {
+            // Log error and throw exception
             String errorMsg = "Failed to initialize services: " + e.getMessage();
             logger.error(errorMsg, e);
             throw new IllegalStateException(errorMsg, e);
@@ -333,6 +337,7 @@ public class ContentController extends BaseController {
     private String sessionToken;
     private int year;
 
+    // Initialize controller
     @Override
     public void initialize(URL location, ResourceBundle resources) {
         logger.info("Initializing ContentController...");
@@ -349,8 +354,10 @@ public class ContentController extends BaseController {
                 } else {
                     logger.error("DataManager initialization failed. Content loading will be skipped.");
                 }
+                // Initialize UI components
             } catch (Exception e) {
                 logger.error("Failed to initialize services: {}", e.getMessage(), e);
+                // Show error alert
                 Platform.runLater(() ->
                         showAlert("Initialization Error",
                                 "Failed to initialize required services.\n" +
@@ -387,6 +394,7 @@ public class ContentController extends BaseController {
                 if (movieSortBy != null) {
                     movieSortBy.getItems().addAll("Title (A-Z)", "Title (Z-A)", "Year (Newest)", "Year (Oldest)", "Rating (High to Low)");
                     movieSortBy.setValue("Title (A-Z)");
+                    // Add listener to sort movie table, if sort by is changed
                     movieSortBy.getSelectionModel().selectedItemProperty().addListener((obs, oldVal, newVal) -> {
                         if (newVal != null) {
                             sortMovieTable(newVal);
@@ -405,20 +413,25 @@ public class ContentController extends BaseController {
 
                 // Add double-click handler for series table
                 seriesTable.setRowFactory(tv -> {
+                    // Set up row factory for series table
                     TableRow<Series> row = new TableRow<>();
                     row.setOnMouseClicked(event -> {
+                        // Handle double-click on series table,which opens the series details view
                         if (event.getClickCount() == 2 && !row.isEmpty()) {
                             Series series = row.getItem();
                             showContentDetails(series);
                         }
                     });
+                    // Return row,which means the row factory is set up
                     return row;
                 });
 
                 // Set up sorting
                 if (seriesSortBy != null) {
+                    // Add items to series sort by combo box
                     seriesSortBy.getItems().addAll("Title (A-Z)", "Title (Z-A)", "Year (Newest)", "Year (Oldest)", "Rating (High to Low)");
                     seriesSortBy.setValue("Title (A-Z)");
+                    // Add listener to sort series table, if sort by is changed
                     seriesSortBy.getSelectionModel().selectedItemProperty().addListener((obs, oldVal, newVal) -> {
                         if (newVal != null) {
                             sortSeriesTable(newVal);
@@ -426,17 +439,21 @@ public class ContentController extends BaseController {
                     });
                 }
 
+            // Set up sorting for episodes tables
+
             }
 
             // Load initial data
             loadInitialData();
 
         } catch (Exception e) {
+            // Log the error
             logger.error("Error initializing controller: {}", e.getMessage(), e);
             showAlert("Initialization Error", "Failed to initialize the application: " + e.getMessage());
         }
     }
 
+    //show alert
     private void showAlert(String title, String message) {
         UIUtils.showAlert(Alert.AlertType.ERROR, title, message);
     }
@@ -478,13 +495,16 @@ public class ContentController extends BaseController {
         dialog.setResultConverter(dialogButton -> {
             if (dialogButton == rateButton) {
                 try {
+                    //parse the rating field to double
                     double rating = Double.parseDouble(ratingField.getText().trim());
                     if (rating < 1 || rating > 10) {
                         showError("Invalid Rating", "Please enter a rating between 1 and 10.");
                         return null;
                     }
+                    //return the rating
                     return rating;
                 } catch (NumberFormatException e) {
+                    //show error alert
                     showError("Invalid Input", "Please enter a valid number for the rating.");
                     return null;
                 }
@@ -551,6 +571,7 @@ public class ContentController extends BaseController {
                 loadMovies();
                 
             } catch (Exception e) {
+                // Log the error
                 logger.error("Error deleting movie", e);
                 showError("Error", "An error occurred while deleting the movie: " + e.getMessage());
             }
@@ -580,7 +601,7 @@ public class ContentController extends BaseController {
      */
     private void saveMovie(Movie movie) {
         try {
-            // Get the data manager
+            // Get the data manager,which is used to update the movie
             RefactoredDataManager dataManager = ServiceLocator.getInstance().getDataManager();
             if (dataManager != null) {
                 // Update the movie in the data manager
@@ -619,6 +640,7 @@ public class ContentController extends BaseController {
         // Use NavigationService to show content details
         NavigationService navigationService = NavigationService.getInstance();
         navigationService.showContentDetails(
+                //pass the movie details to the content details view
                 movie.getTitle(),
                 String.valueOf(movie.getYear()),
                 String.format("%.1f/10", movie.getImdbRating()),
@@ -638,6 +660,7 @@ public class ContentController extends BaseController {
         // Use NavigationService to show content details
         NavigationService navigationService = NavigationService.getInstance();
         navigationService.showContentDetails(
+                //pass the series details to the content details view
                 series.getTitle(),
                 String.valueOf(series.getYear()),
                 String.format("%.1f/10", series.getImdbRating()),
@@ -650,6 +673,7 @@ public class ContentController extends BaseController {
 
     private void sortSeriesTable(String newVal) {
         switch (newVal) {
+            //sort series table by title
             case "Title (A-Z)":
                 seriesTable.getSortOrder().clear();
                 seriesTable.getSortOrder().add(seriesTitleColumn);
@@ -659,6 +683,7 @@ public class ContentController extends BaseController {
                 seriesTable.getSortOrder().add(seriesTitleColumn);
                 seriesTable.getSortOrder().add(seriesTitleColumn);
                 break;
+                //sort series table by year
             case "Year (Newest)":
                 seriesTable.getSortOrder().clear();
                 seriesTable.getSortOrder().add(seriesYearColumn);
@@ -668,16 +693,20 @@ public class ContentController extends BaseController {
                 seriesTable.getSortOrder().add(seriesYearColumn);
                 seriesTable.getSortOrder().add(seriesYearColumn);
                 break;
+                //sort series table by rating
             case "Rating (High to Low)":
                 seriesTable.getSortOrder().clear();
                 seriesTable.getSortOrder().add(seriesRatingColumn);
                 break;
             default:
+                //clear the sort order,which will remove any existing sorting
                 seriesTable.getSortOrder().clear();
                 break;
         }
     }
-
+    /**
+     * Sets up event listeners for the content controller.
+     */
     private void setupEventListeners() {
         AppEventBus eventBus = AppEventBus.getInstance();
         eventBus.subscribe(AppStateManager.EVT_USER_LOGGED_IN, event -> {
@@ -692,6 +721,7 @@ public class ContentController extends BaseController {
      */
     private void sortMovieTable(String newVal) {
         switch (newVal) {
+            //sort movie table by title
             case "Title (A-Z)":
                 movieTable.getSortOrder().clear();
                 movieTable.getSortOrder().add(movieTitleColumn);
@@ -701,6 +731,7 @@ public class ContentController extends BaseController {
                 movieTable.getSortOrder().add(movieTitleColumn);
                 movieTable.getSortOrder().add(movieTitleColumn);
                 break;
+                //sort movie table by year
             case "Year (Newest)":
                 movieTable.getSortOrder().clear();
                 movieTable.getSortOrder().add(movieYearColumn);
@@ -710,6 +741,7 @@ public class ContentController extends BaseController {
                 movieTable.getSortOrder().add(movieYearColumn);
                 movieTable.getSortOrder().add(movieYearColumn);
                 break;
+                //sort movie table by rating
             case "Rating (High-Low)":
                 movieTable.getSortOrder().clear();
                 movieTable.getSortOrder().add(movieRatingColumn);
@@ -720,6 +752,7 @@ public class ContentController extends BaseController {
                 movieTable.getSortOrder().add(movieRatingColumn);
                 break;
             default:
+                //clear the sort order,which will remove any existing sorting
                 movieTable.getSortOrder().clear();
                 break;
         }
@@ -737,20 +770,26 @@ public class ContentController extends BaseController {
                 if (movieTitleColumn != null) {
                     movieTitleColumn.setCellValueFactory(cellData -> {
                         try {
+                            //get movie title from cell data
                             return new SimpleStringProperty(cellData.getValue().getTitle());
                         } catch (Exception e) {
+                            //log error
                             logger.warn("Error getting movie title: {}", e.getMessage());
                             return new SimpleStringProperty("");
                         }
                     });
+                    //add movie title column to table
                     movieTable.getColumns().add(movieTitleColumn);
                 }
 
                 if (movieYearColumn != null) {
+                    //set movie year column value factory
                     movieYearColumn.setCellValueFactory(cellData -> {
                         try {
+                            //get movie release date from cell data
                             Date releaseDate = cellData.getValue().getReleaseDate();
                             if (releaseDate != null) {
+                                //get movie release year from release date
                                 Calendar cal = Calendar.getInstance();
                                 cal.setTime(releaseDate);
                                 return new SimpleStringProperty(String.valueOf(cal.get(Calendar.YEAR)));
@@ -758,14 +797,18 @@ public class ContentController extends BaseController {
                         } catch (Exception e) {
                             logger.warn("Error getting movie year: {}", e.getMessage());
                         }
+                        //return empty string if no release date
                         return new SimpleStringProperty("");
                     });
+                    //add movie year column to table
                     movieTable.getColumns().add(movieYearColumn);
                 }
 
+                //set movie rating column value factory
                 if (movieRatingColumn != null) {
                     movieRatingColumn.setCellValueFactory(cellData -> {
                         try {
+                            //get movie rating from cell data
                             Movie movie = cellData.getValue();
                             Double rating = movie != null ? movie.getImdbRating() : 0.0;
                             return new SimpleDoubleProperty(rating).asObject();
@@ -774,6 +817,7 @@ public class ContentController extends BaseController {
                             return new SimpleDoubleProperty(0.0).asObject();
                         }
                     });
+                    //add movie rating column to table
                     movieTable.getColumns().add(movieRatingColumn);
                 }
 
@@ -806,6 +850,7 @@ public class ContentController extends BaseController {
                             });
                         }
 
+                        //update item
                         @Override
                         protected void updateItem(Void item, boolean empty) {
                             super.updateItem(item, empty);
@@ -816,6 +861,7 @@ public class ContentController extends BaseController {
                             }
                         }
                     });
+                    //add movie actions column to table
                     movieTable.getColumns().add(movieActionsColumn);
                 }
 
@@ -841,27 +887,33 @@ public class ContentController extends BaseController {
                 if (seriesTitleColumn != null) {
                     seriesTitleColumn.setCellValueFactory(cellData -> {
                         try {
+                            //get series title from cell data
                             return new SimpleStringProperty(cellData.getValue().getTitle());
                         } catch (Exception e) {
                             logger.warn("Error getting series title: {}", e.getMessage());
                             return new SimpleStringProperty("");
                         }
                     });
+                    //add series title column to table
                     seriesTable.getColumns().add(seriesTitleColumn);
                 }
 
+                //set series year column value factory
                 if (seriesYearColumn != null) {
                     seriesYearColumn.setCellValueFactory(cellData -> {
                         try {
+                            //get series year from cell data
                             return new SimpleIntegerProperty().asObject();
                         } catch (Exception e) {
                             logger.warn("Error getting series year: {}", e.getMessage());
                             return new SimpleIntegerProperty(0).asObject();
                         }
                     });
+                    //add series year column to table
                     seriesTable.getColumns().add(seriesYearColumn);
                 }
 
+                //set series rating column value factory
                 if (seriesRatingColumn != null) {
                     seriesRatingColumn.setCellValueFactory(cellData -> {
                         try {
@@ -873,6 +925,7 @@ public class ContentController extends BaseController {
                             return new SimpleDoubleProperty(0.0).asObject();
                         }
                     });
+                    //add series rating column to table
                     seriesTable.getColumns().add(seriesRatingColumn);
                 }
             } catch (Exception e) {
@@ -908,9 +961,11 @@ public class ContentController extends BaseController {
             if (seriesYearColumn != null) {
                 seriesYearColumn.setCellValueFactory(cellData -> {
                     Series series = cellData.getValue();
+                    //get series start year from cell data
                     if (series == null || series.getStartYear() == 0) {
                         return new SimpleIntegerProperty(0).asObject();
                     }
+                    //return series start year
                     return new SimpleIntegerProperty(series.getStartYear()).asObject();
                 });
 
@@ -919,9 +974,11 @@ public class ContentController extends BaseController {
                     @Override
                     protected void updateItem(Integer year, boolean empty) {
                         super.updateItem(year, empty);
+                        //set text to "N/A" if empty or null or less than or equal to 0
                         if (empty || year == null || year <= 0) {
                             setText("N/A");
                         } else {
+                            //set text to year
                             setText(String.valueOf(year));
                         }
                     }
@@ -932,17 +989,21 @@ public class ContentController extends BaseController {
             if (seriesGenreColumn != null) {
                 seriesGenreColumn.setCellValueFactory(cellData -> {
                     Series series = cellData.getValue();
+                    //get series genres from cell data
                     List<Genre> genres = series.getGenres();
+                    //join genres with comma,whitespace and "," if more than one genre
                     String genreText = genres != null ?
                             genres.stream()
                                     .map(Genre::name)
                                     .collect(Collectors.joining(", ")) : "";
+                    //return genre text
                     return new SimpleStringProperty(genreText);
                 });
             }
 
             // Seasons column
             if (seriesSeasonsColumn != null) {
+                //set series seasons column value factory
                 seriesSeasonsColumn.setCellValueFactory(cellData ->
                         new SimpleIntegerProperty(cellData.getValue().getSeasons() != null ?
                                 cellData.getValue().getSeasons().size() : 0).asObject());
@@ -950,12 +1011,14 @@ public class ContentController extends BaseController {
 
             // Episodes column
             if (seriesEpisodesColumn != null) {
+                //set series episodes column value factory
                 seriesEpisodesColumn.setCellValueFactory(cellData ->
                         new SimpleIntegerProperty(cellData.getValue().getTotalEpisodes()).asObject());
             }
 
             // Rating column
             if (seriesRatingColumn != null) {
+                //set series rating column value factory
                 seriesRatingColumn.setCellValueFactory(cellData ->
                         new SimpleDoubleProperty(cellData.getValue().getImdbRating()).asObject());
             }
@@ -1002,21 +1065,16 @@ public class ContentController extends BaseController {
         grid.setVgap(10);
         grid.setPadding(new Insets(20, 150, 10, 10));
 
+        // Create the input fields
         TextField episodeNumberField = new TextField();
         episodeNumberField.setPromptText("1");
         TextField titleField = new TextField();
         titleField.setPromptText("Episode Title");
-        TextArea descriptionArea = new TextArea();
-        descriptionArea.setPromptText("Episode description");
-        descriptionArea.setWrapText(true);
-        descriptionArea.setPrefRowCount(3);
 
         grid.add(new Label("Episode Number:"), 0, 0);
         grid.add(episodeNumberField, 1, 0);
         grid.add(new Label("Title:"), 0, 1);
         grid.add(titleField, 1, 1);
-        grid.add(new Label("Description:"), 0, 2);
-        grid.add(descriptionArea, 1, 2);
 
         dialog.getDialogPane().setContent(grid);
 
@@ -1027,9 +1085,9 @@ public class ContentController extends BaseController {
         dialog.setResultConverter(dialogButton -> {
             if (dialogButton == addButtonType) {
                 try {
+                    //get episode number from episode number field
                     int episodeNumber = Integer.parseInt(episodeNumberField.getText().trim());
                     String title = titleField.getText().trim();
-                    String description = descriptionArea.getText().trim();
 
                     // Validate input
                     if (title.isEmpty()) {
@@ -1137,6 +1195,14 @@ public class ContentController extends BaseController {
         // Add input validation
         ratingInput.textProperty().addListener((observable, oldValue, newValue) -> {
             try {
+                //check if input is empty
+                if (!newValue.isEmpty()) {
+                    double rating = Double.parseDouble(newValue);
+                    okButton.setDisable(rating < 1 || rating > 10);
+                } else {
+                    okButton.setDisable(true);
+                }
+                //check if input is a number
                 if (!newValue.isEmpty()) {
                     double rating = Double.parseDouble(newValue);
                     okButton.setDisable(rating < 1 || rating > 10);
@@ -1152,16 +1218,19 @@ public class ContentController extends BaseController {
         dialog.setResultConverter(dialogButton -> {
             if (dialogButton == okButtonType) {
                 try {
+                    //return rating
                     return Double.parseDouble(ratingInput.getText());
                 } catch (NumberFormatException e) {
                     return 0.0;
                 }
             }
+            //return 0 if cancelled
             return 0.0;
         });
 
         // Show the dialog and return the result
         dialog.showAndWait();
+        //return rating
         return dialog.getResult() != null ? dialog.getResult() : 0.0;
     }
 
@@ -1192,24 +1261,31 @@ public class ContentController extends BaseController {
      */
     @FXML
     private void handleRateSeries() {
+        //get selected series
         Series selectedSeries = seriesTable.getSelectionModel().getSelectedItem();
         if (selectedSeries != null) {
             double rating = showRatingDialog();
             if (rating > 0) {
                 try {
+                    //rate series
                     contentService.rateContent(selectedSeries, (float) rating);
                     refreshSeriesTable();
                     showSuccess("Success", String.format("You rated '%s' %.1f", selectedSeries.getTitle(), rating));
                 } catch (ContentNotFoundException e) {
+                    //log error and show error message
                     logger.error("Failed to find series with ID {}: {}", selectedSeries.getId(), e.getMessage());
                     showError("Error", "The selected series could not be found. It may have been deleted.");
                     refreshSeriesTable(); // Refresh to show current data
                 } catch (Exception e) {
+                    //log error and show error message
                     logger.error("Error rating series: {}", e.getMessage(), e);
                     showError("Error", "Failed to rate series: " + e.getMessage());
                 }
+                //refresh series table
+                refreshSeriesTable();
             }
         } else {
+            //show alert
             showAlert("No Series Selected", "Please select a series to rate.");
         }
     }
@@ -1243,16 +1319,19 @@ public class ContentController extends BaseController {
             if (movieGenreColumn != null) {
                 movieGenreColumn.setCellValueFactory(cellData -> {
                     try {
+                        //get genres
                         List<Genre> genres = cellData.getValue().getGenres();
                         if (genres == null || genres.isEmpty()) {
                             return new SimpleStringProperty("N/A");
                         }
+                        //format genres
                         String genreText = genres.stream()
                                 .filter(Objects::nonNull)
                                 .map(genre -> genre.name().charAt(0) + genre.name().substring(1).toLowerCase())
                                 .collect(Collectors.joining(", "));
                         return new SimpleStringProperty(genreText.isEmpty() ? "N/A" : genreText);
                     } catch (Exception e) {
+                        //log error
                         logger.debug("Error getting genres for movie: {}", e.getMessage());
                         return new SimpleStringProperty("N/A");
                     }
@@ -1282,6 +1361,10 @@ public class ContentController extends BaseController {
 
             logger.debug("Movie table columns initialized successfully");
 
+            //refresh movie table
+            refreshMovieTable();
+
+
         } catch (Exception e) {
             logger.error("Error initializing movie table columns: {}", e.getMessage(), e);
         }
@@ -1297,6 +1380,7 @@ public class ContentController extends BaseController {
             return;
         }
 
+        // Load data in background thread
         Task<Void> task = new Task<>() {
             @Override
             protected Void call() {
@@ -1345,6 +1429,7 @@ public class ContentController extends BaseController {
                                 seriesTable.setItems(filteredSeries);
                                 logger.debug("Set {} series to series table", filteredSeries.size());
                             }
+                            // Log success
                             logger.info("Successfully loaded {} movies and {} series", movies.size(), series.size());
                         } catch (Exception e) {
                             logger.error("Error updating UI with loaded data: {}", e.getMessage(), e);
@@ -1352,15 +1437,19 @@ public class ContentController extends BaseController {
                         }
                     });
 
+                    // Log success
+                    logger.info("Successfully loaded initial data");
                 } catch (Exception e) {
                     logger.error("Error loading initial data: {}", e.getMessage(), e);
                     Platform.runLater(() -> {
+                        //show alert
                         showAlert("Error", "Failed to load content: " + e.getMessage());
                         if (statusLabel != null) {
                             statusLabel.setText("Error loading data");
                         }
                     });
                 }
+                // returning nothing if task is successful
                 return null;
             }
         };
@@ -1381,34 +1470,28 @@ public class ContentController extends BaseController {
             return;
         }
 
-        // Show loading indicator
-        if (loadingIndicatorContainer != null && movieLoadingIndicator != null) {
-            loadingIndicatorContainer.setVisible(true);
-            movieLoadingIndicator.setProgress(ProgressIndicator.INDETERMINATE_PROGRESS);
-        }
 
         Task<Void> task = new Task<>() {
             {
                 // Set up task completion handlers
+
+                // Set up task success handler
                 setOnSucceeded(e -> {
-                    if (loadingIndicatorContainer != null) {
-                        loadingIndicatorContainer.setVisible(false);
-                    }
                     if (statusLabel != null) {
-                        statusLabel.setText("");
+                        statusLabel.setText("Successfully loaded movie data");
+                        logger.info("Successfully loaded movie data");
                     }
                 });
 
+                // Set up task failure handler
                 setOnFailed(e -> {
-                    if (loadingIndicatorContainer != null) {
-                        loadingIndicatorContainer.setVisible(false);
-                    }
                     if (statusLabel != null) {
                         statusLabel.setText("Error loading movie data");
                     }
                 });
             }
 
+            // Set up task execution
             @Override
             protected Void call() {
                 try {
@@ -1449,13 +1532,17 @@ public class ContentController extends BaseController {
                                 statusLabel.setText("");
                             }
                         } catch (Exception e) {
+                            // Show error alert
                             logger.error("Error updating movie table: {}", e.getMessage(), e);
                             showAlert("Error", "Failed to refresh movie data: " + e.getMessage());
                         }
                     });
+                    // Log success
+                    logger.info("Successfully refreshed movie table");
                 } catch (Exception e) {
                     logger.error("Error refreshing movie data: {}", e.getMessage(), e);
                     Platform.runLater(() -> {
+                        // Show error alert
                         showAlert("Error", "Failed to refresh movie data: " + e.getMessage());
                         if (statusLabel != null) {
                             statusLabel.setText("Error loading movie data");
@@ -1464,6 +1551,7 @@ public class ContentController extends BaseController {
                 }
                 return null;
             }
+
         };
 
         // Start the task in a background thread
@@ -1483,6 +1571,7 @@ public class ContentController extends BaseController {
         }
 
 
+        // Refresh the series table in a background thread
         Task<Void> task = new Task<>() {
             @Override
             protected Void call() {
@@ -1539,6 +1628,7 @@ public class ContentController extends BaseController {
                         }
                     });
                 } catch (Exception e) {
+                    // Log the error
                     logger.error("Error refreshing series data: {}", e.getMessage(), e);
                     Platform.runLater(() -> {
                         showAlert("Error", "Failed to refresh series data: " + e.getMessage());
@@ -1589,6 +1679,7 @@ public class ContentController extends BaseController {
         String title = selectedSeries.getTitle() != null ? selectedSeries.getTitle() : "Untitled Series";
         String yearString = "";
         try {
+            // Get the start year safely
             int startYear = selectedSeries.getStartYear();
             if (startYear > 0) {
                 yearString = " (" + startYear;
@@ -1601,11 +1692,13 @@ public class ContentController extends BaseController {
         // Get seasons count safely
         int seasonCount = 0;
         try {
+            // Get the seasons count safely
             seasonCount = selectedSeries.getSeasons() != null ? selectedSeries.getSeasons().size() : 0;
         } catch (Exception e) {
             logger.error("Error getting seasons count: {}", e.getMessage());
         }
 
+        // Add series info with null checks
         Label infoLabel = new Label(String.format("Manage %s%s\nSeasons: %d", title, yearString, seasonCount));
         infoLabel.setStyle("-fx-font-weight: bold; -fx-padding: 0 0 10 0;");
         content.getChildren().add(infoLabel);
@@ -1613,8 +1706,11 @@ public class ContentController extends BaseController {
         // Add season selector for adding episodes
         ComboBox<Season> seasonComboBox = new ComboBox<>();
         try {
+            // Add seasons to the combo box
             if (selectedSeries.getSeasons() != null && !selectedSeries.getSeasons().isEmpty()) {
+                // Add seasons to the combo box
                 seasonComboBox.getItems().addAll(selectedSeries.getSeasons());
+                // Set the cell factory for the combo box
                 seasonComboBox.setCellFactory(param -> new ListCell<Season>() {
                     @Override
                     protected void updateItem(Season season, boolean empty) {
@@ -1622,12 +1718,14 @@ public class ContentController extends BaseController {
                         if (empty || season == null) {
                             setText(null);
                         } else {
+                            // Set the text for the combo box
                             setText(String.format("Season %d (%d episodes)",
                                     season.getSeasonNumber(),
                                     season.getEpisodes() != null ? season.getEpisodes().size() : 0));
                         }
                     }
                 });
+                // Set the button cell for the combo box
                 seasonComboBox.setButtonCell(new ListCell<Season>() {
                     @Override
                     protected void updateItem(Season season, boolean empty) {
@@ -1639,6 +1737,7 @@ public class ContentController extends BaseController {
                         }
                     }
                 });
+                // Select the first season
                 seasonComboBox.getSelectionModel().selectFirst();
             } else {
                 seasonComboBox.setPromptText("No seasons available");
@@ -1649,7 +1748,7 @@ public class ContentController extends BaseController {
             seasonComboBox.setPromptText("Error loading seasons");
             seasonComboBox.setDisable(true);
         }
-
+    // Add season selector
         content.getChildren().add(new Label("Select Season for Episode:"));
         content.getChildren().add(seasonComboBox);
 
@@ -1657,6 +1756,7 @@ public class ContentController extends BaseController {
         Label episodeCountLabel = new Label("");
         if (seasonComboBox.getSelectionModel().getSelectedItem() != null) {
             Season selectedSeason = seasonComboBox.getSelectionModel().getSelectedItem();
+            // Get the episode count
             int episodeCount = selectedSeason.getEpisodes() != null ? selectedSeason.getEpisodes().size() : 0;
             episodeCountLabel.setText(String.format("Episodes in selected season: %d", episodeCount));
         }
@@ -1665,6 +1765,7 @@ public class ContentController extends BaseController {
         // Update episode count when selection changes
         seasonComboBox.getSelectionModel().selectedItemProperty().addListener((obs, oldVal, newVal) -> {
             if (newVal != null) {
+                // Get the episode count
                 int count = newVal.getEpisodes() != null ? newVal.getEpisodes().size() : 0;
                 episodeCountLabel.setText(String.format("Episodes in selected season: %d", count));
             } else {
@@ -1672,6 +1773,7 @@ public class ContentController extends BaseController {
             }
         });
 
+        // Add content to the dialog
         dialog.getDialogPane().setContent(content);
 
         // Show the dialog and handle the result
@@ -1686,7 +1788,7 @@ public class ContentController extends BaseController {
                         showAlert("No Season Selected", "Please add a season first before adding episodes.");
                         return;
                     }
-
+                    // Handle Add Episode
                     handleAddEpisode(selectedSeries, selectedSeason);
                 }
                 // Refresh the series table after any changes
@@ -1698,6 +1800,7 @@ public class ContentController extends BaseController {
         });
     }
 
+    // Handle rating a movie
     public void handleRateMovie(ActionEvent actionEvent) {
         Movie selectedMovie = movieTable.getSelectionModel().getSelectedItem();
         if (selectedMovie != null) {
@@ -1725,7 +1828,8 @@ public class ContentController extends BaseController {
                     
                     // Refresh the table to show the updated rating
                     refreshMovieTable();
-                    
+
+                    // Show success message
                     showSuccess("Success", String.format("Rated '%s' with %d stars", 
                         movieToRate.getTitle(), rating));
                 }
@@ -1771,6 +1875,7 @@ public class ContentController extends BaseController {
                     refreshSeriesTable();
                     showSuccess("Success", String.format("Added new series: '%s'", newSeries.getTitle()));
                 } catch (Exception e) {
+                    // Log the error
                     logger.error("Error saving series: {}", e.getMessage(), e);
                     showError("Error", "Failed to save series: " + e.getMessage());
                 }
@@ -1857,9 +1962,11 @@ public class ContentController extends BaseController {
         }
     }
 
+    // Handle delete series
     public void handleDeleteSeries(ActionEvent actionEvent) {
         Series selectedSeries = seriesTable.getSelectionModel().getSelectedItem();
         if (selectedSeries != null) {
+            // Show confirmation dialog
             boolean confirmed = showConfirmationDialog("Confirm Delete", 
                 String.format("Are you sure you want to delete '%s'?", selectedSeries.getTitle()));
             

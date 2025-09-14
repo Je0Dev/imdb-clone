@@ -17,11 +17,12 @@ public class ApplicationConfig {
     private static final double DEFAULT_MIN_WIDTH = 5000.0;
     private static final double DEFAULT_MIN_HEIGHT = 3000.0;
 
+    // Default data file paths
     private ApplicationConfig() {
         properties = new Properties();
         loadConfiguration();
     }
-
+    // Singleton pattern
     public static synchronized ApplicationConfig getInstance() {
         if (instance == null) {
             instance = new ApplicationConfig();
@@ -29,6 +30,7 @@ public class ApplicationConfig {
         return instance;
     }
 
+    // Load configuration from properties files
     private void loadConfiguration() {
         // Load from application.properties if it exists
         try (InputStream is = getClass().getResourceAsStream("/application.properties")) {
@@ -49,6 +51,7 @@ public class ApplicationConfig {
                 "app.title", DEFAULT_APP_TITLE);
     }
 
+    // Window settings
     public double getMinWidth() {
         return Double.parseDouble(properties.getProperty(
                 "app.window.min.width", String.valueOf(DEFAULT_MIN_WIDTH)));

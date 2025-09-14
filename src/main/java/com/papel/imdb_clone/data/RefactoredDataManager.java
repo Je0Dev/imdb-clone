@@ -157,10 +157,19 @@ public class RefactoredDataManager {
     public InMemoryUserRepository getUserRepository() {
         return userRepository;
     }
+    /**
+     * Gets the movie repository instance.
+     *
+     * @return The MovieRepository instance
+     */
     public InMemoryMovieRepository getMovieRepository() {
         return movieRepository;
     }
-
+/**
+     * Gets the series repository instance.
+     *
+     * @return The SeriesRepository instance
+     */
     public InMemorySeriesRepository getSeriesRepository() {
         return seriesRepository;
     }

@@ -94,14 +94,17 @@ public class UserInputValidator {
         }
     }
 
+    //checks if username is valid or not
     public boolean isValidUsername(String username) {
         return username != null && USERNAME_PATTERN.matcher(username).matches();
     }
 
+    //checks if email is valid or not
     public boolean isValidEmail(String email) {
         return email != null && EMAIL_PATTERN.matcher(email).matches();
     }
 
+    //checks if password is valid or not
     public boolean isValidPassword(String password) {
         return password != null && PASSWORD_PATTERN.matcher(password).matches();
     }

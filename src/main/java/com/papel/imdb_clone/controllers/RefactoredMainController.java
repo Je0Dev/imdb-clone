@@ -326,6 +326,11 @@ public class RefactoredMainController {
         }
     }
 
+    /**
+     * Navigates to the TV shows view.
+     *
+     * @param event The action event that triggered the navigation
+     */
     @FXML
     private void showTVShows(ActionEvent event) {
         try {
@@ -335,6 +340,7 @@ public class RefactoredMainController {
                 return;
             }
 
+            // Get the series view from the UICoordinator
             Node seriesView = uiCoordinator.getSeriesView();
             if (seriesView != null) {
                 mainBorderPane.setCenter(seriesView);
@@ -348,6 +354,11 @@ public class RefactoredMainController {
         }
     }
 
+    /**
+     * Navigates to the movies view.
+     *
+     * @param event The action event that triggered the navigation
+     */
     @FXML
     private void showMovies(ActionEvent event) {
         try {
@@ -357,6 +368,7 @@ public class RefactoredMainController {
                 return;
             }
 
+            // Get the movie view from the UICoordinator
             Node movieView = uiCoordinator.getMovieView();
             if (movieView != null) {
                 mainBorderPane.setCenter(movieView);
@@ -369,6 +381,11 @@ public class RefactoredMainController {
         }
     }
 
+    /**
+     * Navigates to the advanced search view.
+     *
+     * @param actionEvent The action event that triggered the navigation
+     */
     @FXML
     public void showAdvancedSearch(ActionEvent actionEvent) {
         try {
@@ -378,6 +395,7 @@ public class RefactoredMainController {
                 return;
             }
 
+            // Get the search view from the UICoordinator
             Node searchView = uiCoordinator.getSearchView();
             if (searchView == null) {
                 logger.error("Failed to load search view - view is null");
@@ -385,6 +403,7 @@ public class RefactoredMainController {
                 return;
             }
 
+            // Set the search view as the center of the mainBorderPane
             mainBorderPane.setCenter(searchView);
             logger.info("Successfully navigated to search view");
         } catch (Exception e) {
@@ -491,6 +510,7 @@ public class RefactoredMainController {
         if (!isInitialized && !isInitializing) {
             Platform.runLater(() -> {
                 try {
+                    // Initialize services
                     initializeServices();
                     if (uiCoordinator != null) {
                         uiCoordinator.setPrimaryStage(primaryStage);
@@ -505,7 +525,8 @@ public class RefactoredMainController {
             uiCoordinator.setPrimaryStage(primaryStage);
         }
     }
-
+    // Navigate to celebrities view
+    @FXML
     public void showCelebrities(ActionEvent actionEvent) {
         NavigationService.getInstance().showCelebrities();
     }

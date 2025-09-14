@@ -40,8 +40,8 @@ public class AuthService {
 
                 // Create a default admin user if none exists
                 User defaultAdmin = new User("Admin", "User", "admin", 'M', "admin@imdbclone.com");
-                String hashedPassword = "admin123";
-                defaultAdmin.setPassword(hashedPassword);
+                String Password = "admin123";
+                defaultAdmin.setPassword(Password);
                 usersByUsername.put(defaultAdmin.getUsername(), defaultAdmin);
                 usersByEmail.put(defaultAdmin.getEmail(), defaultAdmin);
                 saveUsers();

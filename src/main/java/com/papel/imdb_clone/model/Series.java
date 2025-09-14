@@ -4,22 +4,16 @@ import com.papel.imdb_clone.enums.Genre;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
 
 public class Series extends Content {
     private List<Season> seasons;
-    private int startYear;
     private Director director;
     private List<Actor> actors;
-
     private String boxOffice;
     private List<String> awards;
     private double rating;
     private String nominations;
-
     private List<Genre> genres = new ArrayList<>();
     private static final Logger logger = LoggerFactory.getLogger(Series.class);
 
@@ -33,6 +27,10 @@ public class Series extends Content {
         this.seasons = new ArrayList<>();
         this.actors = new ArrayList<>();
         this.awards = new ArrayList<>();
+        // Initialize the year field with current year
+        Calendar cal = Calendar.getInstance();
+        cal.setTime(new java.util.Date());
+        this.year = cal.getTime();
     }
 
     public Series(String title, String summary, Genre genre, double imdbRating, double userRating, int startYear) {
@@ -40,7 +38,27 @@ public class Series extends Content {
         this.seasons = new ArrayList<>();
         this.actors = new ArrayList<>();
         this.awards = new ArrayList<>();
-        this.startYear = startYear;
+        
+        // Set the year based on startYear
+        if (startYear > 0) {
+            try {
+                Calendar cal = Calendar.getInstance();
+                cal.set(Calendar.YEAR, startYear);
+                cal.set(Calendar.MONTH, Calendar.JANUARY);
+                cal.set(Calendar.DAY_OF_MONTH, 1);
+                this.year = cal.getTime();
+                this.setStartYear(startYear);
+            } catch (Exception e) {
+                // Fallback to current year if there's an error
+                this.year = new java.util.Date();
+                this.setStartYear(Calendar.getInstance().get(Calendar.YEAR));
+            }
+        } else {
+            // If no valid start year, use current year
+            this.year = new java.util.Date();
+            this.setStartYear(Calendar.getInstance().get(Calendar.YEAR));
+        }
+        
         if (genre != null) {
             this.genres.add(genre);
         }
@@ -58,8 +76,17 @@ public class Series extends Content {
     }
 
 
+    @Override
     public int getStartYear() {
-        return startYear;
+        // If startYear is 0 but we have a year, update startYear from year
+        int yearValue = super.getStartYear();
+        if (yearValue == 0 && this.year != null) {
+            Calendar cal = Calendar.getInstance();
+            cal.setTime(this.year);
+            yearValue = cal.get(Calendar.YEAR);
+            super.setStartYear(yearValue);
+        }
+        return yearValue;
     }
 
     /**
@@ -86,8 +113,23 @@ public class Series extends Content {
         this.actors = new ArrayList<>(actors);
     }
 
+    @Override
     public void setStartYear(int startYear) {
-        this.startYear = startYear;
+        // Update the parent's startYear
+        super.setStartYear(startYear);
+        
+        // Also update the year field to maintain consistency
+        if (startYear > 0) {
+            try {
+                Calendar cal = Calendar.getInstance();
+                cal.set(Calendar.YEAR, startYear);
+                cal.set(Calendar.MONTH, Calendar.JANUARY);
+                cal.set(Calendar.DAY_OF_MONTH, 1);
+                this.year = cal.getTime();
+            } catch (Exception e) {
+                logger.error("Error updating year from startYear: " + startYear, e);
+            }
+        }
     }
 
     public void setSeasons(List<Season> seasons) {
@@ -170,9 +212,8 @@ public class Series extends Content {
         return seasons.stream().mapToInt(Season::getTotalEpisodes).sum();
     }
 
-    public List<String> setAwards(String awards) {
+    public void setAwards(String awards) {
         this.awards = new ArrayList<>();
-        return Arrays.asList(awards.split(","));
     }
 
 }

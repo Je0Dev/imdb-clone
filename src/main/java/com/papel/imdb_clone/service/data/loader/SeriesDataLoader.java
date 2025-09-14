@@ -93,16 +93,14 @@ public class SeriesDataLoader extends BaseDataLoader {
                             logger.warn("Invalid seasons count '{}' at line {}. Using default value 1.", parts[2].trim(), lineNumber);
                         }
 
-                        // Parse years (handle empty end year)
+                        // Parse start year
                         int startYear = 0;
-                        Integer endYear = null;
                         int currentYear = Calendar.getInstance().get(Calendar.YEAR);
                         
-                        // Parse start year
                         try {
                             startYear = Integer.parseInt(parts[3].trim());
-                            // Validate start year
-                            if (startYear < 1928 || startYear > currentYear + 2) { // 1928 is when first TV broadcast happened
+                            // Validate start year (1928 is when first TV broadcast happened)
+                            if (startYear < 1928 || startYear > currentYear + 2) {
                                 logger.warn("Start year {} for series '{}' is out of range (1928-{}). Using current year as fallback.", 
                                     startYear, title, currentYear + 2);
                                 startYear = currentYear;
@@ -114,27 +112,10 @@ public class SeriesDataLoader extends BaseDataLoader {
                             startYear = currentYear;
                         }
 
-                        // Parse end year if it exists
-                        if (!parts[4].trim().isEmpty() && !parts[4].trim().equalsIgnoreCase("n/a")) {
-                            try {
-                                endYear = Integer.parseInt(parts[4].trim());
-                                // Validate end year
-                                if (endYear < startYear || endYear > currentYear + 2) {
-                                    logger.warn("End year {} for series '{}' is invalid (must be between {} and {}). Setting to null.", 
-                                        endYear, title, startYear, currentYear + 2);
-                                    endYear = null;
-                                }
-                                logger.debug("Parsed endYear: {} for series: {}", endYear, title);
-                            } catch (NumberFormatException e) {
-                                logger.warn("Invalid end year format '{}' for series: {}. Setting to null. Error: {}", 
-                                    parts[4].trim(), title, e.getMessage());
-                                endYear = null;
-                            }
-                        }
-
+                        // Parse rating (now at index 4 since we removed end year)
                         double rating = 0.0;
                         try {
-                            rating = Double.parseDouble(parts[5].trim());
+                            rating = Double.parseDouble(parts[4].trim());
                             // Ensure rating is between 0 and 10
                             rating = Math.max(0, Math.min(10.0, rating));
                         } catch (NumberFormatException | ArrayIndexOutOfBoundsException e) {
@@ -142,7 +123,8 @@ public class SeriesDataLoader extends BaseDataLoader {
                             rating = 0.0; // Default rating if not provided or invalid
                         }
 
-                        String creatorName = parts[6].trim();
+                        // Creator is now at index 5
+                        String creatorName = parts[5].trim();
                         String[] genreArray = parts[1].trim().split(",");
                         Set<Genre> genres = new HashSet<>();
 
@@ -192,7 +174,8 @@ public class SeriesDataLoader extends BaseDataLoader {
                             }
                         }
 
-                        String[] actorNames = parts[7].split(";");
+                        // Actors are now at index 6
+                        String[] actorNames = parts[6].split(";");
                         // Check if series already exists by title and year
                         if (seriesService.findByTitleAndYear(title, startYear).isPresent()) {
                             logger.debug("Series '{}' from {} already exists", title, startYear);
