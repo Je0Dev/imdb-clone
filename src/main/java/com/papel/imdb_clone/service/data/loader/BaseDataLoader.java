@@ -58,68 +58,72 @@ public abstract class BaseDataLoader {
     }
 
     /**
-     * Parses a CSV line, handling quoted fields and semicolon-separated values.
+     * Parses a CSV line, handling quoted fields and special characters.
+     * Supports:
+     * - Quoted fields containing commas
+     * - Escaped quotes ("")
+     * - Trims whitespace from fields
+     * - Skips empty lines and comments
      *
      * @param line the line to parse
-     * @return array of parsed fields
+     * @return array of parsed fields, or empty array for empty/comment lines
      */
     protected String[] parseCSVLine(String line) {
-        if (line == null || line.trim().isEmpty()) {
-            return new String[0];
-        }
-
-        // Skip comment lines
-        if (line.trim().startsWith("#")) {
+        // Handle null or empty input
+        if (line == null || (line = line.trim()).isEmpty() || line.startsWith("#")) {
             return new String[0];
         }
 
         List<String> fields = new ArrayList<>();
         StringBuilder currentField = new StringBuilder();
         boolean inQuotes = false;
-        boolean escapeNext = false;
+        
+        // Track if we're at the start of a field
+        boolean atStart = true;
 
-        /**
-         * Iterate over each character in the line
-         */
         for (int i = 0; i < line.length(); i++) {
             char c = line.charAt(i);
-
-            if (escapeNext) {
-                currentField.append(c);
-                escapeNext = false;
+            
+            // Handle quoted fields
+            if (c == '"') {
+                if (inQuotes) {
+                    // Check for escaped quote ("")
+                    if (i + 1 < line.length() && line.charAt(i + 1) == '"') {
+                        currentField.append('"');
+                        i++; // Skip the next quote
+                        continue;
+                    }
+                    inQuotes = false;
+                    atStart = false;
+                    continue;
+                } else if (atStart) {
+                    inQuotes = true;
+                    atStart = false;
+                    continue;
+                }
+            }
+            
+            // Handle field separator (comma) when not in quotes
+            if (c == ',' && !inQuotes) {
+                fields.add(currentField.toString().trim());
+                currentField.setLength(0);
+                atStart = true;
                 continue;
             }
-
-            if (c == '\\') {
-                escapeNext = true;
-            } else if (c == '"') {
-                // Handle quoted fields
-                if (inQuotes && i + 1 < line.length() && line.charAt(i + 1) == '"') {
-                    // Escaped quote inside quoted field
-                    currentField.append('"');
-                    i++; // Skip the next quote
-                } else {
-                    inQuotes = !inQuotes;
-                }
-            } else if (c == ',' && !inQuotes) {
-                // End of field
-                fields.add(currentField.toString().trim());
-                currentField = new StringBuilder();
-            } else {
-                currentField.append(c);
-            }
+            
+            // Add character to current field
+            currentField.append(c);
+            atStart = false;
         }
-
+        
         // Add the last field
         fields.add(currentField.toString().trim());
-
-        // Handle case where line ends with a comma
+        
+        // Handle case where line ends with a comma (add empty field)
         if (line.endsWith(",")) {
             fields.add("");
         }
-
-        //add the last field
+        
         return fields.toArray(new String[0]);
     }
-
 }

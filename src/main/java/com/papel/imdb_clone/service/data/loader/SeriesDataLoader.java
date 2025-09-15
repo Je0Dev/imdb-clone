@@ -95,38 +95,70 @@ public class SeriesDataLoader extends BaseDataLoader {
                             logger.warn("Invalid seasons count '{}' at line {}. Using default value 1.", parts[2].trim(), lineNumber);
                         }
 
-                        // Parse start year
+                        // Parse start year and end year
                         int startYear = 0;
+                        int endYear = 0;
                         int currentYear = Calendar.getInstance().get(Calendar.YEAR);
-                        
-                        try {
-                            startYear = Integer.parseInt(parts[3].trim());
-                            // Validate start year (1928 is when first TV broadcast happened)
-                            if (startYear < 1928 || startYear > currentYear + 2) {
-                                logger.warn("Start year {} for series '{}' is out of range (1928-{}). Using current year as fallback.", 
-                                    startYear, title, currentYear + 2);
+
+                        // Handle both YYYY-YYYY and YYYY,YYYY formats
+                        String yearRange = parts[3].trim();
+                        if (yearRange.contains("-")) {
+                            String[] years = yearRange.split("-");
+                            try {
+                                startYear = Integer.parseInt(years[0].trim());
+                                endYear = years.length > 1 && !years[1].isEmpty() ?
+                                        Integer.parseInt(years[1].trim()) : currentYear;
+                            } catch (NumberFormatException e) {
+                                logger.warn("Invalid year format '{}' at line {}. Using current year.", yearRange, lineNumber);
                                 startYear = currentYear;
+                                endYear = currentYear;
                             }
-                            logger.debug("Parsed startYear: {} for series: {}", startYear, title);
-                        } catch (NumberFormatException e) {
-                            logger.warn("Invalid start year format for series: {}. Using current year as fallback. Error: {}", 
-                                title, e.getMessage());
+                        } else {
+                            // Handle comma-separated years
+                            try {
+                                startYear = Integer.parseInt(parts[3].trim());
+                                endYear = parts.length > 4 && !parts[4].trim().isEmpty() ?
+                                        Integer.parseInt(parts[4].trim()) : currentYear;
+                            } catch (NumberFormatException | ArrayIndexOutOfBoundsException e) {
+                                logger.warn("Invalid year format at line {}. Using current year.", lineNumber);
+                                startYear = currentYear;
+                                endYear = currentYear;
+                            }
+                        }
+
+                        // Validate start year (1928 is when first TV broadcast happened)
+                        if (startYear < 1928 || startYear > currentYear + 2) {
+                            logger.warn("Start year {} for series '{}' is out of range (1928-{}). Using current year as fallback.",
+                                    startYear, title, currentYear + 2);
                             startYear = currentYear;
                         }
+                        logger.debug("Parsed startYear: {} for series: {}", startYear, title);
 
-                        // Parse rating (now at index 4 since we removed end year)
+                        // Parse rating - adjust index based on the format
+                        int ratingIndex = yearRange.contains(",") ? 5 : 4;
                         double rating = 0.0;
                         try {
-                            rating = Double.parseDouble(parts[4].trim());
-                            // Ensure rating is between 0 and 10
-                            rating = Math.max(0, Math.min(10.0, rating));
+                            String ratingStr = parts[ratingIndex].trim();
+                            if (!ratingStr.isEmpty()) {
+                                rating = Double.parseDouble(ratingStr);
+                                // Ensure rating is between 0 and 10
+                                rating = Math.max(0, Math.min(10.0, rating));
+                            } else {
+                                logger.warn("Missing rating at line {}. Using default value 0.0: {}", lineNumber, line);
+                            }
                         } catch (NumberFormatException | ArrayIndexOutOfBoundsException e) {
-                            logger.warn("Invalid or missing rating at line {}: {}", lineNumber, line);
-                            rating = 0.0; // Default rating if not provided or invalid
+                            logger.warn("Invalid rating format at line {}. Using default value 0.0: {}", lineNumber, line);
                         }
 
-                        // Creator is now at index 5
-                        String creatorName = parts[5].trim();
+                        // Parse director(s) - adjust index based on the format
+                        int directorIndex = yearRange.contains(",") ? 6 : 5;
+                        String directorName = "";
+                        try {
+                            directorName = parts[directorIndex].trim();
+                        } catch (ArrayIndexOutOfBoundsException e) {
+                            logger.warn("Missing director at line {}. Using empty string: {}", lineNumber, line);
+                        }
+
                         String[] genreArray = parts[1].trim().split(",");
                         Set<Genre> genres = new HashSet<>();
 
@@ -176,8 +208,15 @@ public class SeriesDataLoader extends BaseDataLoader {
                             }
                         }
 
-                        // Actors are now at index 6
-                        String[] actorNames = parts[6].split(";");
+                        // Parse actors (semicolon separated) - adjust index based on the format
+                        int actorsIndex = yearRange.contains(",") ? 7 : 6;
+                        String[] actorNames = new String[0];
+                        try {
+                            actorNames = parts[actorsIndex].trim().split(";");
+                        } catch (ArrayIndexOutOfBoundsException e) {
+                            logger.warn("Missing actors at line {}. Using empty array: {}", lineNumber, line);
+                        }
+
                         // Check if series already exists by title and year
                         if (seriesService.findByTitleAndYear(title, startYear).isPresent()) {
                             logger.debug("Series '{}' from {} already exists", title, startYear);

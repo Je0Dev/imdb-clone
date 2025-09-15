@@ -14,18 +14,24 @@ public enum Ethnicity {
     
     // Nationalities (for more specific representation)
     AMERICAN("American"),
+    AUSTRALIAN("Australian"),
     BRITISH("British"),
     CANADIAN("Canadian"),
     CHINESE("Chinese"),
     FRENCH("French"),
     GERMAN("German"),
     INDIAN_NATIONAL("Indian"),
+    IRISH("Irish"),
     ITALIAN("Italian"),
     JAPANESE("Japanese"),
     KOREAN("Korean"),
+    MALAYSIAN("Malaysian"),
     MEXICAN("Mexican"),
+    NEW_ZEALAND("New Zealander"),
     RUSSIAN("Russian"),
+    SCOTTISH("Scottish"),
     SPANISH("Spanish"),
+    SWEDISH("Swedish"),
     
     // Additional categories
     MIXED("Mixed"),
@@ -45,26 +51,68 @@ public enum Ethnicity {
         return label;
     }
 
-    //from label
+    /**
+     * Converts a string label to an Ethnicity enum value.
+     * Handles various input formats and provides case-insensitive matching.
+     * 
+     * @param input The input string to convert
+     * @return Matching Ethnicity enum value
+     * @throws IllegalArgumentException if no matching ethnicity is found
+     */
     public static Ethnicity fromLabel(String input) {
-        if (input == null) {
-            throw new IllegalArgumentException("Ethnicity cannot be null");
+        if (input == null || input.trim().isEmpty()) {
+            return UNKNOWN;
         }
-        //normalize input
-        String normalized = input.trim();
+        
+        // Normalize input
+        String normalized = input.trim().toLowerCase();
+        
+        // First try direct label match (case insensitive)
         for (Ethnicity e : values()) {
-            if (e.label.equalsIgnoreCase(normalized)) {
+            if (e.label.toLowerCase().equals(normalized)) {
                 return e;
             }
         }
-        // Try matching enum name style
-        String nameLike = normalized.toUpperCase().replace('-', ' ').replace(' ', '_');
+        
+        // Try common variations and aliases
+        switch (normalized) {
+            case "australian":
+            case "aus":
+                return AUSTRALIAN;
+            case "new_zealand":
+            case "new zealand":
+            case "nz":
+                return NEW_ZEALAND;
+            case "scot":
+            case "scotland":
+                return SCOTTISH;
+            case "malay":
+                return MALAYSIAN;
+            case "eire":
+                return IRISH;
+        }
+        
+        // Try matching enum name style (UPPER_UNDERSCORE)
+        String nameLike = normalized.toUpperCase()
+            .replace('-', '_')
+            .replace(' ', '_');
+            
+        try {
+            return Ethnicity.valueOf(nameLike);
+        } catch (IllegalArgumentException e) {
+            // Continue to next check
+        }
+        
+        // Try partial matches
         for (Ethnicity e : values()) {
-            if (e.name().equals(nameLike)) {
+            if (e.label.toLowerCase().contains(normalized) || 
+                normalized.contains(e.label.toLowerCase())) {
                 return e;
             }
         }
-        throw new IllegalArgumentException("Unknown ethnicity: " + input);
+
+       // Return unknown if no match found
+       return UNKNOWN;
     }
 
 }

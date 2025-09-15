@@ -235,7 +235,7 @@ public class RefactoredDataManager {
     }
 
 
-    //delete movie
+    //delete movie by id
     public void deleteMovie(Movie selectedMovie) {
         movieService.delete(selectedMovie.getId());
         movieRepository.delete(selectedMovie.getId());

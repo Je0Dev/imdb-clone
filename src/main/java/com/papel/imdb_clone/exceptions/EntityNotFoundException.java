@@ -84,7 +84,6 @@ public class EntityNotFoundException extends InvalidEntityException {
         Map<String, List<String>> errors = new HashMap<>();
         //get field name from entity type
         String fieldName = entityType != null ?
-                entityType.getSimpleName().toLowerCase() + "Id" :
                 String.format("%sId", entityType.getSimpleName().toLowerCase()) : "id";
         errors.put(fieldName, Collections.singletonList("not found: " + identifier));
         return errors;
