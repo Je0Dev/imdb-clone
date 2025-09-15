@@ -1,5 +1,6 @@
 package com.papel.imdb_clone.enums;
 
+//GENRE ENUM
 public enum Genre {
     ACTION("Action"),
     COMEDY("Comedy"),
@@ -25,10 +26,12 @@ public enum Genre {
 
     private final String displayName;
 
+    //Genre constructor with displayName
     Genre(String displayName) {
         this.displayName = displayName;
     }
 
+    //get displayName
     public Object getDisplayName() {
         return displayName;
     }

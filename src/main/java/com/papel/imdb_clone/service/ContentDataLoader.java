@@ -19,8 +19,16 @@ public class ContentDataLoader<T extends Content> {
     private final RefactoredDataManager dataManager;
     private final ExecutorService executorService;
 
+    /**
+     * Constructor for ContentDataLoader.
+     * @param dataManager
+     */
     public ContentDataLoader(RefactoredDataManager dataManager) {
         this.dataManager = dataManager;
+        /**
+         * Creates a fixed thread pool with the number of available processors.
+         * Each thread is set as a daemon thread and has a custom name.
+         */
         this.executorService = Executors.newFixedThreadPool(
                 Runtime.getRuntime().availableProcessors(),
                 r -> {
@@ -32,6 +40,13 @@ public class ContentDataLoader<T extends Content> {
         );
     }
 
+    /**
+     * Returns the singleton instance of ContentDataLoader.
+     * @param dataManager
+     * @return ContentDataLoader instance which means the same instance is returned every time.
+     * Instance is created only once and reused and it means that the same instance is returned every time.
+     * This is a thread-safe implementation.
+     */
     public static synchronized ContentDataLoader getInstance(RefactoredDataManager dataManager) {
         if (instance == null) {
             instance = new ContentDataLoader(dataManager);

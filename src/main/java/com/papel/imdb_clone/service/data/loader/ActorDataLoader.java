@@ -155,6 +155,11 @@ public class ActorDataLoader extends BaseDataLoader {
         }
     }
 
+    /**
+     * Parses a date string into a LocalDate object.
+     * @param dateStr
+     * @return LocalDate object or null if the date string is invalid
+     */
     private LocalDate parseDate(String dateStr) {
         if (dateStr == null || dateStr.trim().isEmpty() || dateStr.equalsIgnoreCase("n/a")) {
             return null;

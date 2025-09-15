@@ -35,19 +35,22 @@ public enum Ethnicity {
 
     private final String label;
 
-    //orizo
+    //Ethnicity constructor with label
     Ethnicity(String label) {
         this.label = label;
     }
 
+    //get label
     public String getLabel() {
         return label;
     }
 
+    //from label
     public static Ethnicity fromLabel(String input) {
         if (input == null) {
             throw new IllegalArgumentException("Ethnicity cannot be null");
         }
+        //normalize input
         String normalized = input.trim();
         for (Ethnicity e : values()) {
             if (e.label.equalsIgnoreCase(normalized)) {

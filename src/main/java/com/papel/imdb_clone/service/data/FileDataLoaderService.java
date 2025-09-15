@@ -31,6 +31,16 @@ public class FileDataLoaderService implements DataLoaderService {
     private final DataLoaderFactory loaderFactory;
     private final String dataDirectory;
 
+    /**
+     * Constructor for FileDataLoaderService.
+     * @param userRepository
+     * @param movieRepository
+     * @param seriesRepository
+     * @param seriesService
+     * @param actorService
+     * @param directorService
+     * @param movieService
+     */
     public FileDataLoaderService(
             InMemoryUserRepository userRepository,
             InMemoryMovieRepository movieRepository,
@@ -98,6 +108,7 @@ public class FileDataLoaderService implements DataLoaderService {
             }
         }
 
+        // Log a warning if any files are missing
         if (!allFilesExist) {
             logger.warn("\nSome data files are missing. The application may not function correctly.");
             logger.info("Please ensure all data files are in one of these locations:");
@@ -187,36 +198,42 @@ public class FileDataLoaderService implements DataLoaderService {
         }
     }
 
+    //load users from file
     @Override
     public void loadUsers(String filename) throws IOException {
         logger.info("Loading users from {}", filename);
         loadDataFile(filename, UserDataLoader.class, "users");
     }
 
+    //load actors from file
     @Override
     public void loadActors(String filename) throws IOException {
         logger.info("Loading actors from {}", filename);
         loadDataFile(filename, ActorDataLoader.class, "actors");
     }
 
+    //load directors from file
     @Override
     public void loadDirectors(String filename) throws IOException {
         logger.info("Loading directors from {}", filename);
         loadDataFile(filename, DirectorDataLoader.class, "directors");
     }
 
+    //load movies from file
     @Override
     public void loadMovies(String filename) throws IOException {
         logger.info("Loading movies from {}", filename);
         loadDataFile(filename, MovieDataLoader.class, "movies");
     }
 
+    //load series from file
     @Override
     public void loadSeries(String filename) throws IOException {
         logger.info("Loading series from {}", filename);
         loadDataFile(filename, SeriesDataLoader.class, "series");
     }
 
+    //load awards and box office from file
     @Override
     public void loadAwardsAndBoxOffice(String filename) throws IOException {
         logger.info("Loading awards and box office data from {}", filename);
@@ -314,11 +331,13 @@ public class FileDataLoaderService implements DataLoaderService {
                 throw new IOException(errorMsg, cause != null ? cause : e);
             }
         } catch (NoSuchMethodException | IllegalAccessException e) {
+            // Log error and rethrow
             String errorMsg = String.format("✗ Error setting up loader for %s: %s", dataType, e.getMessage());
             logger.error(errorMsg);
             logger.debug("Stack trace:", e);
             throw new IOException(errorMsg, e);
         } catch (Exception e) {
+            // Log error and rethrow
             String errorMsg = String.format("✗ Unexpected error loading %s: %s", dataType, e.getMessage());
             logger.error(errorMsg);
             logger.debug("Stack trace:", e);

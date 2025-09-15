@@ -128,6 +128,7 @@ public class NavigationService {
         }
     }
 
+    //show home when click on home button-imdb clone app text
     public void showHome() {
         navigateTo("/fxml/main-refactored.fxml", ServiceLocator.getPrimaryStage(), "IMDB Clone App");
     }

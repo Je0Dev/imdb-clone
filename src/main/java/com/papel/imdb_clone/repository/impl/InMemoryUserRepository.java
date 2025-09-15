@@ -23,6 +23,11 @@ public class InMemoryUserRepository implements UserRepository {
     private final AtomicInteger nextId = new AtomicInteger(1);
     private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
 
+    /**
+     * Finds a user by their ID.
+     * @param id The user ID
+     * @return The user with the given ID, or an empty Optional if not found
+     */
     @Override
     public Optional<User> findById(int id) {
         lock.readLock().lock();
@@ -35,6 +40,11 @@ public class InMemoryUserRepository implements UserRepository {
         }
     }
 
+    /**
+     * Saves a user to the repository.
+     * @param user The user to save
+     * @return The saved user
+     */
     @Override
     public User save(User user) {
         if (user == null) {
@@ -73,12 +83,14 @@ public class InMemoryUserRepository implements UserRepository {
         }
     }
 
+    //return true if user with given username exists
     @Override
     public boolean existsByUsername(String username) {
         if (username == null) return false;
 
         lock.readLock().lock();
         try {
+            //check if user with given username exists
             return users.stream()
                     .anyMatch(user -> username.equals(user.getUsername()));
         } finally {
@@ -86,12 +98,14 @@ public class InMemoryUserRepository implements UserRepository {
         }
     }
 
+    //return user with given username
     @Override
     public Optional<User> findByUsername(String username) {
         if (username == null) return Optional.empty();
 
         lock.readLock().lock();
         try {
+            //return user with given username
             return users.stream()
                     .filter(user -> username.equals(user.getUsername()))
                     .findFirst();
@@ -100,6 +114,7 @@ public class InMemoryUserRepository implements UserRepository {
         }
     }
 
+    //return number of users
     @Override
     public long count() {
         lock.readLock().lock();
@@ -121,6 +136,7 @@ public class InMemoryUserRepository implements UserRepository {
 
         lock.writeLock().lock();
         try {
+            //if user has id, update nextId which is used for generating new ids for new users
             if (user.getId() > 0) {
                 nextId.getAndUpdate(current -> Math.max(current, user.getId() + 1));
             } else {

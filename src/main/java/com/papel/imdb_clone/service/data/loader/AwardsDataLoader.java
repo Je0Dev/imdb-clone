@@ -24,6 +24,11 @@ public class AwardsDataLoader extends BaseDataLoader {
     private final InMemoryMovieRepository movieRepository;
     private final ContentService<Series> seriesService;
 
+    /**
+     * Constructor for AwardsDataLoader
+     * @param movieRepository
+     * @param seriesService
+     */
     public AwardsDataLoader(InMemoryMovieRepository movieRepository, ContentService<Series> seriesService) {
         this.movieRepository = movieRepository;
         this.seriesService = seriesService;
@@ -48,6 +53,9 @@ public class AwardsDataLoader extends BaseDataLoader {
             validateInput(inputStream, filename);
             String line;
 
+            /**
+             * Read each line of the file
+             */
             while ((line = reader.readLine()) != null) {
                 lineNumber++;
                 if (line.trim().isEmpty() || line.trim().startsWith("#")) {
@@ -55,6 +63,9 @@ public class AwardsDataLoader extends BaseDataLoader {
                 }
 
                 try {
+                    /**
+                     * Parse CSV line into parts
+                     */
                     String[] parts = parseCSVLine(line);
                     if (parts.length >= 4) {
                         String contentType = parts[0].trim();

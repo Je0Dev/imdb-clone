@@ -6,6 +6,9 @@ import org.slf4j.LoggerFactory;
 
 import java.util.*;
 
+/**
+ * Represents a series of episodes.
+ */
 public class Series extends Content {
     private List<Season> seasons;
     private Director director;
@@ -33,6 +36,15 @@ public class Series extends Content {
         this.year = cal.getTime();
     }
 
+    /**
+     * Creates a new Series with the given title, summary, genre, imdbRating, userRating, and startYear.
+     * @param title
+     * @param summary
+     * @param genre
+     * @param imdbRating
+     * @param userRating
+     * @param startYear
+     */
     public Series(String title, String summary, Genre genre, double imdbRating, double userRating, int startYear) {
         super(title, new java.util.Date(), genre, "", new HashMap<>(), imdbRating);
         this.seasons = new ArrayList<>();
@@ -75,7 +87,7 @@ public class Series extends Content {
         }
     }
 
-
+    //getters and setters
     @Override
     public int getStartYear() {
         // If startYear is 0 but we have a year, update startYear from year
@@ -132,6 +144,7 @@ public class Series extends Content {
         }
     }
 
+    //set seasons to list of seasons
     public void setSeasons(List<Season> seasons) {
         this.seasons = new ArrayList<>();
         if (seasons != null) {

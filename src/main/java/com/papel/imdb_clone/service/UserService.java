@@ -21,21 +21,27 @@ public class UserService {
     /**
      * Private constructor for singleton pattern.
      *
-     * @param dataManager       The data manager instance
+     * @param dataManager  The data manager instance
      */
     private UserService(RefactoredDataManager dataManager) {
         this.dataManager = dataManager;
     }
 
     /**
-     * @param dataManager       The data manager instanc
+     * @param dataManager The data manager instance
      * @return The instance
+     * @throws IllegalArgumentException if the data manager is null
      */
-    public static synchronized UserService getInstance(RefactoredDataManager dataManager) {
+    public static synchronized UserService getInstance(RefactoredDataManager dataManager) throws IllegalArgumentException {
+      try{
         if (instance == null) {
             instance = new UserService(dataManager);
         }
         return instance;
+      } catch (Exception e) {
+        logger.error("Error getting instance of UserService", e);
+        throw new IllegalArgumentException("Error getting instance of UserService", e);
+      }
     }
 
 }

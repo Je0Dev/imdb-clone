@@ -60,6 +60,7 @@ public class UserInputValidator {
         }
 
         if (!errors.isEmpty()) {
+            //build validation exception
             ValidationException.Builder builder = ValidationException.builder().message("Validation failed");
             
             // Add all field errors to the exception
@@ -75,14 +76,17 @@ public class UserInputValidator {
     public void validateLogin(String usernameOrEmail, String password) {
         Map<String, String> errors = new HashMap<>();
 
+        //username or email validation
         if (usernameOrEmail == null || usernameOrEmail.trim().isEmpty()) {
             errors.put("usernameOrEmail", "Username or email is required");
         }
 
+        //password validation
         if (password == null || password.isEmpty()) {
             errors.put("password", "Password is required");
         }
 
+        //throw validation exception if any errors are found
         if (!errors.isEmpty()) {
             ValidationException.Builder builder = ValidationException.builder()
                     .message("Login validation failed");

@@ -78,6 +78,7 @@ public class ImprovedMovieApp extends Application {
 
     private void showLoginScreen() {
         try {
+            //show login screen
             System.out.println("[Login] Creating login screen...");
             FXMLLoader loader = new FXMLLoader(getClass().getResource(AUTH_VIEW));
             Parent authRoot = loader.load();
@@ -117,6 +118,7 @@ public class ImprovedMovieApp extends Application {
                 guestButton.setLayoutX(325);
                 guestButton.setLayoutY(450);
 
+                //set action for guest button
                 guestButton.setOnAction(e -> {
                     System.out.println("[Login] Guest access selected");
                     currentSessionToken = null; // No session for guest
@@ -205,7 +207,7 @@ public class ImprovedMovieApp extends Application {
     }
 
 
-
+    //show error and exit
     private void showErrorAndExit(String message, Exception e) {
         logger.error("{}: {}", message, e.getMessage(), e);
 
@@ -214,6 +216,7 @@ public class ImprovedMovieApp extends Application {
         Platform.exit();
     }
 
+    //cleanup resources
     private void cleanup() {
         try {
             if (serviceLocator != null) {
@@ -225,6 +228,7 @@ public class ImprovedMovieApp extends Application {
         }
     }
 
+    //override stop method
     @Override
     public void stop() throws Exception {
         logger.info("Application stopping...");

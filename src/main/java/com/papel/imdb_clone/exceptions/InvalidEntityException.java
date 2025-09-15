@@ -29,6 +29,7 @@ public class InvalidEntityException extends ValidationException {
      */
     public InvalidEntityException(String entityName, Object entityId, String message,
                                   Map<String, List<String>> fieldErrors, Throwable cause) {
+        //call parent constructor with message, field errors, and cause
         super(message != null ? message : "Invalid entity data", null, fieldErrors, cause);
         this.entityName = entityName;
         this.entityId = entityId;

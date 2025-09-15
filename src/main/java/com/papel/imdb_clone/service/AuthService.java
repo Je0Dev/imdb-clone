@@ -54,6 +54,11 @@ public class AuthService {
         }
     }
 
+    /**
+     * Gets the singleton instance of the AuthService.
+     *
+     * @return The AuthService instance which is used to manage user authentication and sessions.
+     */
     public static synchronized AuthService getInstance() {
         if (instance == null) {
             instance = new AuthService(null);
@@ -92,6 +97,9 @@ public class AuthService {
         }
 
         try {
+            /**
+             * Set the password for the user
+             */
             user.setPassword(password);
             usersByUsername.put(user.getUsername(), user);
             usersByEmail.put(user.getEmail(), user);

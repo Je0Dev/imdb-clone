@@ -13,6 +13,12 @@ public class UserRating {
     private String title;
     private final LocalDateTime createdAt;
 
+    /**
+     * Constructor for UserRating
+     * @param userId
+     * @param contentId
+     * @param rating
+     */
     public UserRating(int userId, int contentId, int rating) {
         this.userId = userId;
         this.contentId = contentId;
@@ -20,7 +26,13 @@ public class UserRating {
         this.createdAt = LocalDateTime.now();
     }
 
-
+    /**
+     * Constructor for UserRating with title
+     * @param userId
+     * @param contentId
+     * @param rating
+     * @param title
+     */
     public UserRating(int userId, int contentId, int rating, String title) {
         this(userId, contentId, rating);
         this.title = title;
@@ -40,6 +52,7 @@ public class UserRating {
         return rating;
     }
 
+    //if rating is between 1 and 10, set it to that value-int, else throw exception
     public void setRating(int rating) {
         if (rating >= 1 && rating <= 10) {
             this.rating = rating;

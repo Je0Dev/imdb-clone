@@ -1,4 +1,5 @@
 # Format: FirstName,LastName,BirthDate,Gender,Nationality,NotableWorks
+
 Quentin,Tarantino,1963-03-27,M,AMERICAN,"Pulp Fiction, Kill Bill, Once Upon a Time in Hollywood"
 Christopher,Nolan,1970-07-30,M,BRITISH,"Inception, The Dark Knight, Interstellar"
 Greta,Gerwig,1983-08-04,F,AMERICAN,"Lady Bird, Little Women, Barbie"

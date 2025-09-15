@@ -6,22 +6,36 @@ import org.slf4j.LoggerFactory;
 
 import java.util.*;
 
+/**
+ * Content class is an abstract class that represents a content.
+ */
 public abstract class Content {
     public Date year;
     private String director;
     private int id;
     public String title;
     protected Genre genre;
-    private final Map<Integer, Integer> userRatings; // userId -> rating
+    private Map<Integer, Integer> userRatings; // userId -> rating
     private Double imdbRating; // IMDb rating
     private Date releaseDate;
     private int startYear;
+    //Genres and actors
     private List<Genre> genres = new ArrayList<>();
     private List<Actor> actors = new ArrayList<>();
+    //User rating as integer
     private Integer userRating;
     private static final Logger logger = LoggerFactory.getLogger(Content.class);
 
 
+    /**
+     * Content constructor
+     * @param title
+     * @param year
+     * @param genre
+     * @param director
+     * @param userRatings
+     * @param imdbRating
+     */
     public Content(String title, Date year, Genre genre, String director, Map<Integer, Integer> userRatings, Double imdbRating) {
         this.title = title;
         this.genre = genre;
@@ -35,6 +49,7 @@ public abstract class Content {
             // Set the release date based on the year
             Calendar cal = Calendar.getInstance();
             cal.setTime(this.year);
+            //Set start year and release date
             this.startYear = cal.get(Calendar.YEAR);
             this.releaseDate = new Date(this.year.getTime());
         } else {
@@ -46,6 +61,7 @@ public abstract class Content {
         }
     }
 
+    //getters
     public int getId() {
         return id;
     }
@@ -66,6 +82,56 @@ public abstract class Content {
         return new ArrayList<>(genres);
     }
 
+    public String getDirector() {
+        return director;
+    }
+
+    public Double getImdbRating() {
+        return imdbRating;
+    }
+
+    public Date getYear() {
+        return year;
+    }
+
+    public int getReleaseYear() {
+        return startYear; // Using startYear as release year
+    }
+
+    public Map<Integer, Integer> getUserRatings() {
+        return new HashMap<>(userRatings);
+    }
+
+    /**
+     * Gets the start year of the content.
+     *
+     * @return the start year, or 0 if not set
+     */
+    public int getStartYear() {
+        // If startYear is not set but releaseDate is, derive it from releaseDate
+        if (startYear == 0 && releaseDate != null) {
+            Calendar cal = Calendar.getInstance();
+            cal.setTime(releaseDate);
+            startYear = cal.get(Calendar.YEAR);
+        }
+        return startYear;
+    }
+
+    /**
+     * Gets the release date of the content
+     *
+     * @return the release date
+     */
+    public Date getReleaseDate() {
+        return releaseDate != null ? new Date(releaseDate.getTime()) : null;
+    }
+
+    public List<Actor> getActors() {
+        return actors != null ? List.copyOf(actors) : List.of(); // Updated to return an unmodifiable list
+    }
+
+
+    //setters
     public void setGenre(Genre genre) {
         this.genre = genre;
         if (genre != null && !genres.contains(genre)) {
@@ -73,16 +139,13 @@ public abstract class Content {
         }
     }
 
-    public String getDirector() {
-        return director;
-    }
 
     public void setDirector(String director) {
         this.director = director;
     }
 
-    public Double getImdbRating() {
-        return imdbRating;
+    public void setYear(Date year) {
+        this.year = year;
     }
 
     /**
@@ -98,18 +161,14 @@ public abstract class Content {
         this.imdbRating = imdbRating;
     }
 
-    public Date getYear() {
-        return year;
+    public void setUserRatings(Map<Integer, Integer> userRatings) {
+        this.userRatings = new HashMap<>(userRatings);
     }
 
-    public int getReleaseYear() {
-        return startYear; // Using startYear as release year
-    }
 
-    public Map<Integer, Integer> getUserRatings() {
-        return new HashMap<>(userRatings);
+    public void setUserRating(Integer userRating) {
+        this.userRating = userRating;
     }
-
 
     /**
      * Sets the title of the content
@@ -136,7 +195,6 @@ public abstract class Content {
         }
     }
 
-
     /**
      * Sets all genres for this content
      *
@@ -151,14 +209,6 @@ public abstract class Content {
         }
     }
 
-    /**
-     * Gets the release date of the content
-     *
-     * @return the release date
-     */
-    public Date getReleaseDate() {
-        return releaseDate != null ? new Date(releaseDate.getTime()) : null;
-    }
 
     /**
      * Sets the release date of the content and updates the start year accordingly.
@@ -170,6 +220,7 @@ public abstract class Content {
 
         // Update startYear based on the release date
         if (releaseDate != null) {
+            //Derive start year from release date
             Calendar cal = Calendar.getInstance();
             cal.setTime(releaseDate);
             this.startYear = cal.get(Calendar.YEAR);
@@ -178,10 +229,11 @@ public abstract class Content {
         }
     }
 
-    public List<Actor> getActors() {
-        return actors != null ? List.copyOf(actors) : List.of(); // Updated to return an unmodifiable list
-    }
-
+    /**
+     * Sets the actors for this content
+     *
+     * @param actors the list of actors to set
+     */
     public void setActors(List<Actor> actors) {
         this.actors = actors != null ? new ArrayList<>(actors) : new ArrayList<>();
     }
@@ -200,6 +252,11 @@ public abstract class Content {
                 (releaseDate != null &&
                         new Calendar.Builder().setInstant(releaseDate).build().get(Calendar.YEAR) != startYear)) {
             try {
+                /**
+                 * Update release date based on the start year
+                 * If the release date is not set or has a different year, it will be updated.
+                 * If the release date is set and has the same year, it will be left unchanged.
+                 */
                 Calendar cal = Calendar.getInstance();
                 cal.set(Calendar.YEAR, startYear);
                 cal.set(Calendar.MONTH, Calendar.JANUARY);
@@ -211,18 +268,4 @@ public abstract class Content {
         }
     }
 
-    /**
-     * Gets the start year of the content.
-     * 
-     * @return the start year, or 0 if not set
-     */
-    public int getStartYear() {
-        // If startYear is not set but releaseDate is, derive it from releaseDate
-        if (startYear == 0 && releaseDate != null) {
-            Calendar cal = Calendar.getInstance();
-            cal.setTime(releaseDate);
-            startYear = cal.get(Calendar.YEAR);
-        }
-        return startYear;
-    }
 }

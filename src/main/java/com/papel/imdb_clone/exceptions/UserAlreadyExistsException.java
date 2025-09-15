@@ -30,13 +30,17 @@ public class UserAlreadyExistsException extends AuthException {
         );
     }
 
+    //create default message
     private static String createDefaultMessage(String field, Object value) {
+        //get field name from field
         String fieldName = field != null ? field : DEFAULT_FIELD;
         return String.format("User with %s '%s' already exists", fieldName, value);
     }
 
+    //create field errors
     private static Map<String, List<String>> createFieldErrors(String field, Object value) {
         String fieldName = field != null ? field : DEFAULT_FIELD;
+        //create field errors
         Map<String, List<String>> errors = new HashMap<>();
         errors.put(fieldName, Collections.singletonList("already exists"));
         return errors;

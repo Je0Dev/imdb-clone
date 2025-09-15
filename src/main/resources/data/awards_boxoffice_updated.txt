@@ -1,4 +1,5 @@
 # Format: ContentType,Title,Year,BoxOffice,Awards,Rating,Genre
+
 movie,The Godfather,1972,"$246,120,974","3 Oscars, 5 Golden Globes",9.2,Crime
 movie,The Shawshank Redemption,1994,"$28,767,189","7 Oscar nominations",9.3,Drama
 movie,The Dark Knight,2008,"$1,006,234,167","2 Oscars, 1 Golden Globe",9.0,Action

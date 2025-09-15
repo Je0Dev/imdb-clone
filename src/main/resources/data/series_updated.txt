@@ -1,5 +1,4 @@
 # Format: Title,Genre,Seasons,StartYear-EndYear,Rating,Creator,MainCast
-# Top 150 TV Series of All Time
 
 # Drama & Crime
 Breaking Bad,CRIME,5,2008-2013,9.5,Vince Gilligan,Bryan Cranston;Aaron Paul;Anna Gunn

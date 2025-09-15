@@ -37,6 +37,13 @@ public class ServiceLocator {
         // Private constructor to prevent instantiation
     }
 
+    /**
+     * Singleton pattern implementation for ServiceLocator.
+     * Ensures that only one instance of ServiceLocator is created.
+     * Thread-safe implementation using double-checked locking.
+     * Sychronized method to ensure thread safety means that only one thread can access the method at a time.
+     * @return
+     */
     public static synchronized ServiceLocator getInstance() {
         if (instance == null) {
             synchronized (ServiceLocator.class) {
@@ -48,6 +55,14 @@ public class ServiceLocator {
         return instance;
     }
 
+    /**
+     * Sets the primary stage for the application.
+     * If the primary stage is not already set and the provided stage is not null,
+     * it synchronizes on the ServiceLocator class to ensure thread safety.
+     * If the primary stage is not already set and the provided stage is not null,
+     * it synchronizes on the ServiceLocator class to ensure thread safety.
+     * @param stage
+     */
     public static void setPrimaryStage(Stage stage) {
         if (primaryStage == null && stage != null) {
             synchronized (ServiceLocator.class) {
@@ -62,10 +77,12 @@ public class ServiceLocator {
         }
     }
 
+    //getter for primary stage
     public static Stage getPrimaryStage() {
         return primaryStage;
     }
 
+    //initialize services
     private void initializeServices() {
         if (servicesInitialized) {
             return;
@@ -155,6 +172,11 @@ public class ServiceLocator {
         }
     }
 
+    /**
+     * Get the RefactoredDataManager instance.
+     * If the RefactoredDataManager is not already initialized, it synchronizes on the ServiceLocator class to ensure thread safety.
+     * @return
+     */
     public RefactoredDataManager getDataManager() {
         if (dataManager == null) {
             synchronized (lock) {
@@ -167,6 +189,12 @@ public class ServiceLocator {
         return dataManager;
     }
 
+    /**
+     * Get the UICoordinator instance.
+     * If the UICoordinator is not already initialized, it synchronizes on the ServiceLocator class to ensure thread safety.
+     * If the primary stage is not set, it throws an IllegalStateException.
+     * @return
+     */
     public UICoordinator getUICoordinator() {
         if (uiCoordinator == null) {
             synchronized (lock) {
@@ -185,6 +213,7 @@ public class ServiceLocator {
 
     /**
      * Register a service instance with a qualifier for multiple implementations
+     * @param serviceClass The class of the service to register
      */
     public <T> void registerService(Class<T> serviceClass, T serviceInstance, String qualifier) {
         if (serviceClass == null || serviceInstance == null || qualifier == null) {
@@ -232,13 +261,36 @@ public class ServiceLocator {
         logger.info("Service shutdown complete");
     }
 
+    /**
+     * Get a service instance by class
+     * @param serviceClass that the service implements
+     * @return the service instance which means the object that implements the service
+     * @param <T> which means the type of the service that we want to get
+     */
     @SuppressWarnings("unchecked")
     public static <T> T getService(Class<T> serviceClass) {
+        if (!services.containsKey(serviceClass)) {
+            throw new IllegalArgumentException("Service not found: " + serviceClass.getName());
+        }
+        logger.debug("Service found: {}", serviceClass.getName());
+
         return (T) services.get(serviceClass);
     }
 
+    /**
+     * Get a service instance by class and qualifier
+     * @param serviceClass that the service implements
+     * @param qualifier the qualifier of the service
+     * @return the service instance which means the object that implements the service
+     * @param <T> which means the type of the service that we want to get
+     */
     @SuppressWarnings("unchecked")
     public static <T> T getService(Class<T> serviceClass, String qualifier) {
+        if (!services.containsKey(serviceClass.getName() + "_" + qualifier)) {
+            throw new IllegalArgumentException("Service not found: " + serviceClass.getName() + "_" + qualifier);
+        }
+        logger.debug("Service found: {} with qualifier: {}", serviceClass.getName(), qualifier);
+        logger.info("Service found: {} with qualifier: {}", serviceClass.getName(), qualifier);
         return (T) services.get(serviceClass.getName() + "_" + qualifier);
     }
 }

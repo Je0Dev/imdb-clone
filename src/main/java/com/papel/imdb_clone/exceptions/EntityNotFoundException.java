@@ -40,16 +40,19 @@ public class EntityNotFoundException extends InvalidEntityException {
                 message != null ? message : createMessage(entityType, identifier),
                 createFieldErrors(entityType, identifier),
                 cause);
+        //set entity type, identifier, and entity name
         this.entityType = entityType;
         this.identifier = identifier;
         this.entityName = entityName != null ? entityName :
                 (entityType != null ? entityType.getSimpleName() : null);
     }
 
+    //create exception with entity type, identifier, and cause
     public EntityNotFoundException(Class<?> entityType, Object identifier, Throwable cause) {
         this(entityType, identifier, null, cause);
     }
 
+    //create exception with entity type, identifier, message, and cause
     public EntityNotFoundException(Class<?> entityType, Object identifier, String message, Throwable cause) {
         this(entityType,
                 entityType != null ? entityType.getSimpleName() : null,
@@ -58,6 +61,7 @@ public class EntityNotFoundException extends InvalidEntityException {
                 cause);
     }
 
+    //create exception with entity type, identifier, message, and cause
     public EntityNotFoundException(Class<?> entityType, String finalEntityName, Object identifier, String message) {
         super(finalEntityName, identifier, message, createFieldErrors(entityType, identifier), null);
         this.entityType = entityType;
@@ -74,9 +78,13 @@ public class EntityNotFoundException extends InvalidEntityException {
                 identifier);
     }
 
+    //create field errors
     private static Map<String, List<String>> createFieldErrors(Class<?> entityType, Object identifier) {
+        //create field errors
         Map<String, List<String>> errors = new HashMap<>();
+        //get field name from entity type
         String fieldName = entityType != null ?
+                entityType.getSimpleName().toLowerCase() + "Id" :
                 String.format("%sId", entityType.getSimpleName().toLowerCase()) : "id";
         errors.put(fieldName, Collections.singletonList("not found: " + identifier));
         return errors;

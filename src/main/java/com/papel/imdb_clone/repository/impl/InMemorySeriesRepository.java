@@ -25,10 +25,18 @@ public class InMemorySeriesRepository implements SeriesRepository {
     private final AtomicInteger nextId = new AtomicInteger(1);
     private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
 
+    /**
+     * Finds a series by its ID.
+     * @param id The series ID
+     * @return
+     */
     @Override
     public Optional<Series> findById(int id) {
         lock.readLock().lock();
         try {
+            /**
+             * Returns the first series that matches the given ID.
+             */
             return seriesList.stream()
                     .filter(series -> series.getId() == id)
                     .findFirst();
@@ -37,12 +45,20 @@ public class InMemorySeriesRepository implements SeriesRepository {
         }
     }
 
+    /**
+     * Finds a series by its title.
+     * @param title The series title to search for
+     * @return
+     */
     @Override
     public Optional<Series> findByTitle(String title) {
         if (title == null) return Optional.empty();
 
         lock.readLock().lock();
         try {
+            /**
+             * Returns the first series that matches the given title.
+             */
             return seriesList.stream()
                     .filter(series -> title.equals(series.getTitle()))
                     .findFirst();
@@ -51,6 +67,10 @@ public class InMemorySeriesRepository implements SeriesRepository {
         }
     }
 
+    /**
+     * Returns a list of all series.
+     * @return
+     */
     @Override
     public List<Series> findAll() {
         lock.readLock().lock();
@@ -61,6 +81,11 @@ public class InMemorySeriesRepository implements SeriesRepository {
         }
     }
 
+    /**
+     * Saves a series to the repository.
+     * @param series The series to save
+     * @return
+     */
     @Override
     public Series save(Series series) {
         if (series == null) {
@@ -69,6 +94,9 @@ public class InMemorySeriesRepository implements SeriesRepository {
 
         lock.writeLock().lock();
         try {
+            /**
+             * If the series ID is 0, it is a new series and we need to check for duplicate title.
+             */
             if (series.getId() == 0) {
                 // New series - check for duplicate title
                 if (existsByTitle(series.getTitle())) {
@@ -86,6 +114,9 @@ public class InMemorySeriesRepository implements SeriesRepository {
                             existsByTitle(series.getTitle())) {
                         throw new DuplicateEntryException("Series", series.getId(), "title", series.getTitle());
                     }
+                    /**
+                     * Remove the existing series and add the updated series.
+                     */
                     seriesList.remove(existing.get());
                     seriesList.add(series);
                     logger.debug("Updated series: {} with ID: {}", series.getTitle(), series.getId());
@@ -93,16 +124,27 @@ public class InMemorySeriesRepository implements SeriesRepository {
                     throw new IllegalArgumentException("Series with ID " + series.getId() + " not found");
                 }
             }
+            /**
+             * Return the updated series.
+             */
             return series;
         } finally {
             lock.writeLock().unlock();
         }
     }
 
+    /**
+     * Deletes a series by its ID.
+     * @param id The ID of the series to delete
+     * @return
+     */
     @Override
     public boolean deleteById(int id) {
         lock.writeLock().lock();
         try {
+            /**
+             * Find the series by ID.
+             */
             Optional<Series> existing = findById(id);
             if (existing.isPresent()) {
                 seriesList.remove(existing.get());
@@ -115,6 +157,11 @@ public class InMemorySeriesRepository implements SeriesRepository {
         }
     }
 
+    /**
+     * Checks if a series with the given title exists.
+     * @param title The title of the series to check
+     * @return true if a series with the given title exists, false otherwise
+     */
     @Override
     public boolean existsByTitle(String title) {
         if (title == null) return false;
@@ -128,11 +175,13 @@ public class InMemorySeriesRepository implements SeriesRepository {
         }
     }
 
+    //count total series size
     @Override
     public long count() {
         return seriesList.size();
     }
 
+    //delete series by id
     public void delete(int id) {
         deleteById(id);
         logger.debug("Deleted series with ID: {}", id);

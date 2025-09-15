@@ -174,46 +174,60 @@ public class RefactoredDataManager {
         return seriesRepository;
     }
 
+    //get actor service
     public CelebrityService<Actor> getActorService() {
         return actorService;
     }
 
+    //get director service
     public CelebrityService<Director> getDirectorService() {
         return directorService;
     }
 
+    //get data loader service
+    public DataLoaderService getDataLoaderService() {
+        return dataLoaderService;
+    }
+
+    //get data loaded status
     public boolean isDataLoaded() {
         return dataLoaded;
     }
 
+    //add movie
     public void addMovie(Movie movie) {
         movieService.add(movie);
         movieRepository.add(movie);
         dataLoaded = true;
     }
 
+    //get all movies
     public List<Movie> getMovies() {
         return movieRepository.getAll();
     }
 
+    //update movie
     public void updateMovie(Movie movie) {
         movieService.update(movie);
         movieRepository.update(movie);
         dataLoaded = true;
     }
 
+    //delete movie
     public void deleteMovie(int id) {
         movieService.delete(id);
         movieRepository.delete(id);
         dataLoaded = true;
     }
 
+    //delete series
     public void deleteSeries(Series selectedSeries) {
         seriesService.delete(selectedSeries.getId());
         seriesRepository.delete(selectedSeries.getId());
         dataLoaded = true;
     }
 
+    //save series
     public void saveSeries(Series newSeries) {
         seriesService.save(newSeries);
         seriesRepository.save(newSeries);
@@ -221,6 +235,7 @@ public class RefactoredDataManager {
     }
 
 
+    //delete movie
     public void deleteMovie(Movie selectedMovie) {
         movieService.delete(selectedMovie.getId());
         movieRepository.delete(selectedMovie.getId());

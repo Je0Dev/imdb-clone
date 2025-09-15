@@ -1,4 +1,5 @@
 # id,username,email,password,fullName,gender,dateOfBirth
+
 1,admin,admin@imdbclone.com,admin123,Admin User,M,1985-01-01
 2,johndoe,john.doe@example.com,password123,John Doe,M,1990-05-15
 3,janesmith,jane.smith@email.com,password123,Jane Smith,F,1988-07-22

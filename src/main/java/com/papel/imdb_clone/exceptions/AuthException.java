@@ -50,12 +50,14 @@ public class AuthException extends ValidationException {
         private Throwable cause;
 
 
+        //add field error
         public Builder fieldError(String field, String error) {
             this.fieldErrors.computeIfAbsent(field, k -> new java.util.ArrayList<>()).add(error);
             return this;
         }
 
 
+        //build AuthException
         public AuthException build() {
             if (errorType == null) {
                 throw new IllegalStateException("errorType is required");
@@ -67,6 +69,7 @@ public class AuthException extends ValidationException {
         }
     }
 
+    //AuthErrorType enum
     public enum AuthErrorType {
         INVALID_CREDENTIALS("Invalid username or password"),
         USER_ALREADY_EXISTS("User with this email already exists"),
@@ -78,6 +81,7 @@ public class AuthException extends ValidationException {
 
         private final String defaultMessage;
 
+        //AuthErrorType constructor with defaultMessage
         AuthErrorType(String defaultMessage) {
             this.defaultMessage = defaultMessage;
         }

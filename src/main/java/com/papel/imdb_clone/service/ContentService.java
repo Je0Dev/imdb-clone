@@ -52,6 +52,9 @@ public class ContentService<T extends Content> {
     public void updateContent(T content) {
         lock.writeLock().lock();
         try {
+            /**
+             * Search for the content in the list by ID.
+             */
             int index = -1;
             for (int i = 0; i < contentList.size(); i++) {
                 if (contentList.get(i).getId() == content.getId()) {
@@ -226,6 +229,12 @@ public class ContentService<T extends Content> {
     }
 
 
+    /**
+     * Finds content by title and start year.
+     * @param title
+     * @param startYear
+     * @return Optional<T> if content is found, empty otherwise
+     */
     public Optional<T> findByTitleAndYear(String title, int startYear) {
         return contentList.stream()
                 .filter(content -> content.getTitle().equalsIgnoreCase(title) &&
@@ -233,18 +242,21 @@ public class ContentService<T extends Content> {
                 .findFirst();
     }
 
+    //add content type T movie
     public void add(T movie) {
         save(movie);
         contentList.add(movie);
         logger.info("Added new {}", contentType.getSimpleName());
     }
 
+    //update content type T movie
     public void update(T movie) {
         updateContent(movie);
         contentList.add(movie);
         logger.info("Updated {}", contentType.getSimpleName());
     }
 
+    //delete type T
     public void delete(int id) {
         findById(id);
         contentList.removeIf(content -> content.getId() == id);

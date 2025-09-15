@@ -71,6 +71,7 @@ public class SeriesDataLoader extends BaseDataLoader {
                 }
 
                 try {
+                    // Parse CSV line
                     String[] parts = parseCSVLine(line);
                     if (parts.length >= 8) {
 
@@ -84,6 +85,7 @@ public class SeriesDataLoader extends BaseDataLoader {
 
                         int seasonsCount = 1;
                         try {
+                            // Parse seasons count
                             seasonsCount = Integer.parseInt(parts[2].trim());
                             if (seasonsCount < 1) {
                                 logger.warn("Invalid seasons count {} at line {}. Using default value 1.", seasonsCount, lineNumber);
@@ -252,6 +254,7 @@ public class SeriesDataLoader extends BaseDataLoader {
                                 String firstName = nameParts[0];
                                 String lastName = nameParts.length > 1 ? nameParts[1] : "";
 
+                                // Create director with default values
                                 Director creator = new Director(
                                         firstName,
                                         lastName,

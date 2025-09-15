@@ -78,6 +78,9 @@ public abstract class BaseDataLoader {
         boolean inQuotes = false;
         boolean escapeNext = false;
 
+        /**
+         * Iterate over each character in the line
+         */
         for (int i = 0; i < line.length(); i++) {
             char c = line.charAt(i);
 
@@ -115,6 +118,7 @@ public abstract class BaseDataLoader {
             fields.add("");
         }
 
+        //add the last field
         return fields.toArray(new String[0]);
     }
 

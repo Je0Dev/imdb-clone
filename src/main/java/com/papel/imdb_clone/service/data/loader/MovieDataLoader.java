@@ -35,6 +35,12 @@ public class MovieDataLoader extends BaseDataLoader {
     private LocalDate birthDate;
     private Ethnicity Ethnicity;
 
+    /**
+     * Constructor for MovieDataLoader.
+     * @param movieService
+     * @param actorService
+     * @param directorService
+     */
     public MovieDataLoader(
             ContentService<Movie> movieService,
             CelebrityService<Actor> actorService,
@@ -71,6 +77,11 @@ public class MovieDataLoader extends BaseDataLoader {
                 .replace("Ac", "é");     // Fix ChloAc -> Chloé
     }
 
+    /**
+     * load filename
+     * @param filename
+     * @throws IOException
+     */
     public void load(String filename) throws IOException {
         logger.info("Loading movies from {}", filename);
         int count = 0;
@@ -84,6 +95,9 @@ public class MovieDataLoader extends BaseDataLoader {
             validateInput(inputStream, filename);
             String line;
 
+            /**
+             * read file line by line
+             */
             while ((line = reader.readLine()) != null) {
                 lineNumber++;
                 if (line.trim().isEmpty() || line.trim().startsWith("#")) {
@@ -108,6 +122,7 @@ public class MovieDataLoader extends BaseDataLoader {
                                 logger.warn("Year {} is out of range (1888-{}). Using current year as fallback.", year, currentYear + 2);
                                 year = currentYear;
                             }
+                            // create release date
                             Calendar cal = Calendar.getInstance();
                             cal.set(Calendar.YEAR, year);
                             cal.set(Calendar.MONTH, Calendar.JANUARY);
@@ -119,6 +134,7 @@ public class MovieDataLoader extends BaseDataLoader {
                             // Set to current year as fallback
                             year = Calendar.getInstance().get(Calendar.YEAR);
                             Calendar cal = Calendar.getInstance();
+                            // set release date to first day of current year
                             cal.set(Calendar.YEAR, year);
                             cal.set(Calendar.MONTH, Calendar.JANUARY);
                             cal.set(Calendar.DAY_OF_MONTH, 1);
@@ -267,6 +283,7 @@ public class MovieDataLoader extends BaseDataLoader {
                                             if (!lastName.isEmpty()) {
                                                 newActor.setLastName(lastName);
                                             }
+                                            // save actor
                                             newActor = actorService.save(newActor);
                                             movie.addActor(newActor);
                                             logger.debug("Created new actor: {} {}", firstName, lastName);
@@ -281,6 +298,7 @@ public class MovieDataLoader extends BaseDataLoader {
 
 
                             try {
+                                // save movie
                                 InMemoryMovieRepository.addMovie(movie);
                                 count++;
                                 logger.debug("Successfully loaded movie: {} ({}), ID: {}",

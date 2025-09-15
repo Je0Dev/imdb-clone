@@ -107,12 +107,14 @@ public class SearchService {
                         }
                         return result;
                     });
+                    //log the content that passed all filters
                     if (matches) {
                         logger.trace("Content '{}' passed all filters",
                                 content != null ? content.getTitle() : "null");
                     }
                     return matches;
                 })
+                //collect the results from the stream that passed all filters
                 .collect(Collectors.toList());
 
         logger.debug("After applying filters, found {} matching items", results.size());
@@ -120,6 +122,12 @@ public class SearchService {
     }
 
 
+    /**
+     * Creates a list of filters based on the search criteria.
+     * @param criteria
+     * @return List of filters to apply to the content list
+     * Predicate<Content> is a function that takes a Content object as input and returns a boolean value
+     */
     private List<Predicate<Content>> createSearchFilters(SearchCriteria criteria) {
         List<Predicate<Content>> filters = new ArrayList<>();
         if (criteria == null) {
@@ -139,6 +147,9 @@ public class SearchService {
             searchText = criteria.getQuery().trim().toLowerCase();
         }
 
+        /**
+         * Text search filter - check both query and title
+         */
         if (!searchText.isEmpty()) {
             final String finalSearchText = searchText; // Need final for lambda
             logger.debug("Adding text search filter for: '{}'", finalSearchText);
@@ -214,6 +225,7 @@ public class SearchService {
             });
         }
 
+        //Max rating filter
         if (criteria.getMaxRating() != null && (int)criteria.getMaxRating() > 0) {
             int maxRating = (int)criteria.getMaxRating();
             logger.debug("Adding rating filter for max rating: {}", maxRating);
@@ -222,6 +234,7 @@ public class SearchService {
                     logger.trace("Content is null in rating filter");
                     return false;
                 }
+                //get the rating from the content
                 Double rating = content.getImdbRating();
                 boolean matches = rating != null && rating >= maxRating;
                 logger.trace("Rating filter - Content: '{}', Rating: {}, Max: {}, Match: {}",
@@ -233,6 +246,7 @@ public class SearchService {
         return filters;
     }
 
+    //search content
     public List<Content> searchContent(SearchCriteria criteria) {
         return search(criteria);
     }

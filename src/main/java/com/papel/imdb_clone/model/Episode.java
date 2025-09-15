@@ -4,6 +4,9 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
+/**
+ * Represents an episode of a TV show.
+ */
 public class Episode {
     private int id;
     private Director director;
@@ -15,6 +18,9 @@ public class Episode {
     private Object season;
     private Date releaseDate;
 
+    /**
+     * Default constructor for Episode
+     */
     public Episode() {
         this.director = null;
         this.imdbRating = 0.0;
@@ -43,6 +49,7 @@ public class Episode {
         this.title = episodeTitle;
     }
 
+    //getters setters
     public int getId() {
         return id;
     }
@@ -77,7 +84,6 @@ public class Episode {
     }
 
 
-
     @Override
     public String toString() {
         return "Episode{" +
@@ -96,6 +102,7 @@ public class Episode {
         this.releaseDate = date;
     }
 
+    //add actors to the list
     public void setActors(List<Actor> actors) {
         this.actors = actors != null ? new ArrayList<>(actors) : new ArrayList<>();
     }

@@ -2,6 +2,9 @@ package com.papel.imdb_clone.model;
 
 import java.time.LocalDateTime;
 
+/**
+ * Represents a rating.
+ */
 public class Rating {
     private int id;
     private int userId;
@@ -14,6 +17,7 @@ public class Rating {
         this.createdAt = LocalDateTime.now();
     }
 
+    //constructor for rating creation
     public Rating(int userId, int contentId, double score) {
         this.userId = userId;
         this.contentId = contentId;
@@ -39,6 +43,7 @@ public class Rating {
         return score;
     }
 
+    //set score with validation
     public void setScore(double score) {
         if (score >= 0 && score <= 10) {
             this.score = score;
@@ -48,8 +53,6 @@ public class Rating {
     public void setRating(int rating) {
         setScore(rating);
     }
-
-
 
     @Override
     public String toString() {

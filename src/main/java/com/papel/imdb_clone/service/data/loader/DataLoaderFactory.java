@@ -44,6 +44,9 @@ public class DataLoaderFactory {
             ContentService<Series> seriesService,
             CelebrityService<Actor> actorService,
             CelebrityService<Director> directorService) {
+        /**
+         * Initialize the DataLoaderFactory with the required dependencies.
+         */
         this.userRepository = userRepository;
         this.movieRepository = movieRepository;
         this.seriesRepository = seriesRepository;

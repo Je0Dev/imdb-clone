@@ -8,13 +8,17 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
+/**
+ * Actor class extends Celebrity and adds ethnicity and notable works fields.
+ *
+ */
 public class Actor extends Celebrity {
     private Ethnicity ethnicity;
 
     // Backward-compatible storage of the original race label used in older tests
     private String notableWorks;
 
-
+    // Actor constructor
     public Actor(String firstName, String lastName, LocalDate birthDate, char gender, Ethnicity ethnicity) {
         super(firstName, lastName, birthDate, gender);
         this.ethnicity = ethnicity;
@@ -32,11 +36,15 @@ public class Actor extends Celebrity {
         }
     }
 
+    // getter for ethnicity
     public Ethnicity getEthnicity() {
         return ethnicity;
     }
 
-
+    // setter for ethnicity
+    public void setEthnicity(Ethnicity ethnicity) {
+        this.ethnicity = ethnicity;
+    }
 
     @Override
     public String toString() {
@@ -49,14 +57,16 @@ public class Actor extends Celebrity {
                 '}';
     }
 
+    // setter for id
     public void setId(int id) {
         this.id = id;
     }
 
+    // setter for notable works
     public void setNotableWorks(String notableWorks) {
         this.notableWorks = notableWorks;
     }
-
+    //setters for first and lastname
     public void setFirstName(String firstName) {
         this.firstName = firstName;
     }
@@ -66,6 +76,7 @@ public class Actor extends Celebrity {
     }
 
 
+    // getter for notable works
     public List<String> getNotableWorks() {
         if (notableWorks == null || notableWorks.trim().isEmpty()) {
             return new ArrayList<>();

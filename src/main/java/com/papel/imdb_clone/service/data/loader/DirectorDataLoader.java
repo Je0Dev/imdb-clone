@@ -47,6 +47,9 @@ public class DirectorDataLoader extends BaseDataLoader {
             validateInput(inputStream, filename);
             String line;
 
+            /**
+             * Read each line of the file
+             */
             while ((line = reader.readLine()) != null) {
                 lineNumber++;
                 if (line.trim().isEmpty() || line.trim().startsWith("#")) {
@@ -160,6 +163,11 @@ public class DirectorDataLoader extends BaseDataLoader {
         }
     }
 
+    /**
+     * Parses a date string into a LocalDate object.
+     * @param dateStr
+     * @return LocalDate object which means the date of birth of the director
+     */
     private LocalDate parseDate(String dateStr) {
         if (dateStr == null || dateStr.trim().isEmpty() || dateStr.equalsIgnoreCase("n/a")) {
             return null;

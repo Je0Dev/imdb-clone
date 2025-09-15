@@ -1,4 +1,5 @@
 # Format: Title,Year,Genre,Duration,Director,Rating,Actors
+
 The Shawshank Redemption,1994,DRAMA,142,Frank Darabont,9.3,Tim Robbins;Morgan Freeman
 The Godfather,1972,CRIME,175,Francis Ford Coppola,9.2,Marlon Brando;Al Pacino
 The Dark Knight,2008,ACTION,152,Christopher Nolan,9.0,Christian Bale;Heath Ledger

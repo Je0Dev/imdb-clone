@@ -54,9 +54,11 @@ public class UserDataLoader extends BaseDataLoader {
                 }
 
                 try {
+                    // Parse CSV line
                     String[] parts = parseCSVLine(line);
                     if (parts.length >= 5) {
 
+                        // Parse user ID, username, email, password, and full name, and gender and validate
                         int id = Integer.parseInt(parts[0].trim());
                         String username = parts[1].trim();
                         String email = parts[2].trim();

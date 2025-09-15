@@ -4,6 +4,9 @@ import com.papel.imdb_clone.enums.Genre;
 
 import java.util.*;
 
+/**
+ * Represents a movie.
+ */
 public class Movie extends Content {
     private final List<Actor> actors;
 
@@ -24,12 +27,14 @@ public class Movie extends Content {
         this.releaseDate = releaseDate != null ? new Date(releaseDate.getTime()) : null;
     }
 
+    //default constructor
     public Movie() {
         super("", new Date(), Genre.ACTION, "Unknown", new HashMap<>(), 0.0);
         this.actors = new ArrayList<>();
         initializeRichContentFields();
     }
 
+    //constructor for simple movie creation
     public Movie(String title, int year, String genre, String director, Map<Integer, Integer> userRatings, double imdbRating) {
         super(title, new Date(year - 1900, Calendar.JANUARY, 1),
                 Genre.valueOf(genre.toUpperCase().replace(" ", "_")),
@@ -51,12 +56,14 @@ public class Movie extends Content {
         initializeRichContentFields();
     }
 
+    //initialize rich content fields like awards and genres
     private void initializeRichContentFields() {
         this.awards = new ArrayList<>();
         this.genres.add(getGenre()); // Add the primary genre from parent class
     }
 
 
+    //getters and setters
     public List<Actor> getActors() {
         return new ArrayList<>(actors);
     }

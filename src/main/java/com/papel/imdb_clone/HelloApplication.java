@@ -9,7 +9,11 @@ import javafx.application.Application;
  */
 public class HelloApplication {
 
-
+    /**
+     * Launches the ImprovedMovieApp application.
+     * @param args the command line arguments-
+     *             args[0] is the path to the data file...
+     */
     public static void main(String[] args) {
         Application.launch(ImprovedMovieApp.class, args);
     }

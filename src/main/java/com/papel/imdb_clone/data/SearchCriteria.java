@@ -6,6 +6,9 @@ import com.papel.imdb_clone.enums.Genre;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Search criteria for filtering content.
+ */
 public class SearchCriteria {
     private String query;
     private String title;
@@ -20,6 +23,7 @@ public class SearchCriteria {
     private Integer startYear;
     private Integer endYear;
 
+    //search criteria constructor with all parameters
     public SearchCriteria(String query, Double minImdb, Double maxImdb, Double minUser, Double maxUser, Integer minDuration, Integer maxDuration, List<Genre> selectedGenres, String description, Integer yearFrom, Integer yearTo) {
         this.query = query;
         this.minImdbRating = minImdb;
@@ -30,6 +34,7 @@ public class SearchCriteria {
         this.sortDescending = false;
     }
 
+    //search criteria constructor
     public SearchCriteria(String query, String keywords, List<String> contentTypes, Integer yearFromValue, Integer yearToValue) {
         this.query = query != null ? query : "";
         this.title = keywords;
@@ -51,17 +56,20 @@ public class SearchCriteria {
         }
     }
 
+    //search criteria constructor with sort by and sort descending
     public SearchCriteria(String sortBy, boolean sortDescending) {
         this.sortBy = sortBy;
         this.sortDescending = sortDescending;
     }
 
+    //search criteria constructor with query
     public SearchCriteria(String query) {
         this.query = query;
         this.sortBy = "title";
         this.sortDescending = false;
     }
 
+    //search criteria constructor with content type and keywords
     public SearchCriteria(ContentType contentType, String keywords) {
         this.contentType = contentType;
         this.title = keywords;
@@ -69,23 +77,32 @@ public class SearchCriteria {
         this.sortDescending = false;
     }
 
+    //search criteria constructor with title and sort by
+    public SearchCriteria(String title, String sortBy) {
+        this.title = title;
+        this.sortBy = sortBy;
+        this.sortDescending = false;
+    }
 
+    //set title
     public void setTitle(String title) {
         this.title = title;
     }
 
+    //set min imdb rating
     public void setMinImdbRating(double rating) {
         this.minImdbRating = rating;
     }
 
+    //set max imdb rating
     public void setMaxImdbRating(double rating) {
         this.maxImdbRating = rating;
     }
 
+    //set min year
     public void setMinYear(Integer year) {
         this.minYear = year;
     }
-
 
 
     /**
@@ -102,16 +119,24 @@ public class SearchCriteria {
     }
 
 
+    //set genre
     public void setGenre(Genre genre) {
         this.genre = genre;
     }
 
+    //set content type
     public void setContentType(ContentType contentType) {
         this.contentType = contentType;
     }
 
+    //set query
     public void setQuery(String query) {
         this.query = query;
+    }
+
+    //set max year
+    public void setMaxYear(Integer yearToValue) {
+        this.endYear = yearToValue;
     }
 
     // Getters
@@ -139,6 +164,18 @@ public class SearchCriteria {
         return minYear;
     }
 
+    public Integer getStartYear() {
+        return startYear;
+    }
+
+    public Object getMaxRating() {
+        return maxImdbRating;
+    }
+
+    public Integer getEndYear() {
+        return endYear;
+    }
+
     /**
      * Returns a string representation of this {@code SearchCriteria} object.
      * The string representation includes the values of all fields for debugging purposes.
@@ -158,19 +195,4 @@ public class SearchCriteria {
                 '}';
     }
 
-    public Integer getStartYear() {
-        return startYear;
-    }
-
-    public Object getMaxRating() {
-        return maxImdbRating;
-    }
-
-    public void setMaxYear(Integer yearToValue) {
-        this.endYear = yearToValue;
-    }
-
-    public Integer getEndYear() {
-        return endYear;
-    }
 }

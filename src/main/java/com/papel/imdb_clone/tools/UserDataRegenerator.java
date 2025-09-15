@@ -32,7 +32,13 @@ public class UserDataRegenerator {
 
         try (BufferedReader br = new BufferedReader(new FileReader(usersFile))) {
             String line;
+            /**
+             * Read each line from the file
+             */
             while ((line = br.readLine()) != null) {
+                /**
+                 * Split the line into parts
+                 */
                 String[] parts = line.split(",");
                 if (parts.length < 5) continue;
                 String username = parts[0].trim();
@@ -42,6 +48,9 @@ public class UserDataRegenerator {
                 String email = parts[4].trim();
                 User user = new User(firstName, lastName, username, gender, email);
                 try {
+                    /**
+                     * Register the user through AuthService
+                     */
                     authService.register(user, defaultPassword);
                     count++;
                 } catch (UserAlreadyExistsException e) {
@@ -53,6 +62,9 @@ public class UserDataRegenerator {
         } catch (IOException e) {
             System.out.println("Failed to read users_updated.txt: " + e.getMessage());
         }
+        /**
+         * Print the number of users registered and the default password
+         */
         System.out.println("Done. Registered " + count + " users. Default password: " + defaultPassword);
     }
 }

@@ -26,7 +26,9 @@ public class DuplicateEntryException extends InvalidEntityException {
     }
 
 
+    //create field errors
     private static Map<String, List<String>> createFieldErrors(String fieldName, Object fieldValue) {
+        //create field errors
         Map<String, List<String>> errors = new HashMap<>();
         errors.put(fieldName, Collections.singletonList("already exists: " + fieldValue));
         return errors;

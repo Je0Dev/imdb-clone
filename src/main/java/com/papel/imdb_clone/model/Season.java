@@ -4,7 +4,9 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
-
+/**
+ * Represents a season of a series.
+ */
 public class Season {
     private int episodeCount;
     private int id;
@@ -23,7 +25,8 @@ public class Season {
         this.episodes = new ArrayList<>();
     }
 
-   
+
+    // constructor for season creation
     public Season(int seasonNumber, int episodeCount, String title, Series series) {
         this(seasonNumber, series);
         this.seasonNumber = seasonNumber;
@@ -31,6 +34,7 @@ public class Season {
         this.episodeCount = episodeCount;
     }
 
+    //getters and setters
     public int getId() {
         return id;
     }
@@ -83,6 +87,7 @@ public class Season {
         this.series = series;
     }
 
+    //set episodes type E to a list of episodes
     public <E> void setEpisodes(List<Episode> episodes) {
         this.episodes = episodes;
     }

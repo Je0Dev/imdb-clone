@@ -26,6 +26,10 @@ public class UserStorageService {
 
     }
 
+    /**
+     * UserStorageService singleton instance
+     * @return UserStorageService instance which means the object that implements the UserStorageService interface
+     */
     public static synchronized UserStorageService getInstance() {
         if (instance == null) {
             instance = new UserStorageService();
@@ -33,6 +37,11 @@ public class UserStorageService {
         return instance;
     }
 
+    /**
+     * Save users to a file which means serialize the users and write them to a file.
+     * @param usersByUsername
+     * @param usersByEmail
+     */
     public void saveUsers(Map<String, User> usersByUsername, Map<String, User> usersByEmail) {
         try (ObjectOutputStream oos = new ObjectOutputStream(
                 new FileOutputStream(USER_DATA_FILE))) {
@@ -50,6 +59,10 @@ public class UserStorageService {
     }
 
 
+    /**
+     * Load users from a file which means deserialize the users and read them from a file.
+     * @return Map<String, User>[] which means an array of two maps, one for users by username and one for users by email
+     */
     @SuppressWarnings("unchecked")
     public Map<String, User>[] loadUsers() {
         try (ObjectInputStream ois = new ObjectInputStream(

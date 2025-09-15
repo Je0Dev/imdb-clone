@@ -7,6 +7,7 @@ import java.util.*;
  * Supports both simple error messages and field-level validation errors.
  */
 public class ValidationException extends RuntimeException {
+    //field errors
     public final Map<String, List<String>> fieldErrors = new HashMap<>();
     private final String errorCode;
     private final Map<String, Object> details = new HashMap<>();
@@ -19,6 +20,7 @@ public class ValidationException extends RuntimeException {
                                Map<String, List<String>> fieldErrors,
                                Throwable cause) {
         super(message, cause);
+        //set error code
         this.errorCode = errorCode;
         if (fieldErrors != null) {
             this.fieldErrors.putAll(fieldErrors);
@@ -64,6 +66,7 @@ public class ValidationException extends RuntimeException {
         private final Map<String, List<String>> fieldErrors = new HashMap<>();
         private Throwable cause;
 
+        //add field error to builder
         public Builder fieldError(String field, String error) {
             this.fieldErrors.computeIfAbsent(field, k -> new ArrayList<>()).add(error);
             return this;
@@ -74,6 +77,7 @@ public class ValidationException extends RuntimeException {
             return new ValidationException(message, errorCode, fieldErrors, cause);
         }
 
+        //set message
         public Builder message(String validationFailed) {
             this.message = validationFailed;
             return this;
