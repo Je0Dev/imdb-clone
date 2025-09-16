@@ -43,8 +43,13 @@ public class ImprovedMovieApp extends Application {
 
             System.out.println("[Startup] initializeApplication() completed");
 
-            // Set window title from config
+            // Set window properties
             this.primaryStage.setTitle(config.getAppTitle());
+            this.primaryStage.setMinWidth(1200);
+            this.primaryStage.setMinHeight(800);
+            this.primaryStage.setWidth(1400);
+            this.primaryStage.setHeight(900);
+            this.primaryStage.setResizable(true);
 
             logger.info("Application started successfully");
 
@@ -89,8 +94,11 @@ public class ImprovedMovieApp extends Application {
             // Create auth stage
             Stage authStage = new Stage();
             authStage.setTitle("Login - " + config.getAppTitle());
-            authStage.setScene(new Scene(authRoot));
-            authStage.setResizable(false);
+            Scene scene = new Scene(authRoot, 1200, 800);
+            authStage.setScene(scene);
+            authStage.setMinWidth(1000);
+            authStage.setMinHeight(700);
+            authStage.setResizable(true);
             authStage.centerOnScreen();
 
             authController.setStage(authStage);

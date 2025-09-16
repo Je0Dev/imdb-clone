@@ -57,32 +57,32 @@ public class ContentController extends BaseController {
             Dialog<Movie> dialog = new Dialog<>();
             dialog.setTitle("Add New Movie");
             dialog.setHeaderText("Enter Movie Details");
-            
+
             // Set the button types
             ButtonType addButton = new ButtonType("Add", ButtonBar.ButtonData.OK_DONE);
             dialog.getDialogPane().getButtonTypes().addAll(addButton, ButtonType.CANCEL);
-            
+
             // Create form fields
             TextField titleField = new TextField();
             TextField yearField = new TextField();
-            
+
             // Set up the grid
             GridPane grid = new GridPane();
             grid.setHgap(10);
             grid.setVgap(10);
             grid.setPadding(new Insets(20, 150, 10, 10));
-            
+
             // Add fields to grid
             grid.add(new Label("Title:"), 0, 0);
             grid.add(titleField, 1, 0);
             grid.add(new Label("Year:"), 0, 1);
             grid.add(yearField, 1, 1);
-            
+
             dialog.getDialogPane().setContent(grid);
-            
+
             // Request focus on the title field by default
             Platform.runLater(titleField::requestFocus);
-            
+
             // Convert the result to a Movie object when the Add button is clicked
             dialog.setResultConverter(dialogButton -> {
                 if (dialogButton == addButton) {
@@ -99,23 +99,23 @@ public class ContentController extends BaseController {
                 }
                 return null;
             });
-            
+
             // Show the dialog and process the result
             Optional<Movie> result = dialog.showAndWait();
-            
+
             result.ifPresent(movie -> {
                 // Add the movie to the data manager
 
                 RefactoredDataManager dataManager = ServiceLocator.getInstance().getDataManager();
                 dataManager.addMovie(movie);
-                
+
                 // Show success message
                 showSuccess("Movie Added", String.format("Movie '%s' has been added successfully.", movie.getTitle()));
-                
+
                 // Refresh the movie list
                 loadMovies();
             });
-            
+
         } catch (Exception e) {
             logger.error("Error adding movie", e);
             showError("Error", "An error occurred while adding the movie: " + e.getMessage());
@@ -124,17 +124,17 @@ public class ContentController extends BaseController {
 
     private void loadMovies() {
         try {
-            
+
             // Get movies from data manager
             RefactoredDataManager dataManager = ServiceLocator.getInstance().getDataManager();
             List<Movie> movies = dataManager.getMovies();
-            
+
             // Update UI on JavaFX Application Thread
             Platform.runLater(() -> {
                 try {
                     // Clear existing items and add all movies
                     movieTable.getItems().setAll(movies);
-                    
+
                     // Update status
                     statusLabel.setText(String.format("Loaded %d movies", movies.size()));
                     logger.info("Successfully loaded {} movies", movies.size());
@@ -147,7 +147,7 @@ public class ContentController extends BaseController {
                     statusLabel.setText("Loaded movies");
                 }
             });
-            
+
         } catch (Exception e) {
             // Log error and show error message
             logger.error("Error in loadMovies", e);
@@ -210,7 +210,7 @@ public class ContentController extends BaseController {
         // Initialize movie table columns
         movieTitleColumn.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().getTitle()));
         movieYearColumn.setCellValueFactory(cellData -> new SimpleStringProperty(String.valueOf(cellData.getValue().getStartYear())));
-        
+
         // Set up cell value factories for other columns
         movieGenreColumn.setCellValueFactory(cellData -> new SimpleStringProperty(
                 //if genres is null or empty, return "N/A"
@@ -224,49 +224,8 @@ public class ContentController extends BaseController {
             return new SimpleDoubleProperty(rating != null ? rating : 0.0).asObject();
         });
 
-        
-        // Set up action buttons for each row
-        setupActionButtons();
-        
         // Load initial data
         loadMovies();
-    }
-    
-    private void setupActionButtons() {
-        // Add action buttons to the actions column
-        movieActionsColumn.setCellFactory(param -> new TableCell<>() {
-            private final Button editButton = new Button("Edit");
-            private final Button deleteButton = new Button("Delete");
-            
-            {
-                // Set button styles
-                editButton.getStyleClass().add("edit-button");
-                deleteButton.getStyleClass().add("delete-button");
-                // Set button actions
-                editButton.setOnAction(event -> {
-                    Movie movie = getTableView().getItems().get(getIndex());
-                    // Handle edit action
-                    logger.info("Edit movie: {}", movie.getTitle());
-                });
-                // Set delete button action
-                deleteButton.setOnAction(event -> {
-                    Movie movie = getTableView().getItems().get(getIndex());
-                    // Handle delete action
-                    logger.info("Delete movie: {}", movie.getTitle());
-                });
-            }
-            // Set cell value factory
-            @Override
-            protected void updateItem(Void item, boolean empty) {
-                super.updateItem(item, empty);
-                if (empty) {
-                    setGraphic(null);
-                } else {
-                    HBox buttons = new HBox(5, editButton, deleteButton);
-                    setGraphic(buttons);
-                }
-            }
-        });
     }
 
     // Search fields
@@ -457,27 +416,27 @@ public class ContentController extends BaseController {
     private void showAlert(String title, String message) {
         UIUtils.showAlert(Alert.AlertType.ERROR, title, message);
     }
-    
+
     /**
      * Shows a dialog to rate a movie
      * @param movie The movie to rate
      */
     private void showRateMovieDialog(Movie movie) {
         if (movie == null) return;
-        
+
         // Create a dialog for rating the movie
         Dialog<Double> dialog = new Dialog<>();
         dialog.setTitle("Rate Movie");
         dialog.setHeaderText(String.format("Rate '%s' (1-10)", movie.getTitle()));
-        
+
         // Set the button types
         ButtonType rateButton = new ButtonType("Rate", ButtonBar.ButtonData.OK_DONE);
         dialog.getDialogPane().getButtonTypes().addAll(rateButton, ButtonType.CANCEL);
-        
+
         // Create form fields
         TextField ratingField = new TextField();
         ratingField.setPromptText("Enter rating (1-10)");
-        
+
         // Set up the grid
         GridPane grid = new GridPane();
         grid.setHgap(10);
@@ -485,91 +444,81 @@ public class ContentController extends BaseController {
         grid.setPadding(new Insets(20, 150, 10, 10));
         grid.add(new Label("Rating:"), 0, 0);
         grid.add(ratingField, 1, 0);
-        
+
         dialog.getDialogPane().setContent(grid);
-        
+
         // Request focus on the rating field by default
         Platform.runLater(ratingField::requestFocus);
-        
+
         // Convert the result to a rating value when the Rate button is clicked
         dialog.setResultConverter(dialogButton -> {
             if (dialogButton == rateButton) {
                 try {
-                    //parse the rating field to double
+                    // Parse the rating field to double
                     double rating = Double.parseDouble(ratingField.getText().trim());
                     if (rating < 1 || rating > 10) {
                         showError("Invalid Rating", "Please enter a rating between 1 and 10.");
                         return null;
                     }
-                    //return the rating
+                    // Return the rating
                     return rating;
                 } catch (NumberFormatException e) {
-                    //show error alert
+                    // Show error alert
                     showError("Invalid Input", "Please enter a valid number for the rating.");
                     return null;
                 }
             }
             return null;
         });
-        
+
         // Show the dialog and process the result
         Optional<Double> result = dialog.showAndWait();
-        
+
         result.ifPresent(rating -> {
             try {
-                // Get the current user (you'll need to implement this)
-                User currentUser = getCurrentUser();
-                if (currentUser == null) {
-                    showError("Not Logged In", "You must be logged in to rate movies.");
-                    return;
-                }
-                
-                // Update the movie rating
-                movie.setImdbRating(rating);
-                
-                // Save the updated movie (you'll need to implement this)
-                saveMovie(movie);
-                
+                // Rate the movie using the content service
+                contentService.rateContent(movie, rating.floatValue());
+
                 // Show success message
-                showSuccess("Rating Saved", 
+                showSuccess("Rating Saved",
                     String.format("You rated '%s' %.1f/10", movie.getTitle(), rating));
-                
+
                 // Refresh the movie list
                 loadMovies();
-                
+
             } catch (Exception e) {
                 logger.error("Error rating movie", e);
                 showError("Error", "An error occurred while rating the movie: " + e.getMessage());
             }
         });
     }
-    
+
     /**
      * Handles deleting a movie
      * @param movie The movie to delete
      */
     private void handleDeleteMovie(Movie movie) {
         if (movie == null) return;
-        
+
         // Confirm deletion
         Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
         alert.setTitle("Confirm Deletion");
         alert.setHeaderText("Delete Movie");
         alert.setContentText(String.format("Are you sure you want to delete '%s'?", movie.getTitle()));
-        
+
         Optional<ButtonType> result = alert.showAndWait();
         if (result.isPresent() && result.get() == ButtonType.OK) {
             try {
                 // Delete the movie (you'll need to implement this)
                 deleteMovie(movie);
-                
+
                 // Show success message
-                showSuccess("Movie Deleted", 
+                showSuccess("Movie Deleted",
                     String.format("'%s' has been deleted successfully.", movie.getTitle()));
-                
+
                 // Refresh the movie list
                 loadMovies();
-                
+
             } catch (Exception e) {
                 // Log the error
                 logger.error("Error deleting movie", e);
@@ -577,7 +526,7 @@ public class ContentController extends BaseController {
             }
         }
     }
-    
+
     /**
      * Gets the current logged-in user
      * @return The current user, or null if not logged in
@@ -594,7 +543,7 @@ public class ContentController extends BaseController {
         }
         return null;
     }
-    
+
     /**
      * Saves a movie
      * @param movie The movie to save
@@ -612,7 +561,7 @@ public class ContentController extends BaseController {
             throw new RuntimeException("Failed to save movie", e);
         }
     }
-    
+
     /**
      * Deletes a movie
      * @param movie The movie to delete
@@ -821,57 +770,12 @@ public class ContentController extends BaseController {
                     movieTable.getColumns().add(movieRatingColumn);
                 }
 
-                // Add action buttons column
-                if (movieActionsColumn != null) {
-                    movieActionsColumn.setCellFactory(param -> new TableCell<>() {
-                        private final Button rateButton = new Button("Rate");
-                        private final Button deleteButton = new Button("Delete");
-                        private final HBox buttons = new HBox(5, rateButton, deleteButton);
+                logger.debug("Movie table columns initialized successfully");
 
-                        {
-                            // Style buttons
-                            rateButton.getStyleClass().add("btn-rate");
-                            deleteButton.getStyleClass().add("btn-delete");
+                //refresh movie table
+                refreshMovieTable();
 
-                            // Handle rate button click
-                            rateButton.setOnAction(event -> {
-                                Movie movie = getTableView().getItems().get(getIndex());
-                                if (movie != null) {
-                                    showRateMovieDialog(movie);
-                                }
-                            });
 
-                            // Handle delete button click
-                            deleteButton.setOnAction(event -> {
-                                Movie movie = getTableView().getItems().get(getIndex());
-                                if (movie != null) {
-                                    handleDeleteMovie(movie);
-                                }
-                            });
-                        }
-
-                        //update item
-                        @Override
-                        protected void updateItem(Void item, boolean empty) {
-                            super.updateItem(item, empty);
-                            if (empty) {
-                                setGraphic(null);
-                            } else {
-                                setGraphic(buttons);
-                            }
-                        }
-                    });
-                    //add movie actions column to table
-                    movieTable.getColumns().add(movieActionsColumn);
-                }
-
-                // Set the items after columns are configured
-                movieTable.setItems(filteredMovies);
-
-                // Add row selection listener
-                movieTable.getSelectionModel().selectedItemProperty().addListener((obs, oldSelection, newSelection) -> {
-                    selectedMovie.set(newSelection);
-                });
             } catch (Exception e) {
                 logger.error("Error setting up movie table columns: {}", e.getMessage(), e);
             }
@@ -885,17 +789,7 @@ public class ContentController extends BaseController {
 
                 // Configure series table columns
                 if (seriesTitleColumn != null) {
-                    seriesTitleColumn.setCellValueFactory(cellData -> {
-                        try {
-                            //get series title from cell data
-                            return new SimpleStringProperty(cellData.getValue().getTitle());
-                        } catch (Exception e) {
-                            logger.warn("Error getting series title: {}", e.getMessage());
-                            return new SimpleStringProperty("");
-                        }
-                    });
-                    //add series title column to table
-                    seriesTable.getColumns().add(seriesTitleColumn);
+                    seriesTitleColumn.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().getTitle()));
                 }
 
                 //set series year column value factory
@@ -903,7 +797,7 @@ public class ContentController extends BaseController {
                     seriesYearColumn.setCellValueFactory(cellData -> {
                         try {
                             //get series year from cell data
-                            return new SimpleIntegerProperty().asObject();
+                            return new SimpleIntegerProperty(cellData.getValue().getYearAsInt()).asObject();
                         } catch (Exception e) {
                             logger.warn("Error getting series year: {}", e.getMessage());
                             return new SimpleIntegerProperty(0).asObject();
@@ -966,7 +860,7 @@ public class ContentController extends BaseController {
                         return new SimpleIntegerProperty(0).asObject();
                     }
                     //return series start year
-                    return new SimpleIntegerProperty(series.getStartYear()).asObject();
+                    return new SimpleIntegerProperty(series.getYearAsInt()).asObject();
                 });
 
                 // Set cell factory to display "N/A" for invalid years
@@ -1310,43 +1204,71 @@ public class ContentController extends BaseController {
 
             // Year column
             if (movieYearColumn != null) {
-                movieYearColumn.setCellValueFactory(cellData ->
-                        new SimpleStringProperty(String.valueOf(cellData.getValue().getYear()))
-                );
-            }
-
-            // Genre column
-            if (movieGenreColumn != null) {
-                movieGenreColumn.setCellValueFactory(cellData -> {
+                movieYearColumn.setCellValueFactory(cellData -> {
                     try {
-                        //get genres
-                        List<Genre> genres = cellData.getValue().getGenres();
-                        if (genres == null || genres.isEmpty()) {
-                            return new SimpleStringProperty("N/A");
+                        Movie movie = cellData.getValue();
+                        if (movie != null && movie.getReleaseDate() != null) {
+                            Calendar cal = Calendar.getInstance();
+                            cal.setTime(movie.getReleaseDate());
+                            return new SimpleStringProperty(String.valueOf(cal.get(Calendar.YEAR)));
                         }
-                        //format genres
-                        String genreText = genres.stream()
-                                .filter(Objects::nonNull)
-                                .map(genre -> genre.name().charAt(0) + genre.name().substring(1).toLowerCase())
-                                .collect(Collectors.joining(", "));
-                        return new SimpleStringProperty(genreText.isEmpty() ? "N/A" : genreText);
+                        return new SimpleStringProperty("N/A");
                     } catch (Exception e) {
-                        //log error
-                        logger.debug("Error getting genres for movie: {}", e.getMessage());
+                        logger.warn("Error getting movie year: {}", e.getMessage());
                         return new SimpleStringProperty("N/A");
                     }
                 });
             }
 
-            // Director column
+            // Genre column with proper null handling and formatting
+            if (movieGenreColumn != null) {
+                movieGenreColumn.setCellValueFactory(cellData -> {
+                    try {
+                        Movie movie = cellData.getValue();
+                        if (movie == null) return new SimpleStringProperty("N/A");
+                        
+                        List<Genre> genres = movie.getGenres();
+                        if (genres == null || genres.isEmpty()) {
+                            return new SimpleStringProperty("N/A");
+                        }
+                        
+                        String genreText = genres.stream()
+                            .filter(Objects::nonNull)
+                            .map(genre -> {
+                                try {
+                                    if (genre.getDisplayName() != null) {
+                                        return genre.getDisplayName();
+                                    }
+                                    String name = genre.name();
+                                    return (name != null && !name.isEmpty()) ? 
+                                        name.charAt(0) + name.substring(1).toLowerCase() : "";
+                                } catch (Exception e) {
+                                    return "";
+                                }
+                            })
+                            .filter(Objects::nonNull)
+                            .map(String::valueOf)
+                            .filter(s -> !s.trim().isEmpty())
+                            .map(String::trim)
+                            .distinct()
+                            .sorted()
+                            .reduce((s1, s2) -> s1 + ", " + s2)
+                            .orElse("");
+                            
+                        return new SimpleStringProperty(genreText.isEmpty() ? "N/A" : genreText);
+                    } catch (Exception e) {
+                        logger.warn("Error getting genres for movie: {}", e.getMessage());
+                        return new SimpleStringProperty("N/A");
+                    }
+                });
+            }
+
+            // Director column with null check
             if (movieDirectorColumn != null) {
                 movieDirectorColumn.setCellValueFactory(cellData -> {
                     Movie movie = cellData.getValue();
-                    if (movie.getDirector() != null) {
-                        // Access director name directly from the director string
-                        return new SimpleStringProperty(movie.getDirector());
-                    }
-                    return new SimpleStringProperty("");
+                    return new SimpleStringProperty(movie != null && movie.getDirector() != null ? 
+                        movie.getDirector() : "N/A");
                 });
             }
 
@@ -1515,14 +1437,9 @@ public class ContentController extends BaseController {
                                 if (movieTable.getColumns() == null || movieTable.getColumns().isEmpty()) {
                                     initializeMovieTableColumns();
                                 }
-
-                                // Apply sorting if sort is active
-                                if (movieSortBy != null && movieSortBy.getValue() != null) {
-                                    sortMovieTable(movieSortBy.getValue());
-                                }
-
-                                // Refresh the table to show the updated data
-                                movieTable.refresh();
+                                // Set movie table items after initializing columns
+                                movieTable.setItems(filteredMovies);
+                                logger.debug("Set {} movies to movie table", filteredMovies.size());
                             }
 
                             logger.info("Refreshed movie table with {} items", updatedMovies.size());
@@ -1809,28 +1726,28 @@ public class ContentController extends BaseController {
                 Optional<Number> result = Optional.of(showRatingDialog());
                 if (result.isPresent()) {
                     int rating = result.get().intValue();
-                    
+
                     // Get the data manager
                     RefactoredDataManager dataManager = ServiceLocator.getInstance().getDataManager();
                     if (dataManager == null) {
                         throw new IllegalStateException("Unable to access data manager");
                     }
-                    
+
                     // Get the latest version of the movie from the data manager
                     Movie movieToRate = dataManager.getMovieRepository().findById(selectedMovie.getId())
                             .orElseThrow(() -> new ContentNotFoundException("Movie with id " + selectedMovie.getId() + " not found"));
-                    
+
                     // Update the movie's rating
                     movieToRate.setUserRating(rating);
-                    
+
                     // Save the updated movie using the data manager
                     dataManager.updateMovie(movieToRate);
-                    
+
                     // Refresh the table to show the updated rating
                     refreshMovieTable();
 
                     // Show success message
-                    showSuccess("Success", String.format("Rated '%s' with %d stars", 
+                    showSuccess("Success", String.format("Rated '%s' with %d stars",
                         movieToRate.getTitle(), rating));
                 }
             } catch (ContentNotFoundException e) {
@@ -1854,20 +1771,20 @@ public class ContentController extends BaseController {
             if (dataManager == null) {
                 throw new IllegalStateException("Unable to access data manager");
             }
-            
+
             // Create a new series with default values
             Series newSeries = new Series("New Series");
             newSeries.setStartYear(Calendar.getInstance().get(Calendar.YEAR));
             newSeries.setSeasons(new ArrayList<>());
-            
+
             // Set default values for required fields
             newSeries.setGenre(Genre.DRAMA);
             newSeries.setActors(new ArrayList<>());
             newSeries.setGenres(List.of(Genre.DRAMA));
-            
+
             // Show a dialog to edit the new series details
             boolean confirmed = showSeriesEditDialog(newSeries, "Add New Series");
-            
+
             if (confirmed) {
                 try {
                     // Save the new series using the data manager
@@ -1925,15 +1842,6 @@ public class ContentController extends BaseController {
             grid.add(new Label("Year:"), 0, 1);
             grid.add(yearSpinner, 1, 1);
             grid.add(new Label("Description:"), 0, 2);
-
-            // Enable/Disable save button depending on whether a title was entered
-            Node saveButton = dialog.getDialogPane().lookupButton(saveButtonType);
-            saveButton.setDisable(true);
-
-            // Do some validation
-            titleField.textProperty().addListener((observable, oldValue, newValue) -> {
-                saveButton.setDisable(newValue.trim().isEmpty());
-            });
 
             dialog.getDialogPane().setContent(grid);
             

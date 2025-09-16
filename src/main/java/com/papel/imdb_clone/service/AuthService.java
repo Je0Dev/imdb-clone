@@ -82,6 +82,7 @@ public class AuthService {
             );
         }
 
+        //username and email check
         if (usersByUsername.containsKey(user.getUsername())) {
             throw new AuthException(
                     AuthException.AuthErrorType.USERNAME_EXISTS,

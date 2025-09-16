@@ -20,7 +20,9 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Calendar;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 /**
  * Controller for the advanced search functionality.
@@ -106,45 +108,156 @@ public class AdvancedSearchController {
     }
 
     private void setupTableColumns() {
-        // Set up table columns
-        resultTitleColumn.setCellValueFactory(new PropertyValueFactory<>("title"));
-        
-        // Set up type column
-        resultTypeColumn.setCellValueFactory(cellData -> {
-            String type = cellData.getValue() instanceof com.papel.imdb_clone.model.Movie ? "Movie" : "Series";
-            return new SimpleStringProperty(type);
-        });
-        
-        // Set up year column to show the correct year value
-        resultYearColumn.setCellValueFactory(cellData -> {
-            Content content = cellData.getValue();
-            int year = content.getStartYear();
-            if (year == 0 && content.getYear() != null) {
-                Calendar cal = Calendar.getInstance();
-                cal.setTime(content.getYear());
-                year = cal.get(Calendar.YEAR);
-            }
-            return new SimpleIntegerProperty(year).asObject();
-        });
-        
-        // Set up genre column
-        resultGenreColumn.setCellValueFactory(cellData -> {
-            List<Genre> genres = cellData.getValue().getGenres();
-            // if genres is null or empty, return "N/A"
-            String genreString = genres != null && !genres.isEmpty() ?
-                    genres.stream()
-                          .map(Genre::getDisplayName)
-                          .map(Object::toString)
-                          .collect(java.util.stream.Collectors.joining(", ")) : "N/A";
-            return new SimpleStringProperty(genreString);
-        });
-        
-        // Set up IMDb rating column with proper null check and formatting
-        resultImdbColumn.setCellValueFactory(cellData -> {
-            Double rating = cellData.getValue().getImdbRating();
-            String ratingStr = (rating != null && rating > 0) ? String.format("%.1f", rating) : "N/A";
-            return new SimpleStringProperty(ratingStr);
-        });
+        try {
+            // Set up title column with null check and tooltip
+            resultTitleColumn.setCellValueFactory(cellData -> {
+                Content content = cellData.getValue();
+                String title = (content != null && content.getTitle() != null) ? content.getTitle() : "N/A";
+                return new SimpleStringProperty(title);
+            });
+            
+            // Add tooltip to title column
+            resultTitleColumn.setCellFactory(column -> new TableCell<Content, String>() {
+                @Override
+                protected void updateItem(String item, boolean empty) {
+                    super.updateItem(item, empty);
+                    if (item == null || empty) {
+                        setText(null);
+                        setTooltip(null);
+                    } else {
+                        setText(item);
+                        Tooltip tooltip = new Tooltip(item);
+                        tooltip.setStyle("-fx-font-size: 12px; -fx-padding: 5px;");
+                        setTooltip(tooltip);
+                    }
+                }
+            });
+            
+            // Set up type column with proper styling
+            resultTypeColumn.setCellValueFactory(cellData -> {
+                Content content = cellData.getValue();
+                if (content == null) return new SimpleStringProperty("N/A");
+                String type = content instanceof com.papel.imdb_clone.model.Movie ? "Movie" : "Series";
+                return new SimpleStringProperty(type);
+            });
+            
+            // Set up year column with proper null checks and formatting
+            resultYearColumn.setCellValueFactory(cellData -> {
+                Content content = cellData.getValue();
+                if (content == null) return new SimpleIntegerProperty(0).asObject();
+                
+                int year = content.getStartYear();
+                if (year <= 0 && content.getYear() != null) {
+                    try {
+                        Calendar cal = Calendar.getInstance();
+                        cal.setTime(content.getYear());
+                        year = cal.get(Calendar.YEAR);
+                    } catch (Exception e) {
+                        logger.warn("Error parsing year for content: {}", content.getTitle(), e);
+                    }
+                }
+                return new SimpleIntegerProperty(year > 0 ? year : 0).asObject();
+            });
+            
+            // Set up genre column with better null handling and formatting
+            resultGenreColumn.setCellValueFactory(cellData -> {
+                Content content = cellData.getValue();
+                if (content == null) return new SimpleStringProperty("N/A");
+                
+                try {
+                    List<Genre> genres = content.getGenres();
+                    if (genres == null || genres.isEmpty()) {
+                        return new SimpleStringProperty("N/A");
+                    }
+                    
+                    String genreString = genres.stream()
+                        .filter(Objects::nonNull)
+                        .map(genre -> {
+                            try {
+                                return genre.getDisplayName() != null ? 
+                                    genre.getDisplayName() : 
+                                    genre.name().charAt(0) + genre.name().substring(1).toLowerCase();
+                            } catch (Exception e) {
+                                logger.warn("Error formatting genre: {}", genre, e);
+                                return "";
+                            }
+                        })
+                        .filter(Objects::nonNull)
+                        .map(String::valueOf)
+                        .filter(s -> !s.trim().isEmpty())
+                        .distinct()
+                        .collect(Collectors.joining(", "));
+                        
+                    return new SimpleStringProperty(genreString.isEmpty() ? "N/A" : genreString);
+                } catch (Exception e) {
+                    logger.warn("Error getting genres for content: {}", content.getTitle(), e);
+                    return new SimpleStringProperty("N/A");
+                }
+            });
+            
+            // Set up IMDb rating column with proper null check and formatting
+            resultImdbColumn.setCellValueFactory(cellData -> {
+                Content content = cellData.getValue();
+                if (content == null) return new SimpleStringProperty("N/A");
+                
+                try {
+                    Double rating = content.getImdbRating();
+                    if (rating == null || rating <= 0) {
+                        return new SimpleStringProperty("N/A");
+                    }
+                    return new SimpleStringProperty(String.format("%.1f", rating));
+                } catch (Exception e) {
+                    logger.warn("Error getting rating for content: {}", content.getTitle(), e);
+                    return new SimpleStringProperty("N/A");
+                }
+            });
+            
+            // Set up row factory for better row highlighting
+            resultsTable.setRowFactory(tv -> {
+                TableRow<Content> row = new TableRow<>();
+                row.hoverProperty().addListener((obs, wasHovered, isNowHovered) -> {
+                    if (isNowHovered && !row.isEmpty()) {
+                        row.setStyle("-fx-background-color: #f0f0f0; -fx-cursor: hand;");
+                    } else {
+                        row.setStyle("");
+                    }
+                });
+                return row;
+            });
+            
+            // Set up row factory to handle row clicks
+            resultsTable.setRowFactory(tv -> {
+                TableRow<Content> row = new TableRow<>();
+                row.setOnMouseClicked(event -> {
+                    if (event.getClickCount() == 2 && !row.isEmpty()) {
+                        Content rowData = row.getItem();
+                        // Handle double click on row
+                        if (rowData != null) {
+                            try {
+                                // Open content details view
+                                try {
+                                    // Use the application's navigation method if available
+                                    // or implement your navigation logic here
+                                    logger.info("Navigating to content details for: {}", rowData.getTitle());
+                                    // Example: mainController.showContentDetails(rowData);
+                                } catch (Exception e) {
+                                    logger.error("Error navigating to content details", e);
+                                    UIUtils.showError("Navigation Error", "Could not open content details: " + e.getMessage());
+                                }
+                            } catch (Exception e) {
+                                logger.error("Error navigating to content details", e);
+                                UIUtils.showError("Error", "Could not open content details: " + e.getMessage());
+                            }
+                        }
+                    }
+                });
+                return row;
+            });
+            
+        } catch (Exception e) {
+            logger.error("Error setting up table columns", e);
+            UIUtils.showError("Error", "Failed to initialize table columns: " + e.getMessage());
+        }
     }
 
     // setup genre combo box

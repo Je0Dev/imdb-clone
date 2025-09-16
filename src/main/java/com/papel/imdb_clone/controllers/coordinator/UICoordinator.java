@@ -6,6 +6,7 @@ import com.papel.imdb_clone.data.RefactoredDataManager;
 import com.papel.imdb_clone.model.User;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Node;
+import javafx.scene.control.Label;
 import javafx.stage.Stage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -162,6 +163,7 @@ public class UICoordinator {
     /**
      * Safely loads a view and returns null if loading fails.
      * Errors are logged but not rethrown.
+     *
      * @param fxmlPath the path to the FXML file relative to the resources directory
      * @return the loaded JavaFX Node or null if loading fails
      */
@@ -184,34 +186,55 @@ public class UICoordinator {
      */
     private Node loadView(String fxmlPath) throws IOException {
         logger.debug("Loading view: {}", fxmlPath);
+        java.net.URL resourceUrl = null;
+        
         try {
             // Get the resource URL for better error reporting
-            java.net.URL resourceUrl = getClass().getResource(fxmlPath);
+            resourceUrl = getClass().getResource(fxmlPath);
             if (resourceUrl == null) {
-                // Log the error with a more detailed message
-                String errorMsg = String.format("FXML file not found: %s. Current classpath: %s",
-                        fxmlPath,
-                        System.getProperty("java.class.path"));
-                logger.error(errorMsg);
-                throw new IOException(errorMsg);
+                // Try with a leading slash if not found
+                if (!fxmlPath.startsWith("/")) {
+                    resourceUrl = getClass().getResource("/" + fxmlPath);
+                }
+                
+                if (resourceUrl == null) {
+                    String errorMsg = String.format("FXML file not found: %s. Searched in classpath: %s",
+                            fxmlPath,
+                            System.getProperty("java.class.path"));
+                    logger.error(errorMsg);
+                    throw new IOException(errorMsg);
+                }
             }
 
             logger.debug("Loading FXML from URL: {}", resourceUrl);
             FXMLLoader loader = new FXMLLoader(resourceUrl);
 
+            // Set controller factory if needed
+            if (contentController != null) {
+                loader.setController(contentController);
+            }
+
             try {
-                // Load the FXML file-duplicate with above. Added this for safety
                 Node view = loader.load();
-                logger.debug("Successfully loaded view: {}", fxmlPath);
+                logger.info("Successfully loaded view: {}", fxmlPath);
                 return view;
             } catch (Exception e) {
-                // Log the error with a more detailed message
-                logger.error("Error loading FXML file {}: {}", fxmlPath, e.getMessage(), e);
-                throw new IOException("Failed to load FXML: " + e.getMessage(), e);
+                String errorMsg = String.format("Failed to load FXML %s: %s", fxmlPath, e.getMessage());
+                logger.error(errorMsg, e);
+                
+                // Check for common FXML loading issues
+                if (e.getCause() != null) {
+                    logger.error("Root cause: {}", e.getCause().getMessage());
+                }
+                
+                throw new IOException(errorMsg, e);
             }
+        } catch (IOException e) {
+            logger.error("I/O error loading view {}: {}", fxmlPath, e.getMessage(), e);
+            throw e;
         } catch (Exception e) {
             logger.error("Unexpected error loading view {}: {}", fxmlPath, e.getMessage(), e);
-            throw e;
+            throw new IOException("Failed to load view: " + e.getMessage(), e);
         }
     }
 
@@ -251,6 +274,11 @@ public class UICoordinator {
         if (movieView == null) {
             logger.warn("Movie view was not preloaded, attempting to load on demand");
             movieView = loadViewSafely("/fxml/movie-view.fxml");
+            if (movieView != null) {
+                logger.info("Successfully loaded movie view on demand");
+            } else {
+                logger.error("Failed to load movie view on demand");
+            }
         }
         return movieView;
     }
@@ -300,8 +328,20 @@ public class UICoordinator {
         return homeView;
     }
 
-    // Checks if all views are loaded
+        /**
+     * Creates an error node to display when view loading fails
+     */
+    private Node createErrorNode(String message) {
+        Label errorLabel = new Label(message);
+        errorLabel.setStyle("-fx-text-fill: #ff4444; -fx-padding: 20; -fx-font-size: 14;");
+        errorLabel.setWrapText(true);
+        return errorLabel;
+    }
+
+    /**
+     * Checks if all views are loaded
+     */
     public boolean areViewsLoaded() {
-        return homeView == null || movieView == null || seriesView == null || searchView == null;
+        return homeView != null && movieView != null && seriesView != null && searchView != null;
     }
 }

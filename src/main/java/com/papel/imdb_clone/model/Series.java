@@ -11,7 +11,7 @@ import java.util.*;
  */
 public class Series extends Content {
     private List<Season> seasons;
-    private Director director;
+    private String director;  // Changed from Director to String to match parent class
     private List<Actor> actors;
     private String boxOffice;
     private List<String> awards;
@@ -19,6 +19,19 @@ public class Series extends Content {
     private String nominations;
     private List<Genre> genres = new ArrayList<>();
     private static final Logger logger = LoggerFactory.getLogger(Series.class);
+    
+    @Override
+    public String getDirector() {
+        return director;
+    }
+    
+    /**
+     * Sets the director of the series.
+     * @param director The director's name as a String
+     */
+    public void setDirector(String director) {
+        this.director = director;
+    }
 
     /**
      * Creates a new Series with the given title and summary.
@@ -30,54 +43,54 @@ public class Series extends Content {
         this.seasons = new ArrayList<>();
         this.actors = new ArrayList<>();
         this.awards = new ArrayList<>();
-        // Initialize the year field with current year
+        // Set the current year as default
         Calendar cal = Calendar.getInstance();
         cal.setTime(new java.util.Date());
         this.year = cal.getTime();
+        this.startYear = cal.get(Calendar.YEAR);
     }
 
     /**
      * Creates a new Series with the given title, summary, genre, imdbRating, userRating, and startYear.
-     * @param title
-     * @param summary
-     * @param genre
-     * @param imdbRating
-     * @param userRating
-     * @param startYear
+     * @param title The title of the series
+     * @param summary The summary of the series
+     * @param genre The genre of the series
+     * @param imdbRating The IMDB rating of the series
+     * @param userRating The user rating of the series
+     * @param startYear The start year of the series
      */
     public Series(String title, String summary, Genre genre, double imdbRating, double userRating, int startYear) {
         super(title, new java.util.Date(), genre, "", new HashMap<>(), imdbRating);
         this.seasons = new ArrayList<>();
         this.actors = new ArrayList<>();
         this.awards = new ArrayList<>();
+        this.rating = userRating;
+        this.startYear = startYear;
         
         // Set the year based on startYear
-        if (startYear > 0) {
-            try {
-                Calendar cal = Calendar.getInstance();
-                cal.set(Calendar.YEAR, startYear);
-                cal.set(Calendar.MONTH, Calendar.JANUARY);
-                cal.set(Calendar.DAY_OF_MONTH, 1);
-                this.year = cal.getTime();
-                this.setStartYear(startYear);
-            } catch (Exception e) {
-                // Fallback to current year if there's an error
-                this.year = new java.util.Date();
-                this.setStartYear(Calendar.getInstance().get(Calendar.YEAR));
-            }
-        } else {
-            // If no valid start year, use current year
-            this.year = new java.util.Date();
-            this.setStartYear(Calendar.getInstance().get(Calendar.YEAR));
-        }
-        
-        if (genre != null) {
-            this.genres.add(genre);
-        }
+        Calendar cal = Calendar.getInstance();
+        cal.set(Calendar.YEAR, startYear);
+        cal.set(Calendar.MONTH, 0); // January
+        cal.set(Calendar.DAY_OF_MONTH, 1);
+        this.year = cal.getTime();
     }
 
     public List<Season> getSeasons() {
-        return new ArrayList<>(seasons);
+        return seasons != null ? new ArrayList<>(seasons) : new ArrayList<>();
+    }
+    
+    public int getTotalSeasons() {
+        return seasons != null ? seasons.size() : 0;
+    }
+    
+    public int getTotalEpisodes() {
+        if (seasons == null || seasons.isEmpty()) {
+            return 0;
+        }
+        return seasons.stream()
+            .filter(Objects::nonNull)
+            .mapToInt(season -> season.getEpisodes() != null ? season.getEpisodes().size() : 0)
+            .sum();
     }
 
     public void addSeason(Season season) {
@@ -99,21 +112,6 @@ public class Series extends Content {
             super.setStartYear(yearValue);
         }
         return yearValue;
-    }
-
-    /**
-     * Sets the director/creator of the series
-     *
-     * @param director the director to set
-     */
-    public void setDirector(Director director) {
-        this.director = director;
-        // Also set the director's name in the parent class
-        if (director != null) {
-            super.setDirector(director.getFirstName() + " " + director.getLastName());
-        } else {
-            super.setDirector(null);
-        }
     }
 
     /**
@@ -221,9 +219,6 @@ public class Series extends Content {
         this.nominations = nominations;
     }
 
-    public int getTotalEpisodes() {
-        return seasons.stream().mapToInt(Season::getTotalEpisodes).sum();
-    }
 
     public void setAwards(String awards) {
         this.awards = new ArrayList<>();

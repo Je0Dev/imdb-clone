@@ -8,6 +8,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -231,13 +232,14 @@ public class InMemoryMovieRepository implements MovieRepository {
     public List<Movie> getAll() {
         return movies;
     }
-
-    //delete a movie from the repository with id
     public void delete(int id) {
-        findById(id);
-        movies.remove(id);
-        logger.info("Deleted movie with ID: {}", id);
+        Optional<Movie> movieOptional = findById(id);
+        if (movieOptional.isPresent()) {
+            movies.remove(movieOptional.get());
+            logger.info("Deleted movie with ID: {}", id);
+        } else {
+            logger.warn("Attempted to delete non-existent movie with ID: {}", id);
+            throw new NoSuchElementException("Movie with ID " + id + " not found");
+        }
     }
-
-
 }

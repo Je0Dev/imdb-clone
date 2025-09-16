@@ -66,6 +66,7 @@ public class Actor extends Celebrity {
     public void setNotableWorks(String notableWorks) {
         this.notableWorks = notableWorks;
     }
+
     //setters for first and lastname
     public void setFirstName(String firstName) {
         this.firstName = firstName;
@@ -83,4 +84,5 @@ public class Actor extends Celebrity {
         }
         return Arrays.stream(notableWorks.split(",")).map(String::trim).collect(Collectors.toList());
     }
+
 }

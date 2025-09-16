@@ -218,14 +218,25 @@ public class ContentService<T extends Content> {
     }
 
 
-    public void rateContent(T selectedMovie, float rating) {
-        // Check if the content exists
-        findById(selectedMovie.getId());
-        // Save the rating
-        saveRating(new Rating(selectedMovie.getId(), rating));
-        // Update the content
-        updateContent(selectedMovie);
+    public void rateContent(T content, float rating) {
+        if (content == null) {
+            throw new IllegalArgumentException("Content cannot be null");
+        }
+        if (rating < 0 || rating > 10) {
+            throw new IllegalArgumentException("Rating must be between 0 and 10");
+        }
 
+        T existingContent = findById(content.getId())
+                .orElseThrow(() -> new ContentNotFoundException("Content not found with ID: " + content.getId()));
+
+        existingContent.setImdbRating((double) rating);
+        saveRating(new Rating(existingContent.getId(), rating));
+        updateContent(existingContent);
+
+        logger.info("Rated {} '{}' with {} stars",
+                existingContent.getClass().getSimpleName(),
+                existingContent.getTitle(),
+                rating);
     }
 
 

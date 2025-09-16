@@ -19,10 +19,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.URL;
-import java.util.Collections;
-import java.util.List;
-import java.util.Objects;
-import java.util.ResourceBundle;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class CelebritiesController implements Initializable {
@@ -105,180 +102,84 @@ public class CelebritiesController implements Initializable {
     }
 
     private void initializeActorTable() {
-        // Set up cell value factories
-        actorNameColumn.setCellValueFactory(cellData ->
-                // Create a SimpleStringProperty for the actor's name
-                new SimpleStringProperty(
-                        String.format("%s %s",
-                                // Get the actor's first name if it exists, otherwise use an empty string
-                                cellData.getValue().getFirstName() != null ? cellData.getValue().getFirstName() : "",
-                                cellData.getValue().getLastName() != null ? cellData.getValue().getLastName() : ""
-                        ).trim()
-                )
-        );
-
-        // Set up cell value factory for birthdate
-        actorBirthDateColumn.setCellValueFactory(cellData ->
-                new SimpleStringProperty(
-                        cellData.getValue().getBirthDate() != null ?
-                                cellData.getValue().getBirthDate().toString() : "N/A"
-                )
-        );
-
-        // Set up cell value factory for gender
-        actorGenderColumn.setCellValueFactory(cellData -> {
-            try {
-                Actor actor = cellData.getValue();
-                if (actor != null) {
-                    try {
-                        // First try the standard getter
-                        Object gender = actor.getGender();
-                        if (gender != null) {
-                            // Convert the gender to a string
-                            String genderStr = String.valueOf(gender);
-                            if (!genderStr.trim().isEmpty() && !"null".equalsIgnoreCase(genderStr)) {
-                                // Capitalize first letter
-                                return new SimpleStringProperty(
-                                    genderStr.substring(0, 1).toUpperCase() + 
-                                    genderStr.substring(1).toLowerCase()
-                                );
-                            }
-                        }
-                        
-                        // Try reflection as fallback
-                        try {
-                            java.lang.reflect.Field genderField = actor.getClass().getDeclaredField("gender");
-                            genderField.setAccessible(true);
-                            // Get the gender value
-                            Object genderValue = genderField.get(actor);
-                            if (genderValue != null) {
-                                // Convert the gender to a string
-                                String genderStr = String.valueOf(genderValue);
-                                // Check if the gender is not empty
-                                if (!genderStr.trim().isEmpty() && !"null".equalsIgnoreCase(genderStr)) {
-                                    return new SimpleStringProperty(
-                                        genderStr.substring(0, 1).toUpperCase() + 
-                                        genderStr.substring(1).toLowerCase()
-                                    );
-                                }
-                            }
-                        } catch (Exception e) {
-                            logger.debug("Could not get gender through reflection: {}", e.getMessage());
-                        }
-                    } catch (Exception e) {
-                        logger.debug("Error getting gender: {}", e.getMessage());
+        try {
+            // Set up cell value factory for actor name
+            actorNameColumn.setCellValueFactory(cellData -> {
+                try {
+                    Actor actor = cellData.getValue();
+                    if (actor != null) {
+                        String firstName = actor.getFirstName() != null ? actor.getFirstName() : "";
+                        String lastName = actor.getLastName() != null ? actor.getLastName() : "";
+                        return new SimpleStringProperty(String.format("%s %s", firstName, lastName).trim());
                     }
+                } catch (Exception e) {
+                    logger.error("Error getting actor name: {}", e.getMessage());
                 }
                 return new SimpleStringProperty("N/A");
-            } catch (Exception e) {
-                logger.error("Unexpected error getting actor gender: {}", e.getMessage(), e);
-                return new SimpleStringProperty("N/A");
-            }
-        });
+            });
 
-        actorNationalityColumn.setCellValueFactory(cellData -> {
-            try {
-                Actor actor = cellData.getValue();
-                if (actor != null) {
-                    try {
-                        // First try the standard getter
-                        Ethnicity ethnicity = actor.getEthnicity();
-                        if (ethnicity != null) {
-                            String label = ethnicity.getLabel();
-                            if (label != null && !label.trim().isEmpty()) {
-                                return new SimpleStringProperty(label);
-                            }
-                        }
-                        
-                        // Try to get nationality directly if available
-                        try {
-                            java.lang.reflect.Field nationalityField = actor.getClass().getDeclaredField("nationality");
-                            nationalityField.setAccessible(true);
-                            Object nationality = nationalityField.get(actor);
-                            if (nationality != null) {
-                                String natStr = nationality.toString();
-                                if (!natStr.trim().isEmpty() && !"null".equalsIgnoreCase(natStr)) {
-                                    return new SimpleStringProperty(natStr);
-                                }
-                            }
-                        } catch (Exception e) {
-                            logger.debug("Could not get nationality field: {}", e.getMessage());
-                        }
-                        
-                        // Fallback to country field
-                        try {
-                            java.lang.reflect.Field countryField = actor.getClass().getDeclaredField("country");
-                            countryField.setAccessible(true);
-                            Object country = countryField.get(actor);
-                            if (country != null) {
-                                String countryStr = country.toString();
-                                if (!countryStr.trim().isEmpty() && !"null".equalsIgnoreCase(countryStr)) {
-                                    return new SimpleStringProperty(countryStr);
-                                }
-                            }
-                        } catch (Exception e) {
-                            logger.debug("Could not get country field: {}", e.getMessage());
-                        }
-                    } catch (Exception e) {
-                        logger.debug("Error getting ethnicity: {}", e.getMessage());
+            // Set up cell value factory for birth date
+            actorBirthDateColumn.setCellValueFactory(cellData -> {
+                try {
+                    if (cellData.getValue() != null && cellData.getValue().getBirthDate() != null) {
+                        return new SimpleStringProperty(cellData.getValue().getBirthDate().toString());
                     }
+                } catch (Exception e) {
+                    logger.error("Error getting birth date: {}", e.getMessage());
                 }
                 return new SimpleStringProperty("N/A");
-            } catch (Exception e) {
-                logger.error("Error getting actor nationality: {}", e.getMessage(), e);
-                return new SimpleStringProperty("N/A");
-            }
-        });
+            });
 
-        actorNotableWorksColumn.setCellValueFactory(cellData -> {
-            try {
-                Actor actor = cellData.getValue();
-                if (actor != null) {
-                    try {
-                        List<String> works = actor.getNotableWorks();
-                        if (works != null && !works.isEmpty()) {
-                            // Filter out null or empty works and join with comma
-                            String worksText = works.stream()
-                                    .filter(work -> work != null && !work.trim().isEmpty())
-                                    .collect(Collectors.joining(", "));
-                            return new SimpleStringProperty(worksText.isEmpty() ? "No notable works" : worksText);
+            // Simplified gender column
+            actorGenderColumn.setCellValueFactory(cellData -> {
+                try {
+                    if (cellData.getValue() != null) {
+                        char gender = cellData.getValue().getGender();
+                        switch (gender) {
+                            case 'M': return new SimpleStringProperty("Male");
+                            case 'F': return new SimpleStringProperty("Female");
+                            default: return new SimpleStringProperty("Other");
                         }
-                    } catch (Exception e) {
-                        logger.debug("Error getting notable works: {}", e.getMessage());
                     }
-
-                    // Try alternative method if getNotableWorks() fails
-                    try {
-                        java.lang.reflect.Field worksField = actor.getClass().getDeclaredField("notableWorks");
-                        worksField.setAccessible(true);
-                        Object works = worksField.get(actor);
-                        if (works instanceof List<?> worksList) {
-                            if (!worksList.isEmpty()) {
-                                String worksText = worksList.stream()
-                                        .map(Object::toString)
-                                        .filter(work -> work != null && !work.trim().isEmpty())
-                                        .collect(Collectors.joining(", "));
-                                return new SimpleStringProperty(worksText.isEmpty() ? "No notable works" : worksText);
-                            }
-                        }
-                    } catch (Exception e) {
-                        logger.debug("Could not get notable works through reflection: {}", e.getMessage());
-                    }
+                } catch (Exception e) {
+                    logger.error("Error getting gender: {}", e.getMessage());
                 }
-                return new SimpleStringProperty("No notable works");
-            } catch (Exception e) {
-                logger.debug("Unexpected error getting notable works: {}", e.getMessage());
-                return new SimpleStringProperty("Not available");
-            }
-        });
+                return new SimpleStringProperty("N/A");
+            });
 
-        // Set up search functionality
-        actorSearchField.textProperty().addListener((observable, oldValue, newValue) -> {
-            filterActors(newValue);
-        });
+            // Simplified ethnicity column
+            actorNationalityColumn.setCellValueFactory(cellData -> {
+                try {
+                    if (cellData.getValue() != null && cellData.getValue().getEthnicity() != null) {
+                        return new SimpleStringProperty(cellData.getValue().getEthnicity().getLabel());
+                    }
+                } catch (Exception e) {
+                    logger.error("Error getting ethnicity: {}", e.getMessage());
+                }
+                return new SimpleStringProperty("N/A");
+            });
 
-        // Set the filtered list to the table
-        actorsTable.setItems(filteredActors);
+            // Notable works column
+            actorNotableWorksColumn.setCellValueFactory(cellData -> {
+                try {
+                    if (cellData.getValue() != null && cellData.getValue().getNotableWorks() != null) {
+                        return new SimpleStringProperty(
+                            String.join(", ", cellData.getValue().getNotableWorks())
+                        );
+                    }
+                } catch (Exception e) {
+                    logger.error("Error getting notable works: {}", e.getMessage());
+                }
+                return new SimpleStringProperty("N/A");
+            });
+
+            // Set the items to the table
+            actorsTable.setItems(filteredActors);
+            
+        } catch (Exception e) {
+            logger.error("Error initializing actor table: {}", e.getMessage(), e);
+            showError("Initialization Error", "Failed to initialize actor table: " + e.getMessage());
+        }
     }
 
     private void initializeDirectorTable() {
@@ -292,6 +193,7 @@ public class CelebritiesController implements Initializable {
                 )
         );
 
+        // Set up cell value factory for birth date
         directorBirthDateColumn.setCellValueFactory(cellData ->
                 new SimpleStringProperty(
                         cellData.getValue().getBirthDate() != null ?
@@ -299,6 +201,7 @@ public class CelebritiesController implements Initializable {
                 )
         );
 
+        // Set up cell value factory for gender
         directorGenderColumn.setCellValueFactory(cellData -> {
             try {
                 Director director = cellData.getValue();
@@ -306,7 +209,7 @@ public class CelebritiesController implements Initializable {
                     try {
                         // First try the standard getter
                         Object gender = director.getGender();
-                        if (gender != null) {
+                        {
                             String genderStr = String.valueOf(gender);
                             if (!genderStr.trim().isEmpty() && !"null".equalsIgnoreCase(genderStr)) {
                                 // Capitalize first letter
@@ -434,39 +337,58 @@ public class CelebritiesController implements Initializable {
 
     private void loadCelebrities() {
         try {
+            // Validate services
+            if (actorService == null || directorService == null) {
+                throw new IllegalStateException("Actor or Director service is not initialized");
+            }
+
             // Load actors with error handling
-            List<Actor> actorList = actorService != null ? actorService.getAll() : Collections.emptyList();
-            if (actorList != null) {
-                // Set the actors to the table
-                actors.setAll(actorList);
-                filteredActors.setPredicate(actor -> true);
-            } else {
-                logger.warn("Actor service returned null list");
-                actors.clear();
+            List<Actor> actorList = new ArrayList<>();
+            try {
+                actorList = actorService.getAll();
+                if (actorList == null) {
+                    logger.warn("Actor service returned null list");
+                    actorList = Collections.emptyList();
+                }
+            } catch (Exception e) {
+                logger.error("Error loading actors: {}", e.getMessage(), e);
+                showError("Error", "Failed to load actors: " + e.getMessage());
             }
 
             // Load directors with error handling
-            List<Director> directorList = directorService != null ? directorService.getAll() : Collections.emptyList();
-            if (directorList != null) {
-                // Set the directors to the table
-                directors.setAll(directorList);
-                filteredDirectors.setPredicate(director -> true);
-            } else {
-                logger.warn("Director service returned null list");
-                directors.clear();
+            List<Director> directorList = new ArrayList<>();
+            try {
+                directorList = directorService.getAll();
+                if (directorList == null) {
+                    logger.warn("Director service returned null list");
+                    directorList = Collections.emptyList();
+                }
+            } catch (Exception e) {
+                logger.error("Error loading directors: {}", e.getMessage(), e);
+                showError("Error", "Failed to load directors: " + e.getMessage());
             }
 
-            // Update the status
-            updateStatus("Loaded " + actors.size() + " actors and " + directors.size() + " directors");
+            // Update UI on the JavaFX Application Thread
+            List<Actor> finalActorList = actorList;
+            List<Director> finalDirectorList = directorList;
+            Platform.runLater(() -> {
+                try {
+                    actors.setAll(finalActorList);
+                    directors.setAll(finalDirectorList);
+                    filteredActors.setPredicate(actor -> true);
+                    filteredDirectors.setPredicate(director -> true);
+                    updateStatus("Loaded " + actors.size() + " actors and " + directors.size() + " directors");
+                } catch (Exception e) {
+                    logger.error("Error updating UI: {}", e.getMessage(), e);
+                    showError("Error", "Failed to update UI: " + e.getMessage());
+                }
+            });
+
         } catch (Exception e) {
-            logger.error("Error loading celebrities: {}", e.getMessage(), e);
-            showError("Error", "Failed to load celebrities: " + e.getMessage());
-            // Clear tables on error to avoid showing stale data
-            actors.clear();
-            directors.clear();
+            logger.error("Unexpected error in loadCelebrities: {}", e.getMessage(), e);
+            showError("Error", "An unexpected error occurred: " + e.getMessage());
         }
     }
-
 
     /**
      * Filters the actors based on the search text

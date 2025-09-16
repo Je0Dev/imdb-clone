@@ -97,7 +97,83 @@
     <center>
         <VBox spacing="10" style="-fx-padding: 0 20 20 20;" VBox.vgrow="ALWAYS">
             <ScrollPane fitToWidth="true" style="-fx-background-color: transparent; -fx-padding: 0;" VBox.vgrow="ALWAYS">
-                <TableView fx:id="resultsTable" style="-fx-background-color: #1A1A1A; -fx-text-fill: #FFFFFF; -fx-table-cell-border-color: #333;" styleClass="content-table" VBox.vgrow="ALWAYS">
+                <TableView fx:id="resultsTable" style="-fx-background-color: #1A1A1A; -fx-text-fill: #FFFFFF; -fx-table-cell-border-color: #333;" styleClass="content-table" VBox.vgrow="ALWAYS" HBox.hgrow="ALWAYS">
+                    <columns>
+                        <!-- Common Columns -->
+                        <TableColumn fx:id="titleColumn" minWidth="250" prefWidth="350" sortable="true" text="Title" style="-fx-alignment: CENTER_LEFT;">
+                            <style>
+                                -fx-background-color: #2A2A2A;
+                                -fx-text-fill: #FFFFFF;
+                                -fx-font-weight: bold;
+                                -fx-border-color: #444;
+                            </style>
+                        </TableColumn>
+                        <TableColumn fx:id="yearColumn" minWidth="80" prefWidth="100" sortable="true" text="Year" style="-fx-alignment: CENTER;">
+                            <style>
+                                -fx-background-color: #2A2A2A;
+                                -fx-text-fill: #FFFFFF;
+                                -fx-font-weight: bold;
+                                -fx-border-color: #444;
+                            </style>
+                        </TableColumn>
+                        <TableColumn fx:id="typeColumn" minWidth="80" prefWidth="100" sortable="true" text="Type" style="-fx-alignment: CENTER;">
+                            <style>
+                                -fx-background-color: #2A2A2A;
+                                -fx-text-fill: #FFFFFF;
+                                -fx-font-weight: bold;
+                                -fx-border-color: #444;
+                            </style>
+                        </TableColumn>
+                        <TableColumn fx:id="ratingColumn" minWidth="80" prefWidth="100" sortable="true" text="Rating" style="-fx-alignment: CENTER;">
+                            <style>
+                                -fx-background-color: #2A2A2A;
+                                -fx-text-fill: #FFFFFF;
+                                -fx-font-weight: bold;
+                                -fx-border-color: #444;
+                            </style>
+                        </TableColumn>
+                        
+                        <!-- Movie Specific -->
+                        <TableColumn fx:id="directorColumn" minWidth="180" prefWidth="250" sortable="true" text="Director" style="-fx-alignment: CENTER_LEFT;">
+                            <style>
+                                -fx-background-color: #2A2A2A;
+                                -fx-text-fill: #FFFFFF;
+                                -fx-font-weight: bold;
+                                -fx-border-color: #444;
+                            </style>
+                        </TableColumn>
+                        
+                        <!-- Series Specific -->
+                        <TableColumn fx:id="seasonsColumn" minWidth="80" prefWidth="100" sortable="true" text="Seasons" style="-fx-alignment: CENTER;">
+                            <style>
+                                -fx-background-color: #2A2A2A;
+                                -fx-text-fill: #FFFFFF;
+                                -fx-font-weight: bold;
+                                -fx-border-color: #444;
+                            </style>
+                        </TableColumn>
+                        <TableColumn fx:id="episodesColumn" minWidth="80" prefWidth="100" sortable="true" text="Episodes" style="-fx-alignment: CENTER;">
+                            <style>
+                                -fx-background-color: #2A2A2A;
+                                -fx-text-fill: #FFFFFF;
+                                -fx-font-weight: bold;
+                                -fx-border-color: #444;
+                            </style>
+                        </TableColumn>
+                        
+                        <!-- Common Last Column -->
+                        <TableColumn fx:id="castColumn" minWidth="300" prefWidth="400" sortable="false" text="Cast" style="-fx-alignment: CENTER_LEFT;">
+                            <style>
+                                -fx-background-color: #2A2A2A;
+                                -fx-text-fill: #FFFFFF;
+                                -fx-font-weight: bold;
+                                -fx-border-color: #444;
+                            </style>
+                        </TableColumn>
+                    </columns>
+                    <columnResizePolicy>
+                        <TableView fx:constant="CONSTRAINED_RESIZE_POLICY"/>
+                    </columnResizePolicy>
                     <styleClass>
                         <String fx:value="table-view" />
                         <String fx:value="content-table" />

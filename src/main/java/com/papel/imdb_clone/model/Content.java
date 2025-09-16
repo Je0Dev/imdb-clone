@@ -18,7 +18,7 @@ public abstract class Content {
     private Map<Integer, Integer> userRatings; // userId -> rating
     private Double imdbRating; // IMDb rating
     private Date releaseDate;
-    private int startYear;
+    int startYear;
     //Genres and actors
     private List<Genre> genres = new ArrayList<>();
     private List<Actor> actors = new ArrayList<>();
@@ -130,6 +130,24 @@ public abstract class Content {
         return actors != null ? List.copyOf(actors) : List.of(); // Updated to return an unmodifiable list
     }
 
+    /**
+     * Gets the year of the content as an integer
+     * @return the year as an integer (e.g., 2023)
+     */
+    public int getYearAsInt() {
+        if (this.year != null) {
+            Calendar cal = Calendar.getInstance();
+            cal.setTime(this.year);
+            return cal.get(Calendar.YEAR);
+        } else if (this.startYear > 0) {
+            return this.startYear;
+        } else if (this.releaseDate != null) {
+            Calendar cal = Calendar.getInstance();
+            cal.setTime(this.releaseDate);
+            return cal.get(Calendar.YEAR);
+        }
+        return 0; // Default if no date is set
+    }
 
     //setters
     public void setGenre(Genre genre) {
@@ -203,7 +221,7 @@ public abstract class Content {
     public void setGenres(List<Genre> genres) {
         this.genres = new ArrayList<>(genres);
         if (!genres.isEmpty()) {
-            this.genre = genres.getFirst();
+            this.genre = genres.get(0);
         } else {
             this.genre = null;
         }

@@ -21,6 +21,8 @@ import javafx.stage.Stage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static com.papel.imdb_clone.util.UIUtils.showError;
+
 /**
  * Main controller for the application's primary interface.
  * Handles navigation between different views and manages the application state.
@@ -310,23 +312,13 @@ public class RefactoredMainController {
     /**
      * Displays an error dialog with the given title and message.
      *
-     * @param title   The title of the error dialog
-     * @param message The error message to display
-     */
-    private void showError(String title, String message) {
         if (primaryStage != null) {
-            Alert alert = new Alert(Alert.AlertType.ERROR);
-            alert.initOwner(primaryStage);
-            alert.setTitle(title);
-            alert.setHeaderText(null);
-            alert.setContentText(message);
-            alert.showAndWait();
-        } else {
-            logger.error("{}: {}", title, message);
+            uiCoordinator.setPrimaryStage(primaryStage);
         }
-    }
 
-    /**
+        // Set user session if available
+        if (currentUser != null && sessionToken != null) {
+            uiCoordinator.setUserSession(currentUser, sessionToken);
      * Navigates to the TV shows view.
      *
      * @param event The action event that triggered the navigation

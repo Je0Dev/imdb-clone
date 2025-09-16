@@ -68,6 +68,7 @@ public class Movie extends Content {
         return new ArrayList<>(actors);
     }
 
+    @Override
     public String getDirector() {
         return super.getDirector();
     }

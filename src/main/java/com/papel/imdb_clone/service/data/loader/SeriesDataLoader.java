@@ -34,6 +34,7 @@ public class SeriesDataLoader extends BaseDataLoader {
     private final Ethnicity ethnicity = Ethnicity.CAUCASOID; // Default ethnicity
     private String lastName;
     private String firstName;
+    private String creatorName;
 
     public SeriesDataLoader(
             ContentService<Series> seriesService,
@@ -73,7 +74,7 @@ public class SeriesDataLoader extends BaseDataLoader {
                 try {
                     // Parse CSV line
                     String[] parts = parseCSVLine(line);
-                    if (parts.length >= 8) {
+                    if (parts.length >= 7) {
 
                         String title = parts[0].trim();
                         // Handle missing or invalid genre
@@ -95,50 +96,29 @@ public class SeriesDataLoader extends BaseDataLoader {
                             logger.warn("Invalid seasons count '{}' at line {}. Using default value 1.", parts[2].trim(), lineNumber);
                         }
 
-                        // Parse start year and end year
                         int startYear = 0;
-                        int endYear = 0;
                         int currentYear = Calendar.getInstance().get(Calendar.YEAR);
 
-                        // Handle both YYYY-YYYY and YYYY,YYYY formats
-                        String yearRange = parts[3].trim();
-                        if (yearRange.contains("-")) {
-                            String[] years = yearRange.split("-");
-                            try {
-                                startYear = Integer.parseInt(years[0].trim());
-                                endYear = years.length > 1 && !years[1].isEmpty() ?
-                                        Integer.parseInt(years[1].trim()) : currentYear;
-                            } catch (NumberFormatException e) {
-                                logger.warn("Invalid year format '{}' at line {}. Using current year.", yearRange, lineNumber);
+                        // Parse the year (now just a single year instead of a range)
+                        String yearStr = parts[3].trim();
+                        try {
+                            startYear = Integer.parseInt(yearStr);
+                            // Validate start year (1928 is when first TV broadcast happened)
+                            if (startYear < 1928 || startYear > currentYear + 2) {
+                                logger.warn("Start year {} for series '{}' is out of range (1928-{}). Using current year as fallback.",
+                                        startYear, title, currentYear + 2);
                                 startYear = currentYear;
-                                endYear = currentYear;
                             }
-                        } else {
-                            // Handle comma-separated years
-                            try {
-                                startYear = Integer.parseInt(parts[3].trim());
-                                endYear = parts.length > 4 && !parts[4].trim().isEmpty() ?
-                                        Integer.parseInt(parts[4].trim()) : currentYear;
-                            } catch (NumberFormatException | ArrayIndexOutOfBoundsException e) {
-                                logger.warn("Invalid year format at line {}. Using current year.", lineNumber);
-                                startYear = currentYear;
-                                endYear = currentYear;
-                            }
-                        }
-
-                        // Validate start year (1928 is when first TV broadcast happened)
-                        if (startYear < 1928 || startYear > currentYear + 2) {
-                            logger.warn("Start year {} for series '{}' is out of range (1928-{}). Using current year as fallback.",
-                                    startYear, title, currentYear + 2);
+                            logger.debug("Parsed startYear: {} for series: {}", startYear, title);
+                        } catch (NumberFormatException e) {
+                            logger.warn("Invalid year format '{}' at line {}. Using current year.", yearStr, lineNumber);
                             startYear = currentYear;
                         }
-                        logger.debug("Parsed startYear: {} for series: {}", startYear, title);
 
-                        // Parse rating - adjust index based on the format
-                        int ratingIndex = yearRange.contains(",") ? 5 : 4;
+                        // Parse rating (now at index 4 since we removed end year)
                         double rating = 0.0;
                         try {
-                            String ratingStr = parts[ratingIndex].trim();
+                            String ratingStr = parts[4].trim();
                             if (!ratingStr.isEmpty()) {
                                 rating = Double.parseDouble(ratingStr);
                                 // Ensure rating is between 0 and 10
@@ -150,11 +130,11 @@ public class SeriesDataLoader extends BaseDataLoader {
                             logger.warn("Invalid rating format at line {}. Using default value 0.0: {}", lineNumber, line);
                         }
 
-                        // Parse director(s) - adjust index based on the format
-                        int directorIndex = yearRange.contains(",") ? 6 : 5;
+                        // Parse director(s) - now at index 5
                         String directorName = "";
                         try {
-                            directorName = parts[directorIndex].trim();
+                            directorName = parts[5].trim();
+                            creatorName = directorName; // Set creatorName from director
                         } catch (ArrayIndexOutOfBoundsException e) {
                             logger.warn("Missing director at line {}. Using empty string: {}", lineNumber, line);
                         }
@@ -209,7 +189,7 @@ public class SeriesDataLoader extends BaseDataLoader {
                         }
 
                         // Parse actors (semicolon separated) - adjust index based on the format
-                        int actorsIndex = yearRange.contains(",") ? 7 : 6;
+                        int actorsIndex = 6;
                         String[] actorNames = new String[0];
                         try {
                             actorNames = parts[actorsIndex].trim().split(";");
@@ -227,31 +207,25 @@ public class SeriesDataLoader extends BaseDataLoader {
                         // Create the series
                         Series series = new Series(title);
 
-                        // Set the start year (this will also update the release date)
-                        if (startYear > 0) {
-                            try {
-                                // Create a date from the start year (set to January 1st of that year)
-                                Calendar cal = Calendar.getInstance();
-                                cal.set(Calendar.YEAR, startYear);
-                                cal.set(Calendar.MONTH, Calendar.JANUARY);
-                                cal.set(Calendar.DAY_OF_MONTH, 1);
-                                
-                                // Set the release date first (which will also set startYear)
-                                series.setReleaseDate(cal.getTime());
-                                logger.debug("Set release date to {}-01-01 for series: {}", startYear, title);
-                                
-                                // Explicitly set startYear as well to ensure consistency
-                                series.setStartYear(startYear);
-                                logger.debug("Set startYear to {} for series: {}", startYear, title);
-                            } catch (Exception e) {
-                                logger.error("Error setting release date for series: {}", title, e);
-                                // Fall back to just setting the year if date creation fails
-                                series.setStartYear(startYear);
-                            }
-                        } else {
-                            logger.warn("No valid start year found for series: " + title);
+                        // When creating the series, we only set the start year
+                        try {
+                            Calendar cal = Calendar.getInstance();
+                            cal.set(Calendar.YEAR, startYear);
+                            cal.set(Calendar.MONTH, 0); // January
+                            cal.set(Calendar.DAY_OF_MONTH, 1);
+                            
+                            // Set the release date (which will also set startYear)
+                            series.setReleaseDate(cal.getTime());
+                            logger.debug("Set release date to {}-01-01 for series: {}", startYear, title);
+                            
+                            // Explicitly set startYear as well to ensure consistency
+                            series.setStartYear(startYear);
+                            logger.debug("Set startYear to {} for series: {}", startYear, title);
+                        } catch (Exception e) {
+                            logger.error("Error setting release date for series: {}", title, e);
+                            // Fall back to just setting the year if date creation fails
+                            series.setStartYear(startYear);
                         }
-                        
 
                         series.setRating(rating);
                         logger.debug("Final series object: {}", series);
@@ -274,35 +248,18 @@ public class SeriesDataLoader extends BaseDataLoader {
                                 String creatorFirstName = creatorNameParts[0].trim();
                                 String creatorLastName = creatorNameParts[1].trim();
 
-                                // Find or create director
-                                Director creator = directorService.findByFullName(creatorFirstName, creatorLastName)
-                                        .orElseGet(() -> {
-                                            Director newDirector = new Director(
-                                                    creatorFirstName,
-                                                    creatorLastName,
-                                                    birthDate,
-                                                    gender,
-                                                    ethnicity
-                                            );
-                                            return directorService.save(newDirector);
-                                        });
-                                series.setDirector(creator);
+                                // Set director name as a string
+                                String directorFullName = creatorFirstName + (creatorLastName.isEmpty() ? "" : " " + creatorLastName);
+                                series.setDirector(directorFullName);
                             } else {
                                 // Split the creator name into first and last name
                                 String[] nameParts = creatorName.trim().split("\\s+", 2);
                                 String firstName = nameParts[0];
                                 String lastName = nameParts.length > 1 ? nameParts[1] : "";
 
-                                // Create director with default values
-                                Director creator = new Director(
-                                        firstName,
-                                        lastName,
-                                        birthDate,
-                                        gender,
-                                        ethnicity
-                                );
-                                directorService.save(creator);
-                                series.setDirector(creator);
+                                // Set director name as a string
+                                String directorFullName = firstName + (lastName.isEmpty() ? "" : " " + lastName);
+                                series.setDirector(directorFullName);
                             }
                         }
 

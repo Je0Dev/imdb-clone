@@ -9,7 +9,7 @@ import java.util.List;
  */
 public class Episode {
     private int id;
-    private Director director;
+    private String director;
     private double imdbRating;
     private List<Actor> actors;
     private String title;
@@ -25,26 +25,25 @@ public class Episode {
         this.director = null;
         this.imdbRating = 0.0;
         this.actors = new ArrayList<>();
+        this.title = "";
+        this.episodeNumber = 0;
     }
 
     // Additional constructor for simple episode creation
     public Episode(String title, int duration) {
+        this();
         this.title = title;
-        this.director = null;
-        this.imdbRating = 0.0;
-        this.actors = new ArrayList<>();
     }
 
     // Constructor for episode with episode number, title, duration, and summary
     public Episode(int episodeNumber, String title, int duration, String summary) {
+        this();
         this.episodeNumber = episodeNumber;
         this.title = title;
-        this.director = null;
-        this.imdbRating = 0.0;
-        this.actors = new ArrayList<>();
     }
 
     public Episode(int episodeNumber, String episodeTitle) {
+        this();
         this.episodeNumber = episodeNumber;
         this.title = episodeTitle;
     }
@@ -58,8 +57,12 @@ public class Episode {
         this.id = id;
     }
 
-    public Director getDirector() {
+    public String getDirector() {
         return director;
+    }
+    
+    public void setDirector(String director) {
+        this.director = director;
     }
 
 
@@ -88,7 +91,7 @@ public class Episode {
     public String toString() {
         return "Episode{" +
                 "id=" + id +
-                ", director=" + (director != null ? director.getFullName() : "Unknown") +
+                ", director='" + (director != null ? director : "Unknown") + "'" +
                 ", imdbRating=" + imdbRating +
                 ", actors=" + actors.size() +
                 '}';
