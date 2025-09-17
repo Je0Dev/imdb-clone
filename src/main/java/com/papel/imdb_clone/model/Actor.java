@@ -48,13 +48,45 @@ public class Actor extends Celebrity {
 
     @Override
     public String toString() {
-        return "Actor{" +
-                "id=" + getId() +
-                ", firstName='" + getFirstName() + '\'' +
-                ", lastName='" + getLastName() + '\'' +
-                ", birthDate=" + getBirthDate() +
-                ", gender=" + getGender() +
-                '}';
+        return getFullName();
+    }
+
+    /**
+     * Gets a formatted string with the actor's full name, birth year, and notable works.
+     * @return Formatted string with actor information
+     */
+    public String getFormattedInfo() {
+        StringBuilder sb = new StringBuilder();
+        sb.append(getFullName());
+        
+        // Add birth year if available
+        if (getBirthDate() != null) {
+            sb.append(" (");
+            sb.append(getBirthDate().getYear());
+            sb.append(")");
+        }
+        
+        // Add ethnicity if available
+        if (ethnicity != null) {
+            sb.append("\n").append(ethnicity.getLabel());
+        }
+        
+        // Add notable works if available
+        List<String> works = getNotableWorks();
+        if (!works.isEmpty()) {
+            sb.append("\n\nNotable Works:\n");
+            for (int i = 0; i < Math.min(5, works.size()); i++) {
+                sb.append("• ").append(works.get(i));
+                if (i < Math.min(5, works.size()) - 1) {
+                    sb.append("\n");
+                }
+            }
+            if (works.size() > 5) {
+                sb.append("\n... and ").append(works.size() - 5).append(" more");
+            }
+        }
+        
+        return sb.toString();
     }
 
     // setter for id

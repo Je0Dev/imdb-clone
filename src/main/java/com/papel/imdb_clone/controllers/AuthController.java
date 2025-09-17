@@ -1,5 +1,6 @@
 package com.papel.imdb_clone.controllers;
 
+import com.papel.imdb_clone.exceptions.AuthException;
 import com.papel.imdb_clone.exceptions.ValidationException;
 import com.papel.imdb_clone.model.User;
 import com.papel.imdb_clone.service.AuthService;
@@ -193,6 +194,30 @@ public class AuthController extends BaseController {
         logger.warn("Validation error: {}", errorMessage);
     }
 
+    /**
+     * Handles authentication errors and updates the UI accordingly
+     * @param e The AuthException that occurred
+     * @param errorLabel The label to display the error message
+     */
+    private void handleAuthError(AuthException e, Label errorLabel) {
+        String errorMessage = e.getMessage();
+
+        // Use default message if specific message isn't available
+        if (errorMessage == null || errorMessage.isEmpty()) {
+            errorMessage = e.getErrorType() != null ?
+                    e.getErrorType().getDefaultMessage() :
+                    "An authentication error occurred";
+        }
+
+        errorLabel.setText(errorMessage);
+        errorLabel.setStyle("-fx-text-fill: #d32f2f; -fx-font-weight: bold; -fx-wrap-text: true;");
+        errorLabel.setVisible(true);
+        errorLabel.setManaged(true);
+
+        // Log the error
+        logger.warn("Authentication error: {}", errorMessage);
+    }
+
     // Handle unexpected error which is used to display the error message
     private void handleUnexpectedError(String operation, Exception e) {
         String errorMessage = String.format("An unexpected error occurred during %s. Please try again.", operation);
@@ -212,41 +237,48 @@ public class AuthController extends BaseController {
         }
     }
 
-    /**Handle login which is used to authenticate the user
-     * @throws ValidationException if the input is invalid
-     * @throws Exception if an unexpected error occurs
-     */
     @FXML
-    private void handleLogin() throws ValidationException, Exception {
+    private void handleLogin() {
         try {
-            // Get form values for username and password fields
+            // Clear previous errors
+            loginErrorLabel.setText("");
+
             String username = loginUsernameField.getText().trim();
             String password = loginPasswordField.getText();
 
-            // Validate input
-            inputValidator.validateLogin(username, password);
-
-            // Attempt login
-            authService.login(username, password);
-
-            // Get the current stage from the login button
-            Stage currentStage = (Stage) loginButton.getScene().getWindow();
-
-            // Navigate to main app-gui
-            try {
-                navigationService.navigateToMainApp(currentStage);
-            } catch (Exception e) {
-                logger.error("Failed to navigate to main app: {}", e.getMessage(), e);
-                showLoginError("Failed to load the main application. Please try again.");
+            // Input validation
+            if (username.isEmpty() || password.isEmpty()) {
+                throw new ValidationException("Username and password are required", "VALIDATION_ERROR", null, null);
             }
 
-            // Clear login form
-            clearLoginForm();
+            logger.info("Attempting login for user: {}", username);
+
+            // Authenticate user
+            String token = authService.login(username, password);
+
+            if (token != null) {
+                // Store session token and get current user
+                this.sessionToken = token;
+                this.currentUser = authService.getCurrentUser(token);
+
+                // Log successful login
+                logger.info("User logged in successfully: {}", username);
+
+                // Clear sensitive data
+                loginUsernameField.clear();
+                loginPasswordField.clear();
+
+                // Navigate to main application
+                navigationService.navigateTo("/fxml/main-refactored.fxml", (Stage) loginButton.getScene().getWindow(), "IMDb Clone");
+            }
+
+        } catch (AuthException e) {
+            logger.warn("Login failed: {}", e.getMessage());
+            handleAuthError(e, loginErrorLabel);
         } catch (ValidationException e) {
-            // Handle validation error
             handleValidationError(e, loginErrorLabel);
         } catch (Exception e) {
-            // Handle unexpected error
+            logger.error("Unexpected error during login: {}", e.getMessage(), e);
             handleUnexpectedError("login", e);
         }
     }
@@ -258,14 +290,13 @@ public class AuthController extends BaseController {
         loginErrorLabel.setVisible(false);
     }
 
-    /**Handle register which is used to register a new user
-     * @throws ValidationException if the input is invalid
-     * @throws Exception if an unexpected error occurs
-     */
     @FXML
-    private void handleRegister()throws ValidationException, Exception {
+    private void handleRegister() {
         try {
-            // Get form values for first name, last name, username, email, password, and confirm password
+            // Clear previous errors
+            registerErrorLabel.setText("");
+
+            // Get and validate input
             String firstName = firstNameField.getText().trim();
             String lastName = lastNameField.getText().trim();
             String username = registerUsernameField.getText().trim();
@@ -273,23 +304,31 @@ public class AuthController extends BaseController {
             String password = passwordField.getText();
             String confirmPassword = confirmPasswordField.getText();
 
-            // Validate all inputs
-            inputValidator.validateRegistration(firstName, lastName, username, email, password, confirmPassword);
+            logger.info("Starting registration process for user: {}", username);
 
-            // Create new user with all the values
-            User newUser = new User(
-                    firstName,
-                    lastName,
-                    username,
-                    // Get gender from toggle group
-                    genderToggleGroup.getSelectedToggle() != null ?
-                            ((RadioButton) genderToggleGroup.getSelectedToggle()).getText().charAt(0) : ' ',
-                    email
-            );
+            // Basic input validation
+            if (firstName.isEmpty() || lastName.isEmpty() || username.isEmpty() ||
+                    email.isEmpty() || password.isEmpty() || confirmPassword.isEmpty()) {
+                throw new ValidationException("All fields are required", "VALIDATION_ERROR", null, null);
+            }
 
-            // Register user
-            authService.register(newUser, password);
+            // Email format validation
+            if (!email.matches("^[A-Za-z0-9+_.-]+@(.+)$")) {
+                throw new ValidationException("Please enter a valid email address", "VALIDATION_ERROR", null, null);
+            }
 
+            // Password confirmation check
+            if (!password.equals(confirmPassword)) {
+                throw new ValidationException("Passwords do not match", "VALIDATION_ERROR", null, null);
+            }
+
+            // Create and register new user
+            logger.debug("Creating new user object for: {}", username);
+            User newUser = new User(firstName, lastName, username, 'M', email);
+            
+            // Register the user
+            authService.register(newUser, password, confirmPassword);
+            
             // Show success message and switch to login form
             loginErrorLabel.setStyle("-fx-text-fill: #2e7d32;");
             loginErrorLabel.setText("Registration successful! Please log in.");
@@ -299,6 +338,9 @@ public class AuthController extends BaseController {
             clearRegistrationForm();
             showLoginForm(null);
 
+        } catch (AuthException e) {
+            logger.warn("Registration failed: {}", e.getMessage());
+            handleAuthError(e, registerErrorLabel);
         } catch (ValidationException e) {
             handleValidationError(e, registerErrorLabel);
         } catch (Exception e) {
@@ -306,7 +348,7 @@ public class AuthController extends BaseController {
             registerErrorLabel.setStyle("-fx-text-fill: #d32f2f;");
             registerErrorLabel.setText("Registration failed: " + e.getMessage());
             registerErrorLabel.setVisible(true);
-            logger.error("Registration error: {}", e.getMessage(), e);
+            logger.error("Unexpected registration error: {}", e.getMessage(), e);
         }
     }
 

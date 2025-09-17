@@ -189,7 +189,25 @@ public class MovieDataLoader extends BaseDataLoader {
                                 try {
                                     if (genreName != null && !genreName.trim().isEmpty()) {
                                         // Normalize genre name: trim, uppercase, and replace special characters
-                                        String normalizedGenre = getString(genreName);
+                                        String normalizedGenre = genreName.trim().toUpperCase()
+                                                .replace("-", "_")
+                                                .replace(" ", "_")
+                                                .replace("&", "AND")
+                                                .replace("/", "_")
+                                                .replace("'", "");
+
+                                        // Special case handling for common variations
+                                        if (normalizedGenre.equals("SCIFI")) {
+                                            normalizedGenre = "SCI_FI";
+                                        } else if (normalizedGenre.equals("SCIFANTASY")) {
+                                            normalizedGenre = "SCI_FI"; // Map to SCI_FI since SCIENCE_FANTASY doesn't exist
+                                        } else if (normalizedGenre.matches("^DRAMA.*")) {
+                                            normalizedGenre = "DRAMA";
+                                        } else if (normalizedGenre.matches("^COMEDY.*")) {
+                                            normalizedGenre = "COMEDY";
+                                        } else if (normalizedGenre.equals("DOCUMENTARY")) {
+                                            normalizedGenre = "DOCUMENTARY";
+                                        }
 
                                         try {
                                             Genre genre = Genre.valueOf(normalizedGenre);
@@ -306,28 +324,5 @@ public class MovieDataLoader extends BaseDataLoader {
             logger.error("Error reading movies file: {}", e.getMessage(), e);
             throw new FileParsingException("Error reading movies file: " + e.getMessage());
         }
-    }
-
-    private static String getString(String genreName) {
-        String normalizedGenre = genreName.trim().toUpperCase()
-                .replace("-", "_")
-                .replace(" ", "_")
-                .replace("&", "AND")
-                .replace("/", "_")
-                .replace("'", "");
-
-        // Special case handling for common variations
-        if (normalizedGenre.equals("SCIFI")) {
-            normalizedGenre = "SCI_FI";
-        } else if (normalizedGenre.equals("SCIFANTASY")) {
-            normalizedGenre = "SCI_FI"; // Map to SCI_FI since SCIENCE_FANTASY doesn't exist
-        } else if (normalizedGenre.matches("^DRAMA.*")) {
-            normalizedGenre = "DRAMA";
-        } else if (normalizedGenre.matches("^COMEDY.*")) {
-            normalizedGenre = "COMEDY";
-        } else if (normalizedGenre.equals("DOCUMENTARY")) {
-            normalizedGenre = "DOCUMENTARY";
-        }
-        return normalizedGenre;
     }
 }

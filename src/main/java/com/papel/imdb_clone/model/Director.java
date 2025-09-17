@@ -61,18 +61,42 @@ public class Director extends Celebrity {
         return ethnicity != null ? ethnicity.getLabel() : null;
     }
 
+    /**
+     * Gets a formatted string with the director's full name, birth year, and notable works.
+     * @return Formatted string with director information
+     */
+    public String getFormattedInfo() {
+        StringBuilder sb = new StringBuilder();
+        sb.append(getFullName());
+        
+        // Add birth year if available
+        if (getBirthDate() != null) {
+            sb.append(" (");
+            sb.append(getBirthDate().getYear());
+            sb.append(")");
+        }
+        
+        // Add notable works if available
+        List<String> works = getNotableWorks();
+        if (!works.isEmpty()) {
+            sb.append("\n\nNotable Works:\n");
+            for (int i = 0; i < Math.min(5, works.size()); i++) {
+                sb.append("• ").append(works.get(i));
+                if (i < Math.min(5, works.size()) - 1) {
+                    sb.append("\n");
+                }
+            }
+            if (works.size() > 5) {
+                sb.append("\n... and ").append(works.size() - 5).append(" more");
+            }
+        }
+        
+        return sb.toString();
+    }
 
     @Override
     public String toString() {
-        return "Director{" +
-                "id=" + getId() +
-                ", firstName='" + getFirstName() + '\'' +
-                ", lastName='" + getLastName() + '\'' +
-                ", birthDate=" + getBirthDate() +
-                ", gender=" + getGender() +
-                ", bestWorks=" + bestWorks +
-                ", ethnicity=" + (ethnicity != null ? ('\'' + ethnicity.getLabel() + '\'') : null) +
-                '}';
+        return getFullName();
     }
 
     //setters

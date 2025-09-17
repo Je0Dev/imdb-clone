@@ -82,8 +82,19 @@ public class NavigationService {
         }
     }
 
-    public void showCelebrities() {
-        navigateTo("/fxml/celebrities-view.fxml", ServiceLocator.getPrimaryStage(), "Celebrities");
+    public void showCelebrities(Stage currentStage) {
+        try {
+            if (currentStage == null) {
+                currentStage = ServiceLocator.getPrimaryStage();
+                if (currentStage == null) {
+                    throw new IllegalStateException("Primary stage is not set. Cannot navigate to Celebrities view.");
+                }
+            }
+            navigateTo("/fxml/celebrities-view.fxml", currentStage, "Celebrities");
+        } catch (Exception e) {
+            logger.error("Failed to navigate to celebrities view: {}", e.getMessage(), e);
+            throw new RuntimeException("Failed to navigate to celebrities view: " + e.getMessage(), e);
+        }
     }
 
 

@@ -2,12 +2,19 @@ package com.papel.imdb_clone.service;
 
 import com.papel.imdb_clone.exceptions.AuthException;
 import com.papel.imdb_clone.model.User;
+import com.papel.imdb_clone.util.PasswordHasher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
+import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Service responsible for user authentication and session management.
@@ -16,102 +23,159 @@ import java.util.UUID;
  */
 public class AuthService {
     private static final Logger logger = LoggerFactory.getLogger(AuthService.class);
+    private static final String USERS_UPDATED_FILE = "src/main/resources/data/users_updated.txt";
     private static AuthService instance;
     private User admin;
 
     // User storage
     private Map<String, User> usersByUsername = new HashMap<>();
+    
+    /**
+     * Gets the map of usernames to User objects.
+     * @return A map of usernames to User objects
+     */
+    public Map<String, User> getUsersByUsername() {
+        return usersByUsername;
+    }
     private Map<String, User> usersByEmail = new HashMap<>();
-    private final Map<String, String> userSessions = new HashMap<>();
+    private final Map<String, String> userSessions = new ConcurrentHashMap<>();
+    private int nextUserId = 1;
 
     // Dependencies
     private final UserStorageService userStorageService;
-
-    private AuthService(User user) {
+    
+    private AuthService() {
         this.userStorageService = UserStorageService.getInstance();
         logger.info("Initializing AuthService...");
-
-        try {
-            loadUsers();
-            logger.info("Initial user load complete. User count: {}", usersByUsername.size());
-            if (user != null) {
-                ensureAdminUserExists(user);
-            } else if (usersByUsername.isEmpty()) {
-
-                // Create a default admin user if none exists
-                User defaultAdmin = new User("Admin", "User", "admin", 'M', "admin@imdbclone.com");
-                String Password = "admin123";
-                defaultAdmin.setPassword(Password);
-                usersByUsername.put(defaultAdmin.getUsername(), defaultAdmin);
-                usersByEmail.put(defaultAdmin.getEmail(), defaultAdmin);
-                saveUsers();
-                logger.info("Created default admin user");
-            }
-        } catch (Exception e) {
-            logger.error("Failed to initialize AuthService: {}", e.getMessage(), e);
-            throw new AuthException(AuthException.AuthErrorType.INTERNAL_ERROR,
-                    "Failed to initialize AuthService", e);
-        }
+        loadUsers();
     }
 
-    /**
-     * Gets the singleton instance of the AuthService.
-     *
-     * @return The AuthService instance which is used to manage user authentication and sessions.
-     */
     public static synchronized AuthService getInstance() {
         if (instance == null) {
-            instance = new AuthService(null);
+            instance = new AuthService();
         }
         return instance;
     }
 
-
     /**
-     * Registers a new user with the system.
-     *
-     * @param user     The user to register
-     * @param password The plaintext password
-     * @throws AuthException if registration fails (username/email exists, invalid input, etc.)
+     * Loads users from the users_updated.txt file.
      */
-    public void register(User user, String password) {
-        if (user == null || password == null || password.trim().isEmpty()) {
-            throw new AuthException(
-                    AuthException.AuthErrorType.INVALID_INPUT,
-                    "User and password are required"
-            );
+    private void loadUsersFromTextFile() {
+        try (BufferedReader reader = new BufferedReader(new FileReader(USERS_UPDATED_FILE))) {
+            String line;
+            boolean isFirstLine = true;
+            
+            while ((line = reader.readLine()) != null) {
+                // Skip empty lines and comments
+                if (line.trim().isEmpty() || line.trim().startsWith("#")) {
+                    continue;
+                }
+                
+                // Skip header line
+                if (isFirstLine && line.contains("id,username,email,password,fullName")) {
+                    isFirstLine = false;
+                    continue;
+                }
+                
+                String[] parts = line.split(",");
+                if (parts.length >= 5) {
+                    try {
+                        int id = Integer.parseInt(parts[0].trim());
+                        String username = parts[1].trim();
+                        String email = parts[2].trim();
+                        String password = parts[3].trim();
+                        String[] nameParts = parts[4].trim().split("\\s+", 2);
+                        String firstName = nameParts.length > 0 ? nameParts[0] : "";
+                        String lastName = nameParts.length > 1 ? nameParts[1] : "";
+                        
+                        // Create and add user
+                        User user = new User(firstName, lastName, username, ' ', email);
+                        user.setId(id);
+                        // Hash the password when loading from text file
+                        user.setPassword(PasswordHasher.hashPassword(password));
+                        
+                        usersByUsername.put(username, user);
+                        usersByEmail.put(email, user);
+                        
+                        // Update nextUserId if needed
+                        if (id >= nextUserId) {
+                            nextUserId = id + 1;
+                        }
+                        
+                        logger.info("Loaded user: {} (ID: {})", username, id);
+                    } catch (Exception e) {
+                        logger.warn("Error parsing user line: {}", line, e);
+                    }
+                }
+            }
+            
+            logger.info("Loaded {} users from text file", usersByUsername.size());
+            
+            // Save the loaded users to the serialized file for next time
+            if (!usersByUsername.isEmpty()) {
+                saveUsers();
+            }
+            
+        } catch (IOException e) {
+            logger.error("Error loading users from text file", e);
         }
-
-        //username and email check
-        if (usersByUsername.containsKey(user.getUsername())) {
-            throw new AuthException(
-                    AuthException.AuthErrorType.USERNAME_EXISTS,
-                    "Username already exists"
-            );
+    }
+    
+    /**
+     * Loads users from the users_updated.txt file.
+     */
+    private void loadUsers() {
+        // Clear existing users
+        usersByUsername.clear();
+        usersByEmail.clear();
+        nextUserId = 1;
+        
+        // Always load from text file to ensure we have the latest data
+        logger.info("Loading users from text file...");
+        loadUsersFromTextFile();
+        
+        // If no users were loaded, create a default admin user
+        if (usersByUsername.isEmpty()) {
+            logger.info("No users found in text file, creating default admin user");
+            createDefaultAdminUser();
         }
-
-        if (usersByEmail.containsKey(user.getEmail())) {
-            throw new AuthException(
-                    AuthException.AuthErrorType.EMAIL_EXISTS,
-                    "Email already registered"
-            );
-        }
-
+        
+        logger.info("Successfully loaded {} users", usersByUsername.size());
+    }
+    
+    /**
+     * Creates a default admin user if no users exist.
+     */
+    private void createDefaultAdminUser() {
         try {
-            /**
-             * Set the password for the user
-             */
-            user.setPassword(password);
-            usersByUsername.put(user.getUsername(), user);
-            usersByEmail.put(user.getEmail(), user);
+            User admin = new User("Admin", "User", "admin", 'M', "admin@imdbclone.com");
+            admin.setPassword(PasswordHasher.hashPassword("admin123"));
+            admin.setId(nextUserId++);
+            
+            usersByUsername.put(admin.getUsername(), admin);
+            usersByEmail.put(admin.getEmail(), admin);
+            
+            // Save the new admin user
             saveUsers();
-            logger.info("User registered: {}", user.getUsername());
+            logger.info("Created default admin user: {}", admin.getUsername());
         } catch (Exception e) {
-            logger.error("Registration failed for user {}: {}", user.getUsername(), e.getMessage(), e);
-            throw new AuthException(
-                    AuthException.AuthErrorType.REGISTRATION_FAILED,
-                    "Registration failed: " + e.getMessage(), e
-            );
+            logger.error("Failed to create default admin user: {}", e.getMessage(), e);
+        }
+    }
+    
+    /**
+     * Saves the current user data to storage.
+     */
+    /**
+     * Saves the current user data to storage.
+     * This method is public to allow for administrative tasks.
+     */
+    public void saveUsers() {
+        try {
+            userStorageService.saveUsers(usersByUsername, usersByEmail);
+            logger.info("Saved {} users to storage", usersByUsername.size());
+        } catch (Exception e) {
+            logger.error("Failed to save users: {}", e.getMessage(), e);
         }
     }
 
@@ -133,6 +197,19 @@ public class AuthService {
 
         User user = usersByUsername.get(username);
         if (user == null) {
+            logger.warn("Login failed: User not found - {}", username);
+            throw new AuthException(
+                    AuthException.AuthErrorType.INVALID_CREDENTIALS,
+                    "Invalid username or password"
+            );
+        }
+        
+        // Verify password using secure hashing
+        String storedPassword = user.getPassword();
+        boolean passwordMatches = com.papel.imdb_clone.util.PasswordHasher.verifyPassword(password, storedPassword);
+        
+        if (!passwordMatches) {
+            logger.warn("Login failed: Incorrect password for user - {}", username);
             throw new AuthException(
                     AuthException.AuthErrorType.INVALID_CREDENTIALS,
                     "Invalid username or password"
@@ -140,17 +217,17 @@ public class AuthService {
         }
 
         try {
-
             // Generate session token
             String sessionToken = UUID.randomUUID().toString();
             userSessions.put(sessionToken, user.getUsername());
-            logger.info("User logged in: {}", username);
+            logger.info("User logged in successfully: {}", username);
             return sessionToken;
         } catch (Exception e) {
-            logger.error("Login failed for user {}: {}", username, e.getMessage(), e);
+            logger.error("Error during login for user {}: {}", username, e.getMessage(), e);
             throw new AuthException(
                     AuthException.AuthErrorType.INTERNAL_ERROR,
-                    "Login failed due to an internal error"
+                    "An error occurred during login",
+                    e
             );
         }
     }
@@ -169,84 +246,115 @@ public class AuthService {
         return username != null ? usersByUsername.get(username) : null;
     }
 
-
     /**
-     * Ensures that an admin user exists in the system.
-     * Creates one with default credentials if none exists.
+     * Gets the currently logged-in user.
+     *
+     * @return The User object if the session is valid, null otherwise
      */
-    private void ensureAdminUserExists(User adminUser) {
-        String adminUsername = "admin";
-        if (!usersByUsername.containsKey(adminUsername)) {
-            try {
-                // Use the provided admin user or create a default one
-                User admin = (adminUser != null) ? adminUser :
-                        new User("Admin", "User", adminUsername, 'M', "admin@imdbclone.com");
-
-                String hashedPassword = "admin123";
-                admin.setPassword(hashedPassword);
-                usersByUsername.put(adminUsername, admin);
-                usersByEmail.put(admin.getEmail(), admin);
-                saveUsers();
-                logger.info("Created admin user: {}", adminUsername);
-            } catch (Exception e) {
-                logger.error("Failed to create admin user: {}", e.getMessage(), e);
-                throw new AuthException(
-                        AuthException.AuthErrorType.INTERNAL_ERROR,
-                        "Failed to create admin user",
-                        e
-                );
-            }
-        }
-    }
-
-    /**
-     * Loads users from the user storage service.
-     */
-    private void loadUsers() {
-        try {
-            Map<String, User>[] userMaps = userStorageService.loadUsers();
-            if (userMaps != null && userMaps.length >= 2) {
-                usersByUsername = userMaps[0];
-                usersByEmail = userMaps[1];
-                logger.debug("Loaded {} users from storage", usersByUsername.size());
-            } else {
-                usersByUsername = new HashMap<>();
-                usersByEmail = new HashMap<>();
-                logger.debug("No users found in storage, initialized empty user maps");
-            }
-        } catch (Exception e) {
-            logger.error("Failed to load users: {}", e.getMessage(), e);
-            throw new AuthException(AuthException.AuthErrorType.INTERNAL_ERROR,
-                    "Failed to load user data", e);
-        }
-    }
-
-    /**
-     * Saves all users to persistent storage.
-     */
-    private void saveUsers() {
-        try {
-            userStorageService.saveUsers(usersByUsername, usersByEmail);
-        } catch (Exception e) {
-            logger.error("Failed to save users: {}", e.getMessage(), e);
-            throw new AuthException(AuthException.AuthErrorType.INTERNAL_ERROR,
-                    "Failed to save user data", e);
-        }
-    }
-
-    public void initiatePasswordReset(String username) {
-        if (username == null || username.trim().isEmpty()) {
-            throw new IllegalArgumentException("Username cannot be empty");
-        }
-        User user = usersByUsername.get(username);
-        if (user != null) {
-            // Generate and store a password reset token
-            String resetToken = UUID.randomUUID().toString();
-            logger.info("Password reset token for user {}: {}", username, resetToken);
-        }
-    }
-
     public User getCurrentUser() {
         return getCurrentUser(null);
+    }
+
+    /**
+     * Registers a new user with the system.
+     *
+     * @param user The user to register
+     * @param password The plaintext password
+     * @param confirmPassword The password confirmation
+     * @throws AuthException if registration fails
+     */
+    public void register(User user, String password, String confirmPassword) throws AuthException {
+        if (user == null || password == null || password.trim().isEmpty()) {
+            throw new AuthException(
+                    AuthException.AuthErrorType.INVALID_INPUT,
+                    "User and password are required"
+            );
+        }
+
+        // Password confirmation check
+        if (!password.equals(confirmPassword)) {
+            throw new AuthException(
+                    AuthException.AuthErrorType.PASSWORD_MISMATCH,
+                    "Passwords do not match"
+            );
+        }
+
+        // Check if username already exists
+        if (usersByUsername.containsKey(user.getUsername())) {
+            throw new AuthException(
+                    AuthException.AuthErrorType.USERNAME_EXISTS,
+                    "Username already exists"
+            );
+        }
+
+        // Check if email already exists
+        if (usersByEmail.containsKey(user.getEmail())) {
+            throw new AuthException(
+                    AuthException.AuthErrorType.EMAIL_EXISTS,
+                    "Email already registered"
+            );
+        }
+
+        try {
+            // Set the user's password and add to storage
+            user.setPassword(password);
+            user.setId(nextUserId++);
+            usersByUsername.put(user.getUsername(), user);
+            usersByEmail.put(user.getEmail(), user);
+            
+            // Save the updated user list
+            saveUsers();
+            
+            logger.info("User registered successfully: {}", user.getUsername());
+        } catch (Exception e) {
+            logger.error("Registration failed for user {}: {}", user.getUsername(), e.getMessage(), e);
+            throw new AuthException(
+                    AuthException.AuthErrorType.REGISTRATION_FAILED,
+                    "Failed to register user: " + e.getMessage(),
+                    e
+            );
+        }
+    }
+
+    /**
+     * Initiates the password reset process for a user.
+     *
+     * @param username The username of the account to reset
+     * @throws AuthException if the username is invalid or if an error occurs
+     */
+    public void initiatePasswordReset(String username) throws AuthException {
+        if (username == null || username.trim().isEmpty()) {
+            throw new AuthException(
+                    AuthException.AuthErrorType.INVALID_INPUT,
+                    "Username is required"
+            );
+        }
+
+        User user = usersByUsername.get(username);
+        if (user == null) {
+            logger.warn("Password reset failed: User not found - {}", username);
+            // Don't reveal that the user doesn't exist for security reasons
+            return;
+        }
+
+        try {
+            // In a real application, you would:
+            // 1. Generate a unique reset token
+            // 2. Store it with an expiration time
+            // 3. Send an email to the user with a reset link
+            String resetToken = UUID.randomUUID().toString();
+            logger.info("Password reset token for user {}: {}", username, resetToken);
+            
+            // Here you would typically send an email to the user's email address
+            // with a link containing the reset token
+            
+        } catch (Exception e) {
+            logger.error("Failed to initiate password reset for user {}: {}", username, e.getMessage(), e);
+            throw new AuthException(
+                    AuthException.AuthErrorType.INTERNAL_ERROR,
+                    "Failed to initiate password reset",
+                    e
+            );
+        }
     }
 }

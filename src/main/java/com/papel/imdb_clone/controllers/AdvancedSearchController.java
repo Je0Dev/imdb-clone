@@ -88,8 +88,26 @@ public class AdvancedSearchController {
 
     // constructor
     public AdvancedSearchController() {
-        this.searchService = ServiceLocator.getInstance().getService(SearchService.class);
-        this.query = "";  // Initialize query with empty string
+        try {
+            // First ensure ServiceLocator is initialized
+            ServiceLocator serviceLocator = ServiceLocator.getInstance();
+            
+            // Now get the SearchService
+            this.searchService = serviceLocator.getService(SearchService.class);
+            if (this.searchService == null) {
+                String errorMsg = "Failed to initialize SearchService: service is null";
+                logger.error(errorMsg);
+                throw new IllegalStateException(errorMsg);
+            }
+            
+            this.query = "";  // Initialize query with empty string
+            logger.info("AdvancedSearchController initialized with SearchService");
+            
+        } catch (Exception e) {
+            String errorMsg = String.format("Error initializing AdvancedSearchController: %s", e.getMessage());
+            logger.error(errorMsg, e);
+            throw new RuntimeException(errorMsg, e);
+        }
     }
 
     @FXML

@@ -49,6 +49,8 @@ public class ServiceLocator {
             synchronized (ServiceLocator.class) {
                 if (instance == null) {
                     instance = new ServiceLocator();
+                    // Initialize services when the instance is first created
+                    instance.initializeServices();
                 }
             }
         }
@@ -148,9 +150,11 @@ public class ServiceLocator {
                 );
                 registerService(FileDataLoaderService.class, fileDataLoaderService);
 
-                // Initialize search service
+                // Initialize and register SearchService early in the process
+                // to ensure it's available when other services need it
                 SearchService searchService = new SearchService(dataManager);
                 registerService(SearchService.class, searchService);
+                logger.info("SearchService initialized successfully");
 
                 // Initialize UI Coordinator if primary stage is available
                 if (primaryStage != null) {
@@ -162,6 +166,7 @@ public class ServiceLocator {
                     logger.warn("Primary stage not set, UICoordinator initialization will be deferred");
                 }
 
+                // Set services as initialized after all services are registered
                 servicesInitialized = true;
                 logger.info("All services initialized successfully");
 

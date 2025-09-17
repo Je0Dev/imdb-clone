@@ -520,6 +520,14 @@ public class RefactoredMainController {
     // Navigate to celebrities view
     @FXML
     public void showCelebrities(ActionEvent actionEvent) {
-        NavigationService.getInstance().showCelebrities();
+        try {
+            if (primaryStage == null) {
+                primaryStage = (Stage) ((Node) actionEvent.getSource()).getScene().getWindow();
+            }
+            NavigationService.getInstance().showCelebrities(primaryStage);
+        } catch (Exception e) {
+            logger.error("Failed to navigate to celebrities view: {}", e.getMessage(), e);
+            showError("Navigation Error", "Failed to open celebrities view: " + e.getMessage());
+        }
     }
 }

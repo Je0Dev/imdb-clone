@@ -1,0 +1,4 @@
+[2025-09-17T11:44:44.9968021] New user registered - Username: ponitailk, Email: ponitail@gmail.com, Name: lokos brokos
+[2025-09-17T11:47:55.7885925] New user registered - Username: pokofriba, Email: pokofriba@gmail.com, Name: prokos lostre
+[2025-09-17T11:54:15.9305341] New user registered - Username: strat, Email: strat@email.com, Name: polo loro
+[2025-09-17T12:00:21.6821614] New user registered - Username: adada, Email: adadad@gmail.gr, Name: adad adad

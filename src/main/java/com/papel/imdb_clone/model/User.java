@@ -15,6 +15,7 @@ public class User implements Serializable {
     //serialization is the process of converting an object into a byte stream to store it in a file or transmit it over a network
     @Serial
     private static final long serialVersionUID = 1L;
+    private static int nextId = 1;
 
     private int id;
     private String password; // This will store the hashed password
@@ -47,6 +48,7 @@ public class User implements Serializable {
      * @param email
      */
     public User(String firstName, String lastName, String username, char gender, String email) {
+        this.id = nextId++;
         this.firstName = firstName;
         this.lastName = lastName;
         this.username = username;

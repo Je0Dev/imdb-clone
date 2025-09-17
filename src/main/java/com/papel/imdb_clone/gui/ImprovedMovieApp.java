@@ -35,6 +35,9 @@ public class ImprovedMovieApp extends Application {
     @Override
     public void start(Stage primaryStage) {
         this.primaryStage = primaryStage;
+        
+        // Set the primary stage in ServiceLocator as early as possible
+        ServiceLocator.setPrimaryStage(primaryStage);
 
         try {
             System.out.println("[Startup] Entering start()...");
