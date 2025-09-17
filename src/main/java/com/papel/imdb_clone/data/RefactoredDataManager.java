@@ -28,7 +28,8 @@ public class RefactoredDataManager {
 
     public static synchronized RefactoredDataManager getInstance() {
         if (instance == null) {
-            // First create instance without service registration to break circular dependency
+            // First create instance without service registration to break circular dependency,which means
+            // that the instance is created first and then the services are registered.
             instance = new RefactoredDataManager(true);
             // Then register services if ServiceLocator is available
             try {

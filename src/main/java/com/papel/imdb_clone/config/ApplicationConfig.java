@@ -51,7 +51,7 @@ public class ApplicationConfig {
                 "app.title", DEFAULT_APP_TITLE);
     }
 
-    // Window settings
+    // Window settings like min width and height
     public double getMinWidth() {
         return Double.parseDouble(properties.getProperty(
                 "app.window.min.width", String.valueOf(DEFAULT_MIN_WIDTH)));

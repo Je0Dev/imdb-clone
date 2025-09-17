@@ -161,10 +161,12 @@ public class AdvancedSearchController {
             
             // Set up genre column with better null handling and formatting
             resultGenreColumn.setCellValueFactory(cellData -> {
-                Content content = cellData.getValue();
-                if (content == null) return new SimpleStringProperty("N/A");
-                
                 try {
+                    Content content = cellData.getValue();
+                    if (content == null) {
+                        return new SimpleStringProperty("N/A");
+                    }
+                    
                     List<Genre> genres = content.getGenres();
                     if (genres == null || genres.isEmpty()) {
                         return new SimpleStringProperty("N/A");
@@ -174,23 +176,33 @@ public class AdvancedSearchController {
                         .filter(Objects::nonNull)
                         .map(genre -> {
                             try {
-                                return genre.getDisplayName() != null ? 
-                                    genre.getDisplayName() : 
-                                    genre.name().charAt(0) + genre.name().substring(1).toLowerCase();
+                                if (genre == null) return "";
+                                try {
+                                    String displayName = (String) genre.getDisplayName();
+                                    if (displayName != null && !displayName.trim().isEmpty()) {
+                                        return displayName.trim();
+                                    }
+                                    // Fallback to enum name formatting if display name is not available
+                                    String name = genre.name();
+                                    if (name != null && !name.trim().isEmpty()) {
+                                        return name.charAt(0) + name.substring(1).toLowerCase();
+                                    }
+                                } catch (Exception e) {
+                                    logger.debug("Error processing genre display name", e);
+                                }
+                                return "";
                             } catch (Exception e) {
                                 logger.warn("Error formatting genre: {}", genre, e);
                                 return "";
                             }
                         })
-                        .filter(Objects::nonNull)
-                        .map(String::valueOf)
-                        .filter(s -> !s.trim().isEmpty())
+                        .filter(genre -> !genre.isEmpty())
                         .distinct()
                         .collect(Collectors.joining(", "));
-                        
+                    
                     return new SimpleStringProperty(genreString.isEmpty() ? "N/A" : genreString);
                 } catch (Exception e) {
-                    logger.warn("Error getting genres for content: {}", content.getTitle(), e);
+                    logger.warn("Error getting genres for content", e);
                     return new SimpleStringProperty("N/A");
                 }
             });

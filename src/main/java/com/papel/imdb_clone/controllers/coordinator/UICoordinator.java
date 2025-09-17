@@ -38,6 +38,7 @@ public class UICoordinator {
     private Node homeView;
 
     private boolean isViewLoading = false;
+    private Node directorsAndActorsView;
 
     /**
      * Constructs a new UICoordinator with the specified data manager.
@@ -126,6 +127,7 @@ public class UICoordinator {
         Map<String, Supplier<Node>> viewsToLoad = Map.of(
                 "movie view", () -> movieView = loadViewSafely("/fxml/movie-view.fxml"),
                 "series view", () -> seriesView = loadViewSafely("/fxml/series-view.fxml"),
+                "directors & actors", () -> directorsAndActorsView = loadViewSafely("/fxml/directors-and-actors-view.fxml"),
                 "search view", () -> searchView = loadViewSafely("/fxml/advanced-search-view.fxml")
         );
 

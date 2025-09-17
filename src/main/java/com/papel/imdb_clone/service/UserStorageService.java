@@ -58,12 +58,7 @@ public class UserStorageService {
         }
     }
 
-
-    /**
-     * Load users from a file which means deserialize the users and read them from a file.
-     * @return Map<String, User>[] which means an array of two maps, one for users by username and one for users by email
-     */
-    @SuppressWarnings("unchecked")
+    //load users from a file which means deserialize the users and read them from a file.
     public Map<String, User>[] loadUsers() {
         try (ObjectInputStream ois = new ObjectInputStream(
                 new FileInputStream(USER_DATA_FILE))) {

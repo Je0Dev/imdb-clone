@@ -224,4 +224,11 @@ public class Series extends Content {
         this.awards = new ArrayList<>();
     }
 
+    public String getCreator() {
+        return director;
+    }
+
+    public void setCreator(String creator) {
+        this.director = creator;
+    }
 }
