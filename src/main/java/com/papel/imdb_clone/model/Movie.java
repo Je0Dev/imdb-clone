@@ -92,6 +92,11 @@ public class Movie extends Content {
             this.genres.add(genre);
         }
     }
+    
+    @Override
+    public List<Genre> getGenres() {
+        return new ArrayList<>(genres);
+    }
 
 
     @Override

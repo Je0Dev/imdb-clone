@@ -13,11 +13,12 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.lang.reflect.Method;
 import java.time.LocalDate;
-import java.util.ArrayList;
+import java.util.*;
+import java.util.Random;
 import java.util.Calendar;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Loads series data from files.
@@ -35,6 +36,7 @@ public class SeriesDataLoader extends BaseDataLoader {
     private String lastName;
     private String firstName;
     private String creatorName;
+    private Actor actor;
 
     public SeriesDataLoader(
             ContentService<Series> seriesService,
@@ -213,11 +215,11 @@ public class SeriesDataLoader extends BaseDataLoader {
                             cal.set(Calendar.YEAR, startYear);
                             cal.set(Calendar.MONTH, 0); // January
                             cal.set(Calendar.DAY_OF_MONTH, 1);
-                            
+
                             // Set the release date (which will also set startYear)
                             series.setReleaseDate(cal.getTime());
                             logger.debug("Set release date to {}-01-01 for series: {}", startYear, title);
-                            
+
                             // Explicitly set startYear as well to ensure consistency
                             series.setStartYear(startYear);
                             logger.debug("Set startYear to {} for series: {}", startYear, title);
@@ -263,112 +265,141 @@ public class SeriesDataLoader extends BaseDataLoader {
                             }
                         }
 
-                        // Ensure series has seasons list
-                        if (series.getSeasons() == null) {
-                            series.setSeasons(new ArrayList<>());
-                        }
+                        // Ensure all series has seasons list
+                        series.setSeasons(new ArrayList<>());
 
                         // Add seasons
+                        int minEpisodesPerSeason = 8;  // Minimum episodes per season
+                        int maxEpisodesPerSeason = 16; // Maximum episodes per season
+
+                        // Create a list to store all actors for the series
+                        List<Actor> mainCast = new ArrayList<>();
+
                         for (int i = 1; i <= seasonsCount; i++) {
                             try {
                                 Season season = new Season(i, series);
                                 season.setSeasonNumber(i);
                                 season.setTitle("Season " + i);
-                                season.setEpisodes(new ArrayList<>());
 
-                                // Add a default episode to each season
-                                Episode episode = new Episode();
-                                episode.setTitle("Episode 1");
-                                episode.setEpisodeNumber(1);
-                                episode.setReleaseDate(new java.util.Date());
-                                season.getEpisodes().add(episode);
+                                // Create a random number of episodes between min and max
+                                Random random = new Random();
+                                int episodesCount = random.nextInt(maxEpisodesPerSeason - minEpisodesPerSeason + 1) + minEpisodesPerSeason;
 
+                                List<Episode> episodes = new ArrayList<>();
+                                for (int j = 1; j <= episodesCount; j++) {
+                                    Episode episode = new Episode("Episode " + j, 45);
+                                    episode.setEpisodeNumber(j);
+
+                                    // Set a random release date within the series year
+                                    Calendar cal = Calendar.getInstance();
+                                    cal.set(Calendar.YEAR, startYear);
+                                    cal.set(Calendar.MONTH, random.nextInt(12));
+                                    cal.set(Calendar.DAY_OF_MONTH, 1 + random.nextInt(28));
+                                    episode.setReleaseDate(cal.getTime());
+
+                                    // Initialize empty actors list for the episode
+                                    episode.setActors(new ArrayList<>());
+                                    episodes.add(episode);
+                                }
+
+                                // Set episodes to season using reflection
+                                try {
+                                    season.getClass().getMethod("setEpisodes", List.class).invoke(season, episodes);
+                                } catch (Exception e) {
+                                    logger.warn("Could not set episodes for season: {}", e.getMessage());
+                                }
+
+                                // Add season to series
                                 series.getSeasons().add(season);
+
+                                logger.debug("Added season {} with {} episodes to series '{}'",
+                                        i, episodes.size(), title);
                             } catch (Exception e) {
                                 logger.warn("Error creating season {} for series '{}' at line {}: {}",
                                         i, title, lineNumber, e.getMessage());
                             }
                         }
 
-                        // Add actors
-                        for (String actorName : actorNames) {
-                            if (!actorName.trim().isEmpty()) {
-                                try {
-                                    String[] nameParts = actorName.trim().split("\\s+", 2);
-                                    String firstName, lastName;
+                        // Process actors and add them to the main cast
+                        if (actorNames != null && actorNames.length > 0) {
+                            for (String actorName : actorNames) {
+                                String trimmedName = actorName.trim();
+                                if (!trimmedName.isEmpty()) {
+                                    try {
+                                        // Split name into first and last name
+                                        String[] nameParts = trimmedName.split("\\s+", 2);
+                                        String firstName = nameParts[0];
+                                        String lastName = nameParts.length > 1 ? nameParts[1] : "";
 
-                                    if (nameParts.length >= 2) {
-                                        firstName = nameParts[0].trim();
-                                        lastName = nameParts[1].trim();
-                                    } else {
-                                        // If only one name is provided, use it as last name
-                                        firstName = "";
-                                        lastName = nameParts[0].trim();
-                                    }
+                                        // Create or get actor
+                                        Actor actor = new Actor(firstName, lastName, birthDate, gender, ethnicity);
+                                        actor = actorService.save(actor);
 
-                                    // Find or create actor
-                                    Actor actor = actorService.findByFullName(firstName, lastName)
-                                            .orElseGet(() -> {
-                                                Actor newActor = new Actor(
-                                                        firstName,
-                                                        lastName, birthDate, // birthdate unknown
-                                                        gender,  // gender unknown
-                                                        ethnicity // default ethnicity
-                                                );
-                                                return actorService.save(newActor);
-                                            });
-
-                                    // Add actor to series
-                                    if (series.getActors() == null) {
-                                        series.setActors(new ArrayList<>());
-                                    }
-                                    if (!series.getActors().contains(actor)) {
-                                        series.getActors().add(actor);
-                                    }
-
-                                    // Add actor to first episode of first season
-                                    if (!series.getSeasons().isEmpty()) {
-                                        Season firstSeason = series.getSeasons().getFirst();
-                                        if (firstSeason != null && !firstSeason.getEpisodes().isEmpty()) {
-                                            Episode firstEpisode = firstSeason.getEpisodes().getFirst();
-                                            if (firstEpisode.getActors() == null) {
-                                                firstEpisode.setActors(new ArrayList<>());
-                                            }
-                                            if (!firstEpisode.getActors().contains(actor)) {
-                                                firstEpisode.getActors().add(actor);
-                                            }
+                                        // Create final variables for use in lambda
+                                        final String actorFirstName = actor.getFirstName();
+                                        final String actorLastName = actor.getLastName();
+                                        
+                                        // Add actor to main cast if not already present
+                                        if (mainCast.stream().noneMatch(a ->
+                                                a.getFirstName().equals(actorFirstName) &&
+                                                        a.getLastName().equals(actorLastName))) {
+                                            mainCast.add(actor);
+                                            logger.debug("Added actor {} {} to main cast of series '{}'",
+                                                    actor.getFirstName(), actor.getLastName(), title);
                                         }
+
+                                        // Add series to actor's notable works
+                                        String currentWorks = actor.getNotableWorks() != null ?
+                                                actor.getNotableWorks().toString() : "";
+
+                                        if (!currentWorks.contains(series.getTitle())) {
+                                            String updatedWorks = currentWorks.isEmpty() ?
+                                                    series.getTitle() :
+                                                    currentWorks + ", " + series.getTitle();
+
+                                            // Clean up the works string
+                                            updatedWorks = updatedWorks.replace(", ,", ",")
+                                                    .replaceAll("\\s*,\\s*", ", ")
+                                                    .replaceAll("^\\s*,\\s*|\\s*\\.\\s*$|\\.\\s*(?=,|$)", "")
+                                                    .trim();
+
+                                            if (updatedWorks.endsWith(",")) {
+                                                updatedWorks = updatedWorks.substring(0, updatedWorks.length() - 1).trim();
+                                            }
+
+                                            actor.setNotableWorks(updatedWorks);
+                                            actorService.save(actor);
+                                        }
+                                    } catch (Exception e) {
+                                        logger.warn("Error processing actor '{}' for series '{}': {}",
+                                                actorName, title, e.getMessage());
                                     }
-                                } catch (Exception e) {
-                                    logger.warn("Error processing actor '{}' at line {}: {}",
-                                            actorName, lineNumber, e.getMessage());
                                 }
                             }
+
+                            // Set the main cast for the series
+                            series.setActors(mainCast);
+                            logger.info("Set main cast of {} actors for series '{}'", mainCast.size(), title);
                         }
-
-
                         // Save the series
                         try {
                             seriesService.save(series);
                             count++;
-
-                            // Log progress every 10 records
-                            if (count > 0 && count % 10 == 0) {
-                                logger.info("Processed {} series so far...", count);
-                            }
-
                             logger.debug("Successfully loaded series: {} ({})", title, startYear);
                         } catch (Exception e) {
                             logger.error("Error saving series '{}' at line {}: {}",
                                     title, lineNumber, e.getMessage(), e);
                             errors++;
                         }
+                    } else {
+                        logger.warn("Invalid line format at line {}: {}", lineNumber, line);
+                        errors++;
                     }
                 } catch (Exception e) {
-                    logger.error("Error processing line {}: {}", lineNumber, e.getMessage(), e);
                     errors++;
+                    logger.error("Error processing line {}: {}", lineNumber, line, e);
                 }
-            } // End of while loop for reading lines
+            } // End of while loop
 
             // Log final results
             logger.info("Successfully loaded {} series ({} duplicates, {} errors, {} total lines)",
@@ -379,9 +410,7 @@ public class SeriesDataLoader extends BaseDataLoader {
             }
 
             return count;
-
         } catch (IOException e) {
-            throw new FileParsingException("Error reading file: " + filename);
-        }
+            throw new FileParsingException("Error reading file: " + filename + ": " + e.getMessage());
+        }}
     }
-}

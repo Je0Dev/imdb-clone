@@ -53,13 +53,12 @@ public class Series extends Content {
     /**
      * Creates a new Series with the given title, summary, genre, imdbRating, userRating, and startYear.
      * @param title The title of the series
-     * @param summary The summary of the series
      * @param genre The genre of the series
      * @param imdbRating The IMDB rating of the series
      * @param userRating The user rating of the series
      * @param startYear The start year of the series
      */
-    public Series(String title, String summary, Genre genre, double imdbRating, double userRating, int startYear) {
+    public Series(String title, Genre genre, double imdbRating, double userRating, int startYear) {
         super(title, new java.util.Date(), genre, "", new HashMap<>(), imdbRating);
         this.seasons = new ArrayList<>();
         this.actors = new ArrayList<>();
@@ -76,21 +75,58 @@ public class Series extends Content {
     }
 
     public List<Season> getSeasons() {
-        return seasons != null ? new ArrayList<>(seasons) : new ArrayList<>();
+        if (seasons == null) {
+            seasons = new ArrayList<>();
+        }
+        return seasons;
     }
+    
+
     
     public int getTotalSeasons() {
         return seasons != null ? seasons.size() : 0;
     }
     
     public int getTotalEpisodes() {
+        logger.debug("Calculating total episodes for series: {}", getTitle());
         if (seasons == null || seasons.isEmpty()) {
+            logger.debug("No seasons found for series: {}", getTitle());
             return 0;
         }
-        return seasons.stream()
-            .filter(Objects::nonNull)
-            .mapToInt(season -> season.getEpisodes() != null ? season.getEpisodes().size() : 0)
-            .sum();
+        
+        int total = 0;
+        logger.debug("Processing {} seasons for series: {}", seasons.size(), getTitle());
+        
+        for (int i = 0; i < seasons.size(); i++) {
+            Season season = seasons.get(i);
+            if (season == null) {
+                logger.warn("Season at index {} is null for series: {}", i, getTitle());
+                continue;
+            }
+            
+            try {
+                // Use reflection to get episodes
+                List<Episode> episodes = (List<Episode>) season.getClass()
+                    .getMethod("getEpisodes")
+                    .invoke(season);
+                    
+                if (episodes == null) {
+                    logger.warn("Episodes list is null for season {} of series: {}", 
+                        season.getSeasonNumber(), getTitle());
+                    continue;
+                }
+                
+                logger.debug("Season {} has {} episodes", season.getSeasonNumber(), episodes.size());
+                total += episodes.size();
+                
+            } catch (Exception e) {
+                logger.warn("Error getting episodes for season {} of series '{}': {}", 
+                    season.getSeasonNumber(), getTitle(), e.getMessage(), e);
+            }
+        }
+        
+        logger.info("Total episodes for series '{}': {}", getTitle(), total);
+        return total;
     }
 
     public void addSeason(Season season) {
@@ -172,18 +208,32 @@ public class Series extends Content {
     }
 
     /**
-     * Gets all actors from all seasons and episodes.
+     * Gets all actors from the main cast and all episodes.
      *
-     * @return List of all actors in the series
+     * @return List of all unique actors in the series
      */
     public List<Actor> getActors() {
-        List<Actor> allActors = new ArrayList<>();
-        for (Season season : seasons) {
-            for (Episode episode : season.getEpisodes()) {
-                allActors.addAll(episode.getActors());
+        Set<Actor> uniqueActors = new LinkedHashSet<>();
+        
+        // Add main cast first
+        if (this.actors != null) {
+            uniqueActors.addAll(this.actors);
+        }
+        
+        // Add actors from all episodes
+        if (seasons != null) {
+            for (Season season : seasons) {
+                if (season != null && season.getEpisodes() != null) {
+                    for (Episode episode : season.getEpisodes()) {
+                        if (episode != null && episode.getActors() != null) {
+                            uniqueActors.addAll(episode.getActors());
+                        }
+                    }
+                }
             }
         }
-        return allActors;
+        
+        return new ArrayList<>(uniqueActors);
     }
 
     /**

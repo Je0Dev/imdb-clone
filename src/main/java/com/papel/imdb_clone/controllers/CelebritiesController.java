@@ -162,15 +162,24 @@ public class CelebritiesController implements Initializable {
             // Notable works column
             actorNotableWorksColumn.setCellValueFactory(cellData -> {
                 try {
-                    if (cellData.getValue() != null && cellData.getValue().getNotableWorks() != null) {
-                        return new SimpleStringProperty(
-                            String.join(", ", cellData.getValue().getNotableWorks())
-                        );
+                    Actor actor = cellData.getValue();
+                    if (actor != null) {
+                        List<String> notableWorks = actor.getNotableWorks();
+                        if (notableWorks != null && !notableWorks.isEmpty()) {
+                            // Format the notable works as a comma-separated list
+                            String worksText = String.join(", ", notableWorks);
+                            logger.debug("Notable works for {} {}: {}", 
+                                actor.getFirstName(), actor.getLastName(), worksText);
+                            return new SimpleStringProperty(worksText);
+                        } else {
+                            logger.debug("No notable works found for {} {}", 
+                                actor.getFirstName(), actor.getLastName());
+                        }
                     }
                 } catch (Exception e) {
-                    logger.error("Error getting notable works: {}", e.getMessage());
+                    logger.error("Error getting notable works: {}", e.getMessage(), e);
                 }
-                return new SimpleStringProperty("N/A");
+                return new SimpleStringProperty("No notable works");
             });
 
             // Set the items to the table
@@ -336,19 +345,37 @@ public class CelebritiesController implements Initializable {
     }
 
     private void loadCelebrities() {
+        logger.info("Starting to load celebrities...");
         try {
             // Validate services
             if (actorService == null || directorService == null) {
-                throw new IllegalStateException("Actor or Director service is not initialized");
+                String errorMsg = "Actor or Director service is not initialized. ActorService: " + 
+                    (actorService == null ? "null" : "initialized") + 
+                    ", DirectorService: " + (directorService == null ? "null" : "initialized");
+                logger.error(errorMsg);
+                throw new IllegalStateException(errorMsg);
             }
 
             // Load actors with error handling
             List<Actor> actorList = new ArrayList<>();
             try {
+                logger.debug("Fetching actors from actorService...");
                 actorList = actorService.getAll();
                 if (actorList == null) {
                     logger.warn("Actor service returned null list");
                     actorList = Collections.emptyList();
+                } else {
+                    logger.debug("Successfully loaded {} actors", actorList.size());
+                    // Log first few actors for debugging
+                    int maxActorsToLog = Math.min(3, actorList.size());
+                    for (int i = 0; i < maxActorsToLog; i++) {
+                        Actor actor = actorList.get(i);
+                        logger.debug("Actor[{}]: {} {}, Notable Works: {}", 
+                            i, 
+                            actor.getFirstName(), 
+                            actor.getLastName(),
+                            actor.getNotableWorks() != null ? actor.getNotableWorks().toString() : "null");
+                    }
                 }
             } catch (Exception e) {
                 logger.error("Error loading actors: {}", e.getMessage(), e);
@@ -358,10 +385,23 @@ public class CelebritiesController implements Initializable {
             // Load directors with error handling
             List<Director> directorList = new ArrayList<>();
             try {
+                logger.debug("Fetching directors from directorService...");
                 directorList = directorService.getAll();
                 if (directorList == null) {
                     logger.warn("Director service returned null list");
                     directorList = Collections.emptyList();
+                } else {
+                    logger.debug("Successfully loaded {} directors", directorList.size());
+                    // Log first few directors for debugging
+                    int maxDirectorsToLog = Math.min(3, directorList.size());
+                    for (int i = 0; i < maxDirectorsToLog; i++) {
+                        Director director = directorList.get(i);
+                        logger.debug("Director[{}]: {} {}, Notable Works: {}", 
+                            i,
+                            director.getFirstName(),
+                            director.getLastName(),
+                            director.getNotableWorks() != null ? director.getNotableWorks().toString() : "null");
+                    }
                 }
             } catch (Exception e) {
                 logger.error("Error loading directors: {}", e.getMessage(), e);
@@ -373,11 +413,27 @@ public class CelebritiesController implements Initializable {
             List<Director> finalDirectorList = directorList;
             Platform.runLater(() -> {
                 try {
+                    logger.debug("Updating UI with {} actors and {} directors", 
+                        finalActorList.size(), finalDirectorList.size());
+                    
                     actors.setAll(finalActorList);
                     directors.setAll(finalDirectorList);
+                    
+                    // Verify the data was set correctly
+                    logger.debug("After setting, actors list has {} items, directors list has {} items", 
+                        actors.size(), directors.size());
+                    
+                    // Reset filters
                     filteredActors.setPredicate(actor -> true);
                     filteredDirectors.setPredicate(director -> true);
+                    
                     updateStatus("Loaded " + actors.size() + " actors and " + directors.size() + " directors");
+                    
+                    // Log table items count after update
+                    logger.debug("Table items - Actors: {}, Directors: {}", 
+                        actorsTable.getItems().size(), 
+                        directorsTable.getItems().size());
+                        
                 } catch (Exception e) {
                     logger.error("Error updating UI: {}", e.getMessage(), e);
                     showError("Error", "Failed to update UI: " + e.getMessage());
@@ -387,6 +443,8 @@ public class CelebritiesController implements Initializable {
         } catch (Exception e) {
             logger.error("Unexpected error in loadCelebrities: {}", e.getMessage(), e);
             showError("Error", "An unexpected error occurred: " + e.getMessage());
+        } finally {
+            logger.info("Finished loading celebrities");
         }
     }
 

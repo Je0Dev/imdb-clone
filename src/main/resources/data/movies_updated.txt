@@ -18,3 +18,12 @@ Avengers: Endgame,2019,ACTION,181,"Anthony Russo;Joe Russo",8.4,Robert Downey Jr
 Get Out,2017,HORROR,104,Jordan Peele,7.7,Daniel Kaluuya;Allison Williams
 La La Land,2016,MUSICAL,128,Damien Chazelle,8.0,Ryan Gosling;Emma Stone
 Mad Max: Fury Road,2015,ACTION,120,George Miller,8.1,Tom Hardy;Charlize Theron
+Oppenheimer,2023,DRAMA,180,Christopher Nolan,8.6,Cillian Murphy;Emily Blunt
+Everything Everywhere All at Once,2022,COMEDY,139,Daniel Kwan;Daniel Scheinert,8.1,Michelle Yeoh;Stephanie Hsu
+Top Gun: Maverick,2022,ACTION,130,Joseph Kosinski,8.3,Tom Cruise;Miles Teller
+The Batman,2022,ACTION,176,Matt Reeves,7.9,Robert Pattinson;Zoë Kravitz
+Dune: Part Two,2024,SCI_FI,166,Denis Villeneuve,8.8,Timothée Chalamet;Zendaya
+Killers of the Flower Moon,2023,CRIME,206,Martin Scorsese,7.7,Leonardo DiCaprio;Robert De Niro
+Poor Things,2023,COMEDY,141,Yorgos Lanthimos,8.4,Emma Stone;Mark Ruffalo
+The Holdovers,2023,COMEDY,133,Alexander Payne,8.0,Paul Giamatti;Da'Vine Joy Randolph
+Past Lives,2023,ROMANCE,106,Celine Song,8.0,Greta Lee;Teo Yoo

@@ -596,6 +596,28 @@ public class ContentController extends BaseController {
 
 
     private void setupTableColumns() {
+        // Initialize series table columns if they exist
+        if (seriesTable != null) {
+            try {
+                // Clear existing columns to avoid duplicates
+                seriesTable.getColumns().clear();
+                
+                // Add all series columns in the desired order
+                if (seriesTitleColumn != null) seriesTable.getColumns().add(seriesTitleColumn);
+                if (seriesYearColumn != null) seriesTable.getColumns().add(seriesYearColumn);
+                if (seriesGenreColumn != null) seriesTable.getColumns().add(seriesGenreColumn);
+                if (seriesSeasonsColumn != null) seriesTable.getColumns().add(seriesSeasonsColumn);
+                if (seriesEpisodesColumn != null) seriesTable.getColumns().add(seriesEpisodesColumn);
+                if (seriesRatingColumn != null) seriesTable.getColumns().add(seriesRatingColumn);
+                if (seriesCreatorColumn != null) seriesTable.getColumns().add(seriesCreatorColumn);
+                if (seriesCastColumn != null) seriesTable.getColumns().add(seriesCastColumn);
+                
+                logger.debug("Series table columns added successfully");
+            } catch (Exception e) {
+                logger.error("Error setting up series table columns: {}", e.getMessage(), e);
+            }
+        }
+        
         // Initialize movie table columns if they exist
         if (movieTable != null) {
             try {
@@ -638,27 +660,34 @@ public class ContentController extends BaseController {
                     movieGenreColumn.setCellValueFactory(cellData -> {
                         try {
                             Movie movie = cellData.getValue();
-                            if (movie != null && movie.getGenres() != null && !movie.getGenres().isEmpty()) {
-                                List<String> genreNames = new ArrayList<>();
-                                for (Genre genre : movie.getGenres()) {
-                                    if (genre != null) {
-                                        try {
-                                            String displayName = (String) genre.getDisplayName();
-                                            if (displayName != null && !displayName.trim().isEmpty()) {
-                                                genreNames.add(displayName.trim());
-                                            } else {
-                                                String name = genre.name();
-                                                if (name != null && !name.trim().isEmpty()) {
-                                                    genreNames.add(name.substring(0, 1).toUpperCase() + name.substring(1).toLowerCase());
+                            if (movie != null) {
+                                try {
+                                    List<Genre> genres = movie.getGenres();
+                                    if (genres != null && !genres.isEmpty()) {
+                                        List<String> genreNames = new ArrayList<>();
+                                        for (Genre genre : genres) {
+                                            if (genre != null) {
+                                                try {
+                                                    String displayName = genre.toString();
+                                                    if (displayName != null && !displayName.trim().isEmpty()) {
+                                                        // Convert from UPPER_CASE to Title Case
+                                                        String formattedName = Arrays.stream(displayName.split("_"))
+                                                            .map(word -> word.isEmpty() ? word : 
+                                                                Character.toTitleCase(word.charAt(0)) + word.substring(1).toLowerCase())
+                                                            .collect(Collectors.joining(" "));
+                                                        genreNames.add(formattedName);
+                                                    }
+                                                } catch (Exception e) {
+                                                    logger.debug("Error formatting genre: {}", e.getMessage());
                                                 }
                                             }
-                                        } catch (Exception e) {
-                                            logger.debug("Error processing movie genre: {}", e.getMessage());
                                         }
+                                        String genreText = genreNames.isEmpty() ? "N/A" : String.join(", ", genreNames);
+                                        return new SimpleStringProperty(genreText);
                                     }
+                                } catch (Exception e) {
+                                    logger.warn("Error getting movie genres: {}", e.getMessage());
                                 }
-                                String genres = String.join(", ", genreNames);
-                                return new SimpleStringProperty(genres.isEmpty() ? "N/A" : genres);
                             }
                         } catch (Exception e) {
                             logger.warn("Error getting movie genres: {}", e.getMessage());
@@ -687,7 +716,34 @@ public class ContentController extends BaseController {
                     movieCastColumn.setCellValueFactory(cellData -> {
                         try {
                             Movie movie = cellData.getValue();
-                            if (movie != null && movie.getActors() != null && !movie.getActors().isEmpty()) {
+                            if (movie != null) {
+                                try {
+                                    List<Actor> actors = movie.getActors();
+                                    if (actors != null && !actors.isEmpty()) {
+                                        // Get up to 3 main actors
+                                        List<String> actorNames = actors.stream()
+                                            .filter(Objects::nonNull)
+                                            .limit(3) // Limit to first 3 actors
+                                            .map(actor -> {
+                                                try {
+                                                    return actor.getFullName();
+                                                } catch (Exception e) {
+                                                    logger.debug("Error getting actor name: {}", e.getMessage());
+                                                    return null;
+                                                }
+                                            })
+                                            .filter(Objects::nonNull)
+                                            .filter(name -> !name.trim().isEmpty())
+                                            .collect(Collectors.toList());
+                                        
+                                        String castText = actorNames.isEmpty() ? "N/A" : 
+                                            String.join(", ", actorNames) + 
+                                            (actors.size() > 3 ? "..." : "");
+                                        return new SimpleStringProperty(castText);
+                                    }
+                                } catch (Exception e) {
+                                    logger.warn("Error getting movie cast: {}", e.getMessage());
+                                }
                                 String actors = movie.getActors().stream()
                                         .filter(Objects::nonNull)
                                         .limit(3)
@@ -757,35 +813,42 @@ public class ContentController extends BaseController {
                     seriesTable.getColumns().add(seriesYearColumn);
                 }
 
-                // Genre column
+                // Series Genre column
                 if (seriesGenreColumn != null) {
                     seriesGenreColumn.setCellValueFactory(cellData -> {
                         try {
                             Series series = cellData.getValue();
-                            if (series != null && series.getGenres() != null && !series.getGenres().isEmpty()) {
-                                List<String> genreNames = new ArrayList<>();
-                                for (Genre genre : series.getGenres()) {
-                                    if (genre != null) {
-                                        try {
-                                            String displayName = (String) genre.getDisplayName();
-                                            if (displayName != null && !displayName.trim().isEmpty()) {
-                                                genreNames.add(displayName.trim());
-                                            } else {
-                                                String name = genre.name();
-                                                if (name != null && !name.trim().isEmpty()) {
-                                                    genreNames.add(name.substring(0, 1).toUpperCase() + name.substring(1).toLowerCase());
+                            if (series != null) {
+                                try {
+                                    List<Genre> genres = series.getGenres();
+                                    if (genres != null && !genres.isEmpty()) {
+                                        List<String> genreNames = new ArrayList<>();
+                                        for (Genre genre : genres) {
+                                            if (genre != null) {
+                                                try {
+                                                    String displayName = genre.toString();
+                                                    if (displayName != null && !displayName.trim().isEmpty()) {
+                                                        // Convert from UPPER_CASE to Title Case
+                                                        String formattedName = Arrays.stream(displayName.split("_"))
+                                                            .map(word -> word.isEmpty() ? word : 
+                                                                Character.toTitleCase(word.charAt(0)) + word.substring(1).toLowerCase())
+                                                            .collect(Collectors.joining(" "));
+                                                        genreNames.add(formattedName);
+                                                    }
+                                                } catch (Exception e) {
+                                                    logger.debug("Error formatting series genre: {}", e.getMessage());
                                                 }
                                             }
-                                        } catch (Exception e) {
-                                            logger.debug("Error processing series genre: {}", e.getMessage());
                                         }
+                                        String genreText = genreNames.isEmpty() ? "N/A" : String.join(", ", genreNames);
+                                        return new SimpleStringProperty(genreText);
                                     }
+                                } catch (Exception e) {
+                                    logger.warn("Error getting series genres: {}", e.getMessage());
                                 }
-                                String genres = String.join(", ", genreNames);
-                                return new SimpleStringProperty(genres.isEmpty() ? "N/A" : genres);
                             }
                         } catch (Exception e) {
-                            logger.warn("Error getting series genres: {}", e.getMessage());
+                            logger.warn("Error processing series genres: {}", e.getMessage());
                         }
                         return new SimpleStringProperty("N/A");
                     });
@@ -797,10 +860,10 @@ public class ContentController extends BaseController {
                     seriesSeasonsColumn.setCellValueFactory(cellData -> {
                         try {
                             Series series = cellData.getValue();
-                            int seasons = series != null ? series.getTotalSeasons() : 0;
+                            int seasons = series != null ? series.getSeasons().size() : 0;
                             return new SimpleIntegerProperty(seasons).asObject();
                         } catch (Exception e) {
-                            logger.warn("Error getting series seasons: {}", e.getMessage());
+                            logger.error("Error getting seasons count: {}", e.getMessage());
                             return new SimpleIntegerProperty(0).asObject();
                         }
                     });
@@ -812,10 +875,14 @@ public class ContentController extends BaseController {
                     seriesEpisodesColumn.setCellValueFactory(cellData -> {
                         try {
                             Series series = cellData.getValue();
-                            int episodes = series != null ? series.getTotalEpisodes() : 0;
-                            return new SimpleIntegerProperty(episodes).asObject();
+                            if (series != null) {
+                                int totalEpisodes = series.getTotalEpisodes();
+                                logger.debug("Series '{}' has {} episodes", series.getTitle(), totalEpisodes);
+                                return new SimpleIntegerProperty(totalEpisodes).asObject();
+                            }
+                            return new SimpleIntegerProperty(0).asObject();
                         } catch (Exception e) {
-                            logger.warn("Error getting series episodes: {}", e.getMessage());
+                            logger.error("Error getting episodes count: {}", e.getMessage(), e);
                             return new SimpleIntegerProperty(0).asObject();
                         }
                     });
@@ -857,17 +924,37 @@ public class ContentController extends BaseController {
                     seriesCastColumn.setCellValueFactory(cellData -> {
                         try {
                             Series series = cellData.getValue();
-                            if (series != null && series.getActors() != null && !series.getActors().isEmpty()) {
-                                String actors = series.getActors().stream()
-                                        .filter(Objects::nonNull)
-                                        .limit(3)
-                                        .map(actor -> actor.getFullName())
-                                        .filter(Objects::nonNull)
-                                        .collect(Collectors.joining(", "));
-                                return new SimpleStringProperty(actors.isEmpty() ? "N/A" : actors);
+                            if (series != null) {
+                                try {
+                                    List<Actor> actors = series.getActors();
+                                    if (actors != null && !actors.isEmpty()) {
+                                        // Get up to 3 main actors
+                                        List<String> actorNames = actors.stream()
+                                            .filter(Objects::nonNull)
+                                            .limit(3) // Limit to first 3 actors
+                                            .map(actor -> {
+                                                try {
+                                                    return actor.getFullName();
+                                                } catch (Exception e) {
+                                                    logger.debug("Error getting actor name: {}", e.getMessage());
+                                                    return null;
+                                                }
+                                            })
+                                            .filter(Objects::nonNull)
+                                            .filter(name -> !name.trim().isEmpty())
+                                            .collect(Collectors.toList());
+                                        
+                                        String castText = actorNames.isEmpty() ? "N/A" : 
+                                            String.join(", ", actorNames) + 
+                                            (actors.size() > 3 ? "..." : "");
+                                        return new SimpleStringProperty(castText);
+                                    }
+                                } catch (Exception e) {
+                                    logger.warn("Error getting series cast: {}", e.getMessage());
+                                }
                             }
                         } catch (Exception e) {
-                            logger.warn("Error getting series cast: {}", e.getMessage());
+                            logger.warn("Error processing series cast: {}", e.getMessage());
                         }
                         return new SimpleStringProperty("N/A");
                     });
@@ -881,11 +968,7 @@ public class ContentController extends BaseController {
 
             } catch (Exception e) {
                 logger.error("Error setting up series table columns: {}", e.getMessage(), e);
-
             }
-            //add series rating column to table
-            seriesTable.getColumns().add(seriesRatingColumn);
-
         }
 
     }
@@ -901,9 +984,6 @@ public class ContentController extends BaseController {
         }
 
         try {
-            // Clear existing columns to prevent duplicates
-            seriesTable.getColumns().clear();
-
             // Set the items to the filtered list
             seriesTable.setItems(filteredSeries);
 
@@ -913,7 +993,6 @@ public class ContentController extends BaseController {
                     Series series = cellData.getValue();
                     return new SimpleStringProperty(series != null ? series.getTitle() : "N/A");
                 });
-                seriesTable.getColumns().add(seriesTitleColumn);
             }
 
             // Year column
@@ -982,18 +1061,15 @@ public class ContentController extends BaseController {
                         return new SimpleStringProperty("N/A");
                     }
                 });
-                seriesTable.getColumns().add(seriesGenreColumn);
             }
 
             // Seasons column with null check
             if (seriesSeasonsColumn != null) {
                 seriesSeasonsColumn.setCellValueFactory(cellData -> {
                     Series series = cellData.getValue();
-                    int seasons = (series != null && series.getSeasons() != null) ? 
-                        series.getSeasons().size() : 0;
+                    int seasons = (series != null) ? series.getSeasons().size() : 0;
                     return new SimpleIntegerProperty(seasons).asObject();
                 });
-                seriesTable.getColumns().add(seriesSeasonsColumn);
             }
 
             // Episodes column with null check
@@ -1001,9 +1077,10 @@ public class ContentController extends BaseController {
                 seriesEpisodesColumn.setCellValueFactory(cellData -> {
                     Series series = cellData.getValue();
                     int episodes = series != null ? series.getTotalEpisodes() : 0;
+                    logger.debug("Series '{}' has {} episodes", 
+                        series != null ? series.getTitle() : "null", episodes);
                     return new SimpleIntegerProperty(episodes).asObject();
                 });
-                seriesTable.getColumns().add(seriesEpisodesColumn);
             }
 
             // Rating column
@@ -1013,7 +1090,6 @@ public class ContentController extends BaseController {
                     Double rating = series != null ? series.getImdbRating() : 0.0;
                     return new SimpleDoubleProperty(rating != null ? rating : 0.0).asObject();
                 });
-                seriesTable.getColumns().add(seriesRatingColumn);
             }
             
             // Creator/Director column
@@ -1047,7 +1123,6 @@ public class ContentController extends BaseController {
                         return new SimpleStringProperty("N/A");
                     }
                 });
-                seriesTable.getColumns().add(seriesCreatorColumn);
             }
             
             // Cast column
@@ -1055,22 +1130,45 @@ public class ContentController extends BaseController {
                 seriesCastColumn.setCellValueFactory(cellData -> {
                     try {
                         Series series = cellData.getValue();
-                        if (series != null && series.getActors() != null && !series.getActors().isEmpty()) {
-                            String actors = series.getActors().stream()
-                                .filter(Objects::nonNull)
-                                .limit(3) // Show first 3 actors
-                                .map(actor -> actor != null ? actor.getFullName() : "")
-                                .filter(name -> name != null && !name.trim().isEmpty())
-                                .collect(Collectors.joining(", "));
-                            return new SimpleStringProperty(actors.isEmpty() ? "N/A" : actors);
+                        if (series != null) {
+                            try {
+                                // Get main cast (not episode actors)
+                                List<Actor> mainCast = series.getActors();
+                                logger.debug("Found {} main cast members for series '{}'", 
+                                    mainCast != null ? mainCast.size() : 0, series.getTitle());
+                                
+                                if (mainCast != null && !mainCast.isEmpty()) {
+                                    String actorNames = mainCast.stream()
+                                        .filter(Objects::nonNull)
+                                        .limit(3) // Show first 3 main cast members
+                                        .map(actor -> {
+                                            try {
+                                                String fullName = (actor.getFirstName() + " " + actor.getLastName()).trim();
+                                                logger.debug("Adding main cast member: {}", fullName);
+                                                return fullName;
+                                            } catch (Exception e) {
+                                                logger.warn("Error formatting actor name: {}", e.getMessage());
+                                                return "";
+                                            }
+                                        })
+                                        .filter(name -> !name.isEmpty())
+                                        .collect(Collectors.joining(", "));
+                                    
+                                    if (!actorNames.isEmpty()) {
+                                        return new SimpleStringProperty(actorNames);
+                                    }
+                                }
+                            } catch (Exception e) {
+                                logger.warn("Error processing actors for series '{}': {}", 
+                                    series.getTitle(), e.getMessage(), e);
+                            }
                         }
                         return new SimpleStringProperty("N/A");
                     } catch (Exception e) {
-                        logger.warn("Error getting series cast: {}", e.getMessage());
+                        logger.warn("Error in cast column factory: {}", e.getMessage(), e);
                         return new SimpleStringProperty("N/A");
                     }
                 });
-                seriesTable.getColumns().add(seriesCastColumn);
             }
 
             logger.debug("Series table columns initialized successfully");

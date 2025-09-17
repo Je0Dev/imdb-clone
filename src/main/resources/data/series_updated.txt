@@ -12,4 +12,13 @@ The Bear,COMEDY,2,2022,8.4,Christopher Storer,Jeremy Allen White;Ebon Moss-Bachr
 Wednesday,COMEDY,1,2022,8.2,Alfred Gough;Miles Millar,Jenna Ortega;Gwendoline Christie
 The Boys,ACTION,4,2019,8.7,Eric Kripke,Karl Urban;Jack Quaid
 Euphoria,DRAMA,2,2019,8.4,Sam Levinson,Zendaya;Hunter Schafer
- Lindelof;Jeffrey Lieber,Matthew Fox;Jorge Garcia
+Lost,SCI_FI,6,2004,8.3,J.J. Abrams;Damon Lindelof,Matthew Fox;Jorge Garcia
+The Last of Us,DRAMA,1,2023,8.7,Craig Mazin;Neil Druckmann,Pedro Pascal;Bella Ramsey
+House of the Dragon,FANTASY,1,2022,8.5,Ryan Condal;George R.R. Miller,Matt Smith;Emma D'Arcy
+The Bear,COMEDY,2,2022,8.4,Christopher Storer,Jeremy Allen White;Ayo Edebiri
+Beef,COMEDY,1,2023,8.1,Lee Sung Jin,Steven Yeun;Ali Wong
+The White Lotus,DRAMA,2,2021,8.0,Mike White,Jennifer Coolidge;Aubrey Plaza
+Severance,SCI_FI,1,2022,8.7,Dan Erickson,Adam Scott;Britt Lower
+Succession,DRAMA,4,2018,8.8,Jesse Armstrong,Brian Cox;Jeremy Strong
+Better Call Saul,CRIME,6,2015,8.9,Vince Gilligan;Peter Gould,Bob Odenkirk;Rhea Seehorn
+The Queen's Gambit,DRAMA,1,2020,8.6,Scott Frank,Anya Taylor-Joy;Thomas Brodie-Sangster
