@@ -1,5 +1,6 @@
 package com.papel.imdb_clone.util;
 
+import com.papel.imdb_clone.model.Content;
 import javafx.application.Platform;
 import javafx.scene.Node;
 import javafx.scene.control.Alert;
@@ -114,5 +115,12 @@ public class UIUtils {
 
     public static void showInfo(String noResults, String s) {
         showAlert(Alert.AlertType.INFORMATION, noResults, s);
+    }
+
+    public static void showContentDetails(Content rowData) {
+        Platform.runLater(() -> {
+            Alert alert = createAlert(Alert.AlertType.INFORMATION, "Content Details", null, rowData.toString());
+            alert.showAndWait();
+        });
     }
 }

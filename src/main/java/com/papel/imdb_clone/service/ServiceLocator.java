@@ -111,27 +111,27 @@ public class ServiceLocator {
                 UserService userService = UserService.getInstance(dataManager);
                 registerService(UserService.class, userService);
 
-                // Initialize content services with proper generic types
-                ContentService<Movie> movieService = new ContentService<>(Movie.class);
-                ContentService<Series> seriesService = new ContentService<>(Series.class);
+                // Initialize content services with proper types
+                MoviesService moviesService = MoviesService.getInstance();
+                SeriesService seriesService = SeriesService.getInstance();
                 CelebrityService<Actor> actorService = new CelebrityService<>(Actor.class);
                 CelebrityService<Director> directorService = new CelebrityService<>(Director.class);
 
-                // Register content services with type-safe qualifiers
-                registerService(ContentService.class, movieService, "movie");
-                registerService(ContentService.class, seriesService, "series");
+                // Register services with type-safe qualifiers
+                registerService(MoviesService.class, moviesService);
+                registerService(SeriesService.class, seriesService);
                 registerService(CelebrityService.class, actorService, "actor");
                 registerService(CelebrityService.class, directorService, "director");
 
-                // Register default ContentService instance for backward compatibility
-                registerService(ContentService.class, movieService);
+                // Register for backward compatibility
+                registerService(MoviesService.class, moviesService);
 
                 // Initialize data loader factory with concrete repository types
                 dataLoaderFactory = new DataLoaderFactory(
                         userRepository,
                         movieRepository,
                         seriesRepository,
-                        movieService,
+                        moviesService,
                         seriesService,
                         actorService,
                         directorService
@@ -146,7 +146,7 @@ public class ServiceLocator {
                         seriesService,
                         actorService,
                         directorService,
-                        movieService
+                        moviesService
                 );
                 registerService(FileDataLoaderService.class, fileDataLoaderService);
 

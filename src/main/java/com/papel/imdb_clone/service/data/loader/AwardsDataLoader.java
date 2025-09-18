@@ -4,7 +4,7 @@ import com.papel.imdb_clone.exceptions.FileParsingException;
 import com.papel.imdb_clone.model.Movie;
 import com.papel.imdb_clone.model.Series;
 import com.papel.imdb_clone.repository.impl.InMemoryMovieRepository;
-import com.papel.imdb_clone.service.ContentService;
+import com.papel.imdb_clone.service.SeriesService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -22,14 +22,14 @@ import java.util.Optional;
 public class AwardsDataLoader extends BaseDataLoader {
     private static final Logger logger = LoggerFactory.getLogger(AwardsDataLoader.class);
     private final InMemoryMovieRepository movieRepository;
-    private final ContentService<Series> seriesService;
+    private final SeriesService seriesService;
 
     /**
      * Constructor for AwardsDataLoader
      * @param movieRepository
      * @param seriesService
      */
-    public AwardsDataLoader(InMemoryMovieRepository movieRepository, ContentService<Series> seriesService) {
+    public AwardsDataLoader(InMemoryMovieRepository movieRepository, SeriesService seriesService) {
         this.movieRepository = movieRepository;
         this.seriesService = seriesService;
     }
@@ -53,8 +53,8 @@ public class AwardsDataLoader extends BaseDataLoader {
             validateInput(inputStream, filename);
             String line;
 
-            /**
-             * Read each line of the file
+            /*
+              Read each line of the file
              */
             while ((line = reader.readLine()) != null) {
                 lineNumber++;

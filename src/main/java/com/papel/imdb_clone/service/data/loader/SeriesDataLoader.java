@@ -5,7 +5,7 @@ import com.papel.imdb_clone.enums.Genre;
 import com.papel.imdb_clone.exceptions.FileParsingException;
 import com.papel.imdb_clone.model.*;
 import com.papel.imdb_clone.service.CelebrityService;
-import com.papel.imdb_clone.service.ContentService;
+import com.papel.imdb_clone.service.SeriesService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -25,7 +25,7 @@ import java.util.stream.Collectors;
  */
 public class SeriesDataLoader extends BaseDataLoader {
     private static final Logger logger = LoggerFactory.getLogger(SeriesDataLoader.class);
-    private final ContentService<Series> seriesService;
+    private final SeriesService seriesService;
     private final CelebrityService<Actor> actorService;
     private final CelebrityService<Director> directorService;
     private int seasonNumber;
@@ -39,7 +39,7 @@ public class SeriesDataLoader extends BaseDataLoader {
     private Actor actor;
 
     public SeriesDataLoader(
-            ContentService<Series> seriesService,
+            SeriesService seriesService,
             CelebrityService<Actor> actorService,
             CelebrityService<Director> directorService) {
         this.seriesService = seriesService;
@@ -55,11 +55,13 @@ public class SeriesDataLoader extends BaseDataLoader {
      * @throws IOException if there is an error reading the file
      */
     public int load(String filename) throws IOException {
-        logger.info("Loading series from {}", filename);
+        long startTime = System.currentTimeMillis();
+        logger.info("Starting to load series from: {}", filename);
         int count = 0;
         int errors = 0;
         int duplicates = 0;
         int lineNumber = 0;
+        logger.debug("Initializing series data loading process");
 
         try (InputStream inputStream = getResourceAsStream(filename);
              BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream))) {
@@ -183,10 +185,10 @@ public class SeriesDataLoader extends BaseDataLoader {
                                     Genre genre = Genre.valueOf(normalizedGenre);
                                     genres.add(genre);
                                 } catch (IllegalArgumentException e) {
-                                    logger.warn("Unknown genre '{}' at line {}: {}", genreItem, lineNumber, line);
+                                    logger.debug("Unknown genre '{}' for series '{}' at line {}", genreItem, title, lineNumber);
                                 }
                             } catch (Exception e) {
-                                logger.warn("Error processing genre '{}' at line {}: {}", genreItem, lineNumber, e.getMessage());
+                                logger.warn("Error processing genre '{}' for series '{}' at line {}: {}", genreItem, title, lineNumber, e.getMessage());
                             }
                         }
 
@@ -316,7 +318,7 @@ public class SeriesDataLoader extends BaseDataLoader {
                                         i, episodes.size(), title);
                             } catch (Exception e) {
                                 logger.warn("Error creating season {} for series '{}' at line {}: {}",
-                                        i, title, lineNumber, e.getMessage());
+                                        i, title, lineNumber, e.getMessage(), e);
                             }
                         }
 
@@ -371,8 +373,8 @@ public class SeriesDataLoader extends BaseDataLoader {
                                             actorService.save(actor);
                                         }
                                     } catch (Exception e) {
-                                        logger.warn("Error processing actor '{}' for series '{}': {}",
-                                                actorName, title, e.getMessage());
+                                        logger.warn("Error processing actor '{}' for series '{}' at line {}: {}",
+                                                actorName, title, lineNumber, e.getMessage(), e);
                                     }
                                 }
                             }
@@ -389,6 +391,7 @@ public class SeriesDataLoader extends BaseDataLoader {
                         } catch (Exception e) {
                             logger.error("Error saving series '{}' at line {}: {}",
                                     title, lineNumber, e.getMessage(), e);
+                            logger.debug("Series object that failed to save: {}", series);
                             errors++;
                         }
                     } else {
@@ -397,20 +400,27 @@ public class SeriesDataLoader extends BaseDataLoader {
                     }
                 } catch (Exception e) {
                     errors++;
-                    logger.error("Error processing line {}: {}", lineNumber, line, e);
+                    logger.error("Unexpected error processing line {}: {}", lineNumber, line, e);
                 }
             } // End of while loop
 
-            // Log final results
-            logger.info("Successfully loaded {} series ({} duplicates, {} errors, {} total lines)",
-                    count, duplicates, errors, lineNumber);
-
+            long endTime = System.currentTimeMillis();
+            long duration = (endTime - startTime) / 1000;
+            
             if (errors > 0) {
+                logger.warn("Completed loading series with {} errors. Successfully loaded {} series ({} duplicates, {} total lines) in {} seconds", 
+                    errors, count, duplicates, lineNumber, duration);
                 throw new FileParsingException("Encountered " + errors + " errors while loading series data");
+            } else {
+                logger.info("Successfully loaded {} series ({} duplicates, {} total lines) in {} seconds", 
+                    count, duplicates, lineNumber, duration);
             }
 
             return count;
         } catch (IOException e) {
+            logger.error("Error reading series file: {}", e.getMessage(), e);
             throw new FileParsingException("Error reading file: " + filename + ": " + e.getMessage());
+        } finally {
+            logger.debug("Series data loading process completed");
         }}
     }

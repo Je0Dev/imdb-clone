@@ -8,14 +8,11 @@ import java.util.*;
  * Represents a movie.
  */
 public class Movie extends Content {
-    private final List<Actor> actors;
-
     private String boxOffice;
     private List<String> awards;
     private List<Genre> genres = new ArrayList<>(); // Multiple genres support
     private Date releaseDate;
 
-    private Arrays directors;
     private int startyear;
     private Integer userRating;
 
@@ -30,7 +27,6 @@ public class Movie extends Content {
     //default constructor
     public Movie() {
         super("", new Date(), Genre.ACTION, "Unknown", new HashMap<>(), 0.0);
-        this.actors = new ArrayList<>();
         initializeRichContentFields();
     }
 
@@ -40,19 +36,21 @@ public class Movie extends Content {
                 Genre.valueOf(genre.toUpperCase().replace(" ", "_")),
                 director, userRatings, imdbRating);
         this.releaseDate = new Date(year - 1900, Calendar.JANUARY, 1);
-        this.actors = new ArrayList<>();
         initializeRichContentFields();
     }
 
     // Constructor for FileDataLoaderService
-    public Movie(String title, Date year, List<Genre> genres, int duration,
-                 double imdbRating, String description, String director, List<Actor> actors) {
-        super(title, year,
+    public Movie(String title, Date year, List<Genre> genres,
+                 double imdbRating, String director, List<Actor> actors) {
+        super(title, year != null ? year : new Date(),
                 (genres != null && !genres.isEmpty()) ? genres.get(0) : Genre.DRAMA,
                 director, new HashMap<>(), imdbRating);
         this.releaseDate = year != null ? new Date(year.getTime()) : null;
-        this.actors = new ArrayList<>(actors != null ? actors : new ArrayList<>());
         this.genres = genres != null ? new ArrayList<>(genres) : new ArrayList<>();
+        if (actors != null) {
+            // Use setActors to properly set the actors list
+            this.setActors(actors);
+        }
         initializeRichContentFields();
     }
 
@@ -64,8 +62,10 @@ public class Movie extends Content {
 
 
     //getters and setters
+    @Override
     public List<Actor> getActors() {
-        return new ArrayList<>(actors);
+        // Return the list from the parent class to ensure we're using a single source of truth
+        return super.getActors();
     }
 
     @Override
@@ -76,6 +76,10 @@ public class Movie extends Content {
 
     public String getBoxOffice() {
         return boxOffice;
+    }
+
+    public void setBoxOffice(String boxOffice) {
+        this.boxOffice = boxOffice;
     }
 
     public List<String> getAwards() {
@@ -105,7 +109,7 @@ public class Movie extends Content {
                 "id=" + getId() +
                 ", title='" + getTitle() + '\'' +
                 ", genre=" + getGenre() +
-                ", actors=" + actors.size() +
+                ", actors=" + getActors().size() +
                 ", genres=" + genres.size() +
                 '}';
     }
@@ -122,8 +126,22 @@ public class Movie extends Content {
         return ((Movie) o).getImdbRating();
     }
 
+    @Override
+    public void setActors(List<Actor> actors) {
+        // Create a new ArrayList with the provided actors (or empty list if null)
+        List<Actor> newActors = actors != null ? new ArrayList<>(actors) : new ArrayList<>();
+        // Use the parent class's setter to update the actors
+        super.setActors(newActors);
+    }
+    
+    /**
+     * Adds an actor to the movie's cast
+     * @param actor The actor to add
+     */
     public void addActor(Actor actor) {
-        this.actors.add(actor);
+        if (actor != null && !getActors().contains(actor)) {
+            getActors().add(actor);
+        }
     }
 
     public int getStartYear() {

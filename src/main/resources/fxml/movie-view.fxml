@@ -8,7 +8,10 @@
 <?import javafx.scene.shape.*?>
 <?import javafx.scene.text.*?>
 
-<BorderPane style="-fx-background-color: #0a0a0a; -fx-font-family: 'Segoe UI', Arial, sans-serif;" xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.papel.imdb_clone.controllers.ContentController">
+<BorderPane style="-fx-background-color: #0a0a0a; -fx-font-family: 'Segoe UI', Arial, sans-serif;" 
+             xmlns="http://javafx.com/javafx/17.0.12" 
+             xmlns:fx="http://javafx.com/fxml/1" 
+             fx:controller="com.papel.imdb_clone.controllers.MoviesController">
 
     <!-- Search Suggestions Popup -->
 
@@ -27,6 +30,11 @@
                 </HBox>
 
                 <Region HBox.hgrow="ALWAYS" />
+                <Button onAction="#goToHome" style="-fx-background-color: transparent; -fx-text-fill: #f5c518; -fx-border-color: #f5c518; -fx-border-width: 1.5; -fx-border-radius: 4; -fx-padding: 5 10; -fx-font-weight: bold; -fx-cursor: hand; -fx-effect: dropshadow(gaussian, rgba(245,197,24,0.3), 5, 0, 0, 1);" text="HOME">
+                    <tooltip>
+                        <Tooltip text="Go to Home" />
+                    </tooltip>
+                </Button>
             </HBox>
             <AmbientLight lightOn="true">
                 <color>
@@ -36,7 +44,10 @@
 
             <!-- Search and Filter Section -->
             <VBox spacing="10" style="-fx-padding: 5 0 15 0;">
-                <HBox alignment="CENTER_LEFT" spacing="15" />
+                <HBox alignment="CENTER_LEFT" spacing="15">
+                    <TextField fx:id="movieSearchField" promptText="Search movies..." style="-fx-pref-width: 300px; -fx-padding: 8 15; -fx-background-radius: 20; -fx-background-color: #1a1a1a; -fx-text-fill: white; -fx-prompt-text-fill: #666; -fx-border-color: #333; -fx-border-radius: 20;" />
+                    <ComboBox fx:id="movieSortBy" promptText="Sort by..." style="-fx-pref-width: 200px; -fx-background-color: #1a1a1a; -fx-text-fill: white; -fx-prompt-text-fill: #666; -fx-border-color: #333; -fx-border-radius: 20; -fx-padding: 0 10;" />
+                </HBox>
 
                 <!-- Action Buttons -->
                 <HBox spacing="15" style="-fx-padding: 5 0 0 0;">

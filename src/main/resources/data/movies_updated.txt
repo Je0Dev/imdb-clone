@@ -1,6 +1,30 @@
 # Format: Title,Year,Genre,Duration,Director,Rating,Actors
 
 The Shawshank Redemption,1994,DRAMA,142,Frank Darabont,9.3,Tim Robbins;Morgan Freeman
+Forrest Gump,1994,DRAMA,142,Robert Zemeckis,8.8,Tom Hanks;Robin Wright
+The Matrix,1999,SCI_FI,136,Lana Wachowski;Lilly Wachowski,8.7,Keanu Reeves;Laurence Fishburne
+Gladiator,2000,ACTION,155,Ridley Scott,8.5,Russell Crowe;Joaquin Phoenix
+Eternal Sunshine of the Spotless Mind,2004,ROMANCE,108,Michel Gondry,8.3,Jim Carrey;Kate Winslet
+Pan's Labyrinth,2006,FANTASY,118,Guillermo del Toro,8.2,Ivana Baquero;Sergi López
+No Country for Old Men,2007,THRILLER,122,Joel Coen;Ethan Coen,8.2,Josh Brolin;Javier Bardem
+The Social Network,2010,DRAMA,120,David Fincher,7.7,Jesse Eisenberg;Andrew Garfield
+Gravity,2013,SCI_FI,91,Alfonso Cuarón,7.7,Sandra Bullock;George Clooney
+Birdman,2014,COMEDY,119,Alejandro G. Iñárritu,7.7,Michael Keaton;Edward Norton
+The Grand Budapest Hotel,2014,COMEDY,99,Wes Anderson,8.1,Ralph Fiennes;Tony Revolori
+Mad Max: Fury Road,2015,ACTION,120,George Miller,8.1,Tom Hardy;Charlize Theron
+The Revenant,2015,ADVENTURE,156,Alejandro G. Iñárritu,8.0,Leonardo DiCaprio;Tom Hardy
+Moonlight,2016,DRAMA,111,Barry Jenkins,7.4,Mahershala Ali;Naomie Harris
+Blade Runner 2049,2017,SCI_FI,164,Denis Villeneuve,8.0,Ryan Gosling;Harrison Ford
+Hereditary,2018,HORROR,127,Ari Aster,7.3,Toni Collette;Milly Shapiro
+Spider-Man: Into the Spider-Verse,2018,ANIMATION,117,Peter Ramsey;Rodney Rothman,8.4,Shameik Moore;Jake Johnson
+Midsommar,2019,HORROR,148,Ari Aster,7.1,Florence Pugh;Jack Reynor
+Knives Out,2019,CRIME,130,Rian Johnson,7.9,Daniel Craig;Chris Evans
+Soul,2020,ANIMATION,100,Pete Docter;Kemp Powers,8.0,Jamie Foxx;Tina Fey
+Dune,2021,SCI_FI,155,Denis Villeneuve,8.0,Timothée Chalamet;Rebecca Ferguson
+Everything Everywhere All at Once,2022,SCI_FI,139,Daniel Kwan;Daniel Scheinert,8.1,Michelle Yeoh;Ke Huy Quan
+The Banshees of Inisherin,2022,COMEDY,114,Martin McDonagh,7.7,Colin Farrell;Brendan Gleeson
+Aftersun,2022,DRAMA,101,Charlotte Wells,7.7,Paul Mescal;Frankie Corio
+Past Lives,2023,ROMANCE,106,Celine Song,8.0,Greta Lee;Teo Yoo
 The Godfather,1972,CRIME,175,Francis Ford Coppola,9.2,Marlon Brando;Al Pacino
 The Dark Knight,2008,ACTION,152,Christopher Nolan,9.0,Christian Bale;Heath Ledger
 Inception,2010,SCI_FI,148,Christopher Nolan,8.8,Leonardo DiCaprio;Joseph Gordon-Levitt

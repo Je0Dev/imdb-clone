@@ -27,6 +27,7 @@ public class ApplicationConfig {
         if (instance == null) {
             instance = new ApplicationConfig();
         }
+        // Return the instance, the instance being created only once and reused each time
         return instance;
     }
 
@@ -49,17 +50,6 @@ public class ApplicationConfig {
     public String getAppTitle() {
         return properties.getProperty(
                 "app.title", DEFAULT_APP_TITLE);
-    }
-
-    // Window settings like min width and height
-    public double getMinWidth() {
-        return Double.parseDouble(properties.getProperty(
-                "app.window.min.width", String.valueOf(DEFAULT_MIN_WIDTH)));
-    }
-
-    public double getMinHeight() {
-        return Double.parseDouble(properties.getProperty(
-                "app.window.min.height", String.valueOf(DEFAULT_MIN_HEIGHT)));
     }
 
 

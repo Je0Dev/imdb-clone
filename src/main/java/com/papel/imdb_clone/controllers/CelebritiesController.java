@@ -88,6 +88,7 @@ public class CelebritiesController implements Initializable {
             // Initialize director table
             initializeDirectorTable();
 
+
             // Initialize unified search
             initializeUnifiedSearch();
 
@@ -110,6 +111,9 @@ public class CelebritiesController implements Initializable {
                     if (actor != null) {
                         String firstName = actor.getFirstName() != null ? actor.getFirstName() : "";
                         String lastName = actor.getLastName() != null ? actor.getLastName() : "";
+                        logger.debug("Actor name for actor {} {}: {}",
+                            actor.getFirstName(), actor.getLastName(),
+                            String.format("%s %s", firstName, lastName).trim());
                         return new SimpleStringProperty(String.format("%s %s", firstName, lastName).trim());
                     }
                 } catch (Exception e) {
@@ -118,10 +122,15 @@ public class CelebritiesController implements Initializable {
                 return new SimpleStringProperty("N/A");
             });
 
-            // Set up cell value factory for birth date
+            // Set up cell value factory for birth date with proper formatting
             actorBirthDateColumn.setCellValueFactory(cellData -> {
                 try {
                     if (cellData.getValue() != null && cellData.getValue().getBirthDate() != null) {
+                        // Format the date as yyyy-MM-dd for consistency
+                        String birthDate = cellData.getValue().getBirthDate().toString();
+                        logger.debug("Birth date for actor {} {}: {}",
+                            cellData.getValue().getFirstName(), cellData.getValue().getLastName(),
+                            cellData.getValue().getBirthDate().toString());
                         return new SimpleStringProperty(cellData.getValue().getBirthDate().toString());
                     }
                 } catch (Exception e) {
@@ -130,60 +139,91 @@ public class CelebritiesController implements Initializable {
                 return new SimpleStringProperty("N/A");
             });
 
-            // Simplified gender column
+            // Gender column with proper handling
             actorGenderColumn.setCellValueFactory(cellData -> {
                 try {
                     if (cellData.getValue() != null) {
                         char gender = cellData.getValue().getGender();
-                        switch (gender) {
-                            case 'M': return new SimpleStringProperty("Male");
-                            case 'F': return new SimpleStringProperty("Female");
-                            default: return new SimpleStringProperty("Other");
+                        if (gender == 'M' || gender == 'm') {
+                            return new SimpleStringProperty("Male");
+                        } else if (gender == 'F' || gender == 'f') {
+                            return new SimpleStringProperty("Female");
+                        } else {
+                            return new SimpleStringProperty("Other");
                         }
                     }
                 } catch (Exception e) {
                     logger.error("Error getting gender: {}", e.getMessage());
                 }
+                // Log error and show error message
                 return new SimpleStringProperty("N/A");
             });
 
-            // Simplified ethnicity column
+            // Nationality/Ethnicity column with proper handling
             actorNationalityColumn.setCellValueFactory(cellData -> {
                 try {
-                    if (cellData.getValue() != null && cellData.getValue().getEthnicity() != null) {
-                        return new SimpleStringProperty(cellData.getValue().getEthnicity().getLabel());
+                    Actor actor = cellData.getValue();
+                    if (actor != null) {
+                        Ethnicity ethnicity = actor.getEthnicity();
+                        if (ethnicity != null) {
+                            return new SimpleStringProperty(ethnicity.getLabel());
+                        } else if (actor.getNationality() != null) {
+                            return new SimpleStringProperty(actor.getNationality().getLabel());
+                        }
                     }
                 } catch (Exception e) {
-                    logger.error("Error getting ethnicity: {}", e.getMessage());
+                    logger.error("Error getting nationality/ethnicity: {}", e.getMessage());
                 }
                 return new SimpleStringProperty("N/A");
             });
 
-            // Notable works column
+            // Notable works column with improved formatting and null safety
             actorNotableWorksColumn.setCellValueFactory(cellData -> {
                 try {
                     Actor actor = cellData.getValue();
                     if (actor != null) {
-                        List<String> notableWorks = actor.getNotableWorks();
-                        if (notableWorks != null && !notableWorks.isEmpty()) {
-                            // Format the notable works as a comma-separated list
-                            String worksText = String.join(", ", notableWorks);
-                            logger.debug("Notable works for {} {}: {}", 
-                                actor.getFirstName(), actor.getLastName(), worksText);
-                            return new SimpleStringProperty(worksText);
-                        } else {
-                            logger.debug("No notable works found for {} {}", 
+                        try {
+                            List<String> notableWorks = actor.getNotableWorks();
+                            if (notableWorks != null && !notableWorks.isEmpty()) {
+                                // Filter out any null or empty strings from notable works
+                                List<String> validWorks = notableWorks.stream()
+                                    .filter(work -> work != null && !work.trim().isEmpty())
+                                    .collect(Collectors.toList());
+                                
+                                if (!validWorks.isEmpty()) {
+                                    // Format the notable works as a comma-separated list, limit to 3 items for display
+                                    int maxWorks = Math.min(3, validWorks.size());
+                                    String worksText = String.join(", ", validWorks.subList(0, maxWorks));
+                                    if (validWorks.size() > 3) {
+                                        worksText += "...";
+                                    }
+                                    logger.debug("Notable works for {} {}: {}", 
+                                        actor.getFirstName(), actor.getLastName(), worksText);
+                                    return new SimpleStringProperty(worksText);
+                                }
+                            }
+                            logger.debug("No valid notable works found for {} {}", 
                                 actor.getFirstName(), actor.getLastName());
+                        } catch (Exception e) {
+                            logger.warn("Error processing notable works for {} {}: {}", 
+                                actor.getFirstName(), actor.getLastName(), e.getMessage());
                         }
                     }
                 } catch (Exception e) {
-                    logger.error("Error getting notable works: {}", e.getMessage(), e);
+                    logger.error("Unexpected error getting actor notable works: {}", e.getMessage(), e);
                 }
                 return new SimpleStringProperty("No notable works");
             });
 
             // Set the items to the table
             actorsTable.setItems(filteredActors);
+            
+            // Enable sorting on all columns
+            actorNameColumn.setSortable(true);
+            actorBirthDateColumn.setSortable(true);
+            actorGenderColumn.setSortable(true);
+            actorNationalityColumn.setSortable(true);
+            actorNotableWorksColumn.setSortable(true);
             
         } catch (Exception e) {
             logger.error("Error initializing actor table: {}", e.getMessage(), e);
@@ -193,69 +233,54 @@ public class CelebritiesController implements Initializable {
 
     private void initializeDirectorTable() {
         // Set up cell value factories
-        directorNameColumn.setCellValueFactory(cellData ->
-                new SimpleStringProperty(
-                        String.format("%s %s",
-                                cellData.getValue().getFirstName() != null ? cellData.getValue().getFirstName() : "",
-                                cellData.getValue().getLastName() != null ? cellData.getValue().getLastName() : ""
-                        ).trim()
-                )
-        );
+        directorNameColumn.setCellValueFactory(cellData -> {
+            try {
+                Director director = cellData.getValue();
+                if (director != null) {
+                    String firstName = director.getFirstName() != null ? director.getFirstName() : "";
+                    String lastName = director.getLastName() != null ? director.getLastName() : "";
+                    return new SimpleStringProperty(String.format("%s %s", firstName, lastName).trim());
+                }
+            } catch (Exception e) {
+                logger.error("Error getting director name: {}", e.getMessage());
+            }
+            return new SimpleStringProperty("N/A");
+        });
 
-        // Set up cell value factory for birth date
-        directorBirthDateColumn.setCellValueFactory(cellData ->
-                new SimpleStringProperty(
-                        cellData.getValue().getBirthDate() != null ?
-                                cellData.getValue().getBirthDate().toString() : "N/A"
-                )
-        );
+        // Set up cell value factory for birth date with proper formatting
+        directorBirthDateColumn.setCellValueFactory(cellData -> {
+            try {
+                if (cellData.getValue() != null && cellData.getValue().getBirthDate() != null) {
+                    return new SimpleStringProperty(cellData.getValue().getBirthDate().toString());
+                }
+            } catch (Exception e) {
+                logger.error("Error getting director birth date: {}", e.getMessage());
+            }
+            return new SimpleStringProperty("N/A");
+        });
 
-        // Set up cell value factory for gender
+        // Set up cell value factory for gender with consistent handling
         directorGenderColumn.setCellValueFactory(cellData -> {
             try {
                 Director director = cellData.getValue();
                 if (director != null) {
                     try {
-                        // First try the standard getter
-                        Object gender = director.getGender();
-                        {
-                            String genderStr = String.valueOf(gender);
-                            if (!genderStr.trim().isEmpty() && !"null".equalsIgnoreCase(genderStr)) {
-                                // Capitalize first letter
-                                return new SimpleStringProperty(
-                                    genderStr.substring(0, 1).toUpperCase() + 
-                                    genderStr.substring(1).toLowerCase()
-                                );
-                            }
-                        }
-                        
-                        // Try reflection as fallback
-                        try {
-                            java.lang.reflect.Field genderField = director.getClass().getDeclaredField("gender");
-                            genderField.setAccessible(true);
-                            Object genderValue = genderField.get(director);
-                            if (genderValue != null) {
-                                String genderStr = String.valueOf(genderValue);
-                                if (!genderStr.trim().isEmpty() && !"null".equalsIgnoreCase(genderStr)) {
-                                    return new SimpleStringProperty(
-                                        genderStr.substring(0, 1).toUpperCase() + 
-                                        genderStr.substring(1).toLowerCase()
-                                    );
-                                }
-                            }
-                        } catch (Exception e) {
-                            logger.debug("Could not get gender through reflection: {}", e.getMessage());
+                        char gender = director.getGender();
+                        if (gender == 'M' || gender == 'm') {
+                            return new SimpleStringProperty("Male");
+                        } else if (gender == 'F' || gender == 'f') {
+                            return new SimpleStringProperty("Female");
+                        } else {
+                            return new SimpleStringProperty("Other");
                         }
                     } catch (Exception e) {
-                        logger.debug("Error getting gender: {}", e.getMessage());
+                        logger.debug("Error getting director gender: {}", e.getMessage());
                     }
                 }
-                return new SimpleStringProperty("N/A");
             } catch (Exception e) {
-                // Log error and return "N/A"
                 logger.error("Unexpected error getting director gender: {}", e.getMessage(), e);
-                return new SimpleStringProperty("N/A");
             }
+            return new SimpleStringProperty("N/A");
         });
 
         // Set up cell value factory for nationality/ethnicity
@@ -265,13 +290,20 @@ public class CelebritiesController implements Initializable {
                 if (director != null) {
                     // Get the director's ethnicity
                     Ethnicity ethnicity = director.getEthnicity();
-                    if (ethnicity != null && ethnicity.getLabel() != null && !ethnicity.getLabel().trim().isEmpty()) {
-                        return new SimpleStringProperty(ethnicity.getLabel());
+                    if (ethnicity != null) {
+                        String label = ethnicity.getLabel();
+                        if (label != null && !label.trim().isEmpty()) {
+                            return new SimpleStringProperty(label);
+                        }
                     }
 
                     // Try to get nationality from other fields if ethnicity is not set
-                    if (director.getNationality() != null && !director.getNationality().trim().isEmpty()) {
-                        return new SimpleStringProperty(director.getNationality());
+                    Ethnicity nationality = director.getNationality();
+                    if (nationality != null) {
+                        String label = nationality.getLabel();
+                        if (label != null && !label.trim().isEmpty()) {
+                            return new SimpleStringProperty(label);
+                        }
                     }
 
                 }
@@ -282,66 +314,54 @@ public class CelebritiesController implements Initializable {
             }
         });
 
-        // Set up cell value factory for notable works
+        // Set up cell value factory for notable works with improved formatting and null safety
         directorNotableWorksColumn.setCellValueFactory(cellData -> {
             try {
                 Director director = cellData.getValue();
                 if (director != null) {
-                    // First try the standard method if it exists
                     try {
-                        if (director.getClass().getMethod("getNotableWorks") != null) {
-                            List<String> works = director.getNotableWorks();
-                            // Check if the list is not null and not empty
-                            if (works != null && !works.isEmpty()) {
-                                // Join the list into a string,which is separated by commas
-                                String worksText = works.stream()
-                                        .filter(work -> work != null && !work.trim().isEmpty())
-                                        .collect(Collectors.joining(", "));
-                                return new SimpleStringProperty(worksText.isEmpty() ? "No notable works" : worksText);
-                            }
-                        }
-                    } catch (NoSuchMethodException e) {
-                        // Method doesn't exist, try reflection
-                        try {
-                            java.lang.reflect.Field worksField = director.getClass().getDeclaredField("notableWorks");
-                            worksField.setAccessible(true);
-                            Object works = worksField.get(director);
-
-                            // Check if the object is a list
-                            if (works instanceof List<?> worksList) {
-                                if (!worksList.isEmpty()) {
-                                    // Join the list into a string,which is separated by commas
-                                    String worksText = worksList.stream()
-                                            .map(Object::toString)
-                                            .filter(work -> work != null && !work.trim().isEmpty())
-                                            .collect(Collectors.joining(", "));
-                                    return new SimpleStringProperty(worksText.isEmpty() ? "No notable works" : worksText);
+                        List<String> notableWorks = director.getNotableWorks();
+                        if (notableWorks != null && !notableWorks.isEmpty()) {
+                            // Filter out any null or empty strings from notable works
+                            List<String> validWorks = notableWorks.stream()
+                                .filter(work -> work != null && !work.trim().isEmpty())
+                                .collect(Collectors.toList());
+                            
+                            if (!validWorks.isEmpty()) {
+                                // Format the notable works as a comma-separated list, limit to 3 items for display
+                                int maxWorks = Math.min(3, validWorks.size());
+                                String worksText = String.join(", ", validWorks.subList(0, maxWorks));
+                                if (validWorks.size() > 3) {
+                                    worksText += "...";
                                 }
-                                // If the list is empty, return "No notable works"
-                            } else if (works instanceof String) {
-                                String worksStr = ((String) works).trim();
-                                return new SimpleStringProperty(worksStr.isEmpty() ? "No notable works" : worksStr);
+                                // Log the notable works for the director
+                                logger.debug("Notable works for director {} {}: {}",
+                                    director.getFirstName(), director.getLastName(), worksText);
+                                return new SimpleStringProperty(worksText);
                             }
-                        } catch (Exception ex) {
-                            logger.debug("Could not get notable works through reflection: {}", ex.getMessage());
                         }
+                    } catch (Exception e) {
+                        logger.warn("Error processing notable works for director {} {}: {}", 
+                            director.getFirstName(), director.getLastName(), e.getMessage());
                     }
                 }
-                // If the director is null or the notable works are not available, return "Not available"
-                return new SimpleStringProperty("No notable works");
             } catch (Exception e) {
-                logger.debug("Unexpected error getting notable works: {}", e.getMessage());
-                return new SimpleStringProperty("Not available");
+                logger.error("Unexpected error getting director notable works: {}", e.getMessage(), e);
             }
+            return new SimpleStringProperty("No notable works");
         });
 
         // Set up search functionality
         directorSearchField.textProperty().addListener((observable, oldValue, newValue) -> {
             filterDirectors(newValue);
+            // Log the search query
+            logger.debug("Search query: {}", newValue);
         });
 
         // Set the filtered list to the table
         directorsTable.setItems(filteredDirectors);
+        // Log the filtered list
+        logger.debug("Filtered directors: {}", filteredDirectors);
     }
 
     private void loadCelebrities() {
@@ -413,9 +433,15 @@ public class CelebritiesController implements Initializable {
             List<Director> finalDirectorList = directorList;
             Platform.runLater(() -> {
                 try {
-                    logger.debug("Updating UI with {} actors and {} directors", 
+                    assert finalActorList != null;
+                    assert finalDirectorList != null;
+                    logger.debug("Updating UI with {} actors and {} directors",
                         finalActorList.size(), finalDirectorList.size());
-                    
+
+                    // Set the actors and directors to the ObservableLists
+                    // Log the actors and directors lists
+                    logger.debug("Setting actors list: {}", finalActorList);
+                    logger.debug("Setting directors list: {}", finalDirectorList);
                     actors.setAll(finalActorList);
                     directors.setAll(finalDirectorList);
                     
@@ -424,6 +450,10 @@ public class CelebritiesController implements Initializable {
                         actors.size(), directors.size());
                     
                     // Reset filters
+                    // Log the filters
+                    logger.debug("Resetting filters");
+                    logger.debug("Setting actors filter: {}", filteredActors);
+                    logger.debug("Setting directors filter: {}", filteredDirectors);
                     filteredActors.setPredicate(actor -> true);
                     filteredDirectors.setPredicate(director -> true);
                     
@@ -438,6 +468,9 @@ public class CelebritiesController implements Initializable {
                     logger.error("Error updating UI: {}", e.getMessage(), e);
                     showError("Error", "Failed to update UI: " + e.getMessage());
                 }
+                // Log the final list
+                logger.debug("Final actors list: {}", actors);
+                logger.debug("Final directors list: {}", directors);
             });
 
         } catch (Exception e) {
@@ -521,7 +554,7 @@ public class CelebritiesController implements Initializable {
                     Ethnicity ethnicity = director.getEthnicity();
                     nationality = ethnicity != null ? ethnicity.getLabel().toLowerCase() : "";
                 } catch (Exception e) {
-                    logger.debug("Error getting director nationality: {}", e.getMessage());
+                    logger.error("Error getting director nationality: {}", e.getMessage());
                 }
 
                 // Check notable works using reflection

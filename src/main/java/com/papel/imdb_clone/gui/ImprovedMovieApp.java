@@ -24,7 +24,7 @@ import java.io.IOException;
 public class ImprovedMovieApp extends Application {
     private static final Logger logger = LoggerFactory.getLogger(ImprovedMovieApp.class);
 
-    private static final String MAIN_FXML = "/fxml/main-refactored.fxml";
+    private static final String MAIN_FXML = "/fxml/home-view.fxml";
     private static final String AUTH_VIEW = "/fxml/auth-view.fxml";
 
     private Stage primaryStage;
@@ -106,114 +106,11 @@ public class ImprovedMovieApp extends Application {
 
             authController.setStage(authStage);
 
-
-            // Add guest access button functionality
-            addGuestAccessToLogin(authStage, authRoot);
-
             authStage.show();
 
         } catch (Exception e) {
             System.err.println("[Login][ERROR] Failed to show login screen: " + e);
-            e.printStackTrace();
             showErrorAndExit("Failed to show login screen", e);
-        }
-    }
-
-    private void addGuestAccessToLogin(Stage authStage, Parent authRoot) {
-        try {
-            // Add a "Continue as Guest" button to the login screen
-            if (authRoot instanceof javafx.scene.layout.AnchorPane anchorPane) {
-                javafx.scene.control.Button guestButton = new javafx.scene.control.Button("Continue as Guest");
-                guestButton.setStyle("-fx-background-color: #6c757d; -fx-text-fill: white; -fx-font-size: 12px;");
-                guestButton.setPrefWidth(150);
-                guestButton.setLayoutX(325);
-                guestButton.setLayoutY(450);
-
-                //set action for guest button
-                guestButton.setOnAction(e -> {
-                    System.out.println("[Login] Guest access selected");
-                    currentSessionToken = null; // No session for guest
-                    authStage.close();
-                    loadMainApplication();
-                });
-
-                anchorPane.getChildren().add(guestButton);
-            }
-        } catch (Exception e) {
-            logger.warn("Failed to add guest access button", e);
-        }
-    }
-
-    private void loadMainApplication() {
-        try {
-            System.out.println("[Startup] Enter loadMainApplication()");
-            
-            // Ensure we have a primary stage
-            if (primaryStage == null) {
-                primaryStage = new Stage();
-                System.out.println("[Startup] Created new primary stage");
-            }
-
-            // Get the current user
-            com.papel.imdb_clone.service.AuthService authService = 
-                    com.papel.imdb_clone.service.AuthService.getInstance();
-            com.papel.imdb_clone.model.User currentUser = authService.getCurrentUser(currentSessionToken);
-            System.out.println("[Startup] Current user: " + (currentUser != null ? currentUser.getUsername() : "<none>"));
-
-            // Load the FXML first to let it create the controller
-            FXMLLoader loader = new FXMLLoader(getClass().getResource(MAIN_FXML));
-            System.out.println("[Startup] Loading FXML: " + MAIN_FXML);
-            
-            // Load the main view
-            Parent root = loader.load();
-            System.out.println("[Startup] FXML loaded successfully");
-            
-            // Get the controller that was created by the FXML loader
-            RefactoredMainController controller = loader.getController();
-            System.out.println("[Startup] Controller obtained from FXML loader");
-            
-            // Initialize the controller with the user and session
-            if (currentUser != null) {
-                controller.setUserSession(currentUser, currentSessionToken);
-            }
-            
-            // Set the primary stage in the controller
-            controller.setPrimaryStage(primaryStage);
-            System.out.println("[Startup] Primary stage set in controller");
-
-            // Set up the scene with initial size
-            double initialWidth = config.getMinWidth() * 1.5; // Start with a bit more than minimum
-            double initialHeight = config.getMinHeight() * 1.5;
-            
-            Scene scene = new Scene(root, initialWidth, initialHeight);
-            primaryStage.setScene(scene);
-            primaryStage.setTitle(config.getAppTitle() + (currentUser != null ? " - " + currentUser.getUsername() : ""));
-            
-            // Set minimum size constraints
-            primaryStage.setMinWidth(config.getMinWidth());
-            primaryStage.setMinHeight(config.getMinHeight());
-            
-            // Allow window resizing
-            primaryStage.setResizable(true);
-            
-            // Center the window on screen
-            primaryStage.centerOnScreen();
-            
-            // Apply CSS for better resizing behavior
-            scene.getStylesheets().add(getClass().getResource("/css/styles.css").toExternalForm());
-            
-            // Make root container resizable
-            if (root instanceof Pane) {
-                ((Pane) root).setMinSize(config.getMinWidth(), config.getMinHeight());
-            }
-
-            // Show the main application
-            primaryStage.show();
-            System.out.println("[Startup] Stage shown");
-
-        } catch (Exception e) {
-            System.err.println("[Startup][ERROR] loadMainApplication() failed: " + e);
-            showErrorAndExit("Failed to load main application", e);
         }
     }
 

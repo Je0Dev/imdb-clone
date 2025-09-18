@@ -5,7 +5,8 @@ import com.papel.imdb_clone.repository.impl.InMemoryMovieRepository;
 import com.papel.imdb_clone.repository.impl.InMemorySeriesRepository;
 import com.papel.imdb_clone.repository.impl.InMemoryUserRepository;
 import com.papel.imdb_clone.service.CelebrityService;
-import com.papel.imdb_clone.service.ContentService;
+import com.papel.imdb_clone.service.MoviesService;
+import com.papel.imdb_clone.service.SeriesService;
 import com.papel.imdb_clone.service.ServiceLocator;
 import com.papel.imdb_clone.service.data.DataLoaderService;
 import com.papel.imdb_clone.service.data.FileDataLoaderService;
@@ -50,8 +51,8 @@ public class RefactoredDataManager {
     private InMemorySeriesRepository seriesRepository;
 
     // Services
-    private final ContentService<Movie> movieService;
-    private final ContentService<Series> seriesService;
+    private final MoviesService moviesService;
+    private final SeriesService seriesService;
     private final CelebrityService<Actor> actorService;
     private final CelebrityService<Director> directorService;
     private final DataLoaderService dataLoaderService;
@@ -77,8 +78,8 @@ public class RefactoredDataManager {
         this.seriesRepository = new InMemorySeriesRepository();
 
         // Initialize services
-        this.movieService = new ContentService<>(Movie.class);
-        this.seriesService = new ContentService<>(Series.class);
+        this.moviesService = MoviesService.getInstance();
+        this.seriesService = SeriesService.getInstance();
         this.actorService = new CelebrityService<>(Actor.class);
         this.directorService = new CelebrityService<>(Director.class);
 
@@ -90,7 +91,7 @@ public class RefactoredDataManager {
                 seriesService,
                 actorService,
                 directorService,
-                movieService);
+                moviesService);
 
         // Only register services if not skipped
         if (!skipServiceRegistration) {
@@ -107,9 +108,9 @@ public class RefactoredDataManager {
     public void registerServices() {
         ServiceLocator locator = ServiceLocator.getInstance();
 
-        // Register content services
-        locator.registerService(ContentService.class, movieService, "movie");
-        locator.registerService(ContentService.class, seriesService, "series");
+        // Register services
+        locator.registerService(MoviesService.class, moviesService);
+        locator.registerService(SeriesService.class, seriesService);
 
         // Register celebrity services
         locator.registerService(CelebrityService.class, actorService, "actor");
@@ -141,7 +142,17 @@ public class RefactoredDataManager {
 
     // Movie operations
     public List<Movie> getAllMovies() {
-        return movieService.getAll();
+        return moviesService.getAll();
+    }
+
+    // Get movies service
+    public MoviesService getMoviesService() {
+        return moviesService;
+    }
+
+    // Get series service
+    public SeriesService getSeriesService() {
+        return seriesService;
     }
 
     // Series operations
@@ -197,26 +208,26 @@ public class RefactoredDataManager {
 
     //add movie
     public void addMovie(Movie movie) {
-        movieService.add(movie);
+        moviesService.save(movie);
         movieRepository.add(movie);
         dataLoaded = true;
     }
 
     //get all movies
     public List<Movie> getMovies() {
-        return movieRepository.getAll();
+        return moviesService.getAll();
     }
 
     //update movie
     public void updateMovie(Movie movie) {
-        movieService.update(movie);
+        moviesService.update(movie);
         movieRepository.update(movie);
         dataLoaded = true;
     }
 
     //delete movie
     public void deleteMovie(int id) {
-        movieService.delete(id);
+        moviesService.delete(id);
         movieRepository.delete(id);
         dataLoaded = true;
     }
@@ -238,8 +249,14 @@ public class RefactoredDataManager {
 
     //delete movie by id
     public void deleteMovie(Movie selectedMovie) {
-        movieService.delete(selectedMovie.getId());
+        moviesService.delete(selectedMovie.getId());
         movieRepository.delete(selectedMovie.getId());
+        dataLoaded = true;
+    }
+
+    public void removeSeries(Series selected) {
+        seriesService.remove(selected);
+        seriesRepository.remove(selected);
         dataLoaded = true;
     }
 }

@@ -8,6 +8,7 @@ import com.papel.imdb_clone.service.ServiceLocator;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
@@ -18,6 +19,7 @@ import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
+import java.io.IOException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -27,7 +29,7 @@ import static com.papel.imdb_clone.util.UIUtils.showError;
  * Main controller for the application's primary interface.
  * Handles navigation between different views and manages the application state.
  */
-public class RefactoredMainController {
+public class RefactoredMainController extends BorderPane {
     private static final Logger logger = LoggerFactory.getLogger(RefactoredMainController.class);
 
     // Core services and coordinators
@@ -36,8 +38,6 @@ public class RefactoredMainController {
 
     // UI Components
     @FXML
-    private BorderPane mainBorderPane;
-    @FXML
     private VBox sidebar;
     @FXML
     private Label statusLabel;
@@ -45,6 +45,42 @@ public class RefactoredMainController {
     private Label userLabel;
     @FXML
     private VBox featuredContent;
+
+    @FXML
+    private void showMovies(ActionEvent event) {
+        try {
+            NavigationService navigationService = NavigationService.getInstance();
+            Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
+            navigationService.navigateTo("/fxml/movie-view.fxml", stage, "Movies");
+        } catch (Exception e) {
+            logger.error("Error navigating to movies view", e);
+            showError("Navigation Error", "Failed to navigate to movies view: " + e.getMessage());
+        }
+    }
+    
+    @FXML
+    private void showAdvancedSearch(ActionEvent event) {
+        try {
+            NavigationService navigationService = NavigationService.getInstance();
+            Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
+            navigationService.navigateTo("/fxml/advanced-search-view.fxml", stage, "Advanced Search");
+        } catch (Exception e) {
+            logger.error("Error navigating to advanced search", e);
+            showError("Navigation Error", "Failed to open advanced search: " + e.getMessage());
+        }
+    }
+    
+    @FXML
+    private void showTVShows(ActionEvent event) {
+        try {
+            NavigationService navigationService = NavigationService.getInstance();
+            Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
+            navigationService.navigateTo("/fxml/series-view.fxml", stage, "TV Shows");
+        } catch (Exception e) {
+            logger.error("Error navigating to TV shows view", e);
+            showError("Navigation Error", "Failed to navigate to TV shows: " + e.getMessage());
+        }
+    }
 
     // State
     private Stage primaryStage;
@@ -67,8 +103,7 @@ public class RefactoredMainController {
      */
     public RefactoredMainController(User user, String sessionToken) {
         this();
-        this.currentUser = user;
-        this.sessionToken = sessionToken;
+        setUserSession(user, sessionToken);
 
         // Initialize services from ServiceLocator
         initializeServices();
@@ -151,7 +186,6 @@ public class RefactoredMainController {
      */
     @FXML
     public void initialize() {
-
         logger.info("Initializing RefactoredMainController...");
 
         try {
@@ -162,23 +196,33 @@ public class RefactoredMainController {
                 throw new IllegalStateException("UICoordinator not initialized");
             }
 
-            // Load views if needed
-            if (uiCoordinator.areViewsLoaded()) {
-                if (!uiCoordinator.loadAndInitializeViews()) {
-                    logger.warn("Some views failed to load");
-                }
+            // Always try to load views, regardless of areViewsLoaded()
+            logger.info("Loading all views...");
+            if (!uiCoordinator.loadAndInitializeViews()) {
+                logger.warn("Some views failed to load, but continuing with available views");
             }
 
             // Set initial view
             Platform.runLater(() -> {
                 try {
+                    // Ensure this BorderPane is available
+                    if (this == null) {
+                        logger.error("Controller not properly initialized");
+                        return;
+                    }
+
+                    // Get home view and set it as center
                     Node homeView = uiCoordinator.getHomeView();
                     if (homeView != null) {
+                        setCenter(homeView);
                         updateUserInterface();
-                        logger.info("Successfully initialized UI");
+                        logger.info("Successfully initialized UI with home view");
+                    } else {
+                        logger.error("Failed to load home view");
                     }
                 } catch (Exception e) {
-                    logger.error("Error initializing UI", e);
+                    logger.error("Error initializing UI: {}", e.getMessage(), e);
+                    showError("Initialization Error", "Failed to initialize UI: " + e.getMessage());
                 }
             });
 
@@ -198,8 +242,8 @@ public class RefactoredMainController {
             return;
         }
 
-        if (mainBorderPane == null) {
-            logger.warn("mainBorderPane is null in initializeCoordinatorsAndUI");
+        if (this == null) {
+            logger.warn("Controller not properly initialized in initializeCoordinatorsAndUI");
             return;
         }
 
@@ -234,7 +278,7 @@ public class RefactoredMainController {
                 // Set initial view to home
                 Node homeView = uiCoordinator.getHomeView();
                 if (homeView != null) {
-                    mainBorderPane.setCenter(homeView);
+                    setCenter(homeView);
                     logger.info("Successfully set initial view to home");
                     updateUserInterface();
                 } else {
@@ -301,159 +345,27 @@ public class RefactoredMainController {
      * If no user is logged in, it may clear or hide the user label.
      */
     private void updateUserLabel() {
-        if (currentUser != null) {
-            userLabel.setText(currentUser.getUsername());
+        if (userLabel != null) {
+            if (currentUser != null) {
+                String username = currentUser.getUsername();
+                logger.debug("Updating user label for user: {}, session token: {}", 
+                    username, 
+                    sessionToken != null ? "[HIDDEN]" + sessionToken.substring(Math.max(0, sessionToken.length() - 4)) : "null");
+                userLabel.setText(username);
+            } else {
+                logger.debug("No user logged in, setting guest mode");
+                userLabel.setText("Guest");
+            }
         } else {
-            userLabel.setText("Guest");
+            logger.warn("userLabel is not initialized in FXML. Current user: {}, Session token: {}", 
+                currentUser != null ? currentUser.getUsername() : "null",
+                sessionToken != null ? "[HIDDEN]" + sessionToken.substring(Math.max(0, sessionToken.length() - 4)) : "null");
         }
     }
 
 
-    /**
-     * Displays an error dialog with the given title and message.
-     *
-        if (primaryStage != null) {
-            uiCoordinator.setPrimaryStage(primaryStage);
-        }
 
-        // Set user session if available
-        if (currentUser != null && sessionToken != null) {
-            uiCoordinator.setUserSession(currentUser, sessionToken);
-     * Navigates to the TV shows view.
-     *
-     * @param event The action event that triggered the navigation
-     */
-    @FXML
-    private void showTVShows(ActionEvent event) {
-        try {
-            if (uiCoordinator == null) {
-                logger.error("UICoordinator is not initialized");
-                showError("Navigation Error", "Application not properly initialized. Please restart the application.");
-                return;
-            }
 
-            // Get the series view from the UICoordinator
-            Node seriesView = uiCoordinator.getSeriesView();
-            if (seriesView != null) {
-                mainBorderPane.setCenter(seriesView);
-            } else {
-                logger.error("Failed to load series view");
-                showError("Navigation Error", "Failed to load TV shows. Please try again later.");
-            }
-        } catch (Exception e) {
-            logger.error("Error navigating to TV shows: ", e);
-            showError("Navigation Error", "An error occurred while loading TV shows. Please try again.");
-        }
-    }
-
-    /**
-     * Navigates to the movies view.
-     *
-     * @param event The action event that triggered the navigation
-     */
-    @FXML
-    private void showMovies(ActionEvent event) {
-        try {
-            if (uiCoordinator == null) {
-                logger.error("UICoordinator is not initialized");
-                showError("Navigation Error", "Application not properly initialized. Please restart the application.");
-                return;
-            }
-
-            // Get the movie view from the UICoordinator
-            Node movieView = uiCoordinator.getMovieView();
-            if (movieView != null) {
-                mainBorderPane.setCenter(movieView);
-            } else {
-                logger.error("Failed to load movie view");
-                showError("Navigation Error", "Failed to load movies. Please try again later.");
-            }
-        } catch (Exception e) {
-            logger.error("Error showing movies: {}", e.getMessage(), e);
-        }
-    }
-
-    /**
-     * Navigates to the advanced search view.
-     *
-     * @param actionEvent The action event that triggered the navigation
-     */
-    @FXML
-    public void showAdvancedSearch(ActionEvent actionEvent) {
-        try {
-            if (uiCoordinator == null) {
-                logger.error("UICoordinator is not initialized");
-                showError("Navigation Error", "Application not properly initialized. Please restart the application.");
-                return;
-            }
-
-            // Get the search view from the UICoordinator
-            Node searchView = uiCoordinator.getSearchView();
-            if (searchView == null) {
-                logger.error("Failed to load search view - view is null");
-                showError("Navigation Error", "Failed to load search view. The view could not be initialized.");
-                return;
-            }
-
-            // Set the search view as the center of the mainBorderPane
-            mainBorderPane.setCenter(searchView);
-            logger.info("Successfully navigated to search view");
-        } catch (Exception e) {
-            logger.error("Error showing search view: {}", e.getMessage(), e);
-            showError("Navigation Error", "An error occurred while loading the search view: " + e.getMessage());
-        }
-    }
-
-    /**
-     * Handles navigation to the home view when the home button is clicked.
-     * This method creates a new BorderPane that includes both the sidebar and featured content.
-     *
-     * @param mouseEvent the mouse event that triggered this method
-     */
-    @FXML
-    public void goToHome(MouseEvent mouseEvent) {
-        try {
-            if (uiCoordinator == null) {
-                logger.error("UICoordinator is not initialized");
-                showError("Navigation Error", "Application not properly initialized. Please restart the application.");
-                return;
-            }
-
-            // Create a new container for the home view content
-            BorderPane homeContainer = new BorderPane();
-            homeContainer.setId("homeContainer");
-
-            // Add the sidebar (which contains the navigation buttons)
-            if (sidebar != null) {
-                homeContainer.setLeft(sidebar);
-            } else {
-                logger.warn("Sidebar is not initialized");
-            }
-
-            // Add featured content to the center
-            if (featuredContent != null) {
-                // Create a scrollable container for the featured content
-                ScrollPane scrollPane = new ScrollPane(featuredContent);
-                scrollPane.setFitToWidth(true);
-                scrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
-                scrollPane.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
-                scrollPane.setStyle("-fx-background: #0f0f0f; -fx-background-color: #0f0f0f;");
-
-                homeContainer.setCenter(scrollPane);
-            } else {
-                logger.warn("Featured content is not initialized");
-            }
-
-            // Set the home container as the center of the main border pane
-            mainBorderPane.setCenter(homeContainer);
-            logger.info("Successfully navigated to home view with sidebar and featured content");
-
-        } catch (Exception e) {
-            String errorMsg = "An error occurred while navigating to home: " + e.getMessage();
-            logger.error(errorMsg, e);
-            showError("Navigation Error", errorMsg);
-        }
-    }
 
     /**
      * Sets the current user's session information.

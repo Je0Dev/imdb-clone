@@ -14,6 +14,7 @@ import java.util.stream.Collectors;
  */
 public class Actor extends Celebrity {
     private Ethnicity ethnicity;
+    private String role; // Actor's role in a specific movie/show
 
     // Backward-compatible storage of the original race label used in older tests
     private String notableWorks;
@@ -44,6 +45,16 @@ public class Actor extends Celebrity {
     // setter for ethnicity
     public void setEthnicity(Ethnicity ethnicity) {
         this.ethnicity = ethnicity;
+    }
+    
+    // getter for role
+    public String getRole() {
+        return role != null ? role : "";
+    }
+    
+    // setter for role
+    public void setRole(String role) {
+        this.role = role;
     }
 
     @Override
@@ -116,5 +127,22 @@ public class Actor extends Celebrity {
         }
         return Arrays.stream(notableWorks.split(",")).map(String::trim).collect(Collectors.toList());
     }
+    
+    /**
+     * Adds a notable work to the actor's list of notable works.
+     * @param work The work to add
+     */
+    public void addNotableWork(String work) {
+        if (work != null && !work.trim().isEmpty()) {
+            if (notableWorks == null || notableWorks.isEmpty()) {
+                notableWorks = work.trim();
+            } else {
+                notableWorks += ", " + work.trim();
+            }
+        }
+    }
 
+    public Object getName() {
+        return getFullName();
+    }
 }

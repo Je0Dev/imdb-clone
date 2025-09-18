@@ -27,7 +27,7 @@ public class AuthController extends BaseController {
     // Logger,which is used to log messages for debugging and error tracking
     private static final Logger logger = LoggerFactory.getLogger(AuthController.class);
 
-    // UI Components - Registration
+    // UI Components - Registration Login which is handled by one fxml view auth.fxml
     public Hyperlink registerLink;
     public StackPane registerContainer;
     public Hyperlink loginLink;
@@ -124,6 +124,7 @@ public class AuthController extends BaseController {
     }
 
     private void setupLoginForm(TextField loginPasswordVisibleField) {
+        this.loginPasswordVisibleField = loginPasswordVisibleField;
         // Bind(means connect state with property) login button state, which is disabled when the username or password is empty
         loginButton.disableProperty().bind(
                 loginUsernameField.textProperty().isEmpty()
@@ -269,7 +270,7 @@ public class AuthController extends BaseController {
                 loginPasswordField.clear();
 
                 // Navigate to main application
-                navigationService.navigateTo("/fxml/main-refactored.fxml", (Stage) loginButton.getScene().getWindow(), "IMDb Clone");
+                navigationService.navigateTo("/fxml/home-view.fxml", (Stage) loginButton.getScene().getWindow(), "IMDb Clone");
             }
 
         } catch (AuthException e) {
@@ -283,12 +284,6 @@ public class AuthController extends BaseController {
         }
     }
 
-    // Clear login form
-    private void clearLoginForm() {
-        loginUsernameField.clear();
-        loginPasswordField.clear();
-        loginErrorLabel.setVisible(false);
-    }
 
     @FXML
     private void handleRegister() {
@@ -384,60 +379,7 @@ public class AuthController extends BaseController {
         }
     }
 
-    /**Handle login key press
-     *
-     * @param event for key press
-     * @throws Exception for validation errors like invalid username or password
-     */
-    @FXML
-    private void handleLoginKeyPress(KeyEvent event) throws Exception {
-        // Handle Enter key press in password field for login or registration
-        if (event.getCode() == KeyCode.ENTER) {
-            if (loginContainer.isVisible()) {
-                handleLogin();
-            } else {
-                handleRegister();
-            }
-        }
-    }
 
-    /**Handle forgot password
-     *
-     * @throws Exception for validation errors like invalid username
-     */
-    @FXML
-    public void handleForgotPassword() throws Exception {
-        try {
-            // Get username from login form which is used to reset password
-            String username = loginUsernameField.getText().trim();
-            if (username.isEmpty()) {
-                showLoginError("Please enter your username to reset password");
-                return;
-            }
-
-            // Show confirmation dialog
-            Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
-            alert.setTitle("Password Reset");
-            alert.setHeaderText("Reset Password");
-            alert.setContentText("A password reset link will be sent to the email associated with your account. Continue?");
-
-            // Show confirmation dialog and handle response
-            alert.showAndWait().ifPresent(response -> {
-                if (response == ButtonType.OK) {
-                    try {
-                        // Initiate password reset
-                        authService.initiatePasswordReset(username);
-                        showLoginError("Password reset instructions have been sent to your email.");
-                    } catch (Exception e) {
-                        handleUnexpectedError("password reset", e);
-                    }
-                }
-            });
-            // catch any unexpected errors
-        } catch (Exception e) {
-            handleUnexpectedError("password reset", e);
-        }
-    }
 
     /**Show register form
      *

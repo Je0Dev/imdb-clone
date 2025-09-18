@@ -88,4 +88,7 @@ public abstract class Celebrity {
                 '}';
     }
 
+    public Ethnicity getNationality() {
+        return ethnicity;
+    }
 }

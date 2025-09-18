@@ -8,7 +8,7 @@ import com.papel.imdb_clone.model.Director;
 import com.papel.imdb_clone.model.Movie;
 import com.papel.imdb_clone.repository.impl.InMemoryMovieRepository;
 import com.papel.imdb_clone.service.CelebrityService;
-import com.papel.imdb_clone.service.ContentService;
+import com.papel.imdb_clone.service.MoviesService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -18,6 +18,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.sql.Date;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
 import java.util.Optional;
@@ -27,7 +28,7 @@ import java.util.Optional;
  */
 public class MovieDataLoader extends BaseDataLoader {
     private static final Logger logger = LoggerFactory.getLogger(MovieDataLoader.class);
-    private final ContentService<Movie> movieService;
+    private final MoviesService movieService;
     private final CelebrityService<Actor> actorService;
     private final CelebrityService<Director> directorService;
     private char gender;
@@ -42,7 +43,7 @@ public class MovieDataLoader extends BaseDataLoader {
      * @param directorService
      */
     public MovieDataLoader(
-            ContentService<Movie> movieService,
+            MoviesService movieService,
             CelebrityService<Actor> actorService,
             CelebrityService<Director> directorService) {
         if (movieService == null) {
@@ -83,11 +84,13 @@ public class MovieDataLoader extends BaseDataLoader {
      * @throws IOException
      */
     public void load(String filename) throws IOException {
-        logger.info("Loading movies from {}", filename);
+        long startTime = System.currentTimeMillis();
+        logger.info("Starting to load movies from: {}", filename);
         int count = 0;
         int errors = 0;
         int duplicates = 0;
         int lineNumber = 0;
+        logger.debug("Initializing movie data loading process");
 
         try (InputStream inputStream = getResourceAsStream(filename);
              BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream))) {
@@ -119,7 +122,8 @@ public class MovieDataLoader extends BaseDataLoader {
                             // Validate year is within reasonable range (1888 is when first movie was made)
                             int currentYear = Calendar.getInstance().get(Calendar.YEAR);
                             if (year < 1888 || year > currentYear + 2) {
-                                logger.warn("Year {} is out of range (1888-{}). Using current year as fallback.", year, currentYear + 2);
+                                logger.warn("Year {} is out of range (1888-{}) for movie '{}' at line {}. Using current year as fallback.",
+                                year, currentYear + 2, title, lineNumber);
                                 year = currentYear;
                             }
                             // create release date
@@ -129,8 +133,8 @@ public class MovieDataLoader extends BaseDataLoader {
                             cal.set(Calendar.DAY_OF_MONTH, 1);
                             releaseDate = new Date(cal.getTimeInMillis());
                         } catch (Exception e) {
-                            logger.warn("Invalid year format '{}' at line {}. Using current year as fallback. Error: {}", 
-                                parts[1], lineNumber, e.getMessage());
+                            logger.warn("Invalid year format '{}' for movie '{}' at line {}. Using current year as fallback. Error: {}",
+                                parts[1], title, lineNumber, e.getMessage());
                             // Set to current year as fallback
                             year = Calendar.getInstance().get(Calendar.YEAR);
                             Calendar cal = Calendar.getInstance();
@@ -144,8 +148,9 @@ public class MovieDataLoader extends BaseDataLoader {
                         // Parse genres (handle both comma and semicolon separated values)
                         String genreField = parts[2].trim();
                         if (genreField.isEmpty() || genreField.equalsIgnoreCase("n/a")) {
-                            genreField = "DRAMA"; // Default to DRAMA if no genre specified
-                            logger.warn("No genre specified for movie '{}' at line {}. Defaulting to 'DRAMA'.", title, lineNumber);
+                            logger.warn("No genre specified for movie '{}' at line {}. This movie will be skipped.", title, lineNumber);
+                            errors++;
+                            continue; // Skip this movie if no genre is specified
                         }
                         String[] genreNames = genreField.split("[,;]");
 
@@ -165,7 +170,7 @@ public class MovieDataLoader extends BaseDataLoader {
                             // Ensure rating is between 0 and 10
                             rating = Math.max(0.0, Math.min(10.0, rating));
                         } catch (NumberFormatException e) {
-                            logger.warn("Invalid rating format '{}' at line {}", parts[5].trim(), lineNumber);
+                            logger.warn("Invalid rating format '{}' for movie '{}' at line {}", parts[5].trim(), title, lineNumber);
                             rating = 0.0; // Default to 0.0 if rating is invalid
                         }
 
@@ -174,14 +179,83 @@ public class MovieDataLoader extends BaseDataLoader {
 
                         // Create and save the movie
                         try {
+                            // Create or find director
+                            @SuppressWarnings("unchecked")
+                            List<Director> directors = (List<Director>) (List<?>) directorService.findByName(directorName);
+                            Director director = directors != null && !directors.isEmpty() ? directors.get(0) : null;
+                            if (director == null) {
+                                String[] directorNameParts = directorName.trim().split("\\s+", 2);
+                                String firstName = directorNameParts[0];
+                                String lastName = directorNameParts.length > 1 ? directorNameParts[1] : "";
+                                director = new Director(
+                                    firstName,
+                                    lastName,
+                                    LocalDate.now(), // Default birth date
+                                    '?', // Unknown gender
+                                    Ethnicity.UNKNOWN // Unknown ethnicity
+                                );
+                                director = directorService.save(director);
+                            }
+
                             // Create new movie with required fields
                             Movie movie = new Movie();
                             movie.setTitle(title);
                             movie.setReleaseDate(releaseDate);
-                            movie.setStartYear(year);  // Set the startYear field
-                            movie.setRating(rating); // Set the rating using the setter that accepts double
-                            // Save through service only (which will handle repository saving)
+                            movie.setStartYear(year);
+                            movie.setDirector(directorName); // This will be updated to use Director object in the future
+                            movie.setRating(rating);
+                            
+                            // Set the director object if available
+                            if (director != null) {
+                                movie.setDirector(director.getFullName());
+                            }
+
+                            // Save movie to get an ID
                             movie = movieService.save(movie);
+
+                            // Add actors to the movie
+                            List<Actor> movieActors = new ArrayList<>();
+                            for (String actorName : actorNames) {
+                                if (actorName != null && !actorName.trim().isEmpty()) {
+                                    String normalizedActorName = normalizeText(actorName).trim();
+                                    if (normalizedActorName.isEmpty()) continue;
+                                    
+                                    String[] nameParts = normalizedActorName.split("\\s+", 2);
+                                    String firstName = nameParts[0];
+                                    String lastName = nameParts.length > 1 ? nameParts[1] : "";
+
+                                    // Create or find actor
+                                    @SuppressWarnings("unchecked")
+                                    List<Actor> actors = (List<Actor>) (List<?>) actorService.findByName(firstName + " " + lastName);
+                                    Actor actor = actors != null && !actors.isEmpty() ? actors.get(0) : null;
+                                    
+                                    if (actor == null) {
+                                        actor = new Actor(
+                                            firstName,
+                                            lastName,
+                                            LocalDate.now(), // Default birth date
+                                            '?', // Unknown gender
+                                            "Unknown" // Unknown ethnicity
+                                        );
+                                        actor = actorService.save(actor);
+                                        logger.debug("Created new actor: {} {}", firstName, lastName);
+                                    }
+
+                                    // Add actor to movie's actor list
+                                    if (!movieActors.contains(actor)) {
+                                        movieActors.add(actor);
+                                        actorService.save(actor);
+                                        logger.debug("Added actor {} to movie {}", actor.getFullName(), title);
+                                    }
+                                }
+                            }
+                            
+                            // Set the actors to the movie and save it
+                            if (!movieActors.isEmpty()) {
+                                movie.setActors(movieActors);
+                                movie = movieService.save(movie);
+                                logger.debug("Saved movie with {} actors: {}", movieActors.size(), movie.getTitle());
+                            }
 
                             // Set genres with improved handling
                             boolean hasValidGenre = false;
@@ -223,7 +297,7 @@ public class MovieDataLoader extends BaseDataLoader {
                                             genreName, lineNumber, e.getMessage());
                                 }
                             }
-                            
+
 
                             // Set director with improved error handling
                             if (!directorName.trim().isEmpty()) {
@@ -317,12 +391,22 @@ public class MovieDataLoader extends BaseDataLoader {
                 }
             }
 
-            logger.info("Successfully loaded {} movies ({} duplicates, {} errors, {} total lines)",
-                    count, duplicates, errors, lineNumber);
+            long endTime = System.currentTimeMillis();
+            long duration = (endTime - startTime) / 1000;
+
+            if (errors > 0) {
+                logger.warn("Completed loading movies with {} errors. Successfully loaded {} movies ({} duplicates, {} total lines) in {} seconds",
+                    errors, count, duplicates, lineNumber, duration);
+            } else {
+                logger.info("Successfully loaded {} movies ({} duplicates, {} total lines) in {} seconds",
+                    count, duplicates, lineNumber, duration);
+            }
 
         } catch (IOException e) {
             logger.error("Error reading movies file: {}", e.getMessage(), e);
             throw new FileParsingException("Error reading movies file: " + e.getMessage());
+        } finally {
+            logger.debug("Movie data loading process completed");
         }
     }
 }

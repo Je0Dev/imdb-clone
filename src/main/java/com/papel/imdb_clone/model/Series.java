@@ -10,6 +10,7 @@ import java.util.*;
  * Represents a series of episodes.
  */
 public class Series extends Content {
+    private Date year;
     private List<Season> seasons;
     private String director;  // Changed from Director to String to match parent class
     private List<Actor> actors;
@@ -19,7 +20,16 @@ public class Series extends Content {
     private String nominations;
     private List<Genre> genres = new ArrayList<>();
     private static final Logger logger = LoggerFactory.getLogger(Series.class);
+    private int endYear;
     
+    /**
+     * Sets the end year of the series.
+     * @param endYear The year the series ended
+     */
+    public void setEndYear(int endYear) {
+        this.endYear = endYear;
+    }
+
     @Override
     public String getDirector() {
         return director;
@@ -248,12 +258,33 @@ public class Series extends Content {
 
     @Override
     public String toString() {
-        return "Series{" +
-                "id=" + getId() +
-                ", title='" + getTitle() + '\'' +
-                ", genre=" + getGenre() +
-                ", seasons=" + seasons.size() +
-                '}';
+        return String.format(
+            "%s (%d-%s, %d seasons, %d episodes, %.1f/10)",
+            getTitle(),
+            getYear() != null ? getYear().getYear() + 1900 : 0,
+            endYear > 0 ? String.valueOf(endYear) : "Present",
+            getTotalSeasons(),
+            getTotalEpisodes(),
+            getRating()
+        );
+    }
+    
+    /**
+     * Gets a brief summary of the series
+     * @return Formatted string with series details
+     */
+    public String getSummary() {
+        return String.format(
+            "%s\n" +
+            "Seasons: %d | Episodes: %d | Status: %s\n" +
+            "Network: %s\n" +
+            "Rating: %.1f/10\n" +
+            "\n%s",
+            getTitle(),
+            getTotalSeasons(),
+            getTotalEpisodes(),
+            getRating()
+        );
     }
 
     public void setRating(double rating) {
@@ -280,5 +311,9 @@ public class Series extends Content {
 
     public void setCreator(String creator) {
         this.director = creator;
+    }
+
+    public int getEndYear() {
+        return endYear;
     }
 }

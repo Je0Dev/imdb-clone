@@ -24,7 +24,7 @@ public class SearchCriteria {
     private Integer endYear;
 
     //search criteria constructor with all parameters
-    public SearchCriteria(String query, Double minImdb, Double maxImdb, Double minUser, Double maxUser, Integer minDuration, Integer maxDuration, List<Genre> selectedGenres, String description, Integer yearFrom, Integer yearTo) {
+    public SearchCriteria(String query, Double minImdb, Double maxImdb, Double minUser, Double maxUser, Integer minDuration, Integer maxDuration, List<Genre> selectedGenres, Integer yearFrom, Integer yearTo) {
         this.query = query;
         this.minImdbRating = minImdb;
         this.maxImdbRating = maxImdb;

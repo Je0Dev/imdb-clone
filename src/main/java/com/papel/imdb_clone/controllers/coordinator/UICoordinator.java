@@ -1,12 +1,18 @@
 package com.papel.imdb_clone.controllers.coordinator;
 
 import com.papel.imdb_clone.config.ApplicationConfig;
-import com.papel.imdb_clone.controllers.ContentController;
+import com.papel.imdb_clone.controllers.MoviesController;
+import com.papel.imdb_clone.controllers.SeriesController;
 import com.papel.imdb_clone.data.RefactoredDataManager;
+import com.papel.imdb_clone.model.Movie;
+import com.papel.imdb_clone.model.Series;
 import com.papel.imdb_clone.model.User;
+import com.papel.imdb_clone.service.MoviesService;
+import com.papel.imdb_clone.service.SeriesService;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Node;
 import javafx.scene.control.Label;
+import javafx.scene.layout.BorderPane;
 import javafx.stage.Stage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,14 +28,40 @@ import java.util.function.Supplier;
  */
 public class UICoordinator {
     private static final Logger logger = LoggerFactory.getLogger(UICoordinator.class);
+    private static UICoordinator instance;
 
     private final RefactoredDataManager dataManager;
+    private MoviesService movieService;
+
+    /**
+     * Private constructor to prevent instantiation
+     */
+    private UICoordinator() {
+        this.dataManager = new RefactoredDataManager();
+        this.moviesService = MoviesService.getInstance();
+        this.seriesService = SeriesService.getInstance();
+        logger.info("UICoordinator initialized with default data manager and content services");
+    }
+
+    /**
+     * Returns the singleton instance of UICoordinator
+     * @return the singleton instance
+     */
+    public static synchronized UICoordinator getInstance() {
+        if (instance == null) {
+            instance = new UICoordinator();
+        }
+        return instance;
+    }
+    private final MoviesService moviesService;
+    private final SeriesService seriesService;
     private Stage primaryStage;
     private User currentUser;
     private String sessionToken;
 
     // Controllers
-    private ContentController contentController;
+    private MoviesController moviesController;
+    private SeriesController seriesController;
 
     // Views
     private Node movieView;
@@ -51,7 +83,9 @@ public class UICoordinator {
             throw new IllegalArgumentException("DataManager cannot be null");
         }
         this.dataManager = dataManager;
-        logger.info("UICoordinator initialized");
+        this.moviesService = MoviesService.getInstance();
+        this.seriesService = SeriesService.getInstance();
+        logger.info("UICoordinator initialized with content services");
     }
 
     /**
@@ -71,20 +105,6 @@ public class UICoordinator {
             logger.info("Setting primary stage in UICoordinator");
             this.primaryStage = primaryStage;
 
-            // Get configuration instance
-            ApplicationConfig config = ApplicationConfig.getInstance();
-
-            // Set minimum window size from config
-            primaryStage.setMinWidth(config.getMinWidth());
-            primaryStage.setMinHeight(config.getMinHeight());
-
-            // Set initial window size from config if not already set by application.properties-ApplicationConfig
-            if (primaryStage.getWidth() < config.getMinWidth()) {
-                primaryStage.setWidth(config.getMinWidth());
-            }
-            if (primaryStage.getHeight() < config.getMinHeight()) {
-                primaryStage.setHeight(config.getMinHeight());
-            }
         }
     }
 
@@ -127,7 +147,7 @@ public class UICoordinator {
         Map<String, Supplier<Node>> viewsToLoad = Map.of(
                 "movie view", () -> movieView = loadViewSafely("/fxml/movie-view.fxml"),
                 "series view", () -> seriesView = loadViewSafely("/fxml/series-view.fxml"),
-                "directors & actors", () -> directorsAndActorsView = loadViewSafely("/fxml/directors-and-actors-view.fxml"),
+                "directors & actors", () -> directorsAndActorsView = loadViewSafely("/fxml/celebrities-view.fxml"),
                 "search view", () -> searchView = loadViewSafely("/fxml/advanced-search-view.fxml")
         );
 
@@ -180,6 +200,37 @@ public class UICoordinator {
     }
 
     /**
+     * Shows the home view in the main content area.
+     * If the home view is not loaded, it will be loaded first.
+     *
+     * @throws IllegalStateException if the home view cannot be loaded or shown
+     */
+    public void showHomeView() {
+        try {
+            if (homeView == null) {
+                homeView = loadViewSafely("/fxml/home-view.fxml");
+                if (homeView == null) {
+                    throw new IllegalStateException("Failed to load home view");
+                }
+            }
+            // Assuming there's a method to show the view in the main content area
+            // This is a placeholder - adjust according to your actual UI structure
+            showInContentArea(homeView);
+        } catch (Exception e) {
+            logger.error("Error showing home view: {}", e.getMessage(), e);
+            throw new IllegalStateException("Failed to show home view", e);
+        }
+    }
+
+    private void showInContentArea(Node homeView) {
+        if (primaryStage != null && primaryStage.getScene() != null) {
+            BorderPane root = (BorderPane) primaryStage.getScene().getRoot();
+            root.setCenter(homeView);
+            logger.info("Successfully displayed home view");
+        }
+    }
+
+    /**
      * Loads an FXML view from the specified path.
      *
      * @param fxmlPath the path to the FXML file relative to the resources directory
@@ -211,11 +262,6 @@ public class UICoordinator {
             logger.debug("Loading FXML from URL: {}", resourceUrl);
             FXMLLoader loader = new FXMLLoader(resourceUrl);
 
-            // Set controller factory if needed
-            if (contentController != null) {
-                loader.setController(contentController);
-            }
-
             try {
                 Node view = loader.load();
                 logger.info("Successfully loaded view: {}", fxmlPath);
@@ -241,38 +287,69 @@ public class UICoordinator {
     }
 
     /**
-     * Loads the main content view of the application.
-     * This is a special case view that needs to be loaded first as it contains the main layout.
-     *
-     * @throws IOException if the home view FXML file cannot be loaded
-     */
-    private synchronized void loadContentView() throws IOException {
-        if (homeView != null) {
-            return; // Already loaded
-        }
 
-        if (isViewLoading) {
-            logger.warn("Attempted to load content view while another load is in progress");
-            return;
-        }
+/**
+ * Checks if all views are loaded
+ */
+public boolean areViewsLoaded() {
+    return homeView != null && movieView != null && seriesView != null && searchView != null;
+}
 
-        // Set the loading flag to prevent concurrent loads
-        isViewLoading = true;
-        try {
-            logger.info("Loading main content view...");
-            homeView = loadView("/fxml/main-refactored.fxml");
-            logger.info("Successfully loaded home view");
-        } finally {
-            isViewLoading = false;
-        }
+/**
+ * Loads the main content view of the application.
+ * This is a special case view that needs to be loaded first as it contains the main layout.
+ *
+ * @throws IOException if the home view FXML file cannot be loaded
+ */
+private void loadContentView() throws IOException {
+    if (homeView != null) {
+        return; // Already loaded
     }
 
-    /**
-     * Gets the movie view component.
-     *
-     * @return the Node containing the movie view, or null if not loaded
-     */
-    public Node getMovieView() {
+    if (isViewLoading) {
+        logger.warn("Attempted to load content view while another load is in progress");
+        return;
+    }
+
+    // Set the loading flag to prevent concurrent loads
+    isViewLoading = true;
+    try {
+        logger.info("Loading main content view...");
+        
+        // Load movie view
+        FXMLLoader movieLoader = new FXMLLoader(getClass().getResource("/fxml/movie-view.fxml"));
+        movieView = movieLoader.load();
+        moviesController = movieLoader.getController();
+        moviesController.setContentService(movieService);
+        
+        // Load series view
+        FXMLLoader seriesLoader = new FXMLLoader(getClass().getResource("/fxml/series-view.fxml"));
+        seriesView = seriesLoader.load();
+        seriesController = seriesLoader.getController();
+        seriesController.setContentService(seriesService);
+        
+        // Initialize controllers with current user if available
+        if (currentUser != null) {
+            moviesController.initialize(currentUser.getId());
+            seriesController.initialize(currentUser.getId());
+        }
+        
+        // Load other views
+        homeView = loadView("/fxml/home-view.fxml");
+        searchView = loadView("/fxml/advanced-search-view.fxml");
+        
+        logger.info("Successfully loaded all views");
+    } finally {
+        isViewLoading = false;
+    }
+}
+
+/**
+ * Gets the movie view component.
+ *
+ * @return the Node containing the movie view, or null if not loaded
+ */
+public Node getMovieView() {
         if (movieView == null) {
             logger.warn("Movie view was not preloaded, attempting to load on demand");
             movieView = loadViewSafely("/fxml/movie-view.fxml");
@@ -330,20 +407,4 @@ public class UICoordinator {
         return homeView;
     }
 
-        /**
-     * Creates an error node to display when view loading fails
-     */
-    private Node createErrorNode(String message) {
-        Label errorLabel = new Label(message);
-        errorLabel.setStyle("-fx-text-fill: #ff4444; -fx-padding: 20; -fx-font-size: 14;");
-        errorLabel.setWrapText(true);
-        return errorLabel;
-    }
-
-    /**
-     * Checks if all views are loaded
-     */
-    public boolean areViewsLoaded() {
-        return homeView != null && movieView != null && seriesView != null && searchView != null;
-    }
 }

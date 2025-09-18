@@ -34,11 +34,13 @@ public class ActorDataLoader extends BaseDataLoader {
      * @throws IOException if there is an error reading the file
      */
     public void load(String filename) throws IOException {
-        logger.info("Loading actors from {}", filename);
+        long startTime = System.currentTimeMillis();
+        logger.info("Starting to load actors from: {}", filename);
         int count = 0;
         int errors = 0;
         int duplicates = 0;
         int lineNumber = 0;
+        logger.debug("Initializing actor data loading process");
 
         try (InputStream inputStream = getResourceAsStream(filename);
              BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream))) {
@@ -106,7 +108,7 @@ public class ActorDataLoader extends BaseDataLoader {
                                 ethnicity = Ethnicity.fromLabel(nationality);
                             }
                         } catch (IllegalArgumentException e) {
-                            logger.warn("Unknown ethnicity '{}' for actor {} {}", nationality, firstName, lastName);
+                            logger.warn("Unknown ethnicity '{}' for actor {} {} at line {}", nationality, firstName, lastName, lineNumber);
                         }
 
                         // Notable works (optional)
@@ -126,14 +128,16 @@ public class ActorDataLoader extends BaseDataLoader {
 
                             // Check if actor already exists
                             if (actorService.findByFullName(firstName, lastName).isPresent()) {
-                                logger.debug("Actor already exists: {} {}", firstName, lastName);
+                                logger.debug("Skipping duplicate actor: {} {}", firstName, lastName);
                                 duplicates++;
+                                logger.trace("Actor already exists in database: {} {}", firstName, lastName);
                             } else {
                                 actorService.save(actor);
                                 count++;
                             }
                         } catch (Exception e) {
-                            logger.error("Error creating actor at line {}: {}", lineNumber, e.getMessage());
+                            logger.error("Error creating actor '{} {}' at line {}: {}", 
+                                firstName, lastName, lineNumber, e.getMessage(), e);
                             errors++;
                         }
                     } else {
@@ -146,12 +150,22 @@ public class ActorDataLoader extends BaseDataLoader {
                 }
             }
 
-            logger.info("Successfully loaded {} actors ({} duplicates, {} errors, {} total lines)",
-                    count, duplicates, errors, lineNumber);
+            long endTime = System.currentTimeMillis();
+            long duration = (endTime - startTime) / 1000;
+            
+            if (errors > 0) {
+                logger.warn("Completed loading actors with {} errors. Successfully loaded {} actors ({} duplicates, {} total lines) in {} seconds", 
+                    errors, count, duplicates, lineNumber, duration);
+            } else {
+                logger.info("Successfully loaded {} actors ({} duplicates, {} total lines) in {} seconds", 
+                    count, duplicates, lineNumber, duration);
+            }
 
         } catch (IOException e) {
             logger.error("Error reading actors file: {}", e.getMessage(), e);
             throw new FileParsingException("Error reading actors file: " + e.getMessage());
+        } finally {
+            logger.debug("Actor data loading process completed");
         }
     }
 

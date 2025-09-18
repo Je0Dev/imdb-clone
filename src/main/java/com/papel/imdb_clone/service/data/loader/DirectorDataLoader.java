@@ -35,11 +35,13 @@ public class DirectorDataLoader extends BaseDataLoader {
      * @throws IOException if there is an error reading the file
      */
     public void load(String filename) throws IOException {
-        logger.info("Loading directors from {}", filename);
+        long startTime = System.currentTimeMillis();
+        logger.info("Starting to load directors from: {}", filename);
         int count = 0;
         int errors = 0;
         int duplicates = 0;
         int lineNumber = 0;
+        logger.debug("Initializing director data loading process");
 
         try (InputStream inputStream = getResourceAsStream(filename);
              BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream))) {
@@ -110,7 +112,7 @@ public class DirectorDataLoader extends BaseDataLoader {
                                 ethnicity = Ethnicity.fromLabel(nationality);
                             }
                         } catch (IllegalArgumentException e) {
-                            logger.warn("Unknown ethnicity '{}' for director {} {}", nationality, firstName, lastName);
+                            logger.warn("Unknown ethnicity '{}' for director {} {} at line {}", nationality, firstName, lastName, lineNumber);
                         }
 
                         // Notable works (optional)
@@ -134,14 +136,16 @@ public class DirectorDataLoader extends BaseDataLoader {
                             
                             // Check if director already exists
                             if (directorService.findByFullName(firstName, lastName).isPresent()) {
-                                logger.debug("Director already exists: {} {}", firstName, lastName);
+                                logger.debug("Skipping duplicate director: {} {}", firstName, lastName);
+                                logger.trace("Director already exists in database: {} {}", firstName, lastName);
                                 duplicates++;
                             } else {
                                 directorService.save(director);
                                 count++;
                             }
                         } catch (Exception e) {
-                            logger.error("Error creating director at line {}: {}", lineNumber, e.getMessage());
+                            logger.error("Error creating director '{} {}' at line {}: {}", 
+                                firstName, lastName, lineNumber, e.getMessage(), e);
                             errors++;
                         }
                     } else {
@@ -154,12 +158,22 @@ public class DirectorDataLoader extends BaseDataLoader {
                 }
             }
 
-            logger.info("Successfully loaded {} directors ({} duplicates, {} errors, {} total lines)",
-                    count, duplicates, errors, lineNumber);
+            long endTime = System.currentTimeMillis();
+            long duration = (endTime - startTime) / 1000;
+            
+            if (errors > 0) {
+                logger.warn("Completed loading directors with {} errors. Successfully loaded {} directors ({} duplicates, {} total lines) in {} seconds", 
+                    errors, count, duplicates, lineNumber, duration);
+            } else {
+                logger.info("Successfully loaded {} directors ({} duplicates, {} total lines) in {} seconds", 
+                    count, duplicates, lineNumber, duration);
+            }
 
         } catch (IOException e) {
             logger.error("Error reading directors file: {}", e.getMessage(), e);
             throw new FileParsingException("Error reading directors file: " + e.getMessage());
+        } finally {
+            logger.debug("Director data loading process completed");
         }
     }
 

@@ -186,4 +186,11 @@ public class InMemorySeriesRepository implements SeriesRepository {
         deleteById(id);
         logger.debug("Deleted series with ID: {}", id);
     }
+
+    public void remove(Series selected) {
+        deleteById(selected.getId());
+        seriesList.remove(selected);
+        logger.info("Removed series with ID: {}", selected.getId());
+
+    }
 }

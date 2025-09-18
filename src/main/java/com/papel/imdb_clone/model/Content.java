@@ -10,7 +10,7 @@ import java.util.*;
  * Content class is an abstract class that represents a content.
  */
 public abstract class Content {
-    public Date year;
+    private Date year;
     private String director;
     private int id;
     public String title;
@@ -286,4 +286,7 @@ public abstract class Content {
         }
     }
 
+    public void setGenres(String trim) {
+        this.genres = new ArrayList<>();
+    }
 }

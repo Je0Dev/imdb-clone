@@ -7,7 +7,7 @@
 <?import javafx.scene.text.Text?>
 <?import java.lang.String?>
 <BorderPane style="-fx-background-color: #0a0a0a;" xmlns="http://javafx.com/javafx/17.0.12"
-            xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.papel.imdb_clone.controllers.ContentController">
+            xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.papel.imdb_clone.controllers.SeriesController">
 
     <top>
         <VBox spacing="15.0" style="-fx-padding: 20;">
@@ -21,9 +21,19 @@
                 <Rectangle arcHeight="5" arcWidth="5" fill="#444" height="30" width="3"/>
                 <Text style="-fx-fill: #888; -fx-font-size: 16; -fx-font-style: italic;"
                       text="Browse and manage your series collection"/>
+                <Region HBox.hgrow="ALWAYS" />
+                <Button onAction="#goToHome" style="-fx-background-color: transparent; -fx-text-fill: #f5c518; -fx-border-color: #f5c518; -fx-border-width: 1.5; -fx-border-radius: 4; -fx-padding: 5 10; -fx-font-weight: bold; -fx-cursor: hand; -fx-effect: dropshadow(gaussian, rgba(245,197,24,0.3), 5, 0, 0, 1);" text="HOME">
+                    <tooltip>
+                        <Tooltip text="Go to Home" />
+                    </tooltip>
+                </Button>
             </HBox>
 
-            <HBox alignment="CENTER_LEFT" spacing="15" style="-fx-padding: 5 0 20 0;"/>
+            <!-- Search and Filter Section -->
+            <HBox alignment="CENTER_LEFT" spacing="15" style="-fx-padding: 5 0 20 0;">
+                <TextField fx:id="seriesSearchField" promptText="Search series..." style="-fx-pref-width: 300px; -fx-padding: 8 15; -fx-background-radius: 20; -fx-background-color: #1a1a1a; -fx-text-fill: white; -fx-prompt-text-fill: #666; -fx-border-color: #333; -fx-border-radius: 20;" />
+                <ComboBox fx:id="seriesSortBy" promptText="Sort by..." style="-fx-pref-width: 200px; -fx-background-color: #1a1a1a; -fx-text-fill: white; -fx-prompt-text-fill: #666; -fx-border-color: #333; -fx-border-radius: 20; -fx-padding: 0 10;" />
+            </HBox>
 
             <HBox spacing="15" style="-fx-padding: 5 0 20 0;">
                 <Button onAction="#handleAddSeries"

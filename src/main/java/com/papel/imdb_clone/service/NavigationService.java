@@ -1,9 +1,15 @@
 package com.papel.imdb_clone.service;
 
+import com.papel.imdb_clone.service.MoviesService;
+import com.papel.imdb_clone.service.SeriesService;
 import com.papel.imdb_clone.controllers.ContentDetailsController;
+import com.papel.imdb_clone.controllers.MoviesController;
 import com.papel.imdb_clone.controllers.RefactoredMainController;
+import com.papel.imdb_clone.controllers.SeriesController;
 import com.papel.imdb_clone.controllers.coordinator.UICoordinator;
 import com.papel.imdb_clone.model.Actor;
+import com.papel.imdb_clone.model.Movie;
+import com.papel.imdb_clone.model.Series;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
@@ -42,13 +48,22 @@ public class NavigationService {
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource(fxmlPath));
             Parent root = loader.load();
-
-            // If this is the main view, ensure the controller is properly initialized
-            if (fxmlPath.equals("/fxml/main-refactored.fxml")) {
-                Object controller = loader.getController();
-                if (controller instanceof RefactoredMainController) {
-                    ((RefactoredMainController) controller).setPrimaryStage(currentStage);
-                }
+            
+            // Initialize controllers with required services
+            Object controller = loader.getController();
+            
+            if (controller instanceof RefactoredMainController) {
+                ((RefactoredMainController) controller).setPrimaryStage(currentStage);
+            } else if (controller instanceof MoviesController moviesController) {
+                MoviesService moviesService = MoviesService.getInstance();
+                moviesController.setContentService(moviesService);
+                // Initialize with current user ID (0 for now, replace with actual user ID)
+                moviesController.initializeController(0);
+            } else if (controller instanceof SeriesController seriesController) {
+                SeriesService seriesService = SeriesService.getInstance();
+                seriesController.setContentService(seriesService);
+                // Initialize with current user ID (0 for now, replace with actual user ID)
+                seriesController.initializeController(0);
             }
 
             Scene scene = new Scene(root);
@@ -60,6 +75,8 @@ public class NavigationService {
         } catch (IOException e) {
             logger.error("Failed to load FXML: {}", fxmlPath, e);
             throw new RuntimeException("Failed to load view: " + e.getMessage(), e);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
     }
 
@@ -75,7 +92,7 @@ public class NavigationService {
 
 
             // Navigate to main view
-            navigateTo("/fxml/main-refactored.fxml", currentStage, "IMDB Clone App");
+            navigateTo("/fxml/home-view.fxml", currentStage, "IMDb Clone - Home");
         } catch (Exception e) {
             logger.error("Failed to navigate to main app: {}", e.getMessage(), e);
             throw new RuntimeException("Failed to initialize application: " + e.getMessage(), e);
@@ -141,6 +158,6 @@ public class NavigationService {
 
     //show home when click on home button-imdb clone app text
     public void showHome() {
-        navigateTo("/fxml/main-refactored.fxml", ServiceLocator.getPrimaryStage(), "IMDB Clone App");
+        navigateTo("/fxml/home-view.fxml", ServiceLocator.getPrimaryStage(), "Imdb Clone");
     }
 }

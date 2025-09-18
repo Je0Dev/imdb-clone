@@ -14,7 +14,7 @@ import java.util.stream.Collectors;
 public class Director extends Celebrity {
     private final List<String> bestWorks;
     private Ethnicity ethnicity;
-    private String notableWorks;
+    private String notableWorks = ""; // Initialize to empty string to avoid NPE
 
 
     /**
@@ -46,10 +46,30 @@ public class Director extends Celebrity {
      * @return A list of notable works, or an empty list if not set
      */
     public List<String> getNotableWorks() {
-        if (notableWorks == null || notableWorks.trim().isEmpty()) {
-            return new ArrayList<>();
+        // First, check if we have any works in bestWorks
+        if ((bestWorks != null && !bestWorks.isEmpty())) {
+            return new ArrayList<>(bestWorks);
         }
-        return Arrays.stream(notableWorks.split(",")).map(String::trim).collect(Collectors.toList());
+        
+        // Then check notableWorks string
+        if (notableWorks != null && !notableWorks.trim().isEmpty()) {
+            // Split by comma and clean up the strings
+            return Arrays.stream(notableWorks.split(","))
+                       .map(String::trim)
+                       .filter(s -> !s.isEmpty())
+                       .collect(Collectors.toList());
+        }
+        
+        // Return empty list if no works found
+        return new ArrayList<>();
+    }
+
+    /**
+     * Sets the notable works from a list of strings
+     * @param works List of works
+     */
+    public void setNotableWorks(List<String> works) {
+        this.notableWorks = works != null ? String.join(", ", works) : "";
     }
 
     /**
@@ -57,8 +77,8 @@ public class Director extends Celebrity {
      *
      * @return The ethnicity label or null if not set
      */
-    public String getNationality() {
-        return ethnicity != null ? ethnicity.getLabel() : null;
+    public Ethnicity getNationality() {
+        return ethnicity != null ? Ethnicity.valueOf(ethnicity.getLabel()) : null;
     }
 
     /**
@@ -67,30 +87,49 @@ public class Director extends Celebrity {
      */
     public String getFormattedInfo() {
         StringBuilder sb = new StringBuilder();
-        sb.append(getFullName());
+        sb.append("<html><b>").append(getFullName()).append("</b>");
         
         // Add birth year if available
         if (getBirthDate() != null) {
-            sb.append(" (");
-            sb.append(getBirthDate().getYear());
-            sb.append(")");
+            sb.append("<br>Born: ").append(getBirthDate());
+        }
+        
+        // Add gender if available
+        if (getGender() != '\u0000') {
+            String genderStr = "";
+            if (getGender() == 'M' || getGender() == 'm') {
+                genderStr = "Male";
+            } else if (getGender() == 'F' || getGender() == 'f') {
+                genderStr = "Female";
+            } else if (getGender() == 'U') {
+                genderStr = "Unknown";
+            } else {
+                genderStr = String.valueOf(getGender());
+            }
+            sb.append("<br>Gender: ").append(genderStr);
+        }
+        
+        // Add nationality/ethnicity if available
+        if (getEthnicity() != null) {
+            sb.append("<br>Nationality: ").append(getEthnicity().getLabel());
         }
         
         // Add notable works if available
         List<String> works = getNotableWorks();
         if (!works.isEmpty()) {
-            sb.append("\n\nNotable Works:\n");
+            sb.append("<br><br><b>Notable Works:</b><br>");
             for (int i = 0; i < Math.min(5, works.size()); i++) {
                 sb.append("• ").append(works.get(i));
                 if (i < Math.min(5, works.size()) - 1) {
-                    sb.append("\n");
+                    sb.append("<br>");
                 }
             }
             if (works.size() > 5) {
-                sb.append("\n... and ").append(works.size() - 5).append(" more");
+                sb.append("<br>... and ").append(works.size() - 5).append(" more");
             }
         }
         
+        sb.append("</html>");
         return sb.toString();
     }
 

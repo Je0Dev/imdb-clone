@@ -8,7 +8,8 @@ import com.papel.imdb_clone.repository.impl.InMemoryMovieRepository;
 import com.papel.imdb_clone.repository.impl.InMemorySeriesRepository;
 import com.papel.imdb_clone.repository.impl.InMemoryUserRepository;
 import com.papel.imdb_clone.service.CelebrityService;
-import com.papel.imdb_clone.service.ContentService;
+import com.papel.imdb_clone.service.MoviesService;
+import com.papel.imdb_clone.service.SeriesService;
 import com.papel.imdb_clone.service.data.loader.*;
 import com.papel.imdb_clone.util.DataFileLoader;
 import org.slf4j.Logger;
@@ -46,16 +47,16 @@ public class FileDataLoaderService implements DataLoaderService {
             InMemoryMovieRepository movieRepository,
             InMemorySeriesRepository seriesRepository,
 
-            ContentService<Series> seriesService,
+SeriesService seriesService,
             CelebrityService<Actor> actorService,
             CelebrityService<Director> directorService,
-            ContentService<Movie> movieService) {
+            MoviesService moviesService) {
 
         this.loaderFactory = new DataLoaderFactory(
                 userRepository,
                 movieRepository,
                 seriesRepository,
-                movieService,
+                moviesService,
                 seriesService,
                 actorService,
                 directorService

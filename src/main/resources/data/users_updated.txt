@@ -1,7 +1,24 @@
-# id,username,email,password,fullName
+# id,username,email,password,fullName,role
 
-1,admin,admin@imdbclone.com,admin123,Admin User
-2,johndoe,john.doe@example.com,password123,John Doe
-3,janesmith,jane.smith@email.com,password123,Jane Smith
-4,mike_johnson,mikej@example.com,password123,Mike Johnson
+1,admin,admin@imdbclone.com,admin123,Admin User,ADMIN
+2,johndoe,john.doe@example.com,password123,John Doe,USER
+3,janesmith,jane.smith@email.com,password123,Jane Smith,USER
+4,mike_johnson,mikej@example.com,password123,Mike Johnson,USER
+5,sarahmiller,sarah.m@example.com,password123,Sarah Miller,USER
+6,davidwilson,dwilson@email.com,password123,David Wilson,USER
+7,emilybrown,emily.b@example.com,password123,Emily Brown,USER
+8,alexjohnson,alex.j@example.com,password123,Alex Johnson,USER
+9,mariagarcia,mgarcia@email.com,password123,Maria Garcia,USER
+10,robertlee,rlee@example.com,password123,Robert Lee,USER
+11,lisachen,lisa.chen@email.com,password123,Lisa Chen,USER
+12,mohammedkhan,mkhan@example.com,password123,Mohammed Khan,USER
+13,oliviamartin,omartin@email.com,password123,Olivia Martin,USER
+14,jameswilson,jwilson@example.com,password123,James Wilson,USER
+15,sophiagarcia,sgarcia@email.com,password123,Sophia Garcia,USER
+16,davidkim,david.k@example.com,password123,David Kim,USER
+17,emmaparker,eparker@email.com,password123,Emma Parker,USER
+18,danielroberts,droberts@example.com,password123,Daniel Roberts,USER
+19,avapeterson,apeterson@email.com,password123,Ava Peterson,USER
+20,noahscott,nscott@example.com,password123,Noah Scott,USER
+
 

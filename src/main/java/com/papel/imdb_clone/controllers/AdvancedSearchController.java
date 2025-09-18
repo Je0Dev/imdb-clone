@@ -4,6 +4,7 @@ import com.papel.imdb_clone.data.SearchCriteria;
 import com.papel.imdb_clone.enums.ContentType;
 import com.papel.imdb_clone.enums.Genre;
 import com.papel.imdb_clone.model.Content;
+import com.papel.imdb_clone.service.NavigationService;
 import com.papel.imdb_clone.service.SearchService;
 import com.papel.imdb_clone.service.ServiceLocator;
 import com.papel.imdb_clone.util.UIUtils;
@@ -14,7 +15,8 @@ import javafx.collections.ObservableList;
 import javafx.concurrent.Task;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
-import javafx.scene.control.cell.PropertyValueFactory;
+import com.papel.imdb_clone.controllers.coordinator.UICoordinator;
+import javafx.stage.Stage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -68,6 +70,22 @@ public class AdvancedSearchController {
     private TableColumn<Content, Integer> resultYearColumn;
     @FXML
     private TableColumn<Content, String> resultTypeColumn;
+    
+    /**
+     * Navigates back to the home view.
+     */
+    @FXML
+    public void goToHome() {
+        try {
+            NavigationService navigationService = NavigationService.getInstance();
+            navigationService.navigateTo("/fxml/home-view.fxml", 
+                (Stage) resultsTable.getScene().getWindow(),
+                "IMDb Clone - Home");
+        } catch (Exception e) {
+            logger.error("Error navigating to home view", e);
+            UIUtils.showError("Navigation Error", "Failed to navigate to home view: " + e.getMessage());
+        }
+    }
     @FXML
     private TableColumn<Content, String> resultGenreColumn;
     @FXML
@@ -93,7 +111,7 @@ public class AdvancedSearchController {
             ServiceLocator serviceLocator = ServiceLocator.getInstance();
             
             // Now get the SearchService
-            this.searchService = serviceLocator.getService(SearchService.class);
+            this.searchService = ServiceLocator.getService(SearchService.class);
             if (this.searchService == null) {
                 String errorMsg = "Failed to initialize SearchService: service is null";
                 logger.error(errorMsg);
@@ -116,6 +134,9 @@ public class AdvancedSearchController {
         setupTableColumns();
         setupGenreComboBox();
         setupRatingSlider();
+        setupYearFrom();
+        setupYearTo();
+        setupCheckBoxes();
         
         // Only setup sort options if sortByCombo is available
         if (sortByCombo != null) {
@@ -123,6 +144,19 @@ public class AdvancedSearchController {
         } else {
             logger.debug("Sort combo box is not available in the view, skipping sort options setup");
         }
+    }
+
+    private void setupYearFrom() {
+        yearFrom.setPromptText("Year from");
+    }
+
+    private void setupYearTo() {
+        yearTo.setPromptText("Year to");
+    }
+
+    private void setupCheckBoxes() {
+        movieCheckBox.setSelected(true);
+        seriesCheckBox.setSelected(true);
     }
 
     private void setupTableColumns() {
@@ -136,6 +170,7 @@ public class AdvancedSearchController {
             
             // Add tooltip to title column
             resultTitleColumn.setCellFactory(column -> new TableCell<Content, String>() {
+                // override updateItem to add tooltip
                 @Override
                 protected void updateItem(String item, boolean empty) {
                     super.updateItem(item, empty);
@@ -174,7 +209,7 @@ public class AdvancedSearchController {
                         logger.warn("Error parsing year for content: {}", content.getTitle(), e);
                     }
                 }
-                return new SimpleIntegerProperty(year > 0 ? year : 0).asObject();
+                return new SimpleIntegerProperty(Math.max(year, 0)).asObject();
             });
             
             // Set up genre column with better null handling and formatting
@@ -182,19 +217,18 @@ public class AdvancedSearchController {
                 try {
                     Content content = cellData.getValue();
                     if (content == null) {
-                        return new SimpleStringProperty("N/A");
+                        return new SimpleStringProperty("No Content");
                     }
                     
                     List<Genre> genres = content.getGenres();
                     if (genres == null || genres.isEmpty()) {
-                        return new SimpleStringProperty("N/A");
+                        return new SimpleStringProperty("No genres");
                     }
                     
                     String genreString = genres.stream()
                         .filter(Objects::nonNull)
                         .map(genre -> {
                             try {
-                                if (genre == null) return "";
                                 try {
                                     String displayName = (String) genre.getDisplayName();
                                     if (displayName != null && !displayName.trim().isEmpty()) {
@@ -202,7 +236,7 @@ public class AdvancedSearchController {
                                     }
                                     // Fallback to enum name formatting if display name is not available
                                     String name = genre.name();
-                                    if (name != null && !name.trim().isEmpty()) {
+                                    if (!name.trim().isEmpty()) {
                                         return name.charAt(0) + name.substring(1).toLowerCase();
                                     }
                                 } catch (Exception e) {
@@ -218,31 +252,31 @@ public class AdvancedSearchController {
                         .distinct()
                         .collect(Collectors.joining(", "));
                     
-                    return new SimpleStringProperty(genreString.isEmpty() ? "N/A" : genreString);
+                    return new SimpleStringProperty(genreString.isEmpty() ? "No genres" : genreString);
                 } catch (Exception e) {
                     logger.warn("Error getting genres for content", e);
-                    return new SimpleStringProperty("N/A");
+                    return new SimpleStringProperty("No genres");
                 }
             });
             
             // Set up IMDb rating column with proper null check and formatting
             resultImdbColumn.setCellValueFactory(cellData -> {
                 Content content = cellData.getValue();
-                if (content == null) return new SimpleStringProperty("N/A");
+                if (content == null) return new SimpleStringProperty("No rating");
                 
                 try {
                     Double rating = content.getImdbRating();
                     if (rating == null || rating <= 0) {
-                        return new SimpleStringProperty("N/A");
+                        return new SimpleStringProperty("No rating");
                     }
                     return new SimpleStringProperty(String.format("%.1f", rating));
                 } catch (Exception e) {
                     logger.warn("Error getting rating for content: {}", content.getTitle(), e);
-                    return new SimpleStringProperty("N/A");
+                    return new SimpleStringProperty("No rating");
                 }
             });
             
-            // Set up row factory for better row highlighting
+            // Set up row factory for better row highlighting and readablity
             resultsTable.setRowFactory(tv -> {
                 TableRow<Content> row = new TableRow<>();
                 row.hoverProperty().addListener((obs, wasHovered, isNowHovered) -> {
@@ -267,9 +301,9 @@ public class AdvancedSearchController {
                                 // Open content details view
                                 try {
                                     // Use the application's navigation method if available
-                                    // or implement your navigation logic here
                                     logger.info("Navigating to content details for: {}", rowData.getTitle());
                                     // Example: mainController.showContentDetails(rowData);
+                                    UIUtils.showContentDetails(rowData);
                                 } catch (Exception e) {
                                     logger.error("Error navigating to content details", e);
                                     UIUtils.showError("Navigation Error", "Could not open content details: " + e.getMessage());
@@ -334,10 +368,12 @@ public class AdvancedSearchController {
             currentSearchTask = new Task<ObservableList<Content>>() {
                 @Override
                 protected ObservableList<Content> call() throws Exception {
+                    // build search criteria
                     SearchCriteria criteria = buildSearchCriteria();
                     if (criteria == null) {
                         return FXCollections.observableArrayList();
                     }
+                    // perform search and return results
                     List<Content> results = searchService.searchContent(criteria);
                     return FXCollections.observableArrayList(results);
                 }
@@ -346,10 +382,12 @@ public class AdvancedSearchController {
             // Handle successful search completion
             currentSearchTask.setOnSucceeded(event -> {
                 ObservableList<Content> results = currentSearchTask.getValue();
+                // set results to table
                 resultsTable.setItems(results);
+                // update results count
                 updateResultsCount(results.size());
-                searchProgressIndicator.setVisible(false);
 
+                // clear status label
                 if (statusLabel != null) {
                     statusLabel.setText("");
                 }
@@ -362,7 +400,6 @@ public class AdvancedSearchController {
 
             // Handle search failure
             currentSearchTask.setOnFailed(event -> {
-                searchProgressIndicator.setVisible(false);
                 if (statusLabel != null) {
                     statusLabel.setText("Search failed");
                 }
@@ -457,6 +494,12 @@ public class AdvancedSearchController {
                     // set genre to criteria
                     Genre genre = Genre.valueOf(genreValue);
                     criteria.setGenre(genre);
+                    // log genre
+                    logger.debug("Setting genre to: {}", genre);
+                    // show genre in status label
+                    if (statusLabel != null) {
+                        statusLabel.setText("Genre: " + genre);
+                    }
                 } catch (IllegalArgumentException e) {
                     logger.warn("Invalid genre selected: {}", genreComboBox.getValue(), e);
                 }
@@ -481,7 +524,7 @@ public class AdvancedSearchController {
         }
     }
 
-    //reset all filters to default values
+    //reset all filters to default values from the reset filters button
     @FXML
     private void resetFilters() {
         try {
