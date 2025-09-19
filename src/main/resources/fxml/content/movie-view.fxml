@@ -53,9 +53,19 @@
                 <HBox spacing="15" style="-fx-padding: 5 0 0 0;">
                     <Button onAction="#handleAddMovie" style="-fx-background-color: #FFD700; -fx-text-fill: #000000; -fx-font-weight: bolder; -fx-font-size: 14px; -fx-padding: 10 20; -fx-background-radius: 20; -fx-cursor: hand; -fx-effect: dropshadow(gaussian, rgba(255,215,0,0.3), 5, 0, 0, 2); -fx-transition: all 0.2s;" text="ADD MOVIE" />
 
+                    <Button onAction="#handleEditMovie" style="-fx-background-color: #9C27B0; -fx-text-fill: #FFFFFF; -fx-font-weight: bolder; -fx-font-size: 14px; -fx-padding: 10 20; -fx-background-radius: 20; -fx-cursor: hand; -fx-effect: dropshadow(gaussian, rgba(156,39,176,0.3), 5, 0, 0, 2); -fx-transition: all 0.2s;" text="MANAGE MOVIE" />
+
                     <Button onAction="#handleRateMovie" style="-fx-background-color: #4FC3F7; -fx-text-fill: #000000; -fx-font-weight: bolder; -fx-font-size: 14px; -fx-padding: 10 20; -fx-background-radius: 20; -fx-cursor: hand; -fx-effect: dropshadow(gaussian, rgba(79,195,247,0.3), 5, 0, 0, 2); -fx-transition: all 0.2s;" text="RATE MOVIE" />
 
                     <Button onAction="#handleDeleteMovie" style="-fx-background-color: #FF5252; -fx-text-fill: #FFFFFF; -fx-font-weight: bolder; -fx-font-size: 14px; -fx-padding: 10 20; -fx-background-radius: 20; -fx-cursor: hand; -fx-effect: dropshadow(gaussian, rgba(255,82,82,0.3), 5, 0, 0, 2); -fx-transition: all 0.2s;" text="DELETE MOVIE" />
+                    
+                    <Button onAction="#handleRefresh" style="-fx-background-color: #4CAF50; -fx-text-fill: #FFFFFF; -fx-font-weight: bolder; -fx-font-size: 14px; -fx-padding: 10 20; -fx-background-radius: 20; -fx-cursor: hand; -fx-effect: dropshadow(gaussian, rgba(76,175,80,0.3), 5, 0, 0, 2); -fx-transition: all 0.2s;" text="REFRESH" />
+                    
+                    <Button onAction="#showAdvancedSearchDialog" style="-fx-background-color: #FF9800; -fx-text-fill: #000000; -fx-font-weight: bolder; -fx-font-size: 14px; -fx-padding: 10 20; -fx-background-radius: 20; -fx-cursor: hand; -fx-effect: dropshadow(gaussian, rgba(255,152,0,0.3), 5, 0, 0, 2); -fx-transition: all 0.2s;" text="ADVANCED SEARCH">
+                        <tooltip>
+                            <Tooltip style="-fx-background-color: #1E1E1E; -fx-text-fill: #FFFFFF; -fx-font-size: 12; -fx-padding: 8 12; -fx-background-radius: 4; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.5), 5, 0, 0, 2);" text="Open advanced search with multiple filters"/>
+                        </tooltip>
+                    </Button>
                 </HBox>
                 <AmbientLight color="CHARTREUSE"/>
             </VBox>

@@ -322,11 +322,21 @@ public class SeriesDataLoader extends BaseDataLoader {
                                         String firstName = nameParts[0];
                                         String lastName = nameParts.length > 1 ? nameParts[1] : "";
 
-                                        // Create or get actor
+                                        // Create or get actor using factory method
                                         // Default to Unknown
                                         char gender = 'U';
-                                        Actor actor = new Actor(firstName, lastName, birthDate, gender, ethnicity);
-                                        actor = actorService.save(actor);
+                                        Actor actor = Actor.getInstance(
+                                            firstName,
+                                            lastName,
+                                            birthDate,
+                                            gender,
+                                            ethnicity
+                                        );
+                                        
+                                        // Ensure actor is saved in the service
+                                        if (actor.getId() == 0) { // Assuming 0 means not saved yet
+                                            actor = actorService.save(actor);
+                                        }
 
                                         // Create final variables for use in lambda
                                         final String actorFirstName = actor.getFirstName();

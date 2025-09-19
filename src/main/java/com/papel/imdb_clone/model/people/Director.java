@@ -1,34 +1,68 @@
 package com.papel.imdb_clone.model.people;
 
 import com.papel.imdb_clone.enums.Ethnicity;
+import com.papel.imdb_clone.service.people.CelebrityManager;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
  * Represents a director of a movie or TV show.
+ * Uses CelebrityManager to prevent duplicate instances.
  */
 public class Director extends Celebrity {
+    private static final CelebrityManager celebrityManager = CelebrityManager.getInstance();
+    
     private final List<String> bestWorks;
     private Ethnicity ethnicity;
     private String notableWorks = ""; // Initialize to empty string to avoid NPE
-
-
+    
     /**
-     * Constructor for Director
-     * @param firstName
-     * @param lastName
-     * @param birthDate
-     * @param gender
-     * @param ethnicity
+     * Protected constructor to enforce use of factory methods.
      */
-    public Director(String firstName, String lastName, LocalDate birthDate, char gender, Ethnicity ethnicity) {
+    protected Director(String firstName, String lastName, LocalDate birthDate, char gender, Ethnicity ethnicity) {
         super(firstName, lastName, birthDate, gender);
         this.bestWorks = new ArrayList<>();
         this.ethnicity = ethnicity;
+    }
+    
+    /**
+     * Factory method to get or create a Director instance.
+     * @param firstName First name of the director
+     * @param lastName Last name of the director
+     * @param birthDate Birth date (can be null)
+     * @param gender Gender (M/F/other)
+     * @return Existing or new Director instance
+     */
+    public static Director getInstance(String firstName, String lastName, LocalDate birthDate, char gender) {
+        return getInstance(firstName, lastName, birthDate, gender, null);
+    }
+    
+    /**
+     * Factory method with ethnicity.
+     */
+    public static Director getInstance(String firstName, String lastName, LocalDate birthDate, 
+                                     char gender, Ethnicity ethnicity) {
+        if (firstName == null) firstName = "";
+        if (lastName == null) lastName = "";
+        
+        Director temp = new Director(firstName.trim(), lastName.trim(), birthDate, gender, ethnicity);
+        return getInstance(temp);
+    }
+    
+    /**
+     * Internal factory method that handles the actual instance creation/lookup.
+     */
+    private static Director getInstance(Director director) {
+        return (Director) celebrityManager.findCelebrity(director).orElseGet(() -> {
+            celebrityManager.addCelebrity(director);
+            return director;
+        });
     }
 
     //getters
@@ -159,15 +193,15 @@ public class Director extends Celebrity {
     }
 
     //set first and last name
+    @Override
     public void setFirstName(String firstName) {
-        this.firstName = firstName;
+        super.setFirstName(firstName);
     }
 
+    @Override
     public void setLastName(String lastName) {
-        this.lastName = lastName;
+        super.setLastName(lastName);
     }
-
-
 
     public void addBestWork(String work) {
         if (work != null && !work.trim().isEmpty()) {

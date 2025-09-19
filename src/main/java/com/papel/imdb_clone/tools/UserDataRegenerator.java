@@ -106,7 +106,7 @@ public class UserDataRegenerator {
         } catch (IOException e) {
             String errorMsg = "[ERROR] Failed to read users_updated.txt: " + e.getMessage();
             System.out.println(errorMsg);
-            e.printStackTrace();
+            logger.log(Level.SEVERE, errorMsg, e);
         }
     }
 }

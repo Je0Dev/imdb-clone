@@ -127,7 +127,7 @@ public class InMemoryMovieRepository implements MovieRepository {
     /**
      * Checks if a movie with the given title exists in the repository.
      * @param title The movie title to check
-     * @return
+     * @return true if exists, false otherwise
      */
     @Override
     public boolean existsByTitle(String title) {
@@ -156,7 +156,7 @@ public class InMemoryMovieRepository implements MovieRepository {
      * Finds a movie by its title and release year.
      * @param title
      * @param startYear
-     * @return
+     * @return the movie if found, null otherwise
      */
     @Override
     public Movie findByTitleAndReleaseYear(String title, int startYear) {
@@ -182,7 +182,7 @@ public class InMemoryMovieRepository implements MovieRepository {
 
     /**
      * Adds a movie to the repository.
-     * @param movie
+     * @param movie the movie to add
      */
     @Override
     public void add(Movie movie) {
@@ -192,7 +192,7 @@ public class InMemoryMovieRepository implements MovieRepository {
 
     /**
      * Updates a movie in the repository.
-     * @param movie
+     * @param movie the movie to update
      */
     @Override
     public void update(Movie movie) {

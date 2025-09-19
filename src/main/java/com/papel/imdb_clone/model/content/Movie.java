@@ -4,6 +4,7 @@ import com.papel.imdb_clone.enums.Genre;
 import com.papel.imdb_clone.model.people.Actor;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Represents a movie.
@@ -27,16 +28,24 @@ public class Movie extends Content {
 
     //default constructor
     public Movie() {
-        super("", new Date(), Genre.ACTION, "Unknown", new HashMap<>(), 0.0);
+        super("", new Date(), null, "Unknown", new HashMap<>(), 0.0);
         initializeRichContentFields();
     }
 
     //constructor for simple movie creation
     public Movie(String title, int year, String genre, String director, Map<Integer, Integer> userRatings, double imdbRating) {
         super(title, new Date(year - 1900, Calendar.JANUARY, 1),
-                Genre.valueOf(genre.toUpperCase().replace(" ", "_")),
+                null,
                 director, userRatings, imdbRating);
         this.releaseDate = new Date(year - 1900, Calendar.JANUARY, 1);
+        if (genre != null && !genre.trim().isEmpty()) {
+            try {
+                this.addGenre(Genre.valueOf(genre.toUpperCase().replace(" ", "_")));
+            } catch (IllegalArgumentException e) {
+                // If genre is invalid, don't add any genre
+                System.err.println("Invalid genre: " + genre);
+            }
+        }
         initializeRichContentFields();
     }
 
@@ -44,10 +53,17 @@ public class Movie extends Content {
     public Movie(String title, Date year, List<Genre> genres,
                  double imdbRating, String director, List<Actor> actors) {
         super(title, year != null ? year : new Date(),
-                (genres != null && !genres.isEmpty()) ? genres.get(0) : Genre.DRAMA,
+                null, // No default genre
                 director, new HashMap<>(), imdbRating);
         this.releaseDate = year != null ? new Date(year.getTime()) : null;
-        this.genres = genres != null ? new ArrayList<>(genres) : new ArrayList<>();
+        // Only set genres if the list is not empty and doesn't contain null values
+        if (genres != null) {
+            this.genres = genres.stream()
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
+        } else {
+            this.genres = new ArrayList<>();
+        }
         if (actors != null) {
             // Use setActors to properly set the actors list
             this.setActors(actors);
@@ -58,7 +74,8 @@ public class Movie extends Content {
     //initialize rich content fields like awards and genres
     private void initializeRichContentFields() {
         this.awards = new ArrayList<>();
-        this.genres.add(getGenre()); // Add the primary genre from parent class
+        // Don't add parent's genre to avoid duplicates
+        // The genres list should only be modified through addGenre or setGenres
     }
 
 

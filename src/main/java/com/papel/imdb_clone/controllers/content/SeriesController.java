@@ -1,26 +1,39 @@
 package com.papel.imdb_clone.controllers.content;
 
 import com.papel.imdb_clone.controllers.base.BaseController;
+import com.papel.imdb_clone.enums.Ethnicity;
+import com.papel.imdb_clone.model.content.Episode;
+import com.papel.imdb_clone.model.content.Season;
+import com.papel.imdb_clone.model.people.Actor;
 import com.papel.imdb_clone.service.navigation.NavigationService;
 import com.papel.imdb_clone.service.content.SeriesService;
-import com.papel.imdb_clone.util.UIUtils;
 import com.papel.imdb_clone.enums.Genre;
 import com.papel.imdb_clone.model.content.Series;
+
+import com.papel.imdb_clone.util.UIUtils;
 import javafx.application.Platform;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.collections.transformation.FilteredList;
+import javafx.collections.transformation.SortedList;
 import javafx.event.ActionEvent;
-import javafx.geometry.Insets;
-import javafx.scene.control.*;
-import javafx.scene.control.cell.PropertyValueFactory;
-import javafx.scene.layout.GridPane;
-
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
+import javafx.scene.Node;
+import javafx.scene.control.*;
+import javafx.scene.control.ButtonBar.ButtonData;
+import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.scene.layout.GridPane;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
+import javafx.util.Pair;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -54,6 +67,9 @@ public class SeriesController extends BaseController implements Initializable {
     private void showSeriesManagementDialog(Series selectedSeries) {
         try {
             //add message here
+            showSeriesEditDialog(selectedSeries);
+            loadSeries();
+            showSuccess("Success", "Series managed successfully!");
         } catch (Exception e) {
             logger.error("Error in showSeriesManagementDialog: {}", e.getMessage(), e);
             showErrorAlert("Failed to show series management dialog", e.getMessage());
@@ -254,6 +270,24 @@ public class SeriesController extends BaseController implements Initializable {
     }
 
     private void setupSortHandlers() {
+        // Add sort options to the ComboBox
+        seriesSortBy.getItems().addAll(
+            "Title (A-Z)",
+            "Title (Z-A)",
+            "Year (Newest First)",
+            "Year (Oldest First)",
+            "Rating (Highest First)",
+            "Rating (Lowest First)",
+            "Seasons (Most First)",
+            "Seasons (Fewest First)",
+            "Episodes (Most First)",
+            "Episodes (Fewest First)"
+        );
+        
+        // Set default sort
+        seriesSortBy.getSelectionModel().selectFirst();
+        
+        // Add listener for sort changes
         seriesSortBy.getSelectionModel().selectedItemProperty().addListener((obs, oldVal, newVal) -> {
             if (newVal != null) {
                 sortSeriesTable(newVal);
@@ -272,15 +306,45 @@ public class SeriesController extends BaseController implements Initializable {
 
         try {
             List<Series> seriesList = seriesService.getAll();
+            logger.info("Retrieved {} series from service", seriesList.size());
+            
             Platform.runLater(() -> {
-                allSeries.setAll(seriesList);
-                filterSeries();
-                statusLabel.setText(String.format("Loaded %d series", seriesList.size()));
-                logger.info("Successfully loaded {} series", seriesList.size());
+                try {
+                    // Clear existing data
+                    allSeries.clear();
+                    
+                    // Use a Set to filter out duplicates based on title and start year
+                    Set<String> uniqueSeriesKeys = new HashSet<>();
+                    List<Series> uniqueSeries = new ArrayList<>();
+                    
+                    for (Series series : seriesList) {
+                        String key = series.getTitle().toLowerCase() + "_" + series.getStartYear();
+                        if (uniqueSeriesKeys.add(key)) { // add returns true if the key was not already in the set
+                            uniqueSeries.add(series);
+                        } else {
+                            logger.debug("Skipping duplicate series: {} ({})", series.getTitle(), series.getStartYear());
+                        }
+                    }
+                    
+                    // Add only unique series to the observable list
+                    allSeries.addAll(uniqueSeries);
+                    logger.info("Added {} unique series to allSeries list ({} duplicates filtered out)", 
+                              uniqueSeries.size(), seriesList.size() - uniqueSeries.size());
+                    
+                    // Update the filtered list and UI
+                    filterSeries();
+                    statusLabel.setText(String.format("Loaded %d unique series", uniqueSeries.size()));
+                    logger.info("Successfully loaded and displayed {} unique series", uniqueSeries.size());
+                } catch (Exception e) {
+                    logger.error("Error in Platform.runLater", e);
+                    statusLabel.setText("Error updating UI: " + e.getMessage());
+                }
             });
         } catch (Exception e) {
             logger.error("Error loading series", e);
-            showError("Error", "Failed to load series: " + e.getMessage());
+            Platform.runLater(() -> 
+                statusLabel.setText("Failed to load series: " + e.getMessage())
+            );
         }
     }
 
@@ -316,10 +380,281 @@ public class SeriesController extends BaseController implements Initializable {
     }
 
     private void sortSeriesTable(String sortOption) {
-        // Implementation of sorting logic
-
+        if (filteredSeries == null || sortOption == null) {
+            return;
+        }
+        
+        Comparator<Series> comparator = null;
+        
+        // Determine the appropriate comparator based on the selected sort option
+        switch (sortOption) {
+            case "Title (A-Z)":
+                comparator = Comparator.comparing(Series::getTitle, String.CASE_INSENSITIVE_ORDER);
+                break;
+                
+            case "Title (Z-A)":
+                comparator = Comparator.comparing(Series::getTitle, String.CASE_INSENSITIVE_ORDER).reversed();
+                break;
+                
+            case "Year (Newest First)":
+                comparator = Comparator.comparingInt(Series::getStartYear).reversed();
+                break;
+                
+            case "Year (Oldest First)":
+                comparator = Comparator.comparingInt(Series::getStartYear);
+                break;
+                
+            case "Rating (Highest First)":
+                comparator = Comparator.comparingDouble(Series::getRating).reversed();
+                break;
+                
+            case "Rating (Lowest First)":
+                comparator = Comparator.comparingDouble(Series::getRating);
+                break;
+                
+            case "Seasons (Most First)":
+                comparator = Comparator.comparingInt(Series::getTotalSeasons).reversed();
+                break;
+                
+            case "Seasons (Fewest First)":
+                comparator = Comparator.comparingInt(Series::getTotalSeasons);
+                break;
+                
+            case "Episodes (Most First)", "Episodes (Fewest First)":
+                comparator = (s1, s2) -> Integer.compare(
+                    s1.getSeasons().stream().mapToInt(season -> season.getEpisodes().size()).sum(),
+                    s2.getSeasons().stream().mapToInt(season -> season.getEpisodes().size()).sum()
+                );
+                break;
+        }
+        
+        if (comparator != null) {
+            // Create a sorted list and update the table
+            FXCollections.sort(filteredSeries, comparator);
+            
+            // If the table has a sort order, clear it to prevent interference with our custom sort
+            if (!seriesTable.getSortOrder().isEmpty()) {
+                seriesTable.getSortOrder().clear();
+            }
+        }
     }
 
+    /**
+     * Shows the advanced search dialog with multiple genre selection and improved visibility.
+     */
+    @FXML
+    private void showAdvancedSearchDialog() {
+        try {
+            // Create a custom dialog
+            Dialog<Map<String, Object>> dialog = new Dialog<>();
+            dialog.setTitle("Advanced Search");
+            dialog.setHeaderText("Search for series with advanced filters");
+
+            // Set the button types
+            ButtonType searchButtonType = new ButtonType("Search", ButtonData.OK_DONE);
+            dialog.getDialogPane().getButtonTypes().addAll(searchButtonType, ButtonType.CANCEL);
+
+            // Create the search form
+            GridPane grid = new GridPane();
+            grid.setHgap(10);
+            grid.setVgap(10);
+            grid.setPadding(new Insets(20, 20, 10, 10));
+            
+            // Title field
+            TextField titleField = new TextField();
+            titleField.setPromptText("Title");
+            titleField.setStyle("-fx-pref-width: 300px; -fx-padding: 8; -fx-background-radius: 5; -fx-border-radius: 5; -fx-border-color: #666;");
+            
+            // Year range fields
+            Spinner<Integer> yearFromSpinner = new Spinner<>(1900, 2100, 1990);
+            Spinner<Integer> yearToSpinner = new Spinner<>(1900, 2100, Calendar.getInstance().get(Calendar.YEAR));
+            yearFromSpinner.setStyle("-fx-pref-width: 100px; -fx-padding: 5;");
+            yearToSpinner.setStyle("-fx-pref-width: 100px; -fx-padding: 5;");
+            
+            // Genre selection (checkboxes in a scrollable pane)
+            VBox genreBox = new VBox(5);
+            genreBox.setStyle("-fx-padding: 5; -fx-background-color: #f5f5f5; -fx-border-color: #ddd; -fx-border-radius: 5; -fx-border-width: 1;");
+            ScrollPane genreScroll = new ScrollPane(genreBox);
+            genreScroll.setFitToWidth(true);
+            genreScroll.setPrefHeight(150);
+            genreScroll.setStyle("-fx-background: #f5f5f5; -fx-border-color: #ddd;");
+            
+            // Add checkboxes for each genre
+            Map<CheckBox, Genre> genreCheckBoxes = new HashMap<>();
+            for (Genre genre : Genre.values()) {
+                CheckBox checkBox = new CheckBox(genre.name());
+                checkBox.setStyle("-fx-text-fill: #333; -fx-font-size: 13;");
+                genreBox.getChildren().add(checkBox);
+                genreCheckBoxes.put(checkBox, genre);
+            }
+            
+            // Rating slider
+            Slider ratingSlider = new Slider(0, 10, 0);
+            ratingSlider.setShowTickMarks(true);
+            ratingSlider.setShowTickLabels(true);
+            ratingSlider.setMajorTickUnit(2);
+            ratingSlider.setMinorTickCount(1);
+            ratingSlider.setSnapToTicks(true);
+            ratingSlider.setStyle("-fx-padding: 5 0 0 0;");
+            
+            // Sort by combo box with improved visibility
+            ComboBox<String> sortByCombo = new ComboBox<>();
+            sortByCombo.getItems().addAll("Relevance", "Title (A-Z)", "Title (Z-A)", "Year (Newest)", "Year (Oldest)", "Rating (Highest)", "Rating (Lowest)");
+            sortByCombo.setValue("Relevance");
+            sortByCombo.setStyle(
+                "-fx-pref-width: 200px; " +
+                "-fx-background-color: white; " +
+                "-fx-text-fill: #333; " +
+                "-fx-font-size: 13px; " +
+                "-fx-border-color: #666; " +
+                "-fx-border-radius: 5; " +
+                "-fx-padding: 8;"
+            );
+            
+            // Add components to grid
+            grid.add(new Label("Title:"), 0, 0);
+            grid.add(titleField, 1, 0, 2, 1);
+            
+            grid.add(new Label("Year Range:"), 0, 1);
+            HBox yearBox = new HBox(10, yearFromSpinner, new Label("to"), yearToSpinner);
+            yearBox.setAlignment(Pos.CENTER_LEFT);
+            grid.add(yearBox, 1, 1, 2, 1);
+            
+            grid.add(new Label("Genres:"), 0, 2);
+            grid.add(genreScroll, 1, 2, 2, 1);
+            
+            grid.add(new Label("Minimum Rating:"), 0, 3);
+            grid.add(ratingSlider, 1, 3, 2, 1);
+            
+            grid.add(new Label("Sort By:"), 0, 4);
+            grid.add(sortByCombo, 1, 4, 2, 1);
+            
+            // Style the dialog pane
+            dialog.getDialogPane().setContent(grid);
+            dialog.getDialogPane().setStyle(
+                "-fx-background-color: #f9f9f9; " +
+                "-fx-padding: 10;"
+            );
+            
+            // Style the buttons
+            Node searchButton = dialog.getDialogPane().lookupButton(searchButtonType);
+            searchButton.setStyle(
+                "-fx-background-color: #4CAF50; " +
+                "-fx-text-fill: white; " +
+                "-fx-font-weight: bold; " +
+                "-fx-padding: 8 16; " +
+                "-fx-background-radius: 5;"
+            );
+            
+            Node cancelButton = dialog.getDialogPane().lookupButton(ButtonType.CANCEL);
+            cancelButton.setStyle(
+                "-fx-background-color: #f44336; " +
+                "-fx-text-fill: white; " +
+                "-fx-font-weight: bold; " +
+                "-fx-padding: 8 16; " +
+                "-fx-background-radius: 5;"
+            );
+            
+            // Convert the result to a map when the search button is clicked
+            dialog.setResultConverter(dialogButton -> {
+                if (dialogButton == searchButtonType) {
+                    Map<String, Object> searchParams = new HashMap<>();
+                    searchParams.put("title", titleField.getText().trim());
+                    searchParams.put("yearFrom", yearFromSpinner.getValue());
+                    searchParams.put("yearTo", yearToSpinner.getValue());
+                    
+                    // Get selected genres
+                    List<Genre> selectedGenres = genreCheckBoxes.entrySet().stream()
+                        .filter(entry -> entry.getKey().isSelected())
+                        .map(Map.Entry::getValue)
+                        .collect(Collectors.toList());
+                    searchParams.put("genres", selectedGenres);
+                    
+                    searchParams.put("minRating", ratingSlider.getValue());
+                    searchParams.put("sortBy", sortByCombo.getValue());
+                    
+                    return searchParams;
+                }
+                return null;
+            });
+            
+            // Show the dialog and process the result
+            Optional<Map<String, Object>> result = dialog.showAndWait();
+            result.ifPresent(this::performAdvancedSearch);
+            
+        } catch (Exception e) {
+            logger.error("Error showing advanced search dialog", e);
+            showError("Error", "Failed to show advanced search dialog: " + e.getMessage());
+        }
+    }
+    
+    /**
+     * Performs the advanced search with the given parameters.
+     * @param searchParams The search parameters
+     */
+    private void performAdvancedSearch(Map<String, Object> searchParams) {
+        try {
+            String title = (String) searchParams.get("title");
+            int yearFrom = (int) searchParams.get("yearFrom");
+            int yearTo = (int) searchParams.get("yearTo");
+            @SuppressWarnings("unchecked")
+            List<Genre> genres = (List<Genre>) searchParams.get("genres");
+            double minRating = (double) searchParams.get("minRating");
+            String sortBy = (String) searchParams.get("sortBy");
+            
+            // Apply filters
+            List<Series> filtered = allSeries.stream()
+                .filter(series -> title.isEmpty() || series.getTitle().toLowerCase().contains(title.toLowerCase()))
+                .filter(series -> series.getStartYear() >= yearFrom && series.getStartYear() <= yearTo)
+                .filter(series -> {
+                    if (genres.isEmpty()) return true;
+                    return genres.stream().anyMatch(genre -> series.getGenres().contains(genre));
+                })
+                .filter(series -> series.getRating() >= minRating)
+                .collect(Collectors.toList());
+            
+            // Apply sorting
+            Comparator<Series> comparator = getSortComparator(sortBy);
+            if (comparator != null) {
+                filtered.sort(comparator);
+            }
+            
+            // Update the table
+            filteredSeries.setAll(filtered);
+            
+            // Show result count
+            statusLabel.setText(String.format("Found %d series matching your criteria", filtered.size()));
+            
+        } catch (Exception e) {
+            logger.error("Error performing advanced search", e);
+            showError("Search Error", "Failed to perform search: " + e.getMessage());
+        }
+    }
+    
+    /**
+     * Returns a comparator based on the sort option.
+     */
+    private Comparator<Series> getSortComparator(String sortOption) {
+        if (sortOption == null) return null;
+        
+        switch (sortOption) {
+            case "Title (A-Z)":
+                return Comparator.comparing(Series::getTitle, String.CASE_INSENSITIVE_ORDER);
+            case "Title (Z-A)":
+                return Comparator.comparing(Series::getTitle, String.CASE_INSENSITIVE_ORDER).reversed();
+            case "Year (Newest)":
+                return Comparator.comparingInt(Series::getStartYear).reversed();
+            case "Year (Oldest)":
+                return Comparator.comparingInt(Series::getStartYear);
+            case "Rating (Highest)":
+                return Comparator.comparingDouble(Series::getRating).reversed();
+            case "Rating (Lowest)":
+                return Comparator.comparingDouble(Series::getRating);
+            default: // Relevance or unknown
+                return null;
+        }
+    }
+    
     @FXML
     private void handleAddSeries(ActionEvent event) {
         if (seriesService == null) {
@@ -388,8 +723,22 @@ public class SeriesController extends BaseController implements Initializable {
             showAlert("No Selection", "Please select a series to rate.");
         }
     }
-
-
+    
+    /**
+     * Handles the refresh button action to reload all series.
+     */
+    @FXML
+    private void handleRefresh(ActionEvent event) {
+        try {
+            logger.info("Refreshing series...");
+            loadSeries();
+            showSuccess("Success", "Series refreshed successfully.");
+        } catch (Exception e) {
+            logger.error("Error refreshing series", e);
+            showError("Error", "Failed to refresh series: " + e.getMessage());
+        }
+    }
+    
     //add functionality here
     @FXML
     private void handleManageSeasons(ActionEvent event) {
@@ -401,61 +750,191 @@ public class SeriesController extends BaseController implements Initializable {
         }
     }
 
+    /**
+     * Shows a dialog for editing series details.
+     * @param series The series to edit
+     * @return true if the user clicked OK, false otherwise
+     */
     private boolean showSeriesEditDialog(Series series) {
         try {
             // Create a custom dialog
             Dialog<ButtonType> dialog = new Dialog<>();
-            dialog.setTitle("New Series".equals(series.getTitle()) ? "Add New Series" : "Edit Series");
-            dialog.setHeaderText("Enter series details:");
-            
+            dialog.setTitle(series.getTitle() != null && !series.getTitle().isEmpty() ? "Edit Series" : "Add New Series");
+            dialog.setHeaderText("Series Details");
+
             // Set the button types
-            ButtonType saveButtonType = new ButtonType("Save", ButtonBar.ButtonData.OK_DONE);
+            ButtonType saveButtonType = new ButtonType("Save", ButtonData.OK_DONE);
             dialog.getDialogPane().getButtonTypes().addAll(saveButtonType, ButtonType.CANCEL);
-            
-            // Create the form grid
+
+            // Create the form with scroll pane for many fields
             GridPane grid = new GridPane();
             grid.setHgap(10);
             grid.setVgap(10);
-            grid.setPadding(new Insets(20, 150, 10, 10));
-            
-            // Create form fields
+            grid.setPadding(new Insets(20, 20, 10, 10));
+
+            // Title
             TextField titleField = new TextField(series.getTitle());
-            TextField yearField = new TextField(String.valueOf(Calendar.getInstance().get(Calendar.YEAR)));
+            titleField.setPromptText("Title");
+            titleField.setMinWidth(300);
+
+            // Start Year
+            Spinner<Integer> startYearSpinner = new Spinner<>(1900, 2100, 
+                series.getReleaseYear() > 0 ? series.getReleaseYear() : Calendar.getInstance().get(Calendar.YEAR));
+            startYearSpinner.setEditable(true);
+
+            // End Year
+            Spinner<Integer> endYearSpinner = new Spinner<>(1900, 2100, 
+                series.getEndYear() > 0 ? series.getEndYear() : Calendar.getInstance().get(Calendar.YEAR));
+            endYearSpinner.setEditable(true);
+
+            // Genre Selection (multi-select)
+            VBox genreBox = new VBox(5);
+            genreBox.setStyle("-fx-padding: 5; -fx-background-color: #f5f5f5; -fx-border-color: #ddd; -fx-border-radius: 5;");
+            ScrollPane genreScroll = new ScrollPane(genreBox);
+            genreScroll.setFitToWidth(true);
+            genreScroll.setPrefHeight(100);
+            
+            // Add checkboxes for each genre
+            Map<CheckBox, Genre> genreCheckBoxes = new HashMap<>();
+            Set<Genre> selectedGenres = new HashSet<>(series.getGenres());
+            
+            for (Genre genre : Genre.values()) {
+                CheckBox checkBox = new CheckBox(genre.name());
+                checkBox.setSelected(selectedGenres.contains(genre));
+                checkBox.setStyle("-fx-text-fill: #333; -fx-font-size: 13;");
+                genreBox.getChildren().add(checkBox);
+                genreCheckBoxes.put(checkBox, genre);
+            }
+
+            // Rating
+            Spinner<Double> ratingSpinner = new Spinner<>(0.0, 10.0, 
+                series.getImdbRating() != null ? series.getImdbRating() : 0.0, 0.1);
+            ratingSpinner.setEditable(true);
+
+            // Director
             TextField directorField = new TextField(series.getDirector() != null ? series.getDirector() : "");
-            
+            directorField.setPromptText("Director");
+
+            // Cast (comma-separated)
+            TextArea castArea = new TextArea();
+            castArea.setPromptText("Enter cast members, one per line");
+            castArea.setPrefRowCount(3);
+            if (series.getActors() != null && !series.getActors().isEmpty()) {
+                StringBuilder castText = new StringBuilder();
+                for (Actor actor : series.getActors()) {
+                    if (actor != null && actor.getFullName() != null) {
+                        if (castText.length() > 0) {
+                            castText.append("\n");
+                        }
+                        castText.append(actor.getFullName());
+                    }
+                }
+                castArea.setText(castText.toString());
+            }
+
             // Add fields to grid
-            grid.add(new Label("Title:"), 0, 0);
-            grid.add(titleField, 1, 0);
-            grid.add(new Label("Year:"), 0, 1);
-            grid.add(yearField, 1, 1);
-            grid.add(new Label("Director:"), 0, 2);
-            grid.add(directorField, 1, 2);
+            int row = 0;
+            grid.add(new Label("Title*:"), 0, row);
+            grid.add(titleField, 1, row++);
             
-            // Add the form to the dialog
-            dialog.getDialogPane().setContent(grid);
+            grid.add(new Label("Start Year*:"), 0, row);
+            grid.add(startYearSpinner, 1, row++);
             
+            grid.add(new Label("End Year:"), 0, row);
+            grid.add(endYearSpinner, 1, row++);
+            
+            grid.add(new Label("Genres*:"), 0, row);
+            grid.add(genreScroll, 1, row++);
+            
+            grid.add(new Label("Rating (0-10):"), 0, row);
+            grid.add(ratingSpinner, 1, row++);
+            
+            grid.add(new Label("Director:"), 0, row);
+            grid.add(directorField, 1, row++);
+            
+            grid.add(new Label("Cast (one per line):"), 0, row);
+            grid.add(castArea, 1, row++);
+
+            // Make the dialog resizable
+            ScrollPane scrollPane = new ScrollPane(grid);
+            scrollPane.setFitToWidth(true);
+            scrollPane.setFitToHeight(true);
+            
+            dialog.getDialogPane().setContent(scrollPane);
+            dialog.setResizable(true);
+            dialog.getDialogPane().setPrefSize(500, 500);
+
             // Request focus on the title field by default
             Platform.runLater(titleField::requestFocus);
-            
-            // Convert the result to a response
-            Optional<ButtonType> result = dialog.showAndWait();
-            
-            if (result.isPresent() && result.get() == saveButtonType) {
-                // Update the series with the form data
-                series.setTitle(titleField.getText().trim());
-                try {
-                    int year = Integer.parseInt(yearField.getText().trim());
-                    Calendar cal = Calendar.getInstance();
-                    cal.set(Calendar.YEAR, year);
-                    series.setYear(cal.getTime());
-                } catch (NumberFormatException e) {
-                    showError("Invalid Year", "Please enter a valid year number.");
-                    return false;
+
+            // Convert the result to a series when the save button is clicked
+            dialog.setResultConverter(dialogButton -> {
+                if (dialogButton == saveButtonType) {
+                    try {
+                        // Basic validation
+                        if (titleField.getText().trim().isEmpty()) {
+                            showError("Error", "Title is required");
+                            return null;
+                        }
+
+                        // Update series with new values
+                        series.setTitle(titleField.getText().trim());
+                        
+                        // Set the years
+                        Calendar cal = Calendar.getInstance();
+                        cal.set(Calendar.YEAR, startYearSpinner.getValue());
+                        series.setYear(cal.getTime());
+                        series.setEndYear(endYearSpinner.getValue());
+                        
+                        // Update genres
+                        List<Genre> newGenres = genreCheckBoxes.entrySet().stream()
+                            .filter(entry -> entry.getKey().isSelected())
+                            .map(Map.Entry::getValue)
+                            .collect(Collectors.toList());
+                        series.getGenres().clear();
+                        series.getGenres().addAll(newGenres);
+                        
+                        // Update rating
+                        series.setImdbRating(ratingSpinner.getValue());
+                        
+                        // Update director
+                        series.setDirector(directorField.getText().trim());
+                        
+                        // Update cast
+                        if (!castArea.getText().trim().isEmpty()) {
+                            List<Actor> actors = new ArrayList<>();
+                            for (String nameLine : castArea.getText().split("\\n")) {
+                                String name = nameLine.trim();
+                                if (!name.isEmpty()) {
+                                    // Create a new Actor with default values where required
+                                    // Using current date, 'U' for unknown gender, and null ethnicity as defaults
+                                    Actor actor = new Actor(
+                                        name, // First name
+                                        "",   // Last name (empty since we don't have this info)
+                                        java.time.LocalDate.now(), // Default to current date
+                                        'U',  // 'U' for unknown gender
+                                        (Ethnicity)null // No ethnicity specified
+                                    );
+                                    actors.add(actor);
+                                }
+                            }
+                            series.setActors(actors);
+                        } else {
+                            series.setActors(new ArrayList<>());
+                        }
+                        
+                        return saveButtonType;
+                    } catch (Exception e) {
+                        logger.error("Error updating series", e);
+                        showError("Error", "Failed to update series: " + e.getMessage());
+                        return null;
+                    }
                 }
-                series.setDirector(directorField.getText().trim());
-                return true;
-            }
-            return false;
+                return null;
+            });
+
+            Optional<ButtonType> result = dialog.showAndWait();
+            return result.isPresent() && result.get() == saveButtonType;
         } catch (Exception e) {
             logger.error("Error showing series edit dialog", e);
             showError("Error", "Failed to show series editor: " + e.getMessage());
@@ -463,13 +942,327 @@ public class SeriesController extends BaseController implements Initializable {
         }
     }
 
+    /**
+     * Shows a dialog for rating a TV series.
+     * @param series The series to be rated
+     */
+    /**
+     * Shows a dialog for rating a TV series.
+     * @param series The series to be rated
+     */
     private void showRatingDialog(Series series) {
-        // Implementation of rating dialog for series
+        try {
+            // Create a custom dialog
+            Dialog<Pair<Integer, String>> dialog = new Dialog<>();
+            dialog.setTitle("Rate Series");
+            dialog.setHeaderText("Rate " + series.getTitle());
 
+            // Set the button types
+            ButtonType rateButtonType = new ButtonType("Submit Rating", ButtonData.OK_DONE);
+            dialog.getDialogPane().getButtonTypes().addAll(rateButtonType, ButtonType.CANCEL);
+
+            // Create the rating components
+            GridPane grid = new GridPane();
+            grid.setHgap(10);
+            grid.setVgap(10);
+            grid.setPadding(new Insets(20, 20, 10, 10));
+
+            // Create a rating control (using a slider for simplicity)
+            Slider ratingSlider = new Slider(1, 10, 5);
+            ratingSlider.setShowTickMarks(true);
+            ratingSlider.setShowTickLabels(true);
+            ratingSlider.setMajorTickUnit(1);
+            ratingSlider.setMinorTickCount(0);
+            ratingSlider.setSnapToTicks(true);
+            ratingSlider.setBlockIncrement(1);
+
+            Label ratingValue = new Label("5");
+            Label ratingLabel = new Label("Your Rating (1-10):");
+            
+            // Add a text area for optional comments
+            TextArea commentArea = new TextArea();
+            commentArea.setPromptText("Share your thoughts about this series (optional)...");
+            commentArea.setWrapText(true);
+            commentArea.setPrefRowCount(3);
+
+            // Update the rating value label when slider changes
+            ratingSlider.valueProperty().addListener((obs, oldVal, newVal) -> {
+                ratingValue.setText(String.format("%d", newVal.intValue()));
+            });
+
+            // Add components to grid
+            grid.add(ratingLabel, 0, 0);
+            grid.add(ratingSlider, 1, 0);
+            grid.add(ratingValue, 2, 0);
+            grid.add(new Label("Your Review:"), 0, 1);
+            grid.add(commentArea, 1, 2, 2, 1);
+
+            // Enable/Disable rate button based on input validation
+            Node rateButton = dialog.getDialogPane().lookupButton(rateButtonType);
+            rateButton.setDisable(false);
+
+            dialog.getDialogPane().setContent(grid);
+
+            // Request focus on the slider by default
+            Platform.runLater(ratingSlider::requestFocus);
+
+            // Convert the result to a rating-comment pair when the rate button is clicked
+            dialog.setResultConverter(dialogButton -> {
+                if (dialogButton == rateButtonType) {
+                    return new Pair<>(ratingSlider.valueProperty().intValue(), commentArea.getText().trim());
+                }
+                return null;
+            });
+
+            // Show the dialog and process the result
+            Optional<Pair<Integer, String>> result = dialog.showAndWait();
+
+            result.ifPresent(ratingComment -> {
+                int rating = ratingComment.getKey();
+                String comment = ratingComment.getValue();
+                
+                try {
+                    // Update the series rating
+                    Map<Integer, Integer> userRatings = new HashMap<>(series.getUserRatings());
+                    userRatings.put(getCurrentUserId(), rating);
+                    series.setUserRatings(userRatings);
+                    
+                    // Save the updated series
+                    seriesService.update(series);
+                    
+                    // Show success message
+                    showSuccess("Rating Submitted", 
+                        String.format("You rated %s with %d stars!", series.getTitle(), rating) + 
+                        (comment.isEmpty() ? "" : "\n\nYour review: " + comment));
+                    
+                    // Refresh the series list to show the updated rating
+                    loadSeries();
+                } catch (Exception e) {
+                    logger.error("Error saving rating", e);
+                    showError("Error", "Failed to save your rating: " + e.getMessage());
+                }
+            });
+        } catch (Exception e) {
+            logger.error("Error showing rating dialog", e);
+            showError("Error", "Failed to show rating dialog: " + e.getMessage());
+        }
+    }
+    
+    /**
+     * Gets the current user's ID.
+     * This is a placeholder - you'll need to implement this based on your authentication system.
+     * @return The current user's ID
+     */
+    private int getCurrentUserId() {
+        // TODO: Replace this with actual user ID from your authentication system
+        // For now, return a default user ID
+        return 1;
     }
 
+    /**
+     * Shows a dialog for managing seasons of a TV series.
+     * @param series The series whose seasons are being managed
+     */
     private void showSeasonManagementDialog(Series series) {
-        // Implementation of season management dialog
+        try {
+            // Create a custom dialog
+            Dialog<Void> dialog = new Dialog<>();
+            dialog.setTitle("Manage Seasons");
+            dialog.setHeaderText("Manage seasons for " + series.getTitle());
 
+            // Set the button types
+            ButtonType doneButtonType = new ButtonType("Done", ButtonData.FINISH);
+            dialog.getDialogPane().getButtonTypes().addAll(doneButtonType);
+
+            // Create the main container
+            VBox container = new VBox(10);
+            container.setPadding(new Insets(10));
+
+            // Create a list view for seasons
+            ListView<Season> seasonListView = new ListView<>();
+            ObservableList<Season> seasons = FXCollections.observableArrayList(series.getSeasons());
+            seasonListView.setItems(seasons);
+            
+            // Set cell factory to display season information
+            seasonListView.setCellFactory(lv -> new ListCell<Season>() {
+                @Override
+                protected void updateItem(Season season, boolean empty) {
+                    super.updateItem(season, empty);
+                    if (empty || season == null) {
+                        setText(null);
+                    } else {
+                        setText(String.format("Season %d (%d episodes, %d)", 
+                            season.getSeasonNumber(), 
+                            season.getEpisodes() != null ? season.getEpisodes().size() : 0,
+                            season.getYear()));
+                    }
+                }
+            });
+
+            // Create buttons for season management
+            Button addButton = new Button("Add Season");
+            Button editButton = new Button("Edit Season");
+            Button removeButton = new Button("Remove Season");
+
+            // Disable edit/remove buttons when no season is selected
+            editButton.disableProperty().bind(seasonListView.getSelectionModel().selectedItemProperty().isNull());
+            removeButton.disableProperty().bind(seasonListView.getSelectionModel().selectedItemProperty().isNull());
+
+            // Add season button action
+            addButton.setOnAction(e -> {
+                // Create a dialog to add a new season
+                Dialog<Season> addDialog = new Dialog<>();
+                addDialog.setTitle("Add New Season");
+                addDialog.setHeaderText("Add a new season to " + series.getTitle());
+
+                // Set the button types
+                ButtonType addButtonType = new ButtonType("Add", ButtonData.OK_DONE);
+                addDialog.getDialogPane().getButtonTypes().addAll(addButtonType, ButtonType.CANCEL);
+
+                // Create form fields
+                GridPane grid = new GridPane();
+                grid.setHgap(10);
+                grid.setVgap(10);
+                grid.setPadding(new Insets(20, 20, 10, 10));
+
+                Spinner<Integer> seasonNumberSpinner = new Spinner<>(1, 100, series.getSeasons().size() + 1);
+                Spinner<Integer> yearSpinner = new Spinner<>(1900, 2100, Calendar.getInstance().get(Calendar.YEAR));
+                Spinner<Integer> episodesSpinner = new Spinner<>(1, 100, 10);
+
+                grid.add(new Label("Season Number:"), 0, 0);
+                grid.add(seasonNumberSpinner, 1, 0);
+                grid.add(new Label("Year:"), 0, 1);
+                grid.add(yearSpinner, 1, 1);
+                grid.add(new Label("Number of Episodes:"), 0, 2);
+                grid.add(episodesSpinner, 1, 2);
+
+                addDialog.getDialogPane().setContent(grid);
+                addDialog.setResultConverter(dialogButton -> {
+                    if (dialogButton == addButtonType) {
+                        int newSeasonNumber = seasonNumberSpinner.getValue();
+                        Season newSeason = new Season(newSeasonNumber, series);
+                        newSeason.setYear(yearSpinner.getValue());
+                        // Add episodes to the season
+                        List<Episode> episodes = new ArrayList<>();
+                        for (int i = 1; i <= episodesSpinner.getValue(); i++) {
+                            Episode episode = new Episode();
+                            episode.setEpisodeNumber(i);
+                            episode.setTitle(String.format("Episode %d", i));
+                            episodes.add(episode);
+                        }
+                        newSeason.setEpisodes(episodes);
+                        return newSeason;
+                    }
+                    return null;
+                });
+
+                Optional<Season> result = addDialog.showAndWait();
+                result.ifPresent(season -> {
+                    // Add the new season to the series
+                    series.addSeason(season);
+                    seasons.setAll(series.getSeasons()); // Refresh the list
+                    seriesService.update(series);
+                    showSuccess("Success", "Season added successfully!");
+                });
+            });
+
+            // Edit season button action
+            editButton.setOnAction(e -> {
+                Season selected = seasonListView.getSelectionModel().getSelectedItem();
+                if (selected != null) {
+                    // Create a dialog to edit the selected season
+                    Dialog<Season> editDialog = new Dialog<>();
+                    editDialog.setTitle("Edit Season");
+                    editDialog.setHeaderText("Edit Season " + selected.getSeasonNumber());
+
+                    // Set the button types
+                    ButtonType saveButtonType = new ButtonType("Save", ButtonData.OK_DONE);
+                    editDialog.getDialogPane().getButtonTypes().addAll(saveButtonType, ButtonType.CANCEL);
+
+                    // Create form fields with current values
+                    GridPane grid = new GridPane();
+                    grid.setHgap(10);
+                    grid.setVgap(10);
+                    grid.setPadding(new Insets(20, 20, 10, 10));
+
+                    Spinner<Integer> seasonNumberSpinner = new Spinner<>(1, 100, selected.getSeasonNumber());
+                    Spinner<Integer> yearSpinner = new Spinner<>(1900, 2100, selected.getYear());
+                    Spinner<Integer> episodesSpinner = new Spinner<>(1, 100, selected.getEpisodes().size());
+
+                    grid.add(new Label("Season Number:"), 0, 0);
+                    grid.add(seasonNumberSpinner, 1, 0);
+                    grid.add(new Label("Year:"), 0, 1);
+                    grid.add(yearSpinner, 1, 1);
+                    grid.add(new Label("Number of Episodes:"), 0, 2);
+                    grid.add(episodesSpinner, 1, 2);
+
+                    editDialog.getDialogPane().setContent(grid);
+                    editDialog.setResultConverter(dialogButton -> {
+                        if (dialogButton == saveButtonType) {
+                            selected.setSeasonNumber(seasonNumberSpinner.getValue());
+                            selected.setYear(yearSpinner.getValue());
+                            
+                            // Update number of episodes if changed
+                            int episodeCount = episodesSpinner.getValue();
+                            List<Episode> episodes = selected.getEpisodes();
+                            if (episodeCount > episodes.size()) {
+                                // Add new episodes
+                                for (int i = episodes.size() + 1; i <= episodeCount; i++) {
+                                    Episode episode = new Episode();
+                                    episode.setEpisodeNumber(i);
+                                    episode.setTitle(String.format("Episode %d", i));
+                                    episodes.add(episode);
+                                }
+                            } else if (episodeCount < episodes.size()) {
+                                // Remove extra episodes
+                                episodes.subList(episodeCount, episodes.size()).clear();
+                            }
+                            return selected;
+                        }
+                        return null;
+                    });
+
+                    editDialog.showAndWait().ifPresent(updatedSeason -> {
+                        // Update the season in the series
+                        seriesService.update(series);
+                        seasonListView.refresh();
+                        showSuccess("Success", "Season updated successfully!");
+                    });
+                }
+            });
+
+            // Remove season button action
+            removeButton.setOnAction(e -> {
+                Season selected = seasonListView.getSelectionModel().getSelectedItem();
+                if (selected != null && showConfirmation(
+                        "Are you sure you want to remove Season " + selected.getSeasonNumber() + "?")) {
+                    series.getSeasons().remove(selected);
+                    seasons.setAll(series.getSeasons()); // Refresh the list
+                    seriesService.update(series);
+                    showSuccess("Success", "Season removed successfully!");
+                }
+            });
+
+            // Add components to the container
+            HBox buttonBox = new HBox(10, addButton, editButton, removeButton);
+            container.getChildren().addAll(seasonListView, buttonBox);
+            dialog.getDialogPane().setContent(container);
+
+            // Show the dialog
+            dialog.showAndWait();
+
+        } catch (Exception e) {
+            logger.error("Error showing season management dialog", e);
+            showError("Error", "Failed to show season management dialog: " + e.getMessage());
+        }
+    }
+
+    private boolean showConfirmation(String s) {
+        Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+        alert.setTitle("Confirm Removal");
+        alert.setHeaderText(null);
+        alert.setContentText(s);
+        Optional<ButtonType> result = alert.showAndWait();
+        return result.isPresent() && result.get() == ButtonType.OK;
     }
 }

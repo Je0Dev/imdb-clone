@@ -261,7 +261,7 @@ public class UICoordinator {
             FXMLLoader loader = new FXMLLoader(resourceUrl);
 
             try {
-                Node view = loader.load();
+                Node view = loader.<Node>load();
                 logger.info("Successfully loaded view: {}", fxmlPath);
                 return view;
             } catch (Exception e) {

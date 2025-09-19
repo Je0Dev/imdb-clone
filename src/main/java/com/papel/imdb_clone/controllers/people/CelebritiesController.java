@@ -15,6 +15,15 @@ import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.*;
 import javafx.scene.input.MouseEvent;
+import javafx.scene.layout.GridPane;
+import javafx.scene.layout.VBox;
+import javafx.geometry.Insets;
+import javafx.scene.control.Alert.AlertType;
+import java.time.LocalDate;
+import java.util.Arrays;
+import java.util.Optional;
+import java.util.List;
+import javafx.stage.Stage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -227,6 +236,52 @@ public class CelebritiesController implements Initializable {
         } catch (Exception e) {
             logger.error("Error initializing actor table: {}", e.getMessage(), e);
             showError("Initialization Error", "Failed to initialize actor table: " + e.getMessage());
+        }
+    }
+
+    @FXML
+    private void handleGoToHome() {
+        try {
+            NavigationService.getInstance().navigateTo("/fxml/base/home-view.fxml",
+                (Stage) actorsTable.getScene().getWindow(),"IMDb Clone - Home");
+        } catch (Exception e) {
+            logger.error("Error navigating to home: {}", e.getMessage(), e);
+            showError("Navigation Error", "Failed to navigate to home: " + e.getMessage());
+        }
+    }
+    
+    /**
+     * Handles the refresh button action to reload all celebrities.
+     */
+    @FXML
+    private void handleRefresh() {
+        try {
+            logger.info("Refreshing celebrities...");
+            // Clear search fields
+            if (actorSearchField != null) actorSearchField.clear();
+            if (directorSearchField != null) directorSearchField.clear();
+            if (unifiedSearchField != null) unifiedSearchField.clear();
+            
+            // Reload all celebrities
+            loadCelebrities();
+            
+            // Show success message
+            if (statusLabel != null) {
+                statusLabel.setText("Celebrities refreshed successfully");
+                // Clear the status message after 3 seconds
+                new java.util.Timer().schedule(
+                    new java.util.TimerTask() {
+                        @Override
+                        public void run() {
+                            Platform.runLater(() -> statusLabel.setText(""));
+                        }
+                    },
+                    3000
+                );
+            }
+        } catch (Exception e) {
+            logger.error("Error refreshing celebrities: {}", e.getMessage(), e);
+            showError("Refresh Error", "Failed to refresh celebrities: " + e.getMessage());
         }
     }
 
@@ -632,5 +687,214 @@ public class CelebritiesController implements Initializable {
     //go to homes
     public void goToHome(MouseEvent mouseEvent) {
         NavigationService.getInstance().showHome();
+    }
+
+    @FXML
+    private void handleAddCelebrity() {
+        // Create a choice dialog for celebrity type selection
+        List<String> choices = Arrays.asList("Actor", "Director");
+        ChoiceDialog<String> dialog = new ChoiceDialog<>("Actor", choices);
+        dialog.setTitle("Add Celebrity");
+        dialog.setHeaderText("Select Celebrity Type");
+        dialog.setContentText("Choose celebrity type:");
+
+        // Show the dialog and process the result
+        Optional<String> result = dialog.showAndWait();
+        
+        result.ifPresent(celebrityType -> {
+            if ("Actor".equals(celebrityType)) {
+                showAddActorDialog();
+            } else if ("Director".equals(celebrityType)) {
+                showAddDirectorDialog();
+            }
+        });
+    }
+
+    private void showAddActorDialog() {
+        // Create a dialog for adding a new actor
+        Dialog<Actor> dialog = new Dialog<>();
+        dialog.setTitle("Add New Actor");
+        dialog.setHeaderText("Enter actor details");
+
+        // Set the button types
+        ButtonType saveButtonType = new ButtonType("Save", ButtonBar.ButtonData.OK_DONE);
+        dialog.getDialogPane().getButtonTypes().addAll(saveButtonType, ButtonType.CANCEL);
+
+        // Create the form
+        GridPane grid = new GridPane();
+        grid.setHgap(10);
+        grid.setVgap(10);
+        grid.setPadding(new Insets(20, 150, 10, 10));
+
+        TextField firstNameField = new TextField();
+        firstNameField.setPromptText("First Name");
+        TextField lastNameField = new TextField();
+        lastNameField.setPromptText("Last Name");
+        DatePicker birthDatePicker = new DatePicker();
+        birthDatePicker.setPromptText("Birth Date");
+        ComboBox<String> genderComboBox = new ComboBox<>(FXCollections.observableArrayList("M", "F", "O"));
+        genderComboBox.setPromptText("Gender (M/F/O)");
+        
+        // Add ethnicity combo box
+        ComboBox<Ethnicity> ethnicityComboBox = new ComboBox<>();
+        ethnicityComboBox.getItems().addAll(Ethnicity.values());
+        ethnicityComboBox.setPromptText("Select Ethnicity");
+        
+        TextArea notableWorksArea = new TextArea();
+        notableWorksArea.setPromptText("Enter notable works, separated by commas");
+        notableWorksArea.setPrefRowCount(3);
+
+        grid.add(new Label("First Name:"), 0, 0);
+        grid.add(firstNameField, 1, 0);
+        grid.add(new Label("Last Name:"), 0, 1);
+        grid.add(lastNameField, 1, 1);
+        grid.add(new Label("Birth Date:"), 0, 2);
+        grid.add(birthDatePicker, 1, 2);
+        grid.add(new Label("Gender:"), 0, 3);
+        grid.add(genderComboBox, 1, 3);
+        grid.add(new Label("Ethnicity:"), 0, 4);
+        grid.add(ethnicityComboBox, 1, 4);
+        grid.add(new Label("Notable Works:"), 0, 5);
+        grid.add(notableWorksArea, 1, 5);
+
+        dialog.getDialogPane().setContent(grid);
+
+        // Request focus on the first name field by default
+        Platform.runLater(firstNameField::requestFocus);
+
+        // Convert the result to an Actor when the save button is clicked
+        dialog.setResultConverter(dialogButton -> {
+            if (dialogButton == saveButtonType) {
+                try {
+                    String firstName = firstNameField.getText().trim();
+                    String lastName = lastNameField.getText().trim();
+                    LocalDate birthDate = birthDatePicker.getValue();
+                    char gender = genderComboBox.getValue() != null ? genderComboBox.getValue().charAt(0) : 'U';
+                    Ethnicity ethnicity = ethnicityComboBox.getValue() != null ? ethnicityComboBox.getValue() : Ethnicity.UNKNOWN;
+                    
+                    // Parse notable works
+                    String notableWorks = Arrays.stream(notableWorksArea.getText().split(","))
+                            .map(String::trim)
+                            .filter(s -> !s.isEmpty())
+                            .collect(Collectors.joining(", "));
+                    
+                    // Create actor with required fields
+                    Actor actor = new Actor(firstName, lastName, birthDate, gender, ethnicity);
+                    actor.setNotableWorks(notableWorks);
+                    
+                    return actor;
+                } catch (Exception e) {
+                    showError("Error", "Invalid input: " + e.getMessage());
+                    return null;
+                }
+            }
+            return null;
+        });
+
+        // Show the dialog and process the result
+        Optional<Actor> result = dialog.showAndWait();
+        result.ifPresent(actor -> {
+            try {
+                actorService.save(actor);
+                actors.add(actor);
+                updateStatus("Actor added successfully!");
+            } catch (Exception e) {
+                showError("Error", "Failed to add actor: " + e.getMessage());
+            }
+        });
+    }
+
+    private void showAddDirectorDialog() {
+        // Create a dialog for adding a new director
+        Dialog<Director> dialog = new Dialog<>();
+        dialog.setTitle("Add New Director");
+        dialog.setHeaderText("Enter director details");
+
+        // Set the button types
+        ButtonType saveButtonType = new ButtonType("Save", ButtonBar.ButtonData.OK_DONE);
+        dialog.getDialogPane().getButtonTypes().addAll(saveButtonType, ButtonType.CANCEL);
+
+        // Create the form
+        GridPane grid = new GridPane();
+        grid.setHgap(10);
+        grid.setVgap(10);
+        grid.setPadding(new Insets(20, 150, 10, 10));
+
+        TextField firstNameField = new TextField();
+        firstNameField.setPromptText("First Name");
+        TextField lastNameField = new TextField();
+        lastNameField.setPromptText("Last Name");
+        DatePicker birthDatePicker = new DatePicker();
+        birthDatePicker.setPromptText("Birth Date");
+        ComboBox<String> genderComboBox = new ComboBox<>(FXCollections.observableArrayList("M", "F", "O"));
+        genderComboBox.setPromptText("Gender (M/F/O)");
+        
+        // Add ethnicity combo box
+        ComboBox<Ethnicity> ethnicityComboBox = new ComboBox<>();
+        ethnicityComboBox.getItems().addAll(Ethnicity.values());
+        ethnicityComboBox.setPromptText("Select Ethnicity");
+        
+        TextArea notableWorksArea = new TextArea();
+        notableWorksArea.setPromptText("Enter notable works, separated by commas");
+        notableWorksArea.setPrefRowCount(3);
+
+        grid.add(new Label("First Name:"), 0, 0);
+        grid.add(firstNameField, 1, 0);
+        grid.add(new Label("Last Name:"), 0, 1);
+        grid.add(lastNameField, 1, 1);
+        grid.add(new Label("Birth Date:"), 0, 2);
+        grid.add(birthDatePicker, 1, 2);
+        grid.add(new Label("Gender:"), 0, 3);
+        grid.add(genderComboBox, 1, 3);
+        grid.add(new Label("Ethnicity:"), 0, 4);
+        grid.add(ethnicityComboBox, 1, 4);
+        grid.add(new Label("Notable Works:"), 0, 5);
+        grid.add(notableWorksArea, 1, 5);
+
+        dialog.getDialogPane().setContent(grid);
+
+        // Request focus on the first name field by default
+        Platform.runLater(firstNameField::requestFocus);
+
+        // Convert the result to a Director when the save button is clicked
+        dialog.setResultConverter(dialogButton -> {
+            if (dialogButton == saveButtonType) {
+                try {
+                    String firstName = firstNameField.getText().trim();
+                    String lastName = lastNameField.getText().trim();
+                    LocalDate birthDate = birthDatePicker.getValue();
+                    char gender = genderComboBox.getValue() != null ? genderComboBox.getValue().charAt(0) : 'U';
+                    Ethnicity ethnicity = ethnicityComboBox.getValue() != null ? ethnicityComboBox.getValue() : Ethnicity.UNKNOWN;
+                    
+                    // Parse notable works
+                    String notableWorks = Arrays.stream(notableWorksArea.getText().split(","))
+                            .map(String::trim)
+                            .filter(s -> !s.isEmpty())
+                            .collect(Collectors.joining(", "));
+                    
+                    // Create director with required fields using factory method
+                    Director director = Director.getInstance(firstName, lastName, birthDate, gender, ethnicity);
+                    director.setNotableWorks(notableWorks);
+                    
+                    return director;
+                } catch (Exception e) {
+                    showError("Error", "Invalid input: " + e.getMessage());
+                    return null;
+                }
+            }
+            return null;
+        });
+
+        // Show the dialog and process the result
+        Optional<Director> result = dialog.showAndWait();
+        result.ifPresent(director -> {
+            try {
+                directorService.save(director);
+                directors.add(director);
+                updateStatus("Director added successfully!");
+            } catch (Exception e) {
+                showError("Error", "Failed to add director: " + e.getMessage());
+            }
+        });
     }
 }

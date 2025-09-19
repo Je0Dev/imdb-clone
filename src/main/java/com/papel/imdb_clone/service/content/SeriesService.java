@@ -1,8 +1,10 @@
 package com.papel.imdb_clone.service.content;
 
+import com.papel.imdb_clone.enums.Ethnicity;
 import com.papel.imdb_clone.enums.Genre;
 import com.papel.imdb_clone.model.content.Series;
 import com.papel.imdb_clone.model.people.Actor;
+import com.papel.imdb_clone.service.people.CelebrityService;
 
 import java.time.LocalDate;
 import java.util.*;
@@ -50,8 +52,8 @@ public class SeriesService extends BaseContentService<Series> {
             series1.setGenres(breakingBadGenres);
             
             List<Actor> breakingBadActors = new ArrayList<>();
-            breakingBadActors.add(new Actor("Bryan", "Cranston", LocalDate.of(1956, 3, 7), 'M', "White"));
-            breakingBadActors.add(new Actor("Aaron", "Paul", LocalDate.of(1979, 8, 27), 'M', "White"));
+            breakingBadActors.add(Actor.getInstance("Bryan", "Cranston", LocalDate.of(1956, 3, 7), 'M', Ethnicity.CAUCASIAN));
+            breakingBadActors.add(Actor.getInstance("Aaron", "Paul", LocalDate.of(1979, 8, 27), 'M', Ethnicity.CAUCASIAN));
             series1.setActors(breakingBadActors);
             series1.setEndYear(2013);
             save(series1);
@@ -72,9 +74,9 @@ public class SeriesService extends BaseContentService<Series> {
             series2.setDirector("David Benioff, D.B. Weiss");
             series2.setGenres(gotGenres);
             series2.getGenres().add(Genre.ADVENTURE);
-            series2.getActors().add(new Actor("Emilia", "Clarke", LocalDate.of(1986, 10, 23), 'F', "White"));
-            series2.getActors().add(new Actor("Kit", "Harington", LocalDate.of(1986, 12, 26), 'M', "White"));
-            series2.getActors().add(new Actor("Peter", "Dinklage", LocalDate.of(1969, 6, 11), 'M', "White"));
+            series2.getActors().add(Actor.getInstance("Emilia", "Clarke", LocalDate.of(1986, 10, 23), 'F', Ethnicity.CAUCASIAN));
+            series2.getActors().add(Actor.getInstance("Kit", "Harington", LocalDate.of(1986, 12, 26), 'M', Ethnicity.CAUCASIAN));
+            series2.getActors().add(Actor.getInstance("Peter", "Dinklage", LocalDate.of(1969, 6, 11), 'M', Ethnicity.CAUCASIAN));
             series2.setEndYear(2019);
             save(series2);
             
@@ -84,8 +86,8 @@ public class SeriesService extends BaseContentService<Series> {
             series3.getGenres().add(Genre.SCI_FI);
             series3.getGenres().add(Genre.HORROR);
             series3.getGenres().add(Genre.MYSTERY);
-            series3.getActors().add(new Actor("Millie Bobby", "Brown", LocalDate.of(2004, 2, 19), 'F', "White"));
-            series3.getActors().add(new Actor("Finn", "Wolfhard", LocalDate.of(2002, 12, 23), 'M', "White"));
+            series3.getActors().add(Actor.getInstance("Millie Bobby", "Brown", LocalDate.of(2004, 2, 19), 'F', Ethnicity.CAUCASIAN));
+            series3.getActors().add(Actor.getInstance("Finn", "Wolfhard", LocalDate.of(2002, 12, 23), 'M', Ethnicity.CAUCASIAN));
             series3.setEndYear(2025);
             save(series3);
             

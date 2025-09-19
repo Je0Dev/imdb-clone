@@ -347,17 +347,7 @@ public class AuthController extends BaseController {
         }
     }
 
-    /**Show login error
-     *
-     * @param message
-     */
-    private void showLoginError(String message) {
-        loginErrorLabel.setStyle("-fx-text-fill: #d32f2f;");
-        loginErrorLabel.setText(message);
-        loginErrorLabel.setVisible(true);
-    }
-
-
+    
     /**Clear registration form
      */
     private void clearRegistrationForm() {

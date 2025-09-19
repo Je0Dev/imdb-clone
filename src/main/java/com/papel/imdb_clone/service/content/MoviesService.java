@@ -1,8 +1,10 @@
 package com.papel.imdb_clone.service.content;
 
+import com.papel.imdb_clone.enums.Ethnicity;
 import com.papel.imdb_clone.enums.Genre;
 import com.papel.imdb_clone.model.content.Movie;
 import com.papel.imdb_clone.model.people.Actor;
+import com.papel.imdb_clone.service.people.CelebrityService;
 
 import java.time.LocalDate;
 import java.util.*;
@@ -14,7 +16,7 @@ import java.util.logging.Logger;
 public class MoviesService extends BaseContentService<Movie> {
     private static final Logger logger = Logger.getLogger(MoviesService.class.getName());
     private static MoviesService instance;
-    
+
     private MoviesService() {
         super(Movie.class);
     }
@@ -25,7 +27,7 @@ public class MoviesService extends BaseContentService<Movie> {
         }
         return instance;
     }
-    
+
     @Override
     protected void initializeSampleData() {
         lock.writeLock().lock();
@@ -37,9 +39,9 @@ public class MoviesService extends BaseContentService<Movie> {
             List<Genre> shawshankGenres = new ArrayList<>();
             shawshankGenres.add(Genre.DRAMA);
             List<Actor> shawshankActors = new ArrayList<>();
-            shawshankActors.add(new Actor("Tim", "Robbins", LocalDate.of(1958, 10, 16), 'M', "White"));
-            shawshankActors.add(new Actor("Morgan", "Freeman", LocalDate.of(1937, 6, 1), 'M', "Black"));
-            
+            shawshankActors.add(Actor.getInstance("Tim", "Robbins", LocalDate.of(1958, 10, 16), 'M', Ethnicity.CAUCASIAN));
+            shawshankActors.add(Actor.getInstance("Morgan", "Freeman", LocalDate.of(1937, 6, 1), 'M', Ethnicity.AFRICAN));
+
             Movie movie1 = new Movie(
                 "The Shawshank Redemption",
                 new GregorianCalendar(1994, Calendar.JANUARY, 1).getTime(),
@@ -55,9 +57,9 @@ public class MoviesService extends BaseContentService<Movie> {
             godfatherGenres.add(Genre.CRIME);
             godfatherGenres.add(Genre.DRAMA);
             List<Actor> godfatherActors = new ArrayList<>();
-            godfatherActors.add(new Actor("Marlon", "Brando", LocalDate.of(1924, 4, 3), 'M', "White"));
-            godfatherActors.add(new Actor("Al", "Pacino", LocalDate.of(1940, 4, 25), 'M', "White"));
-            
+            godfatherActors.add(Actor.getInstance("Marlon", "Brando", LocalDate.of(1924, 4, 3), 'M', Ethnicity.CAUCASIAN));
+            godfatherActors.add(Actor.getInstance("Al", "Pacino", LocalDate.of(1940, 4, 25), 'M', Ethnicity.CAUCASIAN));
+
             Movie movie2 = new Movie(
                 "The Godfather",
                 new GregorianCalendar(1972, Calendar.JANUARY, 1).getTime(),
@@ -74,9 +76,9 @@ public class MoviesService extends BaseContentService<Movie> {
             darkKnightGenres.add(Genre.CRIME);
             darkKnightGenres.add(Genre.DRAMA);
             List<Actor> darkKnightActors = new ArrayList<>();
-            darkKnightActors.add(new Actor("Christian", "Bale", LocalDate.of(1974, 1, 30), 'M', "White"));
-            darkKnightActors.add(new Actor("Heath", "Ledger", LocalDate.of(1979, 4, 4), 'M', "White"));
-            
+            darkKnightActors.add(Actor.getInstance("Christian", "Bale", LocalDate.of(1974, 1, 30), 'M', Ethnicity.CAUCASIAN));
+            darkKnightActors.add(Actor.getInstance("Heath", "Ledger", LocalDate.of(1979, 4, 4), 'M', Ethnicity.CAUCASIAN));
+
             Movie movie3 = new Movie(
                 "The Dark Knight",
                 new GregorianCalendar(2008, Calendar.JANUARY, 1).getTime(),

@@ -117,12 +117,16 @@ public class ActorDataLoader extends BaseDataLoader {
 
                         // Create and save the actor
                         try {
-                            Actor actor;
-                            if (ethnicity != null) {
-                                actor = new Actor(firstName, lastName, birthDate, gender, ethnicity);
-                            } else {
-                                actor = new Actor(firstName, lastName, birthDate, gender, "");
-                            }
+                            // Use factory method to get or create actor instance
+                            Actor actor = Actor.getInstance(
+                                firstName,
+                                lastName,
+                                birthDate,
+                                gender,
+                                ethnicity != null ? ethnicity : Ethnicity.UNKNOWN
+                            );
+                            
+                            // Set notable works if provided
                             if (!notableWorks.isEmpty() && !notableWorks.equalsIgnoreCase("N/A")) {
                                 actor.setNotableWorks(notableWorks);
                             }

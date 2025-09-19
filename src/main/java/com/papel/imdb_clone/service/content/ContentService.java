@@ -44,6 +44,13 @@ public interface ContentService<T> {
     boolean delete(int id);
 
     /**
+     * Removes a content item.
+     * @param content The content to remove
+     * @return true if the content was removed, false otherwise
+     */
+    boolean remove(T content);
+
+    /**
      * Find content by title and year
      * @param title The title to search for
      * @param year The release year to search for

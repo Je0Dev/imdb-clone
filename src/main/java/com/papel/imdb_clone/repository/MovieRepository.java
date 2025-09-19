@@ -1,6 +1,5 @@
 package com.papel.imdb_clone.repository;
 
-
 import com.papel.imdb_clone.model.content.Movie;
 
 import java.util.List;
@@ -19,7 +18,6 @@ public interface MovieRepository {
      * @return Optional containing the movie if found, empty otherwise
      */
     Optional<Movie> findById(int id);
-
 
     List<Movie> findByTitle(String title);
 
@@ -46,8 +44,15 @@ public interface MovieRepository {
      */
     long count();
 
-
     void add(Movie movie);
 
     void update(Movie movie);
+
+    /**
+     * Finds a movie by its title and release year.
+     * @param title The title of the movie to search for
+     * @param releaseYear The release year of the movie
+     * @return The movie if found, null otherwise
+     */
+    Movie findByTitleAndReleaseYear(String title, int releaseYear);
 }

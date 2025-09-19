@@ -94,6 +94,7 @@ public abstract class BaseController implements Initializable {
         alert.setHeaderText(null);
         alert.setContentText(message);
 
+        // Show the alert and wait for the user to respond
         Optional<ButtonType> result = alert.showAndWait();
         return result.isPresent() && result.get() == ButtonType.OK;
     }

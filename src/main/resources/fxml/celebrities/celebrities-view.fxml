@@ -11,8 +11,8 @@
     <!-- Top Navigation Bar -->
     <VBox style="-fx-background-color: #0f0f0f; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.4), 10, 0, 0, 3);">
         <!-- Top Navigation -->
-        <HBox style="-fx-padding: 12 24; -fx-background-color: #0a0a0a; -fx-alignment: center-left;">
-            <HBox style="-fx-spacing: 0; -fx-alignment: center-left;">
+        <HBox style="-fx-padding: 12 24; -fx-background-color: #0a0a0a; -fx-alignment: center-left; -fx-spacing: 20;">
+            <HBox style="-fx-spacing: 0; -fx-alignment: center-left; -fx-padding-right: 20;">
                 <Label onMouseClicked="#goToHome"
                        style="-fx-text-fill: #f5c518; -fx-font-size: 24px; -fx-font-weight: bold; -fx-padding: 0 2 0 5; -fx-cursor: hand;"
                        text="IMDb">
@@ -24,6 +24,15 @@
                        style="-fx-text-fill: #ffffff; -fx-font-size: 24px; -fx-font-weight: bold; -fx-cursor: hand;"
                        text="Clone"/>
             </HBox>
+            
+            <!-- Home Button -->
+            <Button onAction="#handleGoToHome" 
+                    style="-fx-background-color: transparent; -fx-text-fill: #f5c518; -fx-border-color: #f5c518; -fx-border-width: 1.5; -fx-border-radius: 4; -fx-padding: 5 10; -fx-font-weight: bold; -fx-cursor: hand; -fx-effect: dropshadow(gaussian, rgba(245,197,24,0.3), 5, 0, 0, 1);" 
+                    text="HOME">
+                <tooltip>
+                    <Tooltip text="Go to Home" />
+                </tooltip>
+            </Button>
         </HBox>
     </VBox>
 
@@ -42,7 +51,15 @@
                 <VBox style="-fx-background-color: #121212; -fx-padding: 16; -fx-spacing: 16;">
                     <HBox style="-fx-spacing: 12; -fx-alignment: center-left;">
                         <TextField fx:id="actorSearchField" promptText="Search actors..." 
-                                   style="-fx-pref-width: 350px; -fx-background-color: #1e1e1e; -fx-text-fill: #ffffff; -fx-prompt-text-fill: #888888; -fx-border-color: #333333; -fx-border-radius: 4; -fx-padding: 8 12;" />
+                                   style="-fx-pref-width: 300px; -fx-background-color: #1e1e1e; -fx-text-fill: #ffffff; -fx-prompt-text-fill: #888888; -fx-border-color: #333333; -fx-border-radius: 4; -fx-padding: 8 12;" />
+                        <Button onAction="#handleRefresh" text="Refresh" 
+                                style="-fx-background-color: #4CAF50; -fx-text-fill: white; -fx-font-weight: bold; -fx-padding: 8 16; -fx-background-radius: 4; -fx-cursor: hand; -fx-effect: dropshadow(gaussian, rgba(76,175,80,0.3), 5, 0, 0, 2);" />
+                        <Button onAction="#handleAddCelebrity" text="Add Celebrity" 
+                                style="-fx-background-color: #FFD700; -fx-text-fill: #000000; -fx-font-weight: bold; -fx-padding: 8 16; -fx-background-radius: 4; -fx-cursor: hand; -fx-effect: dropshadow(gaussian, rgba(255,215,0,0.3), 5, 0, 0, 2);">
+                            <tooltip>
+                                <Tooltip style="-fx-background-color: #1E1E1E; -fx-text-fill: #FFFFFF; -fx-font-size: 12; -fx-padding: 8 12; -fx-background-radius: 4; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.5), 5, 0, 0, 2);" text="Add a new celebrity with name, birthdate, gender, nationality, and notable works"/>
+                            </tooltip>
+                        </Button>
                     </HBox>
 
                     <TableView fx:id="actorsTable" style="-fx-background-color: white; -fx-table-cell-border-color: #e0e0e0;" VBox.vgrow="ALWAYS">
@@ -106,7 +123,15 @@
                 <VBox style="-fx-background-color: #121212; -fx-padding: 16; -fx-spacing: 16;">
                     <HBox style="-fx-spacing: 12; -fx-alignment: center-left;">
                         <TextField fx:id="directorSearchField" promptText="Search directors..." 
-                                   style="-fx-pref-width: 350px; -fx-background-color: #1e1e1e; -fx-text-fill: #ffffff; -fx-prompt-text-fill: #888888; -fx-border-color: #333333; -fx-border-radius: 4; -fx-padding: 8 12;" />
+                                   style="-fx-pref-width: 300px; -fx-background-color: #1e1e1e; -fx-text-fill: #ffffff; -fx-prompt-text-fill: #888888; -fx-border-color: #333333; -fx-border-radius: 4; -fx-padding: 8 12;" />
+                        <Button onAction="#handleRefresh" text="Refresh" 
+                                style="-fx-background-color: #4CAF50; -fx-text-fill: white; -fx-font-weight: bold; -fx-padding: 8 16; -fx-background-radius: 4; -fx-cursor: hand; -fx-effect: dropshadow(gaussian, rgba(76,175,80,0.3), 5, 0, 0, 2);" />
+                        <Button onAction="#handleAddCelebrity" text="Add Celebrity" 
+                                style="-fx-background-color: #FFD700; -fx-text-fill: #000000; -fx-font-weight: bold; -fx-padding: 8 16; -fx-background-radius: 4; -fx-cursor: hand; -fx-effect: dropshadow(gaussian, rgba(255,215,0,0.3), 5, 0, 0, 2);">
+                            <tooltip>
+                                <Tooltip style="-fx-background-color: #1E1E1E; -fx-text-fill: #FFFFFF; -fx-font-size: 12; -fx-padding: 8 12; -fx-background-radius: 4; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.5), 5, 0, 0, 2);" text="Add a new celebrity with name, birthdate, gender, nationality, and notable works"/>
+                            </tooltip>
+                        </Button>
                     </HBox>
                     <TableView fx:id="directorsTable" style="-fx-background-color: white; -fx-table-cell-border-color: #e0e0e0;" VBox.vgrow="ALWAYS">
                         <columns>

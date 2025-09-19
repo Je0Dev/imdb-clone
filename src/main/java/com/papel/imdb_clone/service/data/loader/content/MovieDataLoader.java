@@ -5,6 +5,7 @@ import com.papel.imdb_clone.enums.Genre;
 import com.papel.imdb_clone.exceptions.FileParsingException;
 import com.papel.imdb_clone.model.people.Actor;
 import com.papel.imdb_clone.model.people.Director;
+import com.papel.imdb_clone.service.people.CelebrityManager;
 import com.papel.imdb_clone.model.content.Movie;
 import com.papel.imdb_clone.repository.impl.InMemoryMovieRepository;
 import com.papel.imdb_clone.service.people.CelebrityService;
@@ -32,10 +33,11 @@ public class MovieDataLoader extends BaseDataLoader {
     private final MoviesService movieService;
     private final CelebrityService<Actor> actorService;
     private final CelebrityService<Director> directorService;
+    private final CelebrityManager celebrityManager;
     private char gender;
     private String ethnicity;
     private LocalDate birthDate;
-    private Ethnicity Ethnicity;
+    private Ethnicity ethnicityEnum;
 
     /**
      * Constructor for MovieDataLoader.
@@ -59,6 +61,7 @@ public class MovieDataLoader extends BaseDataLoader {
         this.movieService = movieService;
         this.actorService = actorService;
         this.directorService = directorService;
+        this.celebrityManager = CelebrityManager.getInstance();
     }
 
 
@@ -180,21 +183,22 @@ public class MovieDataLoader extends BaseDataLoader {
 
                         // Create and save the movie
                         try {
-                            // Create or find director
-                            @SuppressWarnings("unchecked")
-                            List<Director> directors = (List<Director>) (List<?>) directorService.findByName(directorName);
-                            Director director = directors != null && !directors.isEmpty() ? directors.get(0) : null;
-                            if (director == null) {
-                                String[] directorNameParts = directorName.trim().split("\\s+", 2);
-                                String firstName = directorNameParts[0];
-                                String lastName = directorNameParts.length > 1 ? directorNameParts[1] : "";
-                                director = new Director(
-                                    firstName,
-                                    lastName,
-                                    LocalDate.now(), // Default birth date
-                                    '?', // Unknown gender
-                                    Ethnicity.UNKNOWN // Unknown ethnicity
-                                );
+                            // Create or find director using factory method
+                            String[] directorNameParts = directorName.trim().split("\\s+", 2);
+                            String firstName = directorNameParts[0];
+                            String lastName = directorNameParts.length > 1 ? directorNameParts[1] : "";
+
+                            // Use Director factory method to get or create instance
+                            Director director = Director.getInstance(
+                                firstName,
+                                lastName,
+                                null, // birth date unknown
+                                '?',  // gender unknown
+                                Ethnicity.UNKNOWN
+                            );
+
+                            // Ensure director is saved in the service
+                            if (director.getId() == 0) { // Assuming 0 means not saved yet
                                 director = directorService.save(director);
                             }
 
@@ -205,7 +209,7 @@ public class MovieDataLoader extends BaseDataLoader {
                             movie.setStartYear(year);
                             movie.setDirector(directorName); // This will be updated to use Director object in the future
                             movie.setRating(rating);
-                            
+
                             // Set the director object if available
                             if (director != null) {
                                 movie.setDirector(director.getFullName());
@@ -214,48 +218,39 @@ public class MovieDataLoader extends BaseDataLoader {
                             // Save movie to get an ID
                             movie = movieService.save(movie);
 
-                            // Add actors to the movie
-                            List<Actor> movieActors = new ArrayList<>();
+                            // Parse actors (semicolon separated) and normalize names
+                            List<Actor> actors = new ArrayList<>();
+
                             for (String actorName : actorNames) {
-                                if (actorName != null && !actorName.trim().isEmpty()) {
-                                    String normalizedActorName = normalizeText(actorName).trim();
-                                    if (normalizedActorName.isEmpty()) continue;
-                                    
-                                    String[] nameParts = normalizedActorName.split("\\s+", 2);
-                                    String firstName = nameParts[0];
-                                    String lastName = nameParts.length > 1 ? nameParts[1] : "";
+                                actorName = actorName.trim();
+                                if (!actorName.isEmpty()) {
+                                    String[] actorNameParts = actorName.split("\\s+", 2);
+                                    String actorFirstName = actorNameParts[0];
+                                    String actorLastName = actorNameParts.length > 1 ? actorNameParts[1] : "";
 
-                                    // Create or find actor
-                                    @SuppressWarnings("unchecked")
-                                    List<Actor> actors = (List<Actor>) (List<?>) actorService.findByName(firstName + " " + lastName);
-                                    Actor actor = actors != null && !actors.isEmpty() ? actors.get(0) : null;
-                                    
-                                    if (actor == null) {
-                                        actor = new Actor(
-                                            firstName,
-                                            lastName,
-                                            LocalDate.now(), // Default birth date
-                                            '?', // Unknown gender
-                                            "Unknown" // Unknown ethnicity
-                                        );
+                                    // Use Actor factory method to get or create instance
+                                    Actor actor = Actor.getInstance(
+                                        actorFirstName,
+                                        actorLastName,
+                                        null, // birth date unknown
+                                        '?',  // gender unknown
+                                        Ethnicity.UNKNOWN
+                                    );
+
+                                    // Ensure actor is saved in the service
+                                    if (actor.getId() == 0) { // Assuming 0 means not saved yet
                                         actor = actorService.save(actor);
-                                        logger.debug("Created new actor: {} {}", firstName, lastName);
                                     }
 
-                                    // Add actor to movie's actor list
-                                    if (!movieActors.contains(actor)) {
-                                        movieActors.add(actor);
-                                        actorService.save(actor);
-                                        logger.debug("Added actor {} to movie {}", actor.getFullName(), title);
-                                    }
+                                    actors.add(actor);
                                 }
                             }
-                            
+
                             // Set the actors to the movie and save it
-                            if (!movieActors.isEmpty()) {
-                                movie.setActors(movieActors);
+                            if (!actors.isEmpty()) {
+                                movie.setActors(actors);
                                 movie = movieService.save(movie);
-                                logger.debug("Saved movie with {} actors: {}", movieActors.size(), movie.getTitle());
+                                logger.debug("Saved movie with {} actors: {}", actors.size(), movie.getTitle());
                             }
 
                             // Set genres with improved handling
@@ -299,14 +294,13 @@ public class MovieDataLoader extends BaseDataLoader {
                                 }
                             }
 
-
                             // Set director with improved error handling
                             if (!directorName.trim().isEmpty()) {
                                 try {
-                                    // Split director name into first and last name
-                                    String[] nameParts = directorName.trim().split("\\s+", 2);
-                                    String firstName = nameParts[0];
-                                    String lastName = nameParts.length > 1 ? nameParts[1] : "";
+                                    // Split director name into first and last name (using unique variable name)
+                                    String[] dirNameParts = directorName.trim().split("\\s+", 2);
+                                    String directorFirstName = dirNameParts[0];
+                                    String directorLastName = dirNameParts.length > 1 ? dirNameParts[1] : "";
 
                                     // Try to find existing director by name
                                     List<Director> directorOpt = (List<Director>) directorService.findByName(directorName);
@@ -315,14 +309,20 @@ public class MovieDataLoader extends BaseDataLoader {
                                         movie.setDirector(String.valueOf(directorOpt.getLast()));
                                     } else {
                                         // Create new director if not found
-                                        Director newDirector = new Director(firstName, lastName, birthDate, gender,Ethnicity);
-                                        newDirector.setFirstName(firstName);
-                                        if (!lastName.isEmpty()) {
-                                            newDirector.setLastName(lastName);
+                                        Director newDirector = Director.getInstance(
+                                            directorFirstName,
+                                            directorLastName,
+                                            null, // birth date unknown
+                                            '?',  // gender unknown
+                                            Ethnicity.UNKNOWN
+                                        );
+                                        newDirector.setFirstName(directorFirstName);
+                                        if (!directorLastName.isEmpty()) {
+                                            newDirector.setLastName(directorLastName);
                                         }
                                         newDirector = directorService.save(newDirector);
                                         movie.setDirector(String.valueOf(newDirector));
-                                        logger.debug("Created new director: {} {}", firstName, lastName);
+                                        logger.debug("Created new director: {} {}", directorFirstName, directorLastName);
                                     }
                                 } catch (Exception e) {
                                     logger.warn("Error setting director '{}' at line {}: {}",
@@ -336,26 +336,32 @@ public class MovieDataLoader extends BaseDataLoader {
                                 if (actorName != null && !actorName.trim().isEmpty()) {
                                     try {
                                         // Split actor name into first and last name
-                                        String[] nameParts = actorName.trim().split("\\s+", 2);
-                                        String firstName = nameParts[0];
-                                        String lastName = nameParts.length > 1 ? nameParts[1] : "";
+                                        String[] newActorNameParts = actorName.trim().split("\\s+", 2);
+                                        String newActorFirstName = newActorNameParts[0];
+                                        String newActorLastName = newActorNameParts.length > 1 ? newActorNameParts[1] : "";
 
                                         // Try to find existing actor by name
-                                        Optional<Actor> actorOpt = actorService.findByFullName(firstName, lastName);
+                                        Optional<Actor> actorOpt = actorService.findByFullName(newActorFirstName, newActorLastName);
 
                                         if (actorOpt.isPresent()) {
                                             movie.addActor(actorOpt.get());
                                         } else {
                                             // Create new actor if not found
-                                            Actor newActor = new Actor(firstName, lastName, birthDate, gender, ethnicity);
-                                            newActor.setFirstName(firstName);
-                                            if (!lastName.isEmpty()) {
-                                                newActor.setLastName(lastName);
+                                            Actor newActor = Actor.getInstance(
+                                                newActorFirstName,
+                                                newActorLastName,
+                                                null, // birth date unknown
+                                                '?',  // gender unknown
+                                                Ethnicity.UNKNOWN
+                                            );
+                                            newActor.setFirstName(newActorFirstName);
+                                            if (!newActorLastName.isEmpty()) {
+                                                newActor.setLastName(newActorLastName);
                                             }
                                             // save actor
                                             newActor = actorService.save(newActor);
                                             movie.addActor(newActor);
-                                            logger.debug("Created new actor: {} {}", firstName, lastName);
+                                            logger.debug("Created new actor: {} {}", newActorFirstName, newActorLastName);
                                         }
                                     } catch (Exception e) {
                                         logger.warn("Error processing actor '{}' at line {}: {}",

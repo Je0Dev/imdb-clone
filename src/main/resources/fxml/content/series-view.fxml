@@ -75,6 +75,26 @@
                                 text="Manage series, seasons, and episodes"/>
                     </tooltip>
                 </Button>
+
+                <Button onAction="#handleRefresh"
+                        style="-fx-background-color: #9C27B0; -fx-text-fill: #FFFFFF; -fx-font-weight: bolder; -fx-font-size: 14; -fx-padding: 10 20; -fx-background-radius: 4; -fx-cursor: hand; -fx-effect: dropshadow(gaussian, rgba(156,39,176,0.5), 5, 0, 0, 2);"
+                        text="REFRESH">
+                    <tooltip>
+                        <Tooltip
+                                style="-fx-background-color: #1E1E1E; -fx-text-fill: #FFFFFF; -fx-font-size: 12; -fx-padding: 8 12; -fx-background-radius: 4; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.5), 5, 0, 0, 2);"
+                                text="Refresh series list"/>
+                    </tooltip>
+                </Button>
+                
+                <Button onAction="#showAdvancedSearchDialog"
+                        style="-fx-background-color: #FF9800; -fx-text-fill: #000000; -fx-font-weight: bolder; -fx-font-size: 14; -fx-padding: 10 20; -fx-background-radius: 4; -fx-cursor: hand; -fx-effect: dropshadow(gaussian, rgba(255,152,0,0.5), 5, 0, 0, 2);"
+                        text="ADVANCED SEARCH">
+                    <tooltip>
+                        <Tooltip
+                                style="-fx-background-color: #1E1E1E; -fx-text-fill: #FFFFFF; -fx-font-size: 12; -fx-padding: 8 12; -fx-background-radius: 4; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.5), 5, 0, 0, 2);"
+                                text="Open advanced search with multiple filters"/>
+                    </tooltip>
+                </Button>
             </HBox>
         </VBox>
     </top>

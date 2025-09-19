@@ -22,9 +22,7 @@ public class CelebrityService<T extends Celebrity> {
     private static final Logger logger = LoggerFactory.getLogger(CelebrityService.class);
 
     private final List<T> celebrities = new CopyOnWriteArrayList<>();
-
-    private final AtomicInteger nextId = new AtomicInteger(1);
-
+    private final CelebrityManager celebrityManager = CelebrityManager.getInstance();
     private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
     private final Class<T> celebrityType;
 
@@ -57,6 +55,34 @@ public class CelebrityService<T extends Celebrity> {
     }
 
     /**
+     * Finds a celebrity by their ID.
+     *
+     * @param id The ID of the celebrity to find
+     * @return Optional containing the celebrity if found
+     */
+    public Optional<T> findById(int id) {
+        lock.readLock().lock();
+        try {
+            // First try to find in our local list
+            Optional<T> localCelebrity = celebrities.stream()
+                    .filter(celebrity -> celebrity.getId() == id)
+                    .findFirst();
+                    
+            // If not found locally, check with CelebrityManager
+            if (localCelebrity.isEmpty()) {
+                Optional<Celebrity> celeb = celebrityManager.findById(id);
+                if (celeb.isPresent() && celebrityType.isInstance(celeb.get())) {
+                    return Optional.of(celebrityType.cast(celeb.get()));
+                }
+            }
+            
+            return localCelebrity;
+        } finally {
+            lock.readLock().unlock();
+        }
+    }
+
+    /**
      * Saves a celebrity (creates or updates).
      *
      * @param celebrity The celebrity to save
@@ -69,28 +95,32 @@ public class CelebrityService<T extends Celebrity> {
 
         lock.writeLock().lock();
         try {
-            if (celebrity.getId() == 0) {
-                // New celebrity
-                celebrity.setId(nextId.getAndIncrement());
-                celebrities.add(celebrity);
-                logger.info("Created new {}: {}", celebrityType.getSimpleName(), celebrity.getFullName());
-            } else {
-                // Update existing
-                int index = -1;
-                for (int i = 0; i < celebrities.size(); i++) {
-                    if (celebrities.get(i).getId() == celebrity.getId()) {
-                        index = i;
-                        break;
-                    }
-                }
-
-                if (index != -1) {
-                    celebrities.set(index, celebrity);
-                    logger.info("Updated {}: {}", celebrityType.getSimpleName(), celebrity.getFullName());
-                } else {
-                    throw new EntityNotFoundException(celebrityType, celebrity.getId());
+            // Let CelebrityManager handle the ID assignment and duplicate checking
+            celebrityManager.addCelebrity(celebrity);
+            
+            // Check if this is a new celebrity or an update
+            boolean isNew = true;
+            int index = -1;
+            
+            for (int i = 0; i < celebrities.size(); i++) {
+                if (celebrities.get(i).getId() == celebrity.getId()) {
+                    isNew = false;
+                    index = i;
+                    break;
                 }
             }
+            
+            if (isNew) {
+                celebrities.add(celebrity);
+                logger.info("Created new {}: {}", celebrityType.getSimpleName(), celebrity.getFullName());
+            } else if (index != -1) {
+                celebrities.set(index, celebrity);
+                logger.info("Updated {}: {}", celebrityType.getSimpleName(), celebrity.getFullName());
+            } else {
+                // This should not happen as CelebrityManager should have handled it
+                throw new IllegalStateException("Failed to add or update celebrity: " + celebrity.getFullName());
+            }
+            
             return celebrity;
         } finally {
             lock.writeLock().unlock();
@@ -130,10 +160,25 @@ public class CelebrityService<T extends Celebrity> {
      *
      * @return List of all celebrities
      */
+    public List<T> findAll() {
+        lock.readLock().lock();
+        try {
+            // Return a defensive copy of our local list
+            return new java.util.ArrayList<>(celebrities);
+        } finally {
+            lock.readLock().unlock();
+        }
+    }
+
+    /**
+     * Gets all celebrities of this service's type.
+     *
+     * @return List of all celebrities
+     */
     public List<T> getAll() {
         lock.readLock().lock();
         try {
-            return List.copyOf(celebrities);
+            return new java.util.ArrayList<>(celebrities);
         } finally {
             lock.readLock().unlock();
         }

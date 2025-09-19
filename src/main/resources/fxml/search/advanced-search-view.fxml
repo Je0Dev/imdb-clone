@@ -8,7 +8,6 @@
 
 <BorderPane prefHeight="800" prefWidth="1200" style="-fx-background-color: #0a0a0a;" xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1"
             fx:controller="com.papel.imdb_clone.controllers.search.AdvancedSearchController">
-
     <top>
         <VBox spacing="15.0" style="-fx-padding: 20;" VBox.vgrow="NEVER">
             <HBox alignment="CENTER_LEFT" spacing="15">

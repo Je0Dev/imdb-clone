@@ -19,6 +19,19 @@ public interface SeriesRepository {
     Optional<Series> findById(int id);
 
     /**
+     * Finds a series by its title.
+     * @param title The title of the series to search for
+     * @return An Optional containing the series if found, empty otherwise
+     */
+    Optional<Series> findByTitle(String title);
+
+    /**
+     * Returns all series in the repository.
+     * @return A list of all series
+     */
+    List<Series> findAll();
+
+    /**
      * Saves a series (create or update).
      *
      * @param series The series to save

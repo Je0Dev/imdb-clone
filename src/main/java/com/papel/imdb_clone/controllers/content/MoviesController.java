@@ -1,6 +1,8 @@
 package com.papel.imdb_clone.controllers.content;
 
 import com.papel.imdb_clone.controllers.base.BaseController;
+import com.papel.imdb_clone.enums.Genre;
+import com.papel.imdb_clone.model.people.Actor;
 import com.papel.imdb_clone.service.content.MoviesService;
 import com.papel.imdb_clone.service.navigation.NavigationService;
 import com.papel.imdb_clone.util.UIUtils;
@@ -14,10 +16,13 @@ import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
+import javafx.scene.Node;
 import javafx.scene.control.*;
 import javafx.scene.layout.GridPane;
-
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
+import javafx.util.Pair;
 
 import java.net.URL;
 import java.util.*;
@@ -75,25 +80,25 @@ public class MoviesController extends BaseController implements Initializable {
         try {
             // Initialize movies service
             this.moviesService = MoviesService.getInstance();
-            
+
             // Set up the table columns first
             setupTableColumns();
-            
+
             // Bind the table to the filtered movies list
             movieTable.setItems(filteredMovies);
-            
+
             // Set up selection listener before loading data
             movieTable.getSelectionModel().selectedItemProperty().addListener(
                 (obs, oldSelection, newSelection) -> selectedMovie.set(newSelection)
             );
-            
+
             // Set up search and sort handlers
             setupSearchHandlers();
             setupSortHandlers();
-            
+
             // Load data last, after UI is fully set up
             loadMovies();
-            
+
         } catch (Exception e) {
             logger.error("Error initializing MoviesController", e);
             showError("Initialization Error", "Failed to initialize movie controller: " + e.getMessage());
@@ -121,10 +126,15 @@ public class MoviesController extends BaseController implements Initializable {
             }
         });
 
-        // Set up year column
+        // Set up year column to show only the year part
         movieYearColumn.setCellValueFactory(cellData -> {
             Movie movie = cellData.getValue();
-            return new SimpleStringProperty(movie != null ? String.valueOf(movie.getYear()) : "");
+            if (movie != null && movie.getYear() != null) {
+                Calendar cal = Calendar.getInstance();
+                cal.setTime(movie.getYear());
+                return new SimpleStringProperty(String.valueOf(cal.get(Calendar.YEAR)));
+            }
+            return new SimpleStringProperty("");
         });
         movieYearColumn.setCellFactory(col -> new TableCell<Movie, String>() {
             @Override
@@ -182,20 +192,26 @@ public class MoviesController extends BaseController implements Initializable {
             if (movie == null || movie.getActors() == null || movie.getActors().isEmpty()) {
                 return new SimpleStringProperty("No cast information available");
             }
-            // Get up to 3 main actors/actresses
-            String actors = movie.getActors().stream()
-                    .limit(3) // Show only first 3 actors
+            
+            // Sort actors by importance (e.g., by role or billing order if available)
+            List<Actor> sortedActors = new ArrayList<>(movie.getActors());
+            
+            // Show at least 3 actors if available, or all if less than 3
+            int maxActorsToShow = Math.min(sortedActors.size(), 5); // Show up to 5 actors
+            
+            String actors = sortedActors.stream()
+                    .limit(maxActorsToShow)
                     .map(actor -> {
-                        String role = actor.getRole() != null && !actor.getRole().isEmpty() 
-                                ? " (" + actor.getRole() + ")" 
+                        String role = (actor.getRole() != null && !actor.getRole().trim().isEmpty())
+                                ? " (" + actor.getRole().trim() + ")"
                                 : "";
-                        return actor.getFullName() + role;
+                        return "• " + actor.getFullName() + role;
                     })
                     .collect(Collectors.joining("\n"));
-            
-            // Add "and X more..." if there are more than 3 actors
-            if (movie.getActors().size() > 3) {
-                actors += "\nand " + (movie.getActors().size() - 3) + " more...";
+
+            // Add "and X more..." if there are more actors than shown
+            if (sortedActors.size() > maxActorsToShow) {
+                actors += "\nand " + (sortedActors.size() - maxActorsToShow) + " more...";
             }
             
             return new SimpleStringProperty(actors);
@@ -248,10 +264,10 @@ public class MoviesController extends BaseController implements Initializable {
             "Rating (High to Low)",
             "Rating (Low to High)"
         );
-        
+
         // Set default sort option
         movieSortBy.getSelectionModel().selectFirst();
-        
+
         // Add listener for sort selection changes
         movieSortBy.getSelectionModel().selectedItemProperty().addListener((obs, oldVal, newVal) -> {
             if (newVal != null) {
@@ -262,7 +278,7 @@ public class MoviesController extends BaseController implements Initializable {
     private void loadMovies() {
         if (moviesService == null) {
             logger.error("ContentService is not initialized");
-            Platform.runLater(() -> 
+            Platform.runLater(() ->
                 statusLabel.setText("Error: Content service not initialized")
             );
             return;
@@ -270,53 +286,101 @@ public class MoviesController extends BaseController implements Initializable {
 
         logger.info("Starting to load movies...");
         logger.debug("ContentService type: {}", moviesService.getContentType());
-        
+
         try {
             List<Movie> movies = moviesService.getAll();
             logger.info("Retrieved {} movies from service", movies.size());
-            
+
             if (movies.isEmpty()) {
                 logger.warn("No movies found in the database");
-                Platform.runLater(() -> 
+                Platform.runLater(() ->
                     statusLabel.setText("No movies found")
                 );
                 return;
             }
-            
+
             // Log first few movies for debugging
             int logCount = Math.min(3, movies.size());
             for (int i = 0; i < logCount; i++) {
                 Movie movie = movies.get(i);
-                logger.debug("Movie #{}: {} ({}), Genres: {}, Director: {}", 
-                    i + 1, 
-                    movie.getTitle(), 
+                logger.debug("Movie #{}: {} ({}), Genres: {}, Director: {}",
+                    i + 1,
+                    movie.getTitle(),
                     movie.getYear(),
                     movie.getGenres().stream().map(Enum::name).collect(Collectors.joining(", ")),
                     movie.getDirector()
                 );
             }
-            
+
             Platform.runLater(() -> {
                 try {
+                    // Clear existing data
                     allMovies.clear();
-                    allMovies.addAll(movies);
-                    logger.info("Added {} movies to allMovies list", movies.size());
                     
-                    // Refresh the table
-                    movieTable.getItems().clear();
-                    movieTable.getItems().addAll(movies);
-                    statusLabel.setText(String.format("Loaded %d movies", movies.size()));
+                    // Use a Set to filter out duplicates based on title, year, and director
+                    Set<String> uniqueMovieKeys = new HashSet<>();
+                    List<Movie> uniqueMovies = new ArrayList<>();
                     
+                    for (Movie movie : movies) {
+                        // Create a more specific key using title, year, and director
+                        String director = movie.getDirector() != null ? movie.getDirector().toLowerCase() : "unknown";
+                        String key = String.format("%s_%d_%s", 
+                            movie.getTitle().toLowerCase().trim(),
+                            movie.getYear().getYear() + 1900,
+                            director
+                        );
+                        
+                        if (uniqueMovieKeys.add(key)) { // add returns true if the key was not already in the set
+                            uniqueMovies.add(movie);
+                            logger.trace("Added movie: {} ({}), Director: {}", 
+                                movie.getTitle(), 
+                                movie.getYear().getYear() + 1900,
+                                director);
+                        } else {
+                            logger.debug("Skipping duplicate movie: {} ({}), Director: {}", 
+                                movie.getTitle(), 
+                                movie.getYear().getYear() + 1900,
+                                director);
+                            
+                            // Log more details about the duplicate for debugging
+                            Movie existing = uniqueMovies.stream()
+                                .filter(m -> {
+                                    String existingKey = String.format("%s_%d_%s", 
+                                        m.getTitle().toLowerCase().trim(),
+                                        m.getYear().getYear() + 1900,
+                                        m.getDirector() != null ? m.getDirector().toLowerCase() : "unknown"
+                                    );
+                                    return existingKey.equals(key);
+                                })
+                                .findFirst()
+                                .orElse(null);
+                                
+                            if (existing != null) {
+                                logger.debug("Existing movie with same key - ID: {}, Title: {}", 
+                                    existing.getId(), existing.getTitle());
+                            }
+                        }
+                    }
+                    
+                    // Add only unique movies to the observable list
+                    allMovies.addAll(uniqueMovies);
+                    logger.info("Added {} unique movies to allMovies list ({} duplicates filtered out)", 
+                              uniqueMovies.size(), movies.size() - uniqueMovies.size());
+
+                    // Refresh the table with filtered list
+                    movieTable.getItems().setAll(uniqueMovies);
+                    statusLabel.setText(String.format("Loaded %d unique movies", uniqueMovies.size()));
+
                     // Apply any existing filters
                     filterMovies();
-                    
+
                     statusLabel.setText(String.format("Loaded %d movies", movies.size()));
                     logger.info("Successfully loaded and displayed {} movies", movies.size());
-                    
+
                     // Debug: Log table columns and items
                     logger.debug("Table columns: {}", movieTable.getColumns());
                     logger.debug("Table items count: {}", movieTable.getItems().size());
-                    
+
                 } catch (Exception e) {
                     logger.error("Error in Platform.runLater", e);
                     showError("Error", "Failed to update UI: " + e.getMessage());
@@ -324,7 +388,7 @@ public class MoviesController extends BaseController implements Initializable {
             });
         } catch (Exception e) {
             logger.error("Error loading movies", e);
-            Platform.runLater(() -> 
+            Platform.runLater(() ->
                 showError("Error", "Failed to load movies: " + e.getMessage())
             );
         }
@@ -361,36 +425,43 @@ public class MoviesController extends BaseController implements Initializable {
     }
 
     private void sortMovieTable(String sortOption) {
-        // Implementation of sorting logic
-
-    }
-
-    @FXML
-    private void handleAddMovie(ActionEvent event) {
-        try {
-            // Create a new movie with default values
-            Movie newMovie = new Movie("New Movie", Calendar.getInstance().get(Calendar.YEAR), 
-                "ACTION", "Unknown", new HashMap<>(), 0.0);
-            
-            // Show the edit dialog for the new movie
-            if (showMovieEditDialog(newMovie)) {
-                // Save the new movie
-                moviesService.save(newMovie);
-                loadMovies();
-                showSuccess("Success", "Movie added successfully!");
-            }
-        } catch (Exception e) {
-            logger.error("Error adding movie", e);
-            showError("Error", "Failed to add movie: " + e.getMessage());
+        switch (sortOption) {
+            case "Title":
+                allMovies.sort(Comparator.comparing(Movie::getTitle));
+                break;
+            case "Director":
+                allMovies.sort(Comparator.comparing(Movie::getDirector));
+                break;
+            case "Year":
+                allMovies.sort(Comparator.comparing(Movie::getYear));
+                break;
+            case "Genre":
+                allMovies.sort((m1, m2) -> {
+                    // Get the first genre's name for each movie, or empty string if no genres
+                    String genre1 = m1.getGenres().isEmpty() ? "" : m1.getGenres().getFirst().name();
+                    String genre2 = m2.getGenres().isEmpty() ? "" : m2.getGenres().getFirst().name();
+                    return genre1.compareTo(genre2);
+                });
+                break;
+            default:
         }
     }
 
-    //implement this feature maybe
     @FXML
     private void handleEditMovie(ActionEvent event) {
         Movie selected = movieTable.getSelectionModel().getSelectedItem();
         if (selected != null) {
-            showMovieEditDialog(selected);
+            if (showMovieEditDialog(selected)) {
+                try {
+                    // Save changes if user clicked OK
+                    moviesService.save(selected);
+                    loadMovies(); // Refresh the table
+                    showSuccess("Success", "Movie updated successfully!");
+                } catch (Exception e) {
+                    logger.error("Error saving movie", e);
+                    showError("Error", "Failed to save movie: " + e.getMessage());
+                }
+            }
         } else {
             showAlert("No Selection", "Please select a movie to edit.");
         }
@@ -423,6 +494,82 @@ public class MoviesController extends BaseController implements Initializable {
             showAlert("No Selection", "Please select a movie to rate.");
         }
     }
+    
+    /**
+     * Handles the refresh button action to reload all movies.
+     */
+
+    @FXML
+    private void handleManageMovie(ActionEvent event) {
+        try {
+            Movie selectedMovie = movieTable.getSelectionModel().getSelectedItem();
+            if (selectedMovie != null) {
+                showMovieManagementDialog(selectedMovie);
+            } else {
+                showAlert("No Selection", "Please select a movie to manage.");
+            }
+        } catch (Exception e) {
+            logger.error("Error in handleManageMovie: {}", e.getMessage(), e);
+            showError("Error", "Failed to manage movie: " + e.getMessage());
+        }
+    }
+    
+    /**
+     * Handles the "Add Movie" button click.
+     * Creates a new movie and opens the edit dialog for it.
+     * @param event The action event
+     */
+    @FXML
+    private void handleAddMovie(ActionEvent event) {
+        try {
+            // Create a new movie with default values
+            Calendar cal = Calendar.getInstance();
+            cal.set(Calendar.YEAR, 2023); // Default to current year
+            Date defaultDate = cal.getTime();
+            
+            // Create a new movie with default values
+            Movie newMovie = new Movie("New Movie", defaultDate, 
+                new ArrayList<>(Collections.singletonList(Genre.DRAMA)),
+                0.0, "Unknown Director", new ArrayList<>());
+            
+            // Show the edit dialog for the new movie
+            if (showMovieEditDialog(newMovie)) {
+                // Save the new movie
+                moviesService.save(newMovie);
+                
+                // Refresh the movie list
+                loadMovies();
+                
+                // Show success message
+                statusLabel.setText("Movie added successfully!");
+                
+                // Clear the status message after 3 seconds
+                new java.util.Timer().schedule(
+                    new java.util.TimerTask() {
+                        @Override
+                        public void run() {
+                            Platform.runLater(() -> statusLabel.setText(""));
+                        }
+                    },
+                    3000
+                );
+            }
+        } catch (Exception e) {
+            logger.error("Error adding new movie: {}", e.getMessage(), e);
+            showError("Add Movie Error", "Failed to add new movie: " + e.getMessage());
+        }
+    }
+    
+    private void showMovieManagementDialog(Movie movie) {
+        try {
+            showMovieEditDialog(movie);
+            loadMovies();
+            showSuccess("Success", "Movie managed successfully!");
+        } catch (Exception e) {
+            logger.error("Error in showMovieManagementDialog: {}", e.getMessage(), e);
+            showError("Error", "Failed to show movie management dialog: " + e.getMessage());
+        }
+    }
 
     private boolean showMovieEditDialog(Movie movie) {
         try {
@@ -430,22 +577,22 @@ public class MoviesController extends BaseController implements Initializable {
             Dialog<ButtonType> dialog = new Dialog<>();
             dialog.setTitle("New Movie".equals(movie.getTitle()) ? "Add New Movie" : "Edit Movie");
             dialog.setHeaderText("Enter movie details:");
-            
+
             // Set the button types
             ButtonType saveButtonType = new ButtonType("Save", ButtonBar.ButtonData.OK_DONE);
             dialog.getDialogPane().getButtonTypes().addAll(saveButtonType, ButtonType.CANCEL);
-            
+
             // Create the form grid
             GridPane grid = new GridPane();
             grid.setHgap(10);
             grid.setVgap(10);
             grid.setPadding(new Insets(20, 150, 10, 10));
-            
+
             // Create form fields
             TextField titleField = new TextField(movie.getTitle());
             TextField yearField = new TextField(String.valueOf(Calendar.getInstance().get(Calendar.YEAR)));
             TextField directorField = new TextField(movie.getDirector() != null ? movie.getDirector() : "");
-            
+
             // Add fields to grid
             grid.add(new Label("Title:"), 0, 0);
             grid.add(titleField, 1, 0);
@@ -453,16 +600,16 @@ public class MoviesController extends BaseController implements Initializable {
             grid.add(yearField, 1, 1);
             grid.add(new Label("Director:"), 0, 2);
             grid.add(directorField, 1, 2);
-            
+
             // Add the form to the dialog
             dialog.getDialogPane().setContent(grid);
-            
+
             // Request focus on the title field by default
             Platform.runLater(titleField::requestFocus);
-            
+
             // Convert the result to a response
             Optional<ButtonType> result = dialog.showAndWait();
-            
+
             if (result.isPresent() && result.get() == saveButtonType) {
                 // Update the movie with the form data
                 movie.setTitle(titleField.getText().trim());
@@ -487,6 +634,355 @@ public class MoviesController extends BaseController implements Initializable {
     }
 
     private void showRatingDialog(Movie movie) {
-        // Implementation of rating dialog
+        try {
+            // Create a custom dialog
+            Dialog<Pair<Double, String>> dialog = new Dialog<>();
+            dialog.setTitle("Rate Movie");
+            dialog.setHeaderText("Rate " + movie.getTitle());
+
+            // Set the button types
+            ButtonType rateButtonType = new ButtonType("Rate", ButtonBar.ButtonData.OK_DONE);
+            dialog.getDialogPane().getButtonTypes().addAll(rateButtonType, ButtonType.CANCEL);
+
+            // Create the rating components
+            GridPane grid = new GridPane();
+            grid.setHgap(10);
+            grid.setVgap(10);
+            grid.setPadding(new Insets(20, 150, 10, 10));
+
+            Slider ratingSlider = new Slider(1, 10, 5);
+            ratingSlider.setShowTickMarks(true);
+            ratingSlider.setShowTickLabels(true);
+            ratingSlider.setMajorTickUnit(1);
+            ratingSlider.setMinorTickCount(0);
+            ratingSlider.setSnapToTicks(true);
+            ratingSlider.setBlockIncrement(1);
+
+            Label ratingValue = new Label("5.0");
+            Label ratingLabel = new Label("Rating (1-10):");
+
+            TextArea commentArea = new TextArea();
+            commentArea.setPromptText("Optional comment...");
+            commentArea.setWrapText(true);
+            commentArea.setPrefRowCount(3);
+
+            // Update the rating value label when slider changes
+            ratingSlider.valueProperty().addListener((obs, oldVal, newVal) -> {
+                ratingValue.setText(String.format("%.1f", newVal));
+            });
+
+            grid.add(ratingLabel, 0, 0);
+            grid.add(ratingSlider, 1, 0);
+            grid.add(ratingValue, 2, 0);
+            grid.add(new Label("Comment:"), 0, 1);
+            grid.add(commentArea, 1, 2, 2, 1);
+
+            // Enable/Disable login button depending on whether a rating was entered
+            Node rateButton = dialog.getDialogPane().lookupButton(rateButtonType);
+            rateButton.setDisable(false);
+
+            dialog.getDialogPane().setContent(grid);
+
+            // Request focus on the slider by default
+            Platform.runLater(ratingSlider::requestFocus);
+
+            // Convert the result to a rating-comment pair when the login button is clicked
+            dialog.setResultConverter(dialogButton -> {
+                if (dialogButton == rateButtonType) {
+                    return new Pair<>(ratingSlider.getValue(), commentArea.getText());
+                }
+                return null;
+            });
+
+            Optional<Pair<Double, String>> result = dialog.showAndWait();
+
+            result.ifPresent(ratingComment -> {
+                double rating = ratingComment.getKey();
+                String comment = ratingComment.getValue();
+
+                // Here you would typically save the rating to your data model
+                // For example: movie.addRating(rating, comment);
+                // And then update the movie in your service
+                // moviesService.update(movie);
+
+                // For now, we'll just show a confirmation
+                showSuccess("Rating Submitted",
+                    String.format("You rated %s with %.1f stars!",
+                    movie.getTitle(), rating) +
+                    (comment.isEmpty() ? "" : "\n\nComment: " + comment));
+
+                // Refresh the movie list to show the updated rating
+                loadMovies();
+            });
+        } catch (Exception e) {
+            logger.error("Error showing rating dialog", e);
+            showError("Error", "Failed to show rating dialog: " + e.getMessage());
+        }
+    }
+
+    public void handleRefresh(ActionEvent actionEvent) {
+        try {
+            logger.info("Refreshing movies...");
+            loadMovies();
+            showSuccess("Success", "Movies refreshed successfully.");
+        } catch (Exception e) {
+            logger.error("Error refreshing movies", e);
+            showError("Error", "Failed to refresh movies: " + e.getMessage());
+        }
+    }
+    
+    @FXML
+    private void showAdvancedSearchDialog(ActionEvent event) {
+        // Create a custom dialog
+        Dialog<Map<String, Object>> dialog = new Dialog<>();
+        dialog.setTitle("Advanced Search");
+        dialog.setHeaderText("Enter your search criteria");
+
+        // Set the button types
+        ButtonType searchButtonType = new ButtonType("Search", ButtonBar.ButtonData.OK_DONE);
+        dialog.getDialogPane().getButtonTypes().addAll(searchButtonType, ButtonType.CANCEL);
+
+        // Create the search criteria form
+        GridPane grid = new GridPane();
+        grid.setHgap(10);
+        grid.setVgap(10);
+        grid.setPadding(new Insets(20, 150, 10, 10));
+
+        TextField titleField = new TextField();
+        titleField.setPromptText("Title");
+        TextField directorField = new TextField();
+        directorField.setPromptText("Director");
+        TextField yearFromField = new TextField();
+        yearFromField.setPromptText("From Year");
+        TextField yearToField = new TextField();
+        yearToField.setPromptText("To Year");
+
+        // Add sort options
+        ComboBox<String> sortByCombo = new ComboBox<>();
+        sortByCombo.getItems().addAll("Title (A-Z)", "Title (Z-A)", "Year (Newest)", "Year (Oldest)", "Rating (High-Low)", "Rating (Low-High)");
+        sortByCombo.setPromptText("Sort by...");
+
+        // Add genre checkboxes
+        VBox genreBox = new VBox(5);
+        genreBox.setPadding(new Insets(5));
+        ScrollPane genreScrollPane = new ScrollPane(genreBox);
+        genreScrollPane.setPrefHeight(150);
+        genreScrollPane.setFitToWidth(true);
+        
+        // Create checkboxes for each genre with a select all option
+        Map<CheckBox, Genre> genreMap = new HashMap<>();
+        
+        // Add select all checkbox
+        CheckBox selectAll = new CheckBox("Select All Genres");
+        selectAll.setSelected(true);
+        selectAll.selectedProperty().addListener((obs, wasSelected, isSelected) -> {
+            genreMap.keySet().forEach(cb -> cb.setSelected(isSelected));
+        });
+        genreBox.getChildren().add(selectAll);
+        
+        // Add genre checkboxes
+        for (Genre genre : Genre.values()) {
+            CheckBox checkBox = new CheckBox(genre.name());
+            checkBox.setSelected(true);
+            genreMap.put(checkBox, genre);
+            genreBox.getChildren().add(checkBox);
+        }
+
+        // Add components to grid
+        int row = 0;
+        grid.add(new Label("Title:"), 0, row);
+        grid.add(titleField, 1, row++);
+        grid.add(new Label("Director:"), 0, row);
+        grid.add(directorField, 1, row++);
+        grid.add(new Label("Year Range:"), 0, row);
+        HBox yearBox = new HBox(5);
+        yearBox.getChildren().addAll(yearFromField, new Label("to"), yearToField);
+        grid.add(yearBox, 1, row++);
+        
+        // Add sort option
+        grid.add(new Label("Sort By:"), 0, row);
+        grid.add(sortByCombo, 1, row++);
+        
+        grid.add(new Label("Genres:"), 0, row);
+        grid.add(genreScrollPane, 1, row++);
+        
+        // Add some padding
+        grid.setPadding(new Insets(15));
+
+        // Set the dialog content
+        dialog.getDialogPane().setContent(grid);
+
+        // Request focus on the title field by default
+        Platform.runLater(titleField::requestFocus);
+
+        // Convert the result to a map of search criteria when the search button is clicked
+        dialog.setResultConverter(dialogButton -> {
+            if (dialogButton == searchButtonType) {
+                Map<String, Object> searchCriteria = new HashMap<>();
+                if (!titleField.getText().isEmpty()) searchCriteria.put("title", titleField.getText().trim());
+                if (!directorField.getText().isEmpty()) searchCriteria.put("director", directorField.getText().trim());
+                
+                // Add sort option
+                if (sortByCombo.getValue() != null) {
+                    searchCriteria.put("sortBy", sortByCombo.getValue());
+                }
+                
+                // Get selected genres (only if not all are selected)
+                List<Genre> selectedGenres = genreMap.entrySet().stream()
+                    .filter(entry -> entry.getKey().isSelected())
+                    .map(Map.Entry::getValue)
+                    .collect(Collectors.toList());
+                
+                // Only add genres filter if not all genres are selected
+                if (!selectedGenres.isEmpty() && selectedGenres.size() < genreMap.size()) {
+                    searchCriteria.put("genres", selectedGenres);
+                }
+                
+                // Add year range if provided
+                if (!yearFromField.getText().trim().isEmpty()) {
+                    try {
+                        searchCriteria.put("yearFrom", Integer.parseInt(yearFromField.getText().trim()));
+                    } catch (NumberFormatException e) {
+                        // Handle invalid year format
+                        showError("Invalid Year", "Please enter a valid year number");
+                        return null;
+                    }
+                }
+                if (!yearToField.getText().trim().isEmpty()) {
+                    try {
+                        searchCriteria.put("yearTo", Integer.parseInt(yearToField.getText().trim()));
+                    } catch (NumberFormatException e) {
+                        // Handle invalid year format
+                        showError("Invalid Year", "Please enter a valid year number");
+                        return null;
+                    }
+                }
+                
+                return searchCriteria;
+            }
+            return null;
+        });
+        
+        // Show the dialog and process the results
+        Optional<Map<String, Object>> result = dialog.showAndWait();
+        
+        result.ifPresent(searchCriteria -> {
+            try {
+                // Apply the search criteria to filter movies
+                Set<String> uniqueKeys = new HashSet<>();
+                List<Movie> filteredMovies = allMovies.stream()
+                    .filter(movie -> {
+                        // Create a unique key for each movie (title + year)
+                        String uniqueKey = movie.getTitle().toLowerCase() + "_" + 
+                            (movie.getReleaseDate() != null ? 
+                                new java.text.SimpleDateFormat("yyyy").format(movie.getReleaseDate()) : "");
+                        
+                        // Skip if we've already seen this movie
+                        if (uniqueKeys.contains(uniqueKey)) {
+                            return false;
+                        }
+                        
+                        boolean matches = true;
+                        
+                        // Filter by title (case-insensitive partial match)
+                        if (searchCriteria.containsKey("title")) {
+                            String searchTitle = ((String) searchCriteria.get("title")).toLowerCase();
+                            matches = movie.getTitle().toLowerCase().contains(searchTitle);
+                            if (!matches) return false;
+                        }
+                        
+                        // Filter by director (case-insensitive partial match)
+                        if (searchCriteria.containsKey("director") && movie.getDirector() != null) {
+                            String searchDirector = ((String) searchCriteria.get("director")).toLowerCase();
+                            matches = movie.getDirector().toLowerCase().contains(searchDirector);
+                            if (!matches) return false;
+                        }
+                        
+                        // Filter by year range
+                        if (searchCriteria.containsKey("yearFrom")) {
+                            int yearFrom = (int) searchCriteria.get("yearFrom");
+                            Calendar cal = Calendar.getInstance();
+                            cal.setTime(movie.getReleaseDate());
+                            matches = cal.get(Calendar.YEAR) >= yearFrom;
+                            if (!matches) return false;
+                        }
+                        
+                        if (searchCriteria.containsKey("yearTo")) {
+                            int yearTo = (int) searchCriteria.get("yearTo");
+                            Calendar cal = Calendar.getInstance();
+                            cal.setTime(movie.getReleaseDate());
+                            matches = cal.get(Calendar.YEAR) <= yearTo;
+                            if (!matches) return false;
+                        }
+                        
+                        // Filter by genres (must match all selected genres)
+                        if (searchCriteria.containsKey("genres")) {
+                            @SuppressWarnings("unchecked")
+                            List<Genre> selectedGenres = (List<Genre>) searchCriteria.get("genres");
+                            matches = new HashSet<>(movie.getGenres()).containsAll(selectedGenres);
+                            if (!matches) return false;
+                        }
+                        
+                        // If we get here, the movie matches all criteria
+                        uniqueKeys.add(uniqueKey);
+                        return true;
+                    })
+                    .collect(Collectors.toList());
+                
+                // Apply sorting if specified
+                if (searchCriteria.containsKey("sortBy")) {
+                    String sortOption = (String) searchCriteria.get("sortBy");
+                    switch (sortOption) {
+                        case "Title (A-Z)":
+                            filteredMovies.sort(Comparator.comparing(Movie::getTitle, String.CASE_INSENSITIVE_ORDER));
+                            break;
+                        case "Title (Z-A)":
+                            filteredMovies.sort(Comparator.comparing(Movie::getTitle, String.CASE_INSENSITIVE_ORDER).reversed());
+                            break;
+                        case "Year (Newest)":
+                            filteredMovies.sort(Comparator.comparing(m -> m.getReleaseDate(), 
+                                Comparator.nullsLast(Comparator.reverseOrder())));
+                            break;
+                        case "Year (Oldest)":
+                            filteredMovies.sort(Comparator.comparing(m -> m.getReleaseDate(), 
+                                Comparator.nullsFirst(Comparator.naturalOrder())));
+                            break;
+                        case "Rating (High-Low)":
+                            filteredMovies.sort(Comparator.comparing(Movie::getRating, 
+                                Comparator.nullsLast(Comparator.reverseOrder())));
+                            break;
+                        case "Rating (Low-High)":
+                            filteredMovies.sort(Comparator.comparing(Movie::getRating, 
+                                Comparator.nullsLast(Comparator.naturalOrder())));
+                            break;
+                    }
+                }
+
+                // Update the UI with filtered and sorted results
+                Platform.runLater(() -> {
+                    allMovies.setAll(filteredMovies);
+                    filterMovies(); // Apply any additional filtering from the search bar
+                    statusLabel.setText(String.format("Found %d matching movie%s", 
+                        filteredMovies.size(), 
+                        filteredMovies.size() != 1 ? "s" : ""));
+                    
+                    if (filteredMovies.isEmpty()) {
+                        showInformation();
+                    }
+                });
+                
+            } catch (Exception e) {
+                logger.error("Error performing advanced search", e);
+                showError("Search Error", "An error occurred while performing the search: " + e.getMessage());
+            }
+        });
+    }
+
+    private void showInformation() {
+        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        alert.setTitle("No Results");
+        alert.setHeaderText(null);
+        alert.setContentText("No movies match your search criteria.");
+        alert.showAndWait();
     }
 }

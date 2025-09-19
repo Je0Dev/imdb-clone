@@ -1,40 +1,83 @@
 package com.papel.imdb_clone.model.people;
 
 import com.papel.imdb_clone.enums.Ethnicity;
+import com.papel.imdb_clone.service.people.CelebrityManager;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
- * Actor class extends Celebrity and adds ethnicity and notable works fields.
- *
+ * Represents an actor in the system.
+ * Extends Celebrity with actor-specific fields and functionality.
  */
 public class Actor extends Celebrity {
+    private static final CelebrityManager celebrityManager = CelebrityManager.getInstance();
+    
     private Ethnicity ethnicity;
     private String role; // Actor's role in a specific movie/show
+    private String notableWorks; // Backward-compatible storage of notable works
 
-    // Backward-compatible storage of the original race label used in older tests
-    private String notableWorks;
-
-    // Actor constructor
+    /**
+     * Protected constructor to enforce use of factory methods.
+     */
     public Actor(String firstName, String lastName, LocalDate birthDate, char gender, Ethnicity ethnicity) {
         super(firstName, lastName, birthDate, gender);
         this.ethnicity = ethnicity;
     }
 
-    // Backward-compatible constructor accepting a race/ethnicity label
-    public Actor(String firstName, String lastName, LocalDate birthDate, char gender, String raceLabel) {
-        super(firstName, lastName, birthDate, gender);
-        if (raceLabel != null && !raceLabel.isBlank()) {
+    /**
+     * Factory method to get or create an Actor instance.
+     * @param firstName First name of the actor
+     * @param lastName Last name of the actor
+     * @param birthDate Birth date (can be null)
+     * @param gender Gender (M/F/other)
+     * @return Existing or new Actor instance
+     */
+    public static Actor getInstance(String firstName, String lastName, LocalDate birthDate, char gender) {
+        return getInstance(firstName, lastName, birthDate, gender);
+    }
+    
+    /**
+     * Factory method with ethnicity.
+     */
+    public static Actor getInstance(String firstName, String lastName, LocalDate birthDate, 
+                                  char gender, Ethnicity ethnicity) {
+        if (firstName == null) firstName = "";
+        if (lastName == null) lastName = "";
+        
+        Actor temp = new Actor(firstName.trim(), lastName.trim(), birthDate, gender, ethnicity);
+        return getInstance(temp);
+    }
+    
+    /**
+     * Internal factory method that handles the actual instance creation/lookup.
+     */
+    private static Actor getInstance(Actor actor) {
+        return (Actor) celebrityManager.findCelebrity(actor).orElseGet(() -> {
+            celebrityManager.addCelebrity(actor);
+            return actor;
+        });
+    }
+
+    /**
+     * Backward-compatible factory method with race/ethnicity label.
+     */
+    public static Actor getInstance(String firstName, String lastName, LocalDate birthDate, 
+                                  char gender, String raceLabel) {
+        Actor actor = getInstance(firstName, lastName, birthDate, gender);
+        if (actor.ethnicity == null && raceLabel != null && !raceLabel.isBlank()) {
             try {
-                this.ethnicity = Ethnicity.fromLabel(raceLabel);
+                actor.setEthnicity(Ethnicity.fromLabel(raceLabel));
             } catch (IllegalArgumentException ex) {
-                this.ethnicity = null; // Unknown label; keep null to remain backward-compatible
+                // Keep existing ethnicity if any
             }
         }
+        return actor;
     }
 
     // getter for ethnicity
@@ -120,12 +163,18 @@ public class Actor extends Celebrity {
     }
 
 
-    // getter for notable works
+    /**
+     * Gets the list of notable works.
+     * @return List of notable works, never null
+     */
     public List<String> getNotableWorks() {
-        if (notableWorks == null || notableWorks.trim().isEmpty()) {
+        if (notableWorks == null || notableWorks.isBlank()) {
             return new ArrayList<>();
         }
-        return Arrays.stream(notableWorks.split(",")).map(String::trim).collect(Collectors.toList());
+        return Arrays.stream(notableWorks.split(","))
+                    .map(String::trim)
+                    .filter(s -> !s.isEmpty())
+                    .collect(Collectors.toList());
     }
     
     /**

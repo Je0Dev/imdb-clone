@@ -125,10 +125,16 @@ public class DirectorDataLoader extends BaseDataLoader {
 
                         // Create and save the director
                         try {
-                            Director director;
-                            // Default ethnicity
-                            director = new Director(firstName, lastName, birthDate, gender, Objects.requireNonNullElse(ethnicity, com.papel.imdb_clone.enums.Ethnicity.ASIAN));
+                            // Use factory method to get or create director instance
+                            Director director = Director.getInstance(
+                                firstName,
+                                lastName,
+                                birthDate,
+                                gender,
+                                ethnicity != null ? ethnicity : Ethnicity.UNKNOWN
+                            );
                             
+                            // Set notable works if provided
                             if (!notableWorks.isEmpty() && !notableWorks.equalsIgnoreCase("N/A")) {
                                 director.setNotableWorks(notableWorks);
                             }
