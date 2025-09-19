@@ -1,10 +1,11 @@
 package com.papel.imdb_clone.service.data.loader;
 
 import com.papel.imdb_clone.exceptions.FileParsingException;
-import com.papel.imdb_clone.model.Movie;
-import com.papel.imdb_clone.model.Series;
+import com.papel.imdb_clone.model.content.Movie;
+import com.papel.imdb_clone.model.content.Series;
 import com.papel.imdb_clone.repository.impl.InMemoryMovieRepository;
-import com.papel.imdb_clone.service.SeriesService;
+import com.papel.imdb_clone.service.content.SeriesService;
+import com.papel.imdb_clone.service.data.base.BaseDataLoader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -63,7 +64,7 @@ public class AwardsDataLoader extends BaseDataLoader {
                 }
 
                 try {
-                    /**
+                    /*
                      * Parse CSV line into parts
                      */
                     String[] parts = parseCSVLine(line);
@@ -106,7 +107,7 @@ public class AwardsDataLoader extends BaseDataLoader {
                                     movie.setAwards(awards);
                                 }
                                 if (boxOffice != null && !boxOffice.isEmpty()) {
-                                    // movie.setBoxOffice(boxOffice);
+                                    movie.setBoxOffice(boxOffice);
                                 }
                                 movie = movieRepository.save(movie);
                                 found = true;
@@ -121,8 +122,7 @@ public class AwardsDataLoader extends BaseDataLoader {
 
                             if (seriesOpt.isPresent()) {
                                 Series series = seriesOpt.get();
-                                // Assuming Series class has setAwards and setNominations methods
-                                // If these methods don't exist, you'll need to add them
+                                // Series class has setAwards and setNominations methods
                                 if (!awards.isEmpty()) {
                                     series.setAwards(awards);
                                 }

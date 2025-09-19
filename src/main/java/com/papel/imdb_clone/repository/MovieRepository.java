@@ -1,7 +1,7 @@
 package com.papel.imdb_clone.repository;
 
 
-import com.papel.imdb_clone.model.Movie;
+import com.papel.imdb_clone.model.content.Movie;
 
 import java.util.List;
 import java.util.Optional;
@@ -46,7 +46,6 @@ public interface MovieRepository {
      */
     long count();
 
-    Movie findByTitleAndReleaseYear(String title, int startYear);
 
     void add(Movie movie);
 

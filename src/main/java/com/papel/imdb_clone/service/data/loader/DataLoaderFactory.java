@@ -1,15 +1,18 @@
 package com.papel.imdb_clone.service.data.loader;
 
-import com.papel.imdb_clone.model.Actor;
-import com.papel.imdb_clone.model.Director;
-import com.papel.imdb_clone.model.Movie;
-import com.papel.imdb_clone.model.Series;
+import com.papel.imdb_clone.model.people.Actor;
+import com.papel.imdb_clone.model.people.Director;
 import com.papel.imdb_clone.repository.impl.InMemoryMovieRepository;
 import com.papel.imdb_clone.repository.impl.InMemorySeriesRepository;
 import com.papel.imdb_clone.repository.impl.InMemoryUserRepository;
-import com.papel.imdb_clone.service.CelebrityService;
-import com.papel.imdb_clone.service.MoviesService;
-import com.papel.imdb_clone.service.SeriesService;
+import com.papel.imdb_clone.service.people.CelebrityService;
+import com.papel.imdb_clone.service.content.MoviesService;
+import com.papel.imdb_clone.service.content.SeriesService;
+import com.papel.imdb_clone.service.data.loader.people.ActorDataLoader;
+import com.papel.imdb_clone.service.data.loader.people.DirectorDataLoader;
+import com.papel.imdb_clone.service.data.loader.content.MovieDataLoader;
+import com.papel.imdb_clone.service.data.loader.content.SeriesDataLoader;
+import com.papel.imdb_clone.service.data.loader.people.UserDataLoader;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -25,14 +28,13 @@ public class DataLoaderFactory {
     private final SeriesService seriesService;
     private final CelebrityService<Actor> actorService;
     private final CelebrityService<Director> directorService;
-    private final InMemorySeriesRepository seriesRepository;
 
     /**
      * Creates a new DataLoaderFactory with the required dependencies.
      *
      * @param userRepository  the user repository
      * @param movieRepository the movie repository
-     * @param movieService
+     * @param moviesService the movies service
      * @param seriesService   the series service
      * @param actorService    the actor service
      * @param directorService the director service
@@ -45,12 +47,11 @@ public class DataLoaderFactory {
             SeriesService seriesService,
             CelebrityService<Actor> actorService,
             CelebrityService<Director> directorService) {
-        /**
+        /*
          * Initialize the DataLoaderFactory with the required dependencies.
          */
         this.userRepository = userRepository;
         this.movieRepository = movieRepository;
-        this.seriesRepository = seriesRepository;
         this.moviesService = moviesService;
         this.seriesService = seriesService;
         this.actorService = actorService;

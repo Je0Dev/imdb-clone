@@ -1,8 +1,8 @@
 package com.papel.imdb_clone.tools;
 
 import com.papel.imdb_clone.exceptions.UserAlreadyExistsException;
-import com.papel.imdb_clone.model.User;
-import com.papel.imdb_clone.service.AuthService;
+import com.papel.imdb_clone.model.people.User;
+import com.papel.imdb_clone.service.validation.AuthService;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
@@ -25,7 +25,7 @@ public class UserDataRegenerator {
     public static void main(String[] args) {
         // Get the base path from classpath resources
         String usersFile = Objects.requireNonNull(UserDataRegenerator.class.getClassLoader()
-                .getResource("data/users_updated.txt")).getFile();
+                .getResource("data/people/users_updated.txt")).getFile();
         // Get the default password from the AuthService
         String defaultPassword = "Password123";
         AuthService authService = AuthService.getInstance();

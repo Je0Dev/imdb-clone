@@ -2,6 +2,7 @@ package com.papel.imdb_clone.enums;
 
 //GENRE ENUM
 public enum Genre {
+    //Given genres
     ACTION("Action"),
     COMEDY("Comedy"),
     DRAMA("Drama"),

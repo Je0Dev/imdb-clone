@@ -1,7 +1,7 @@
 package com.papel.imdb_clone.repository.impl;
 
 import com.papel.imdb_clone.exceptions.DuplicateEntryException;
-import com.papel.imdb_clone.model.User;
+import com.papel.imdb_clone.model.people.User;
 import com.papel.imdb_clone.repository.UserRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

@@ -1,17 +1,13 @@
 package com.papel.imdb_clone.controllers.coordinator;
 
-import com.papel.imdb_clone.config.ApplicationConfig;
-import com.papel.imdb_clone.controllers.MoviesController;
-import com.papel.imdb_clone.controllers.SeriesController;
-import com.papel.imdb_clone.data.RefactoredDataManager;
-import com.papel.imdb_clone.model.Movie;
-import com.papel.imdb_clone.model.Series;
-import com.papel.imdb_clone.model.User;
-import com.papel.imdb_clone.service.MoviesService;
-import com.papel.imdb_clone.service.SeriesService;
+import com.papel.imdb_clone.controllers.content.MoviesController;
+import com.papel.imdb_clone.controllers.content.SeriesController;
+import com.papel.imdb_clone.data.DataManager;
+import com.papel.imdb_clone.model.people.User;
+import com.papel.imdb_clone.service.content.MoviesService;
+import com.papel.imdb_clone.service.content.SeriesService;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Node;
-import javafx.scene.control.Label;
 import javafx.scene.layout.BorderPane;
 import javafx.stage.Stage;
 import org.slf4j.Logger;
@@ -30,16 +26,18 @@ public class UICoordinator {
     private static final Logger logger = LoggerFactory.getLogger(UICoordinator.class);
     private static UICoordinator instance;
 
-    private final RefactoredDataManager dataManager;
+    private final DataManager dataManager;
     private MoviesService movieService;
 
     /**
      * Private constructor to prevent instantiation
      */
     private UICoordinator() {
-        this.dataManager = new RefactoredDataManager();
+        this.dataManager = new DataManager();
+
         this.moviesService = MoviesService.getInstance();
         this.seriesService = SeriesService.getInstance();
+
         logger.info("UICoordinator initialized with default data manager and content services");
     }
 
@@ -78,7 +76,7 @@ public class UICoordinator {
      * @param dataManager The data manager instance to be used for data operations
      * @throws IllegalArgumentException if dataManager is null
      */
-    public UICoordinator(RefactoredDataManager dataManager) {
+    public UICoordinator(DataManager dataManager) {
         if (dataManager == null) {
             throw new IllegalArgumentException("DataManager cannot be null");
         }
@@ -145,10 +143,10 @@ public class UICoordinator {
 
         // Define views to load with their names for better error reporting:supplier is a functional interface that returns a value
         Map<String, Supplier<Node>> viewsToLoad = Map.of(
-                "movie view", () -> movieView = loadViewSafely("/fxml/movie-view.fxml"),
-                "series view", () -> seriesView = loadViewSafely("/fxml/series-view.fxml"),
-                "directors & actors", () -> directorsAndActorsView = loadViewSafely("/fxml/celebrities-view.fxml"),
-                "search view", () -> searchView = loadViewSafely("/fxml/advanced-search-view.fxml")
+                "movie view", () -> movieView = loadViewSafely("/fxml/content/movie-view.fxml"),
+                "series view", () -> seriesView = loadViewSafely("/fxml/content/series-view.fxml"),
+                "directors & actors", () -> directorsAndActorsView = loadViewSafely("/fxml/celebrities/celebrities-view.fxml"),
+                "search view", () -> searchView = loadViewSafely("/fxml/search/advanced-search-view.fxml")
         );
 
         // Load each view and track failures
@@ -208,7 +206,7 @@ public class UICoordinator {
     public void showHomeView() {
         try {
             if (homeView == null) {
-                homeView = loadViewSafely("/fxml/home-view.fxml");
+                homeView = loadViewSafely("/fxml/base/home-view.fxml");
                 if (homeView == null) {
                     throw new IllegalStateException("Failed to load home view");
                 }
@@ -317,13 +315,13 @@ private void loadContentView() throws IOException {
         logger.info("Loading main content view...");
         
         // Load movie view
-        FXMLLoader movieLoader = new FXMLLoader(getClass().getResource("/fxml/movie-view.fxml"));
+        FXMLLoader movieLoader = new FXMLLoader(getClass().getResource("/fxml/content/movie-view.fxml"));
         movieView = movieLoader.load();
         moviesController = movieLoader.getController();
         moviesController.setContentService(movieService);
         
         // Load series view
-        FXMLLoader seriesLoader = new FXMLLoader(getClass().getResource("/fxml/series-view.fxml"));
+        FXMLLoader seriesLoader = new FXMLLoader(getClass().getResource("/fxml/content/series-view.fxml"));
         seriesView = seriesLoader.load();
         seriesController = seriesLoader.getController();
         seriesController.setContentService(seriesService);
@@ -335,58 +333,14 @@ private void loadContentView() throws IOException {
         }
         
         // Load other views
-        homeView = loadView("/fxml/home-view.fxml");
-        searchView = loadView("/fxml/advanced-search-view.fxml");
+        homeView = loadView("/fxml/base/home-view.fxml");
+        searchView = loadView("/fxml/search/advanced-search-view.fxml");
         
         logger.info("Successfully loaded all views");
     } finally {
         isViewLoading = false;
     }
 }
-
-/**
- * Gets the movie view component.
- *
- * @return the Node containing the movie view, or null if not loaded
- */
-public Node getMovieView() {
-        if (movieView == null) {
-            logger.warn("Movie view was not preloaded, attempting to load on demand");
-            movieView = loadViewSafely("/fxml/movie-view.fxml");
-            if (movieView != null) {
-                logger.info("Successfully loaded movie view on demand");
-            } else {
-                logger.error("Failed to load movie view on demand");
-            }
-        }
-        return movieView;
-    }
-
-    /**
-     * Gets the series view component.
-     *
-     * @return the Node containing the series view, or null if not loaded
-     */
-    public Node getSeriesView() {
-        if (seriesView == null) {
-            logger.warn("Series view was not preloaded, attempting to load on demand");
-            seriesView = loadViewSafely("/fxml/series-view.fxml");
-        }
-        return seriesView;
-    }
-
-    /**
-     * Gets the search view component.
-     *
-     * @return the Node containing the search view, or null if not loaded
-     */
-    public Node getSearchView() {
-        if (searchView == null) {
-            logger.warn("Search view was not preloaded, attempting to load on demand");
-            searchView = loadViewSafely("/fxml/advanced-search-view.fxml");
-        }
-        return searchView;
-    }
 
     /**
      * Gets the home view component.

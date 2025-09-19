@@ -9,7 +9,6 @@ import java.util.*;
 public class ValidationException extends RuntimeException {
     //field errors
     public final Map<String, List<String>> fieldErrors = new HashMap<>();
-    private final String errorCode;
     private final Map<String, Object> details = new HashMap<>();
 
 
@@ -21,7 +20,6 @@ public class ValidationException extends RuntimeException {
                                Throwable cause) {
         super(message, cause);
         //set error code
-        this.errorCode = errorCode;
         if (fieldErrors != null) {
             this.fieldErrors.putAll(fieldErrors);
         }
@@ -67,9 +65,8 @@ public class ValidationException extends RuntimeException {
         private Throwable cause;
 
         //add field error to builder
-        public Builder fieldError(String field, String error) {
+        public void fieldError(String field, String error) {
             this.fieldErrors.computeIfAbsent(field, k -> new ArrayList<>()).add(error);
-            return this;
         }
 
 

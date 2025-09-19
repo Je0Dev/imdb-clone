@@ -1,6 +1,7 @@
 package com.papel.imdb_clone.enums;
 
 public enum Ethnicity {
+
     // Regional Ethnicities
     AFRICAN("African"),
     ARAB("Arab"),
@@ -67,7 +68,7 @@ public enum Ethnicity {
         // Normalize input
         String normalized = input.trim().toLowerCase();
         
-        // First try direct label match (case insensitive)
+        // First try direct label match (case-insensitive)
         for (Ethnicity e : values()) {
             if (e.label.toLowerCase().equals(normalized)) {
                 return e;
@@ -111,7 +112,7 @@ public enum Ethnicity {
             }
         }
 
-       // Return unknown if no match found
+       // Return unknown if no match found from the above values
        return UNKNOWN;
     }
 

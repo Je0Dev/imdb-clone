@@ -1,6 +1,6 @@
 package com.papel.imdb_clone.repository;
 
-import com.papel.imdb_clone.model.User;
+import com.papel.imdb_clone.model.people.User;
 
 import java.util.Optional;
 

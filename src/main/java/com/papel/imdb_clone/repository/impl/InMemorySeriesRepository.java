@@ -1,8 +1,7 @@
 package com.papel.imdb_clone.repository.impl;
 
 import com.papel.imdb_clone.exceptions.DuplicateEntryException;
-import com.papel.imdb_clone.model.Movie;
-import com.papel.imdb_clone.model.Series;
+import com.papel.imdb_clone.model.content.Series;
 import com.papel.imdb_clone.repository.SeriesRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,7 +33,7 @@ public class InMemorySeriesRepository implements SeriesRepository {
     public Optional<Series> findById(int id) {
         lock.readLock().lock();
         try {
-            /**
+            /*
              * Returns the first series that matches the given ID.
              */
             return seriesList.stream()
@@ -56,7 +55,7 @@ public class InMemorySeriesRepository implements SeriesRepository {
 
         lock.readLock().lock();
         try {
-            /**
+            /*
              * Returns the first series that matches the given title.
              */
             return seriesList.stream()
@@ -94,7 +93,7 @@ public class InMemorySeriesRepository implements SeriesRepository {
 
         lock.writeLock().lock();
         try {
-            /**
+            /*
              * If the series ID is 0, it is a new series and we need to check for duplicate title.
              */
             if (series.getId() == 0) {
@@ -114,7 +113,7 @@ public class InMemorySeriesRepository implements SeriesRepository {
                             existsByTitle(series.getTitle())) {
                         throw new DuplicateEntryException("Series", series.getId(), "title", series.getTitle());
                     }
-                    /**
+                    /*
                      * Remove the existing series and add the updated series.
                      */
                     seriesList.remove(existing.get());
@@ -124,7 +123,7 @@ public class InMemorySeriesRepository implements SeriesRepository {
                     throw new IllegalArgumentException("Series with ID " + series.getId() + " not found");
                 }
             }
-            /**
+            /*
              * Return the updated series.
              */
             return series;
@@ -142,7 +141,7 @@ public class InMemorySeriesRepository implements SeriesRepository {
     public boolean deleteById(int id) {
         lock.writeLock().lock();
         try {
-            /**
+            /*
              * Find the series by ID.
              */
             Optional<Series> existing = findById(id);

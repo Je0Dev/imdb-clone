@@ -61,9 +61,8 @@ public class AuthException extends ValidationException {
 
 
         //add field error
-        public Builder fieldError(String field, String error) {
+        public void fieldError(String field, String error) {
             this.fieldErrors.computeIfAbsent(field, k -> new java.util.ArrayList<>()).add(error);
-            return this;
         }
 
 
@@ -80,7 +79,7 @@ public class AuthException extends ValidationException {
     }
 
     /**
-     * Enum representing different types of authentication errors
+     * Enum representing different types of typical authentication errors
      */
     public enum AuthErrorType {
         INVALID_CREDENTIALS("Invalid username or password"),
@@ -91,13 +90,8 @@ public class AuthException extends ValidationException {
         USERNAME_EXISTS("Username already exists"),
         EMAIL_EXISTS("Email already registered"),
         REGISTRATION_FAILED("Registration failed"),
-        INVALID_INPUT("Invalid input provided"),
-        SESSION_EXPIRED("Your session has expired. Please log in again"),
-        UNAUTHORIZED_ACCESS("You do not have permission to access this resource"),
-        ACCOUNT_LOCKED("Account is locked. Please contact support"),
-        TOKEN_EXPIRED("The authentication token has expired"),
-        TOKEN_INVALID("The authentication token is invalid");
-
+        INVALID_INPUT("Invalid input provided")
+;
         private final String defaultMessage;
 
         /**

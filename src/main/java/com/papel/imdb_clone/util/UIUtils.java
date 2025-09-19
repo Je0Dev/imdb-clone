@@ -1,6 +1,6 @@
 package com.papel.imdb_clone.util;
 
-import com.papel.imdb_clone.model.Content;
+import com.papel.imdb_clone.model.content.Content;
 import javafx.application.Platform;
 import javafx.scene.Node;
 import javafx.scene.control.Alert;
@@ -19,22 +19,6 @@ public class UIUtils {
      * The primary stage of the application, used for dialog positioning.
      */
     private static Stage ownerStage;
-
-    /**
-     * The currently displayed loading indicator node.
-     */
-    private static Node loadingIndicator;
-
-    /**
-     * Container for the loading indicator overlay.
-     */
-    private static StackPane loadingContainer;
-
-    /**
-     * Logger instance for this class.
-     */
-    private static final Logger logger = Logger.getLogger(UIUtils.class.getName());
-
 
     /**
      * Displays a success alert with the specified title and message.
@@ -76,18 +60,6 @@ public class UIUtils {
             Alert alert = createAlert(Alert.AlertType.ERROR, title, header, content);
             alert.showAndWait();
         });
-    }
-
-    /**
-     * Displays a warning alert with the specified title and message.
-     * Uses a consistent styling for warning messages.
-     *
-     * @param title   The title of the warning dialog
-     * @param message The warning message to display
-     * @throws IllegalArgumentException if title or message is null
-     */
-    public static void showWarning(String title, String message) {
-        showAlert(Alert.AlertType.WARNING, title, message);
     }
 
 

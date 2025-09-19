@@ -1,7 +1,7 @@
 package com.papel.imdb_clone.repository.impl;
 
 import com.papel.imdb_clone.exceptions.DuplicateEntryException;
-import com.papel.imdb_clone.model.Movie;
+import com.papel.imdb_clone.model.content.Movie;
 import com.papel.imdb_clone.repository.MovieRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -135,7 +135,7 @@ public class InMemoryMovieRepository implements MovieRepository {
 
         lock.readLock().lock();
         try {
-            /**
+            /*
              * Check if any movie in the list has the same title as the given title
              */
             return movies.stream()
@@ -162,7 +162,7 @@ public class InMemoryMovieRepository implements MovieRepository {
     public Movie findByTitleAndReleaseYear(String title, int startYear) {
         lock.readLock().lock();
         try {
-            /**
+            /*
              * Find the first movie in the list that has the same title and release year as the given title and start year
              */
             return movies.stream()
@@ -211,7 +211,7 @@ public class InMemoryMovieRepository implements MovieRepository {
 
         lock.writeLock().lock();
         try {
-            /**
+            /*
              * If the movie has an ID, update the next ID to be the maximum of the current ID and the movie ID plus one
              */
             if (movie.getId() > 0) {
@@ -221,7 +221,7 @@ public class InMemoryMovieRepository implements MovieRepository {
             }
             movies.add(movie);
         } finally {
-            /**
+            /*
              * Unlock the write lock when done,which means that other threads can modify the list
              */
             lock.writeLock().unlock();

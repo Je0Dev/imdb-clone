@@ -13,9 +13,7 @@ public class ApplicationConfig {
     private final Properties properties;
 
     // Default configuration values
-    private static final String DEFAULT_APP_TITLE = "IMDB Clone - Movie & Series Manager";
-    private static final double DEFAULT_MIN_WIDTH = 5000.0;
-    private static final double DEFAULT_MIN_HEIGHT = 3000.0;
+    private static final String DEFAULT_APP_TITLE = "Imdb Clone Java Fx";
 
     // Default data file paths
     private ApplicationConfig() {
@@ -33,7 +31,7 @@ public class ApplicationConfig {
 
     // Load configuration from properties files
     private void loadConfiguration() {
-        // Load from application.properties if it exists
+        // Load from application.properties
         try (InputStream is = getClass().getResourceAsStream("/application.properties")) {
             if (is != null) {
                 properties.load(is);

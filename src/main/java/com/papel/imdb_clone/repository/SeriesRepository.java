@@ -1,6 +1,6 @@
 package com.papel.imdb_clone.repository;
 
-import com.papel.imdb_clone.model.Series;
+import com.papel.imdb_clone.model.content.Series;
 
 import java.util.List;
 import java.util.Optional;
@@ -17,21 +17,6 @@ public interface SeriesRepository {
      * @return Optional containing the series if found, empty otherwise
      */
     Optional<Series> findById(int id);
-
-    /**
-     * Finds a series by its title (exact match).
-     *
-     * @param title The series title to search for
-     * @return Optional containing the series if found, empty otherwise
-     */
-    Optional<Series> findByTitle(String title);
-
-    /**
-     * Finds all series.
-     *
-     * @return List of all series
-     */
-    List<Series> findAll();
 
     /**
      * Saves a series (create or update).

@@ -127,7 +127,7 @@
                 <artifactId>javafx-maven-plugin</artifactId>
                 <version>${javafx.maven.plugin.version}</version>
                 <configuration>
-                    <mainClass>com.papel.imdb_clone.HelloApplication</mainClass>
+                    <mainClass>com.papel.imdb_clone.StartApplication</mainClass>
                     <launcher>app</launcher>
                     <jlinkZipName>app</jlinkZipName>
                     <jlinkImageName>app</jlinkImageName>
@@ -147,7 +147,7 @@
                     <execution>
                         <id>default-cli</id>
                         <configuration>
-                            <mainClass>com.papel.imdb_clone.HelloApplication</mainClass>
+                            <mainClass>com.papel.imdb_clone.StartApplication</mainClass>
                             <launcher>app</launcher>
                             <jlinkZipName>app</jlinkZipName>
                             <jlinkImageName>app</jlinkImageName>

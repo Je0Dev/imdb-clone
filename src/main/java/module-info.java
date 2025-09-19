@@ -14,10 +14,24 @@ module com.papel.imdb_clone {
 
     opens com.papel.imdb_clone to javafx.fxml;
     opens com.papel.imdb_clone.controllers to javafx.fxml;
-    opens com.papel.imdb_clone.model to javafx.base, javafx.fxml;
     opens com.papel.imdb_clone.gui to javafx.fxml;
     exports com.papel.imdb_clone;
     exports com.papel.imdb_clone.controllers;
-    exports com.papel.imdb_clone.model;
     exports com.papel.imdb_clone.gui;
+    exports com.papel.imdb_clone.model.content;
+    opens com.papel.imdb_clone.model.content to javafx.base, javafx.fxml;
+    exports com.papel.imdb_clone.model.people;
+    opens com.papel.imdb_clone.model.people to javafx.base, javafx.fxml;
+    exports com.papel.imdb_clone.model.rating;
+    opens com.papel.imdb_clone.model.rating to javafx.base, javafx.fxml;
+    exports com.papel.imdb_clone.controllers.people;
+    opens com.papel.imdb_clone.controllers.people to javafx.fxml;
+    exports com.papel.imdb_clone.controllers.content;
+    opens com.papel.imdb_clone.controllers.content to javafx.fxml;
+    exports com.papel.imdb_clone.controllers.authentication;
+    opens com.papel.imdb_clone.controllers.authentication to javafx.fxml;
+    exports com.papel.imdb_clone.controllers.base;
+    opens com.papel.imdb_clone.controllers.base to javafx.fxml;
+    exports com.papel.imdb_clone.controllers.search;
+    opens com.papel.imdb_clone.controllers.search to javafx.fxml;
 }
