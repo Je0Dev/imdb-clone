@@ -24,6 +24,7 @@ public abstract class Content {
     private List<Genre> genres = new ArrayList<>();
     private List<Actor> actors = new ArrayList<>();
     private static final Logger logger = LoggerFactory.getLogger(Content.class);
+    private Object contentType;
 
 
     /**
@@ -279,5 +280,9 @@ public abstract class Content {
 
     public void setGenres(String trim) {
         this.genres = new ArrayList<>();
+    }
+
+    public Object getContentType() {
+        return contentType;
     }
 }

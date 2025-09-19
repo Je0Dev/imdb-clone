@@ -17,8 +17,6 @@ import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
-import javafx.collections.transformation.FilteredList;
-import javafx.collections.transformation.SortedList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
@@ -47,7 +45,8 @@ import java.util.stream.Collectors;
  */
 public class SeriesController extends BaseController implements Initializable {
     private static final Logger logger = LoggerFactory.getLogger(SeriesController.class);
-    
+    private Map<String, Object> data;
+
     @FXML
     private void handleManageSeries(ActionEvent event) {
         try {
@@ -105,7 +104,7 @@ public class SeriesController extends BaseController implements Initializable {
         try {
             NavigationService navigationService = NavigationService.getInstance();
             navigationService.navigateTo("/fxml/base/home-view.fxml",
-                (Stage) seriesTable.getScene().getWindow(),
+                    data, (Stage) seriesTable.getScene().getWindow(),
                 "IMDb Clone - Home");
         } catch (Exception e) {
             logger.error("Error navigating to home view", e);

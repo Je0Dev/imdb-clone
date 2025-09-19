@@ -16,6 +16,8 @@ import javafx.stage.Stage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Map;
+
 import static com.papel.imdb_clone.util.UIUtils.showError;
 
 /**
@@ -36,13 +38,14 @@ public class MainController extends BorderPane {
     private Label userLabel;
     @FXML
     private VBox featuredContent;
+    private Map<String, Object> data;
 
     @FXML
     private void showMovies(ActionEvent event) {
         try {
             NavigationService navigationService = NavigationService.getInstance();
             Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
-            navigationService.navigateTo("/fxml/content/movie-view.fxml", stage, "Movies");
+            navigationService.navigateTo("/fxml/content/movie-view.fxml", data, stage, "Movies");
         } catch (Exception e) {
             logger.error("Error navigating to movies view", e);
             showError("Navigation Error", "Failed to navigate to movies view: " + e.getMessage());
@@ -54,7 +57,7 @@ public class MainController extends BorderPane {
         try {
             NavigationService navigationService = NavigationService.getInstance();
             Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
-            navigationService.navigateTo("/fxml/search/advanced-search-view.fxml", stage, "Advanced Search");
+            navigationService.navigateTo("/fxml/search/advanced-search-view.fxml", data, stage, "Advanced Search");
         } catch (Exception e) {
             logger.error("Error navigating to advanced search", e);
             showError("Navigation Error", "Failed to open advanced search: " + e.getMessage());
@@ -66,7 +69,7 @@ public class MainController extends BorderPane {
         try {
             NavigationService navigationService = NavigationService.getInstance();
             Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
-            navigationService.navigateTo("/fxml/content/series-view.fxml", stage, "TV Shows");
+            navigationService.navigateTo("/fxml/content/series-view.fxml", data, stage, "TV Shows");
         } catch (Exception e) {
             logger.error("Error navigating to TV shows view", e);
             showError("Navigation Error", "Failed to navigate to TV shows: " + e.getMessage());

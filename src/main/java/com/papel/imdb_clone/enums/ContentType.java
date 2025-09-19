@@ -6,5 +6,5 @@ public enum ContentType {
     TV_SHOW,
     EPISODE,
     SEASON,
-    SERIES
+    TV_SERIES, SERIES
 }

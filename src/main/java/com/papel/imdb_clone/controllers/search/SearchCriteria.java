@@ -97,6 +97,33 @@ public class SearchCriteria {
         this.maxImdbRating = rating;
     }
 
+    //set genres
+    public void setGenres(List<Genre> genres) {
+        this.genres = genres != null ? new ArrayList<>(genres) : new ArrayList<>();
+    }
+
+    //set sort field
+    public void setSortField(String sortBy) {
+        // This is a no-op since sortBy is final
+        // The field is only set in the constructor
+    }
+
+    //set sort order
+    public void setSortOrder(String sortOrder) {
+        // This is a no-op since sortDescending is final
+        // The field is only set in the constructor
+    }
+
+    //get sort field
+    public String getSortField() {
+        return this.sortBy;
+    }
+
+    //get sort order
+    public String getSortOrder() {
+        return this.sortDescending ? "desc" : "asc";
+    }
+
     //set min year
     public void setMinYear(Integer year) {
         this.minYear = year;
@@ -170,6 +197,22 @@ public class SearchCriteria {
         return maxImdbRating;
     }
 
+    public Integer getYear() {
+        return minYear;
+    }
+
+    public String getDirector() {
+        return null; // This method needs to be implemented based on your requirements
+    }
+
+    public String getActor() {
+        return null; // This method needs to be implemented based on your requirements
+    }
+    
+    public List<Genre> getGenres() {
+        return genres != null ? new ArrayList<>(genres) : new ArrayList<>();
+    }
+
     public Integer getEndYear() {
         return endYear;
     }
@@ -193,4 +236,11 @@ public class SearchCriteria {
                 '}';
     }
 
+    public Double getMinImdbRating() {
+        return minImdbRating;
+    }
+
+    public Double getMaxImdbRating() {
+        return maxImdbRating;
+    }
 }

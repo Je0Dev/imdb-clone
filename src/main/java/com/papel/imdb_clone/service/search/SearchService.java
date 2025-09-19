@@ -7,10 +7,7 @@ import com.papel.imdb_clone.model.content.Content;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
@@ -83,12 +80,26 @@ public class SearchService {
         } else {
 
             // Search all content types
-            List<Content> movies = new ArrayList<>(dataManager.getAllMovies());
-            List<Content> series = new ArrayList<>(dataManager.getAllSeries());
+            Set<Integer> contentIds = new HashSet<>();
             contentList = new ArrayList<>();
-            contentList.addAll(movies);
-            contentList.addAll(series);
-            logger.debug("Found {} total items to search through ({} movies, {} series)",
+            
+            // Add movies
+            List<Content> movies = new ArrayList<>(dataManager.getAllMovies());
+            for (Content movie : movies) {
+                if (movie != null && contentIds.add(movie.getId())) {
+                    contentList.add(movie);
+                }
+            }
+            
+            // Add series, skipping any with duplicate IDs
+            List<Content> series = new ArrayList<>(dataManager.getAllSeries());
+            for (Content serie : series) {
+                if (serie != null && contentIds.add(serie.getId())) {
+                    contentList.add(serie);
+                }
+            }
+            
+            logger.debug("Found {} total unique items to search through ({} movies, {} series)",
                     contentList.size(), movies.size(), series.size());
         }
 

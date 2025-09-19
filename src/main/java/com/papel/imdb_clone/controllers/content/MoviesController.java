@@ -47,6 +47,7 @@ public class MoviesController extends BaseController implements Initializable {
     @FXML private TableColumn<Movie, Double> movieRatingColumn;
     @FXML private TextField movieSearchField;
     @FXML private ComboBox<String> movieSortBy;
+    private Map<String, Object> data;
 
     /**
      * Navigates back to the home view.
@@ -56,7 +57,7 @@ public class MoviesController extends BaseController implements Initializable {
         try {
             NavigationService navigationService = NavigationService.getInstance();
             navigationService.navigateTo("/fxml/base/home-view.fxml",
-                (Stage) movieTable.getScene().getWindow(),
+                    data, (Stage) movieTable.getScene().getWindow(),
                 "IMDb Clone - Home");
         } catch (Exception e) {
             logger.error("Error navigating to home view", e);

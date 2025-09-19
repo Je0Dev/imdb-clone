@@ -1,551 +1,569 @@
 package com.papel.imdb_clone.controllers.search;
 
-import com.papel.imdb_clone.enums.ContentType;
 import com.papel.imdb_clone.enums.Genre;
 import com.papel.imdb_clone.model.content.Content;
-import com.papel.imdb_clone.model.content.Movie;
-import com.papel.imdb_clone.service.navigation.NavigationService;
-import com.papel.imdb_clone.service.search.SearchService;
-import com.papel.imdb_clone.service.search.ServiceLocator;
-import com.papel.imdb_clone.util.UIUtils;
-import javafx.beans.property.SimpleIntegerProperty;
+import javafx.application.Platform;
 import javafx.beans.property.SimpleStringProperty;
+import javafx.scene.control.TableCell;
+import javafx.scene.control.TableColumn;
+import java.util.stream.Collectors;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.concurrent.Task;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
-import javafx.stage.Stage;
+import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.VBox;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Calendar;
 import java.util.List;
-import java.util.Objects;
+import java.util.Map;
+import java.util.HashMap;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 
 /**
- * Controller for the advanced search functionality.
- * Handles search operations with various filters and displays results in a table.
+ * Main controller for the advanced search functionality.
+ * Coordinates between the search form and results table.
  */
-public class AdvancedSearchController {
+public class AdvancedSearchController extends BaseSearchController {
     private static final Logger logger = LoggerFactory.getLogger(AdvancedSearchController.class);
+    public TableView resultsTable;
+    public TableColumn resultTitleColumn;
+    public TableColumn resultTypeColumn;
+    public TableColumn resultYearColumn;
+    public TableColumn resultGenreColumn;
 
-    // Services
-    private final SearchService searchService;
-    public TableColumn resultDirectorColumn;
-    public TableColumn resultSeasonsColumn;
-    public TableColumn resultEpisodesColumn;
+    @FXML
+    private BorderPane mainContainer;
+    @FXML
+    private VBox searchFormContainer;
+    @FXML
+    private SearchFormController searchFormController;
+    @FXML
+    private ResultsTableController resultsTableController;
+    @FXML
+    private Button manageDetailsButton;
+    @FXML
+    private Label resultsCountLabel;
+
     private Task<ObservableList<Content>> currentSearchTask;
     private final long defaultCacheExpiration = 30;
     private final TimeUnit timeUnit = TimeUnit.MINUTES;
+    private Map<String, Object> data;
 
-    // Search form fields
-    @FXML
-    private TextField titleField;
-    @FXML
-    private ComboBox<String> genreComboBox;
-    @FXML
-    private Slider ratingSlider;
-    @FXML
-    private Label ratingValueLabel;
-    @FXML
-    private TextField keywordsField;
-    @FXML
-    private TextField yearFrom;
-    @FXML
-    private TextField yearTo;
-    @FXML
-    private ComboBox<String> sortByCombo;
-    @FXML
-    private CheckBox movieCheckBox;
-    @FXML
-    private CheckBox seriesCheckBox;
+    /**
+     * Constructor for the AdvancedSearchController.
+     * Initializes the search service and navigation service.
+     */
+    public AdvancedSearchController() {
+        super(); // Initialize base controller
+    }
 
-    // Results display
     @FXML
-    private TableView<Content> resultsTable;
-    @FXML
-    private TableColumn<Content, String> resultTitleColumn;
-    @FXML
-    private TableColumn<Content, Integer> resultYearColumn;
-    @FXML
-    private TableColumn<Content, String> resultTypeColumn;
-    
+    public void initialize() {
+        try {
+            // Initialize the table columns
+            initializeTableColumns();
+
+            // Initialize the search form controller if available
+            if (searchFormController != null) {
+                // Initialize the form with default values
+                searchFormController.initializeForm();
+
+                // Set up the search form listener
+                searchFormController.setSearchFormListener(new SearchFormController.SearchFormListener() {
+                    @Override
+                    public void onSearchCriteriaChanged(SearchCriteria criteria) {
+                        // Update UI based on search criteria changes if needed
+                        if (criteria != null && hasSearchCriteria(criteria)) {
+                            updateStatus("Ready to search");
+                        } else {
+                            updateStatus("Enter search criteria");
+                        }
+                    }
+
+                    @Override
+                    public void onSearchRequested(SearchCriteria criteria) {
+                        if (criteria == null || !hasSearchCriteria(criteria)) {
+                            showInfo("Search", "Please enter some search criteria");
+                            return;
+                        }
+                        performSearch(criteria);
+                    }
+                });
+            } else {
+                logger.error("Search form controller is not initialized");
+            }
+
+            // Initialize the results table and manage details button
+            if (resultsTableController != null) {
+                try {
+                    TableView<Content> table = resultsTableController.getResultsTable();
+                    if (table != null) {
+                        // Set up selection model
+                        TableView.TableViewSelectionModel<Content> selectionModel = table.getSelectionModel();
+                        selectionModel.setSelectionMode(SelectionMode.SINGLE);
+
+                        // Initialize the manage details button state
+                        if (manageDetailsButton != null) {
+                            // Initial state
+                            manageDetailsButton.setDisable(true);
+
+                            // Update button state when selection changes
+                            selectionModel.selectedItemProperty().addListener((obs, oldSelection, newSelection) -> {
+                                manageDetailsButton.setDisable(newSelection == null);
+
+                                // Update button style based on state
+                                if (newSelection == null) {
+                                    manageDetailsButton.setStyle(
+                                        "-fx-background-color: transparent; " +
+                                        "-fx-text-fill: #9E9E9E; " +
+                                        "-fx-border-color: #9E9E9E; " +
+                                        "-fx-border-width: 1.5; " +
+                                        "-fx-border-radius: 4; " +
+                                        "-fx-padding: 5 10; " +
+                                        "-fx-font-weight: bold;"
+                                    );
+                                } else {
+                                    manageDetailsButton.setStyle(
+                                        "-fx-background-color: transparent; " +
+                                        "-fx-text-fill: #4CAF50; " +
+                                        "-fx-border-color: #4CAF50; " +
+                                        "-fx-border-width: 1.5; " +
+                                        "-fx-border-radius: 4; " +
+                                        "-fx-padding: 5 10; " +
+                                        "-fx-font-weight: bold; " +
+                                        "-fx-cursor: hand; " +
+                                        "-fx-effect: dropshadow(gaussian, rgba(76,175,80,0.3), 5, 0, 0, 1);"
+                                    );
+                                }
+                            });
+                        }
+                    }
+
+                    // Set up the results table controller
+                    if (resultsTableController != null) {
+                        // Set up the table with the controller's table view
+                        resultsTable = resultsTableController.getResultsTable();
+
+                        // Set up double-click handler for table rows
+                        resultsTable.setOnMouseClicked(event -> {
+                            if (event.getClickCount() == 2) {
+                                handleTableClick();
+                            }
+                        });
+
+                        // Bind the manage details button's disable property to the table's selection model
+                        resultsTable.getSelectionModel().selectedItemProperty().addListener((obs, oldSelection, newSelection) -> {
+                            if (newSelection != null) {
+                                // Enable the manage details button when an item is selected
+                                // This is handled by the FXML binding, but we keep this for any additional logic
+                            }
+                        });
+                    }
+
+                    updateStatus("Enter search criteria");
+                } catch (Exception e) {
+                    logger.error("Error initializing table components", e);
+                    showError("Initialization Error", "Failed to initialize table components: " + e.getMessage());
+                }
+            }
+        } catch (Exception e) {
+            logger.error("Error initializing AdvancedSearchController", e);
+            showError("Initialization Error", "Failed to initialize search interface: " + e.getMessage());
+        }
+    }
+
+
+    /**
+     * Checks if the search criteria contains any search terms.
+     *
+     * @param criteria The search criteria to check
+     * @return true if the criteria contains search terms, false otherwise
+     */
+    private boolean hasSearchCriteria(SearchCriteria criteria) {
+        // Always return true to allow searches with no criteria (showing all content)
+        // The search service will handle the case of no criteria by returning all content
+        return true;
+        
+        // Note: The original implementation is kept below for reference
+        /*
+        if (criteria == null) {
+            return false;
+        }
+        
+        // Check for search terms in title or query (not empty and not just whitespace)
+        if ((criteria.getTitle() != null && !criteria.getTitle().trim().isEmpty()) ||
+            (criteria.getQuery() != null && !criteria.getQuery().trim().isEmpty())) {
+            return true;
+        }
+        
+        // Check for valid year range (at least one year specified)
+        if (criteria.getMinYear() != null || criteria.getEndYear() != null) {
+            // If either year is specified, it's a valid search
+            return true;
+        }
+        
+        // Check for rating (greater than 0 or less than 10)
+        if ((criteria.getMinImdbRating() != null && criteria.getMinImdbRating() > 0) || 
+            (criteria.getMaxImdbRating() != null && criteria.getMaxImdbRating() < 10)) {
+            return true;
+        }
+        
+        // Check for content type (both checkboxes can't be unchecked)
+        if (criteria.getContentType() != null) {
+            return true;
+        }
+        
+        // Check for genres (at least one genre selected)
+        if (criteria.getGenres() != null && !criteria.getGenres().isEmpty()) {
+            return true;
+        }
+        
+        // No valid search criteria found
+        return false;
+        */
+    }
+
     /**
      * Navigates back to the home view.
      */
     @FXML
     public void goToHome() {
         try {
-            NavigationService navigationService = NavigationService.getInstance();
-            navigationService.navigateTo("/fxml/base/home-view.fxml",
-                (Stage) resultsTable.getScene().getWindow(),
-                "IMDb Clone - Home");
+            navigationService.navigateTo(
+                "/fxml/base/home-view.fxml",
+                    data, getStage(),
+                "IMDb Clone - Home"
+            );
         } catch (Exception e) {
             logger.error("Error navigating to home view", e);
-            UIUtils.showError("Navigation Error", "Failed to navigate to home view: " + e.getMessage());
+            showError("Navigation Error", "Failed to navigate to home view: " + e.getMessage());
         }
     }
-    @FXML
-    private TableColumn<Content, String> resultGenreColumn;
-    @FXML
-    private TableColumn<Content, String> resultImdbColumn;
-    // labels
-    @FXML
-    private Label statusLabel;
-    @FXML
-    private Label resultsCountLabel;
-    // min and max rating
-    private Double minRating;
-    private Double maxRating;
 
-    // constructor
-    public AdvancedSearchController() {
-        try {
-            // First ensure ServiceLocator is initialized
-            ServiceLocator serviceLocator = ServiceLocator.getInstance();
+    /**
+     * Performs a search with the given criteria.
+     *
+     * @param criteria The search criteria to use
+     */
+    private void performSearch(SearchCriteria criteria) {
+        if (criteria == null) {
+            logger.warn("Search criteria is null");
+            showInfo("Search", "No search criteria provided");
+            return;
+        }
+
+        // Log the search criteria for debugging
+        logger.debug("Performing search with criteria: {}", criteria);
+
+        // Cancel any ongoing search
+        if (currentSearchTask != null && currentSearchTask.isRunning()) {
+            currentSearchTask.cancel();
+        }
+
+        // Clear previous results
+        if (resultsTableController != null) {
+            resultsTableController.clearResults();
             
-            // Now get the SearchService
-            this.searchService = ServiceLocator.getService(SearchService.class);
-            if (this.searchService == null) {
-                String errorMsg = "Failed to initialize SearchService: service is null";
-                logger.error(errorMsg);
-                throw new IllegalStateException(errorMsg);
+            // Make sure the table's selection model is properly set up
+            TableView<Content> table = resultsTableController.getResultsTable();
+            if (table != null) {
+                table.getSelectionModel().setSelectionMode(SelectionMode.SINGLE);
+                
+                // Update the manage details button state based on selection
+                table.getSelectionModel().selectedItemProperty().addListener((obs, oldSelection, newSelection) -> {
+                    if (manageDetailsButton != null) {
+                        manageDetailsButton.setDisable(newSelection == null);
+                    }
+                });
             }
+        }
 
-            // search query
-            String query = "";  // Initialize query with empty string
-            logger.info("AdvancedSearchController initialized with SearchService");
+        // Update status
+        updateStatus("Searching...");
+
+        // Create a new search task
+        currentSearchTask = new Task<ObservableList<Content>>() {
+            @Override
+            protected ObservableList<Content> call() throws Exception {
+                try {
+                    // Perform the search using the search service
+                    List<Content> results = searchService.search(criteria);
+                    logger.info("Found {} results for search criteria: {}", results.size(), criteria);
+                    return FXCollections.observableArrayList(results);
+                } catch (Exception e) {
+                    logger.error("Error during search: {}", e.getMessage(), e);
+                    Platform.runLater(() -> {
+                        showError("Search Error", "Failed to perform search: " + e.getMessage());
+                        updateStatus("Search failed");
+                    });
+                    throw e;
+                }
+            }
+        };
+
+        // Handle successful search completion
+        currentSearchTask.setOnSucceeded(event -> {
+            try {
+                ObservableList<Content> results = currentSearchTask.getValue();
+                logger.info("Search completed. Found {} results.", results.size());
+
+                // Log the first few results for debugging
+                int maxResultsToLog = Math.min(5, results.size());
+                for (int i = 0; i < maxResultsToLog; i++) {
+                    Content content = results.get(i);
+                    logger.debug("Result {}: {} (ID: {})", i + 1, content.getTitle(), content.getId());
+                }
+
+                if (resultsTableController != null) {
+                    // Make sure the table is visible
+                    if (resultsTableController.getResultsTable() != null) {
+                        resultsTableController.getResultsTable().setVisible(true);
+                        logger.debug("Table visibility set to: {}", resultsTableController.getResultsTable().isVisible());
+                    }
+
+                    // Update the results using the controller's method
+                    resultsTableController.updateResults(results);
+                    logger.debug("Results passed to resultsTableController.updateResults()");
+
+                    // Update the results count label
+                    if (resultsCountLabel != null) {
+                        String countText = String.format("Found %d result%s", results.size(), results.size() != 1 ? "s" : "");
+                        resultsCountLabel.setText(countText);
+                        logger.debug("Results count label updated to: {}", countText);
+                    }
+
+                    // Make sure the Manage Details button is properly set up
+                    TableView<Content> table = resultsTableController.getResultsTable();
+                    if (table != null) {
+                        logger.debug("Table has {} items", table.getItems() != null ? table.getItems().size() : 0);
+                        logger.debug("Table columns: {}", table.getColumns());
+
+                        if (manageDetailsButton != null) {
+                            // Update the button state based on current selection
+                            manageDetailsButton.setDisable(table.getSelectionModel().getSelectedItem() == null);
+                            logger.debug("Manage Details button disabled state: {}", manageDetailsButton.isDisabled());
+                        }
+                    }
+                    updateStatus(String.format("Found %d results", results.size()));
+                }
+            } catch (Exception e){
+                logger.error("Error performing search", e);
+                showError("Search Error", "Failed to perform search: " + e.getMessage());
+                updateStatus("Search failed");
+            }
+        });
+
+        // Handle search errors
+        currentSearchTask.setOnFailed(event -> {
+            Throwable e = currentSearchTask.getException();
+            String errorMsg = "Search failed: " + (e != null ? e.getMessage() : "Unknown error");
+            logger.error(errorMsg, e);
+            showError("Search Error", errorMsg);
+            updateStatus("Search failed");
+        });
+
+        // Run the search in a background thread
+        Thread searchThread = new Thread(currentSearchTask);
+        searchThread.setDaemon(true);
+        searchThread.start();
+    }
+
+    /**
+     * Navigates to the content details view for the specified content.
+     *
+     * @param content The content to view details for
+     */
+    private void navigateToContentDetails(Content content) {
+        if (content == null) {
+            logger.warn("Attempted to navigate to null content");
+            return;
+        }
+
+        try {
+            // TODO: Implement navigation to content details view
+            // For now, just show an info dialog
+            showInfo("Content Details", "Viewing details for: " + content.getTitle());
+        } catch (Exception e) {
+            logger.error("Error navigating to content details", e);
+            showError("Navigation Error", "Could not open content details: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Resets all search filters and clears the results.
+     */
+    @FXML
+    public void resetFilters() {
+        if (searchFormController != null) {
+            // This will trigger a search with empty criteria
+            searchFormController.handleReset();
+        }
+        if (resultsTableController != null) {
+            resultsTableController.clearResults();
+        }
+        updateStatus("Filters reset");
+    }
+
+            
+            
+    /**
+     * Handles the manage details button click event.
+     * Opens the edit view for the selected content item.
+     */
+    @FXML
+    public void handleManageDetails() {
+        try {
+            // Get the selected content from the table
+            Content selectedContent = null;
+            if (resultsTableController != null && resultsTableController.getResultsTable() != null) {
+                selectedContent = resultsTableController.getResultsTable().getSelectionModel().getSelectedItem();
+            } else if (resultsTable != null && resultsTable.getSelectionModel() != null) {
+                selectedContent = (Content) resultsTable.getSelectionModel().getSelectedItem();
+            }
+            
+            if (selectedContent == null) {
+                showInfo("No Selection", "Please select a valid item to manage details.");
+                return;
+            }
+            
+            logger.info("Opening edit view for content: {}", selectedContent.getTitle());
+            
+            // Create a map to pass data to the edit view
+            Map<String, Object> data = new HashMap<>();
+            data.put("contentId", selectedContent.getId());
+            data.put("contentType", selectedContent.getContentType());
+            
+            // Navigate to the edit view with the content ID
+            navigationService.navigateTo(
+                "/fxml/content/edit-content-view.fxml",
+                data,
+                getStage(),
+                "Edit " + selectedContent.getTitle()
+            );
+            
+            logger.info("Successfully navigated to edit view for content ID: {}", selectedContent.getId());
             
         } catch (Exception e) {
-            String errorMsg = String.format("Error initializing AdvancedSearchController: %s", e.getMessage());
-            logger.error(errorMsg, e);
-            throw new RuntimeException(errorMsg, e);
+            logger.error("Error navigating to edit content view: {}", e.getMessage(), e);
+            showError("Error", "Failed to open edit view. Please try again.");
         }
     }
 
-    @FXML
-    public void initialize() {
-        // setup table columns
-        setupTableColumns();
-        setupGenreComboBox();
-        setupRatingSlider();
-        setupYearFrom();
-        setupYearTo();
-        setupCheckBoxes();
-        
-        // Only setup sort options if sortByCombo is available
-        if (sortByCombo != null) {
-            setupSortOptions();
-        } else {
-            logger.debug("Sort combo box is not available in the view, skipping sort options setup");
-        }
-    }
-
-    private void setupYearFrom() {
-        yearFrom.setPromptText("Year from");
-    }
-
-    private void setupYearTo() {
-        yearTo.setPromptText("Year to");
-    }
-
-    private void setupCheckBoxes() {
-        movieCheckBox.setSelected(true);
-        seriesCheckBox.setSelected(true);
-    }
-
-    private void setupTableColumns() {
-        try {
-            // Set up title column with null check and tooltip
-            resultTitleColumn.setCellValueFactory(cellData -> {
-                Content content = cellData.getValue();
-                String title = (content != null && content.getTitle() != null) ? content.getTitle() : "N/A";
-                return new SimpleStringProperty(title);
+    /**
+     * Initializes the table columns with their respective cell value factories.
+     */
+    private void initializeTableColumns() {
+        if (resultsTableController != null) {
+            TableView<Content> table = resultsTableController.getResultsTable();
+            
+            // Set up title column
+            resultTitleColumn = new TableColumn<>("TITLE");
+            resultTitleColumn.setCellValueFactory(new PropertyValueFactory<>("title"));
+            
+            // Set up type column
+            resultTypeColumn = new TableColumn<>("TYPE");
+            resultTypeColumn.setCellValueFactory(new PropertyValueFactory<>("contentType"));
+            
+            // Set up year column
+            resultYearColumn = new TableColumn<>("YEAR");
+            resultYearColumn.setCellValueFactory(new PropertyValueFactory<>("year"));
+            
+            // Set up genre column
+            resultGenreColumn = new TableColumn<>("GENRE");
+            resultGenreColumn.setCellValueFactory(cellData -> {
+                Content content = ((TableColumn.CellDataFeatures<Content, ?>)cellData).getValue();
+                String genres = "";
+                if (content != null && content.getGenres() != null) {
+                    genres = content.getGenres().stream()
+                            .map(Genre::getDisplayName)
+                            .map(Object::toString)
+                            .collect(Collectors.joining(", "));
+                }
+                return new SimpleStringProperty(genres);
             });
             
-            // Add tooltip to title column
+            // Add columns to the table
+            table.getColumns().setAll(
+                resultTitleColumn,
+                resultTypeColumn,
+                resultYearColumn,
+                resultGenreColumn
+            );
+            
+            // Set up cell factories for better rendering
             resultTitleColumn.setCellFactory(column -> new TableCell<Content, String>() {
-                // override updateItem to add tooltip
                 @Override
                 protected void updateItem(String item, boolean empty) {
                     super.updateItem(item, empty);
-                    if (item == null || empty) {
+                    if (empty || item == null) {
                         setText(null);
-                        setTooltip(null);
                     } else {
                         setText(item);
-                        Tooltip tooltip = new Tooltip(item);
-                        tooltip.setStyle("-fx-font-size: 12px; -fx-padding: 5px;");
-                        setTooltip(tooltip);
+                        setStyle("-fx-text-fill: #00E5FF; -fx-font-weight: bold;");
                     }
                 }
             });
             
-            // Set up type column with proper styling
-            resultTypeColumn.setCellValueFactory(cellData -> {
-                Content content = cellData.getValue();
-                if (content == null) return new SimpleStringProperty("N/A");
-                String type = content instanceof Movie ? "Movie" : "Series";
-                return new SimpleStringProperty(type);
-            });
-            
-            // Set up year column with proper null checks and formatting
-            resultYearColumn.setCellValueFactory(cellData -> {
-                Content content = cellData.getValue();
-                if (content == null) return new SimpleIntegerProperty(0).asObject();
-                
-                int year = content.getStartYear();
-                if (year <= 0 && content.getYear() != null) {
-                    try {
-                        Calendar cal = Calendar.getInstance();
-                        cal.setTime(content.getYear());
-                        year = cal.get(Calendar.YEAR);
-                    } catch (Exception e) {
-                        logger.warn("Error parsing year for content: {}", content.getTitle(), e);
-                    }
-                }
-                return new SimpleIntegerProperty(Math.max(year, 0)).asObject();
-            });
-            
-            // Set up genre column with better null handling and formatting
-            resultGenreColumn.setCellValueFactory(cellData -> {
-                try {
-                    Content content = cellData.getValue();
-                    if (content == null) {
-                        return new SimpleStringProperty("No Content");
-                    }
-                    
-                    List<Genre> genres = content.getGenres();
-                    if (genres == null || genres.isEmpty()) {
-                        return new SimpleStringProperty("No genres");
-                    }
-                    
-                    String genreString = genres.stream()
-                        .filter(Objects::nonNull)
-                        .map(genre -> {
-                            try {
-                                try {
-                                    String displayName = (String) genre.getDisplayName();
-                                    if (displayName != null && !displayName.trim().isEmpty()) {
-                                        return displayName.trim();
-                                    }
-                                    // Fallback to enum name formatting if display name is not available
-                                    String name = genre.name();
-                                    if (!name.trim().isEmpty()) {
-                                        return name.charAt(0) + name.substring(1).toLowerCase();
-                                    }
-                                } catch (Exception e) {
-                                    logger.debug("Error processing genre display name", e);
-                                }
-                                return "";
-                            } catch (Exception e) {
-                                logger.warn("Error formatting genre: {}", genre, e);
-                                return "";
-                            }
-                        })
-                        .filter(genre -> !genre.isEmpty())
-                        .distinct()
-                        .collect(Collectors.joining(", "));
-                    
-                    return new SimpleStringProperty(genreString.isEmpty() ? "No genres" : genreString);
-                } catch (Exception e) {
-                    logger.warn("Error getting genres for content", e);
-                    return new SimpleStringProperty("No genres");
-                }
-            });
-            
-            // Set up IMDb rating column with proper null check and formatting
-            resultImdbColumn.setCellValueFactory(cellData -> {
-                Content content = cellData.getValue();
-                if (content == null) return new SimpleStringProperty("No rating");
-                
-                try {
-                    Double rating = content.getImdbRating();
-                    if (rating == null || rating <= 0) {
-                        return new SimpleStringProperty("No rating");
-                    }
-                    return new SimpleStringProperty(String.format("%.1f", rating));
-                } catch (Exception e) {
-                    logger.warn("Error getting rating for content: {}", content.getTitle(), e);
-                    return new SimpleStringProperty("No rating");
-                }
-            });
-            
-            // Set up row factory for better row highlighting and readablity
-            resultsTable.setRowFactory(tv -> {
-                TableRow<Content> row = new TableRow<>();
-                row.hoverProperty().addListener((obs, wasHovered, isNowHovered) -> {
-                    if (isNowHovered && !row.isEmpty()) {
-                        row.setStyle("-fx-background-color: #f0f0f0; -fx-cursor: hand;");
-                    } else {
-                        row.setStyle("");
-                    }
-                });
-                return row;
-            });
-            
-            // Set up row factory to handle row clicks
-            resultsTable.setRowFactory(tv -> {
-                TableRow<Content> row = new TableRow<>();
-                row.setOnMouseClicked(event -> {
-                    if (event.getClickCount() == 2 && !row.isEmpty()) {
-                        Content rowData = row.getItem();
-                        // Handle double click on row
-                        if (rowData != null) {
-                            try {
-                                // Open content details view
-                                try {
-                                    // Use the application's navigation method if available
-                                    logger.info("Navigating to content details for: {}", rowData.getTitle());
-                                    // Example: mainController.showContentDetails(rowData);
-                                    UIUtils.showContentDetails(rowData);
-                                } catch (Exception e) {
-                                    logger.error("Error navigating to content details", e);
-                                    UIUtils.showError("Navigation Error", "Could not open content details: " + e.getMessage());
-                                }
-                            } catch (Exception e) {
-                                logger.error("Error navigating to content details", e);
-                                UIUtils.showError("Error", "Could not open content details: " + e.getMessage());
-                            }
-                        }
-                    }
-                });
-                return row;
-            });
-            
-        } catch (Exception e) {
-            logger.error("Error setting up table columns", e);
-            UIUtils.showError("Error", "Failed to initialize table columns: " + e.getMessage());
-        }
-    }
-
-    // setup genre combo box
-    private void setupGenreComboBox() {
-        genreComboBox.getItems().addAll(
-                "", // Empty option
-                "Action", "Adventure", "Animation", "Comedy", "Crime",
-                "Documentary", "Drama", "Family", "Fantasy", "History",
-                "Horror", "Music", "Mystery", "Romance", "Sci-Fi",
-                "Thriller", "War", "Western"
-        );
-    }
-
-    // setup rating slider
-    private void setupRatingSlider() {
-        ratingSlider.valueProperty().addListener((obs, oldVal, newVal) -> {
-            ratingValueLabel.setText(String.format("%.1f", newVal));
-        });
-    }
-
-    // setup sort options
-    private void setupSortOptions() {
-        sortByCombo.getItems().addAll(
-                "Relevance", "Title (A-Z)", "Title (Z-A)",
-                "Year (Newest)", "Year (Oldest)",
-                "Rating (Highest)", "Rating (Lowest)"
-        );
-        sortByCombo.getSelectionModel().selectFirst();
-    }
-
-    /**
-     * Handles the search button click event.
-     * Performs a search based on the current criteria and updates the results table.
-     */
-    @FXML
-    private void handleSearch() {
-        try {
-            // Cancel any existing search
-            if (currentSearchTask != null && currentSearchTask.isRunning()) {
-                currentSearchTask.cancel();
-            }
-
-            // Create and configure the search task
-            currentSearchTask = new Task<ObservableList<Content>>() {
+            resultTypeColumn.setCellFactory(column -> new TableCell<Content, String>() {
                 @Override
-                protected ObservableList<Content> call() throws Exception {
-                    // build search criteria
-                    SearchCriteria criteria = buildSearchCriteria();
-                    if (criteria == null) {
-                        return FXCollections.observableArrayList();
+                protected void updateItem(String item, boolean empty) {
+                    super.updateItem(item, empty);
+                    if (empty || item == null) {
+                        setText(null);
+                    } else {
+                        setText(item);
+                        setStyle("-fx-text-fill: #40C4FF; -fx-alignment: CENTER;");
                     }
-                    // perform search and return results
-                    List<Content> results = searchService.searchContent(criteria);
-                    return FXCollections.observableArrayList(results);
-                }
-            };
-
-            // Handle successful search completion
-            currentSearchTask.setOnSucceeded(event -> {
-                ObservableList<Content> results = currentSearchTask.getValue();
-                // set results to table
-                resultsTable.setItems(results);
-                // update results count
-                updateResultsCount(results.size());
-
-                // clear status label
-                if (statusLabel != null) {
-                    statusLabel.setText("");
-                }
-
-                // show no results message if no results
-                if (results.isEmpty()) {
-                    UIUtils.showInfo("No Results", "No content found matching your criteria.");
                 }
             });
-
-            // Handle search failure
-            currentSearchTask.setOnFailed(event -> {
-                if (statusLabel != null) {
-                    statusLabel.setText("Search failed");
+            
+            resultYearColumn.setCellFactory(column -> new TableCell<Content, String>() {
+                @Override
+                protected void updateItem(String item, boolean empty) {
+                    super.updateItem(item, empty);
+                    if (empty || item == null) {
+                        setText(null);
+                    } else {
+                        setText(item);
+                        setStyle("-fx-text-fill: #69F0AE; -fx-alignment: CENTER;");
+                    }
                 }
-
-                // show error message if search fails
-                Throwable exception = currentSearchTask.getException();
-                logger.error("Search failed", exception);
-                UIUtils.showError("Search Error", "An error occurred while performing the search: " +
-                        (exception != null ? exception.getMessage() : "Unknown error"));
             });
-
-            // Start the search in a background thread
-            Thread searchThread = new Thread(currentSearchTask, "Search-Thread");
-            // set thread as daemon,which will not prevent the application from exiting
-            searchThread.setDaemon(true);
-            searchThread.start();
-
-        } catch (Exception e) {
-            // show error message if search fails
-            logger.error("Error performing search: {}", e.getMessage(), e);
-            UIUtils.showError("Error", "Failed to perform search: " + e.getMessage());
+            
+            resultGenreColumn.setCellFactory(column -> new TableCell<Content, String>() {
+                @Override
+                protected void updateItem(String item, boolean empty) {
+                    super.updateItem(item, empty);
+                    if (empty || item == null) {
+                        setText(null);
+                    } else {
+                        setText(item);
+                        setStyle("-fx-text-fill: #FF8A65; -fx-alignment: CENTER_LEFT; -fx-padding: 0 10;");
+                    }
+                }
+            });
         }
     }
-
+    
     /**
-     * Builds a SearchCriteria object based on the current UI state.
-     *
-     * @return Configured SearchCriteria object or null if there was an error
-     * @throws IllegalArgumentException if there is an invalid input
-     * @throws RuntimeException if there is an error building the search criteria
+     * Handles the table click event.
+     * If an item is selected, it will navigate to the content details.
      */
-    private SearchCriteria buildSearchCriteria() throws IllegalArgumentException, RuntimeException {
-        try {
-            // Get keywords,which is optional
-            String keywords = keywordsField.getText().trim();
-
-            // Get selected content types,which is optional and can be either movie or series
-            ContentType contentType = null;
-            if (movieCheckBox.isSelected() && seriesCheckBox.isSelected()) {
-                // Will search both types, so leave contentType as null
-            } else if (movieCheckBox.isSelected()) {
-                contentType = ContentType.MOVIE;
-            } else if (seriesCheckBox.isSelected()) {
-                contentType = ContentType.SERIES;
-            } else {
-                // show error message if no content type is selected
-                UIUtils.showError("Error", "Please select at least one content type (Movie/Series)");
-                return null;
-            }
-
-            // Create criteria with optional keywords and content type
-            SearchCriteria criteria = new SearchCriteria(contentType,keywords);
-
-            // Parse year range - use null for no filter instead of default values
-            Integer yearFromValue = null;
-            Integer yearToValue = null;
-            try {
-                // parse year range both from and to values
-                if (!yearFrom.getText().isEmpty()) {
-                    yearFromValue = Integer.parseInt(yearFrom.getText().trim());
-                }
-                if (!yearTo.getText().isEmpty()) {
-                    yearToValue = Integer.parseInt(yearTo.getText().trim());
-                }
-            } catch (NumberFormatException e) {
-                // show error message if year is not valid
-                logger.warn("Invalid year format", e);
-                UIUtils.showError("Invalid Year", "Please enter valid year values");
-                return null;
-            }
-
-            // Set year range both for max and min year
-            if (yearFromValue != null) {
-                criteria.setMinYear(yearFromValue);
-            }
-            if (yearToValue != null) {
-                criteria.setMaxYear(yearToValue);
-            }
-
-            // Set rating filter - only apply if slider is moved from 0.
-            double minRating = ratingSlider.getValue();
-            if (minRating > 0.1) {  // Small threshold to account for floating point imprecision
-                criteria.setMinRating(minRating);
-                logger.debug("Setting min rating to: {}", minRating);
-            }
-
-            // Set genre if selected
-            if (genreComboBox.getValue() != null && !genreComboBox.getValue().isEmpty()) {
-                try {
-                    // convert genre to uppercase and replace hyphens with underscores
-                    String genreValue = genreComboBox.getValue().toUpperCase().replace("-", "_");
-                    // set genre to criteria
-                    Genre genre = Genre.valueOf(genreValue);
-                    criteria.setGenre(genre);
-                    // log genre
-                    logger.debug("Setting genre to: {}", genre);
-                    // show genre in status label
-                    if (statusLabel != null) {
-                        statusLabel.setText("Genre: " + genre);
-                    }
-                } catch (IllegalArgumentException e) {
-                    logger.warn("Invalid genre selected: {}", genreComboBox.getValue(), e);
-                }
-            }
-
-            // Set content type if specified (null means search both movies and series)
-            criteria.setContentType(contentType);
-
-            return criteria;
-        } catch (Exception e) {
-            // show error message if search criteria building fails
-            logger.error("Error building search criteria", e);
-            UIUtils.showError("Error", "An error occurred while building search criteria");
-            return null;
-        }
-    }
-
-    //update results count label,which shows the number of results found
-    private void updateResultsCount(int count) {
-        if (resultsCountLabel != null) {
-            resultsCountLabel.setText(String.valueOf(count));
-        }
-    }
-
-    //reset all filters to default values from the reset filters button
     @FXML
-    private void resetFilters() {
-        try {
-            //clear all text fields
-            keywordsField.clear();
-            movieCheckBox.setSelected(true);
-            seriesCheckBox.setSelected(true);
-            yearFrom.clear();
-            yearTo.clear();
-            //clear genre selection
-            if (genreComboBox != null) {
-                genreComboBox.getSelectionModel().clearSelection();
+    public void handleTableClick() {
+        if (resultsTable != null) {
+            @SuppressWarnings("unchecked")
+            TableView<Content> tableView = (TableView<Content>) resultsTable;
+            Content selectedContent = tableView.getSelectionModel().getSelectedItem();
+            if (selectedContent != null) {
+                navigateToContentDetails(selectedContent);
             }
-            //reset rating slider to 0
-            if (ratingSlider != null) {
-                ratingSlider.setValue(0);
-            }
-            //reset sort by combo box to first item,if it's not empty
-            if (sortByCombo != null && !sortByCombo.getItems().isEmpty()) {
-                sortByCombo.getSelectionModel().selectFirst();
-            }
-        } catch (Exception e) {
-            logger.error("Error resetting filters: ", e);
         }
     }
+    
+    // performSearch method is already defined above
 }

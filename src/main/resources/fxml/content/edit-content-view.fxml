@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.*?>
+
+<BorderPane style="-fx-background-color: #0f0f0f;" xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.papel.imdb_clone.controllers.content.EditContentController">
+
+    <top>
+        <HBox spacing="10" style="-fx-background-color: #1a1a1a; -fx-padding: 15; -fx-alignment: center-left;">
+            <Button onAction="#handleBack" style="-fx-background-color: transparent; -fx-text-fill: #f5c518; -fx-font-weight: bold; -fx-font-size: 14; -fx-cursor: hand;" text="← Back">
+                <graphic>
+                    <Text fill="#f5c518">
+                        <font>
+                            <Font name="System Bold" size="16" />
+                        </font>
+                    </Text>
+                </graphic>
+            </Button>
+            <Text fill="#f5c518" style="-fx-font-size: 20; -fx-font-weight: bold;">
+                Edit Content
+            </Text>
+        </HBox>
+    </top>
+
+    <center>
+        <ScrollPane fitToWidth="true" hbarPolicy="NEVER" style="-fx-background: #0f0f0f;">
+            <VBox style="-fx-padding: 20; -fx-spacing: 20; -fx-alignment: top_center;">
+                <!-- Main Content Container -->
+                <VBox style="-fx-background-color: #1a1a1a; -fx-padding: 30; -fx-spacing: 25; -fx-background-radius: 10; -fx-max-width: 1000;">
+                    <!-- Title and Basic Info -->
+                    <VBox spacing="15">
+                        <Text style="-fx-font-size: 24; -fx-fill: #f5c518; -fx-font-weight: bold;" text="Basic Information" />
+                        
+                        <HBox spacing="15">
+                            <VBox spacing="5" HBox.hgrow="ALWAYS">
+                                <Label style="-fx-text-fill: #e0e0e0; -fx-font-weight: bold;" text="Title*" />
+                                <TextField fx:id="titleField" style="-fx-background-color: #2d2d2d; -fx-text-fill: white; -fx-prompt-text-fill: #888; -fx-background-radius: 5; -fx-padding: 10;" />
+                            </VBox>
+                            
+                            <VBox spacing="5">
+                                <Label style="-fx-text-fill: #e0e0e0; -fx-font-weight: bold;" text="Type*" />
+                                <ComboBox fx:id="typeComboBox" style="-fx-background-color: #2d2d2d; -fx-text-fill: white; -fx-prompt-text-fill: #888; -fx-background-radius: 5; -fx-pref-width: 200;" />
+                            </VBox>
+                            
+                            <VBox spacing="5">
+                                <Label style="-fx-text-fill: #e0e0e0; -fx-font-weight: bold;" text="Release Year*" />
+                                <TextField fx:id="yearField" style="-fx-background-color: #2d2d2d; -fx-text-fill: white; -fx-prompt-text-fill: #888; -fx-background-radius: 5; -fx-padding: 10; -fx-pref-width: 100;" />
+                            </VBox>
+                            
+                            <VBox spacing="5">
+                                <Label style="-fx-text-fill: #e0e0e0; -fx-font-weight: bold;" text="Rating*" />
+                                <TextField fx:id="ratingField" style="-fx-background-color: #2d2d2d; -fx-text-fill: white; -fx-prompt-text-fill: #888; -fx-background-radius: 5; -fx-padding: 10; -fx-pref-width: 100;" />
+                            </VBox>
+                        </HBox>
+                        
+                        <HBox spacing="15">
+                            <VBox spacing="5" HBox.hgrow="ALWAYS">
+                                <Label style="-fx-text-fill: #e0e0e0; -fx-font-weight: bold;" text="Director" />
+                                <TextField fx:id="directorField" style="-fx-background-color: #2d2d2d; -fx-text-fill: white; -fx-prompt-text-fill: #888; -fx-background-radius: 5; -fx-padding: 10;" />
+                            </VBox>
+                            
+                            <VBox spacing="5">
+                                <Label style="-fx-text-fill: #e0e0e0; -fx-font-weight: bold;" text="Runtime (min)" />
+                                <TextField fx:id="runtimeField" style="-fx-background-color: #2d2d2d; -fx-text-fill: white; -fx-prompt-text-fill: #888; -fx-background-radius: 5; -fx-padding: 10; -fx-pref-width: 120;" />
+                            </VBox>
+                        </HBox>
+                        
+                        <VBox spacing="5">
+                            <Label style="-fx-text-fill: #e0e0e0; -fx-font-weight: bold;" text="Plot Summary" />
+                            <TextArea fx:id="plotArea" style="-fx-background-color: #2d2d2d; -fx-text-fill: white; -fx-prompt-text-fill: #888; -fx-background-radius: 5; -fx-padding: 10; -fx-min-height: 100;" wrapText="true" />
+                        </VBox>
+                    </VBox>
+                    
+                    <!-- Genres -->
+                    <VBox spacing="10">
+                        <Label style="-fx-text-fill: #e0e0e0; -fx-font-weight: bold;" text="Genres" />
+                        <HBox spacing="10" style="-fx-wrap-text: true; -fx-pref-width: 100%;">
+                            <CheckBox fx:id="actionCheckBox" style="-fx-text-fill: #e0e0e0;" text="Action" />
+                            <CheckBox fx:id="adventureCheckBox" style="-fx-text-fill: #e0e0e0;" text="Adventure" />
+                            <CheckBox fx:id="animationCheckBox" style="-fx-text-fill: #e0e0e0;" text="Animation" />
+                            <CheckBox fx:id="comedyCheckBox" style="-fx-text-fill: #e0e0e0;" text="Comedy" />
+                            <CheckBox fx:id="crimeCheckBox" style="-fx-text-fill: #e0e0e0;" text="Crime" />
+                            <CheckBox fx:id="documentaryCheckBox" style="-fx-text-fill: #e0e0e0;" text="Documentary" />
+                            <CheckBox fx:id="dramaCheckBox" style="-fx-text-fill: #e0e0e0;" text="Drama" />
+                            <CheckBox fx:id="familyCheckBox" style="-fx-text-fill: #e0e0e0;" text="Family" />
+                            <CheckBox fx:id="fantasyCheckBox" style="-fx-text-fill: #e0e0e0;" text="Fantasy" />
+                            <CheckBox fx:id="historyCheckBox" style="-fx-text-fill: #e0e0e0;" text="History" />
+                            <CheckBox fx:id="horrorCheckBox" style="-fx-text-fill: #e0e0e0;" text="Horror" />
+                            <CheckBox fx:id="musicCheckBox" style="-fx-text-fill: #e0e0e0;" text="Music" />
+                            <CheckBox fx:id="mysteryCheckBox" style="-fx-text-fill: #e0e0e0;" text="Mystery" />
+                            <CheckBox fx:id="romanceCheckBox" style="-fx-text-fill: #e0e0e0;" text="Romance" />
+                            <CheckBox fx:id="scifiCheckBox" style="-fx-text-fill: #e0e0e0;" text="Sci-Fi" />
+                            <CheckBox fx:id="thrillerCheckBox" style="-fx-text-fill: #e0e0e0;" text="Thriller" />
+                            <CheckBox fx:id="warCheckBox" style="-fx-text-fill: #e0e0e0;" text="War" />
+                            <CheckBox fx:id="westernCheckBox" style="-fx-text-fill: #e0e0e0;" text="Western" />
+                        </HBox>
+                    </VBox>
+                    
+                    <!-- Series-specific fields -->
+                    <VBox fx:id="seriesFields" spacing="15" visible="false">
+                        <Text style="-fx-font-size: 18; -fx-fill: #f5c518; -fx-font-weight: bold;" text="Series Information" />
+                        
+                        <HBox spacing="15">
+                            <VBox spacing="5">
+                                <Label style="-fx-text-fill: #e0e0e0; -fx-font-weight: bold;" text="Seasons" />
+                                <TextField fx:id="seasonsField" style="-fx-background-color: #2d2d2d; -fx-text-fill: white; -fx-prompt-text-fill: #888; -fx-background-radius: 5; -fx-padding: 10; -fx-pref-width: 100;" />
+                            </VBox>
+                            
+                            <VBox spacing="5">
+                                <Label style="-fx-text-fill: #e0e0e0; -fx-font-weight: bold;" text="Episodes" />
+                                <TextField fx:id="episodesField" style="-fx-background-color: #2d2d2d; -fx-text-fill: white; -fx-prompt-text-fill: #888; -fx-background-radius: 5; -fx-padding: 10; -fx-pref-width: 100;" />
+                            </VBox>
+                            
+                            <VBox spacing="5">
+                                <Label style="-fx-text-fill: #e0e0e0; -fx-font-weight: bold;" text="Status" />
+                                <ComboBox fx:id="statusComboBox" style="-fx-background-color: #2d2d2d; -fx-text-fill: white; -fx-prompt-text-fill: #888; -fx-background-radius: 5; -fx-pref-width: 150;" />
+                            </VBox>
+                        </HBox>
+                    </VBox>
+                    
+                    <!-- Buttons -->
+                    <HBox spacing="15" style="-fx-padding: 10 0 0 0; -fx-alignment: center-right;">
+                        <Button onAction="#handleCancel" style="-fx-background-color: #333333; -fx-text-fill: #e0e0e0; -fx-font-weight: bold; -fx-font-size: 14; -fx-padding: 8 20; -fx-background-radius: 4; -fx-cursor: hand;" text="CANCEL" />
+                        <Button onAction="#handleSave" style="-fx-background-color: #f5c518; -fx-text-fill: #000000; -fx-font-weight: bold; -fx-font-size: 14; -fx-padding: 8 30; -fx-background-radius: 4; -fx-cursor: hand; -fx-effect: dropshadow(gaussian, rgba(245, 197, 24, 0.5), 5, 0, 0, 2);" text="SAVE CHANGES" />
+                    </HBox>
+                </VBox>
+            </VBox>
+        </ScrollPane>
+    </center>
+    
+</BorderPane>

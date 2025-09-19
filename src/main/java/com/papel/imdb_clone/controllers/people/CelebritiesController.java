@@ -16,9 +16,8 @@ import javafx.fxml.Initializable;
 import javafx.scene.control.*;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.GridPane;
-import javafx.scene.layout.VBox;
 import javafx.geometry.Insets;
-import javafx.scene.control.Alert.AlertType;
+
 import java.time.LocalDate;
 import java.util.Arrays;
 import java.util.Optional;
@@ -80,6 +79,7 @@ public class CelebritiesController implements Initializable {
     // Services
     private CelebrityService<Actor> actorService;
     private CelebrityService<Director> directorService;
+    private Map<String, Object> data;
 
     //initialize the controller
     @Override
@@ -243,7 +243,7 @@ public class CelebritiesController implements Initializable {
     private void handleGoToHome() {
         try {
             NavigationService.getInstance().navigateTo("/fxml/base/home-view.fxml",
-                (Stage) actorsTable.getScene().getWindow(),"IMDb Clone - Home");
+                    data, (Stage) actorsTable.getScene().getWindow(),"IMDb Clone - Home");
         } catch (Exception e) {
             logger.error("Error navigating to home: {}", e.getMessage(), e);
             showError("Navigation Error", "Failed to navigate to home: " + e.getMessage());

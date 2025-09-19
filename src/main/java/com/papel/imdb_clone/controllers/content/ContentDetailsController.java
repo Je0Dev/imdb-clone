@@ -1,5 +1,6 @@
 package com.papel.imdb_clone.controllers.content;
 
+import com.papel.imdb_clone.model.content.Content;
 import com.papel.imdb_clone.model.people.Actor;
 import com.papel.imdb_clone.service.navigation.NavigationService;
 import javafx.fxml.FXML;
@@ -58,6 +59,7 @@ public class ContentDetailsController {
     // Data
     private String contentId;
     private String contentType; // "movie" or "tv"
+    private Content content;
 
     @FXML
     public void initialize() {
@@ -190,6 +192,29 @@ public class ContentDetailsController {
         NavigationService.getInstance().goBack();
     }
     
+    /**
+     * Toggle edit mode for the content details
+     * @param editMode true to enable editing, false to disable
+     */
+    public void setEditMode(boolean editMode) {
+        // In a real implementation, you would enable/disable editing of fields here
+        // For now, we'll just show a message
+        if (editMode) {
+            // Show a dialog indicating edit mode is enabled
+            Alert alert = new Alert(Alert.AlertType.INFORMATION);
+            alert.setTitle("Edit Mode");
+            alert.setHeaderText("Edit Mode Enabled");
+            alert.setContentText("You are now in edit mode. Make your changes and click 'Save' when done.");
+            alert.showAndWait();
+            
+            // In a real implementation, you would enable form fields for editing here
+            // For example:
+            // titleField.setEditable(true);
+            // overviewArea.setEditable(true);
+            // etc.
+        }
+    }
+    
     // Load similar content (to be implemented)
     private void loadSimilarContent(String contentId, String contentType) {
         // In a real app, you would fetch similar content from your API
@@ -204,5 +229,10 @@ public class ContentDetailsController {
 
     public void setContentId(String id) {
         this.contentId = id;
+    }
+
+    public void setContent(Content content) {
+        this.content = content;
+        
     }
 }

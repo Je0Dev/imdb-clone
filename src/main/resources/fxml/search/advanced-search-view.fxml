@@ -6,103 +6,37 @@
 <?import javafx.scene.layout.*?>
 <?import javafx.scene.text.*?>
 
-<BorderPane prefHeight="800" prefWidth="1200" style="-fx-background-color: #0a0a0a;" xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1"
+<BorderPane prefHeight="800" prefWidth="1200" style="-fx-background-color: #0a0a0a;" 
+            xmlns="http://javafx.com/javafx/17.0.12" 
+            xmlns:fx="http://javafx.com/fxml/1"
             fx:controller="com.papel.imdb_clone.controllers.search.AdvancedSearchController">
+    
     <top>
         <VBox spacing="15.0" style="-fx-padding: 20;" VBox.vgrow="NEVER">
             <HBox alignment="CENTER_LEFT" spacing="15">
                 <Text style="-fx-fill: #00BCD4; -fx-font-size: 26px; -fx-font-weight: bolder; -fx-effect: dropshadow(gaussian, rgba(0,188,212,0.5), 10, 0, 0, 2);" text="ADVANCED SEARCH" />
                 <Region HBox.hgrow="ALWAYS" />
                 <Label fx:id="resultsCountLabel" style="-fx-text-fill: #00BCD4; -fx-font-weight: bolder; -fx-font-size: 16; -fx-effect: dropshadow(gaussian, rgba(0,188,212,0.5), 5, 0, 0, 1);" />
+                <Button fx:id="manageDetailsButton" onAction="#handleManageDetails" style="-fx-background-color: transparent; -fx-text-fill: #4CAF50; -fx-border-color: #4CAF50; -fx-border-width: 1.5; -fx-border-radius: 4; -fx-padding: 5 10; -fx-font-weight: bold; -fx-cursor: hand; -fx-effect: dropshadow(gaussian, rgba(76,175,80,0.3), 5, 0, 0, 1);" text="MANAGE DETAILS">
+                    <tooltip>
+                        <Tooltip text="Edit selected content" />
+                    </tooltip>
+                </Button>
                 <Button onAction="#goToHome" style="-fx-background-color: transparent; -fx-text-fill: #f5c518; -fx-border-color: #f5c518; -fx-border-width: 1.5; -fx-border-radius: 4; -fx-padding: 5 10; -fx-font-weight: bold; -fx-cursor: hand; -fx-effect: dropshadow(gaussian, rgba(245,197,24,0.3), 5, 0, 0, 1);" text="HOME">
                     <tooltip>
                         <Tooltip text="Go to Home" />
                     </tooltip>
                 </Button>
             </HBox>
-
-            <!-- Search Form -->
-            <VBox spacing="15" style="-fx-padding: 10; -fx-background-color: #1E1E1E; -fx-background-radius: 6; -fx-border-color: #333; -fx-border-radius: 6;">
-                <HBox alignment="CENTER_LEFT" spacing="15">
-                    <Label style="-fx-text-fill: #00BCD4; -fx-font-weight: bold; -fx-font-size: 14;" text="SEARCH CRITERIA" />
-                    <Region HBox.hgrow="ALWAYS" />
-                </HBox>
-
-                <GridPane hgap="15" vgap="10">
-                    <padding>
-                        <Insets bottom="10" left="10" right="10"  />
-                    </padding>
-
-                    <!-- Row 1 -->
-                    <Label style="-fx-text-fill: #FFFFFF; -fx-font-weight: bold;" text="Keywords:" GridPane.columnIndex="0" GridPane.rowIndex="0" />
-                    <TextField fx:id="keywordsField" promptText="Title, plot, actors..." style="-fx-background-color: #2A2A2A; -fx-text-fill: #FFFFFF; -fx-prompt-text-fill: #888; -fx-background-radius: 4; -fx-border-color: #444; -fx-border-radius: 4; -fx-padding: 8 12;" GridPane.columnIndex="1" GridPane.columnSpan="3" GridPane.rowIndex="0" />
-
-                    <!-- Row 2 -->
-                    <Label style="-fx-text-fill: #FFFFFF; -fx-font-weight: bold;" text="Content Type:" GridPane.columnIndex="0" GridPane.rowIndex="1" />
-                    <HBox spacing="10" GridPane.columnIndex="1" GridPane.rowIndex="1">
-                        <CheckBox fx:id="movieCheckBox" selected="true" style="-fx-text-fill: #FFFFFF;" text="Movies" />
-                        <CheckBox fx:id="seriesCheckBox" selected="true" style="-fx-text-fill: #FFFFFF;" text="TV Series" />
-                    </HBox>
-
-                    <Label style="-fx-text-fill: #FFFFFF; -fx-font-weight: bold;" text="Year Range:" GridPane.columnIndex="2" GridPane.rowIndex="1" />
-                    <HBox alignment="CENTER_LEFT" spacing="5" GridPane.columnIndex="3" GridPane.rowIndex="1">
-                        <TextField fx:id="yearFrom" prefWidth="70" promptText="From" style="-fx-background-color: #2A2A2A; -fx-text-fill: #FFFFFF; -fx-prompt-text-fill: #888; -fx-background-radius: 4; -fx-border-color: #444; -fx-border-radius: 4; -fx-padding: 8 12;" />
-                        <Label style="-fx-text-fill: #FFFFFF; -fx-padding: 0 5;" text="-" />
-                        <TextField fx:id="yearTo" prefWidth="70" promptText="To" style="-fx-background-color: #2A2A2A; -fx-text-fill: #FFFFFF; -fx-prompt-text-fill: #888; -fx-background-radius: 4; -fx-border-color: #444; -fx-border-radius: 4; -fx-padding: 8 12;" />
-                    </HBox>
-
-                    <!-- Row 3 -->
-                    <Label style="-fx-text-fill: #FFFFFF; -fx-font-weight: bold;" text="Genre:" GridPane.columnIndex="0" GridPane.rowIndex="2" />
-                    <ComboBox fx:id="genreComboBox" prefWidth="200" promptText="Select genre..." style="-fx-background-color: #2A2A2A; -fx-text-fill: #FFFFFF; -fx-prompt-text-fill: #888; -fx-background-radius: 4; -fx-border-color: #444; -fx-border-radius: 4; -fx-padding: 5 10;" GridPane.columnIndex="1" GridPane.rowIndex="2" />
-
-                    <Label style="-fx-text-fill: #FFFFFF; -fx-font-weight: bold;" text="Minimum Rating:" GridPane.columnIndex="2" GridPane.rowIndex="2" />
-                    <HBox alignment="CENTER_LEFT" spacing="5" GridPane.columnIndex="3" GridPane.rowIndex="2">
-                        <Slider fx:id="ratingSlider" majorTickUnit="2" max="10"  minorTickCount="1" prefWidth="150" showTickLabels="true" showTickMarks="true" snapToTicks="true" style="-fx-padding: 5 0;"  />
-                        <Label fx:id="ratingValueLabel" style="-fx-text-fill: #FFD54F; -fx-font-weight: bold; -fx-min-width: 30;" text="0.0" />
-                    </HBox>
-                    <columnConstraints>
-                        <ColumnConstraints />
-                        <ColumnConstraints />
-                        <ColumnConstraints />
-                        <ColumnConstraints />
-                    </columnConstraints>
-                    <!-- Row 4 - Sort By -->
-                    <Label style="-fx-text-fill: #FFFFFF; -fx-font-weight: bold;" text="Sort By:" GridPane.columnIndex="0" GridPane.rowIndex="3" />
-                    <ComboBox fx:id="sortByCombo" prefWidth="200" style="-fx-background-color: #2A2A2A; -fx-text-fill: #FFFFFF; -fx-prompt-text-fill: #888; -fx-background-radius: 4; -fx-border-color: #444; -fx-border-radius: 4; -fx-padding: 5 10;" GridPane.columnIndex="1" GridPane.rowIndex="3">
-                        <tooltip>
-                            <Tooltip text="Select how to sort the search results" />
-                        </tooltip>
-                    </ComboBox>
-                    
-                    <rowConstraints>
-                        <RowConstraints />
-                        <RowConstraints />
-                        <RowConstraints />
-                        <RowConstraints />
-                    </rowConstraints>
-                </GridPane>
-
-                <HBox alignment="CENTER_RIGHT" spacing="15" style="-fx-padding: 0 10 10 0;">
-                    <Button onAction="#resetFilters" style="-fx-background-color: transparent; -fx-text-fill: #FF9800; -fx-border-color: #FF9800; -fx-border-width: 1.5; -fx-border-radius: 4; -fx-padding: 8 15; -fx-font-weight: bold; -fx-cursor: hand; -fx-effect: dropshadow(gaussian, rgba(255,152,0,0.3), 5, 0, 0, 1);" text="CLEAR FIELDS">
-                        <tooltip>
-                            <Tooltip text="Clear all search fields" />
-                        </tooltip>
-                    </Button>
-                    <Region HBox.hgrow="ALWAYS" />
-                    <Button defaultButton="true" onAction="#handleSearch" style="-fx-background-color: #00BCD4; -fx-text-fill: #000000; -fx-font-weight: bolder; -fx-font-size: 14; -fx-padding: 8 25; -fx-background-radius: 4; -fx-cursor: hand; -fx-effect: dropshadow(gaussian, rgba(0,188,212,0.5), 5, 0, 0, 2);" text="SEARCH (Enter)">
-                        <tooltip>
-                            <Tooltip text="Perform search with current criteria (Shortcut: Enter)" />
-                        </tooltip>
-                    </Button>
-                </HBox>
-            </VBox>
+            
+            <!-- Include the search form -->
+            <fx:include fx:id="searchForm" source="search-form-view.fxml" />
         </VBox>
     </top>
-
     <center>
         <VBox spacing="10" style="-fx-padding: 0 20 20 20;" VBox.vgrow="ALWAYS">
             <ScrollPane fitToWidth="true" style="-fx-background-color: transparent; -fx-padding: 0;" VBox.vgrow="ALWAYS">
-                <TableView fx:id="resultsTable" style="-fx-background-color: #1A1A1A; -fx-text-fill: #FFFFFF; -fx-table-cell-border-color: #333;" styleClass="content-table" VBox.vgrow="ALWAYS" HBox.hgrow="ALWAYS">
+                <TableView fx:id="resultsTable" style="-fx-background-color: #1A1A1A; -fx-text-fill: #FFFFFF; -fx-table-cell-border-color: #333;" styleClass="content-table" VBox.vgrow="ALWAYS" HBox.hgrow="ALWAYS" onMouseClicked="#handleTableClick">
                     <columns>
                         <!-- Title Column -->
                         <TableColumn fx:id="resultTitleColumn" prefWidth="250"  text="TITLE" style="-fx-font-weight: bold; -fx-text-fill: #00E5FF; -fx-font-size: 14;">

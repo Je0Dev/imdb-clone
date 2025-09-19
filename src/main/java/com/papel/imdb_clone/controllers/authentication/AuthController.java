@@ -100,6 +100,7 @@ public class AuthController extends BaseController {
     //successMessage and sessiontoken
     private String successMessage;
     private String sessionToken;
+    private Map<String, Object> data;
 
 
     // Initialize the controller which is called when the controller is loaded
@@ -270,7 +271,7 @@ public class AuthController extends BaseController {
                 loginPasswordField.clear();
 
                 // Navigate to main application
-                navigationService.navigateTo("/fxml/base/home-view.fxml", (Stage) loginButton.getScene().getWindow(), "IMDb Clone");
+                navigationService.navigateTo("/fxml/base/home-view.fxml", data, (Stage) loginButton.getScene().getWindow(), "IMDb Clone");
             }
 
         } catch (AuthException e) {
