@@ -41,14 +41,37 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 /**
- * Controller for managing TV series in the application.
- * Handles all series-related operations including listing, adding, editing, and deleting series.
+ * Controller for managing TV series in the IMDB Clone application.
+ * 
+ * <p>This controller handles all series-related operations including:
+ * <ul>
+ *   <li>Displaying and filtering series in a table view</li>
+ *   <li>Adding, editing, and deleting series</li>
+ *   <li>Managing seasons and episodes</li>
+ *   <li>Handling user ratings and reviews</li>
+ *   <li>Advanced search functionality</li>
+ * </ul>
+ * 
+ * @author [Your Name]
+ * @version 1.0
+ * @since 2025-09-20
  */
 public class SeriesController extends BaseController implements Initializable {
+    /** Logger instance for this class */
     private static final Logger logger = LoggerFactory.getLogger(SeriesController.class);
+    
+    /** Data map for storing application state */
     private Map<String, Object> data;
+    
+    /** ID of the currently logged-in user */
     private int currentUserId;
 
+    /**
+     * Handles the action when the manage series button is clicked.
+     * Validates if a series is selected and shows the management dialog.
+     * 
+     * @param event The action event that triggered this method
+     */
     @FXML
     private void handleManageSeries(ActionEvent event) {
         try {
@@ -65,6 +88,11 @@ public class SeriesController extends BaseController implements Initializable {
         }
     }
 
+    /**
+     * Displays the series management dialog for the selected series.
+     * 
+     * @param selectedSeries The series to be managed
+     */
     private void showSeriesManagementDialog(Series selectedSeries) {
         try {
             //add message here
@@ -77,26 +105,53 @@ public class SeriesController extends BaseController implements Initializable {
         }
     }
 
-    private void showErrorAlert(String failedToManageSeries, String message) {
+    /**
+     * Displays an error alert dialog with the specified title and message.
+     * 
+     * @param title   The title of the error dialog
+     * @param message The detailed error message to display
+     */
+    private void showErrorAlert(String title, String message) {
         Alert alert = new Alert(Alert.AlertType.ERROR);
         alert.setTitle("Error");
-        alert.setHeaderText(failedToManageSeries);
+        alert.setHeaderText(title);
         alert.setContentText(message);
         alert.showAndWait();
     }
 
     // UI Components
+    /** Status label for displaying messages to the user */
     @FXML private Label statusLabel;
+    
+    /** Label for displaying the number of search results */
+    @FXML private Label resultsCountLabel;
+    
+    /** Table view that displays the list of series */
     @FXML private TableView<Series> seriesTable;
+    
+    /** Column for displaying series titles */
     @FXML private TableColumn<Series, String> seriesTitleColumn;
+    
+    /** Column for displaying series release years */
     @FXML private TableColumn<Series, Integer> seriesYearColumn;
+    
+    /** Column for displaying series genres */
     @FXML private TableColumn<Series, String> seriesGenreColumn;
+    
+    /** Column for displaying the number of seasons in each series */
     @FXML private TableColumn<Series, Integer> seriesSeasonsColumn;
+    
+    /** Column for displaying the total number of episodes in each series */
     @FXML private TableColumn<Series, Integer> seriesEpisodesColumn;
+    
+    /** Column for displaying average user ratings of series */
     @FXML private TableColumn<Series, Double> seriesRatingColumn;
+    
+    /** Column for displaying the creator(s) of each series */
     @FXML private TableColumn<Series, String> seriesCreatorColumn;
-    @FXML
-    private TableColumn<Series, String> seriesCastColumn;
+    
+    /** Column for displaying the main cast of each series */
+    @FXML private TableColumn<Series, String> seriesCastColumn;
     
     /**
      * Navigates back to the home view.
@@ -113,21 +168,46 @@ public class SeriesController extends BaseController implements Initializable {
             UIUtils.showError("Navigation Error", "Failed to navigate to home view: " + e.getMessage());
         }
     }
+    /** Text field for searching series by title or other criteria */
     @FXML private TextField seriesSearchField;
+    
+    /** Combo box for selecting sort criteria for the series list */
     @FXML private ComboBox<String> seriesSortBy;
 
     // Data
+    /** List containing all series loaded from the database */
     private final ObservableList<Series> allSeries = FXCollections.observableArrayList();
+    
+    /** List containing series that match the current filter criteria */
     private final ObservableList<Series> filteredSeries = FXCollections.observableArrayList();
+    
+    /** Property binding for the currently selected series in the table */
     private final ObjectProperty<Series> selectedSeries = new SimpleObjectProperty<>();
+    
+    /** Service for handling series-related business logic */
     private SeriesService seriesService;
 
+    /**
+     * Initializes the controller class. This method is automatically called
+     * by JavaFX after the FXML file has been loaded.
+     * 
+     * @param location  The location used to resolve relative paths for the root object, or null if not known
+     * @param resources The resources used to localize the root object, or null if not localized
+     */
     @Override
     public void initialize(URL location, ResourceBundle resources) {
         // This method is called by JavaFX during FXML loading
         // The actual initialization with user context happens in initializeController
     }
 
+    /**
+     * Initializes the controller with the current user's context.
+     * This method sets up the controller with the current user's ID and initializes
+     * the UI components and data bindings.
+     * 
+     * @param currentUserId The ID of the currently logged-in user
+     * @throws Exception if there is an error during initialization
+     */
     @Override
     public void initializeController(int currentUserId) throws Exception {
         this.currentUserId = currentUserId;
@@ -160,6 +240,12 @@ public class SeriesController extends BaseController implements Initializable {
     }
     
     // Setter for series service (for dependency injection)
+    /**
+     * Sets the series service for this controller.
+     * This method allows for dependency injection of the SeriesService.
+     * 
+     * @param seriesService The SeriesService instance to be used by this controller
+     */
     public void setContentService(SeriesService seriesService) {
         this.seriesService = seriesService;
     }
@@ -231,17 +317,34 @@ public class SeriesController extends BaseController implements Initializable {
         });
 
         // Set up rating column
-        seriesRatingColumn.setCellValueFactory(new PropertyValueFactory<>("imdbRating"));
+        seriesRatingColumn.setCellValueFactory(cellData -> {
+            // First try to get the rating from the Series class (user rating)
+            Double rating = cellData.getValue().getRating();
+            // If no user rating, fall back to IMDb rating
+            if (rating == 0.0) {
+                rating = cellData.getValue().getImdbRating();
+            }
+            return new SimpleObjectProperty<>(rating);
+        });
+        
         seriesRatingColumn.setCellFactory(col -> new TableCell<Series, Double>() {
             @Override
             protected void updateItem(Double item, boolean empty) {
                 super.updateItem(item, empty);
-                if (empty || item == null) {
-                    setText("");
+                if (empty || item == null || item == 0.0) {
+                    setText("N/A");
+                    setStyle("-fx-alignment: CENTER; -fx-padding: 5; -fx-text-fill: #888;");
                 } else {
                     setText(String.format("%.1f", item));
+                    // Color code based on rating
+                    if (item >= 8.0) {
+                        setStyle("-fx-alignment: CENTER; -fx-padding: 5; -fx-font-weight: bold; -fx-text-fill: #4CAF50;");
+                    } else if (item >= 6.0) {
+                        setStyle("-fx-alignment: CENTER; -fx-padding: 5; -fx-font-weight: bold; -fx-text-fill: #FFC107;");
+                    } else {
+                        setStyle("-fx-alignment: CENTER; -fx-padding: 5; -fx-font-weight: bold; -fx-text-fill: #F44336;");
+                    }
                 }
-                setStyle("-fx-alignment: CENTER; -fx-padding: 5; -fx-font-weight: bold; -fx-text-fill: #FFD700;");
             }
         });
 
@@ -342,6 +445,14 @@ public class SeriesController extends BaseController implements Initializable {
                     
                     // Update the filtered list and UI
                     filterSeries();
+                    
+                    // Update results count
+                    if (resultsCountLabel != null) {
+                        resultsCountLabel.setText(String.format("Results: %d", uniqueSeries.size()));
+                    } else {
+                        logger.warn("resultsCountLabel is not initialized");
+                    }
+                    
                     statusLabel.setText(String.format("Loaded %d unique series", uniqueSeries.size()));
                     logger.info("Successfully loaded and displayed {} unique series", uniqueSeries.size());
                 } catch (Exception e) {
@@ -357,13 +468,18 @@ public class SeriesController extends BaseController implements Initializable {
         }
     }
 
-    //add this to the project
-    private void deleteSeries(Series series) {
+    @FXML
+    private void handleDeleteSeries(ActionEvent event) {
         try {
-            if (showConfirmationDialog("Are you sure you want to delete this series?")) {
-                seriesService.delete(series.getId());
-                loadSeries();
-                showSuccess("Success", "Series deleted successfully.");
+            Series selectedSeries = seriesTable.getSelectionModel().getSelectedItem();
+            if (selectedSeries != null) {
+                if (showConfirmationDialog("Confirm Deletion ","Are you sure you want to delete this series?")) {
+                    seriesService.delete(selectedSeries.getId());
+                    loadSeries();
+                    showSuccess("Success", "Series deleted successfully.");
+                }
+            } else {
+                showAlert("No Selection", "Please select a series to delete.");
             }
         } catch (Exception e) {
             logger.error("Error deleting series", e);
@@ -385,6 +501,18 @@ public class SeriesController extends BaseController implements Initializable {
                 return titleMatch || creatorMatch || genreMatch;
             }));
         }
+        
+        // Update the results count label
+        if (resultsCountLabel != null) {
+            int resultCount = filteredSeries.size();
+            resultsCountLabel.setText(String.format("Results: %d", resultCount));
+            
+            // Update status label with search feedback
+            if (!searchText.isEmpty()) {
+                statusLabel.setText(String.format("Found %d series matching: %s", resultCount, searchText));
+            }
+        }
+        
         seriesTable.setItems(filteredSeries);
     }
 
@@ -664,30 +792,6 @@ public class SeriesController extends BaseController implements Initializable {
             showSeriesEditDialog(selected);
         } else {
             showAlert("No Selection", "Please select a series to edit.");
-        }
-    }
-
-    @FXML
-    private void handleDeleteSeries(ActionEvent event) {
-        Series selected = seriesTable.getSelectionModel().getSelectedItem();
-        if (selected != null) {
-            boolean confirm = showConfirmationDialog("Are you sure you want to delete '" + selected.getTitle() + "'?");
-            if (confirm) {
-                try {
-                    boolean deleted = dataManager.getSeriesRepository().deleteById(selected.getId());
-                    if (deleted) {
-                        loadSeries();
-                        showSuccess("Success", "Series deleted successfully.");
-                    } else {
-                        showError("Error", "Failed to delete series: Series not found");
-                    }
-                } catch (Exception e) {
-                    logger.error("Error deleting series", e);
-                    showError("Error", "Failed to delete series: " + e.getMessage());
-                }
-            }
-        } else {
-            showAlert("No Selection", "Please select a series to delete.");
         }
     }
 

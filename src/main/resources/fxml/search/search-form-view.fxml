@@ -3,13 +3,9 @@
 <?import javafx.geometry.*?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
+<?import javafx.scene.text.*?>
 
-<?import javafx.scene.text.Text?>
-<VBox style="-fx-padding: 10; -fx-background-color: #1E1E1E; -fx-background-radius: 6; -fx-border-color: #333; -fx-border-radius: 6;"
-      xmlns="http://javafx.com/javafx/17.0.12"
-      xmlns:fx="http://javafx.com/fxml/1"
-      fx:controller="com.papel.imdb_clone.controllers.search.SearchFormController"
-      spacing="15.0">
+<VBox spacing="15.0" style="-fx-padding: 10; -fx-background-color: #1E1E1E; -fx-background-radius: 6; -fx-border-color: #333; -fx-border-radius: 6;" xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.papel.imdb_clone.controllers.search.SearchFormController">
     
     <HBox alignment="CENTER_LEFT" spacing="15">
         <Label style="-fx-text-fill: #00BCD4; -fx-font-weight: bold; -fx-font-size: 14;" text="SEARCH CRITERIA" />
@@ -18,19 +14,28 @@
 
     <GridPane hgap="15" vgap="10">
         <padding>
-            <Insets bottom="10" left="10" right="10"  />
+            <Insets bottom="10" left="10" right="10" />
         </padding>
 
         <!-- Row 1 -->
-        <Label style="-fx-text-fill: #FFFFFF; -fx-font-weight: bold;" text="Title:" GridPane.columnIndex="0" GridPane.rowIndex="0" />
-        <TextField fx:id="titleField" promptText="Search by title..." style="-fx-background-color: #2A2A2A; -fx-text-fill: #FFFFFF; -fx-prompt-text-fill: #888; -fx-background-radius: 4; -fx-border-color: #444; -fx-border-radius: 4; -fx-padding: 8 12;" GridPane.columnIndex="1" GridPane.columnSpan="3" GridPane.rowIndex="0" />
+        <Label style="-fx-text-fill: #FFFFFF; -fx-font-weight: bold;" text="Title:" textFill="#c61313" GridPane.columnIndex="0" GridPane.rowIndex="0">
+         <font>
+            <Font size="18.0" />
+         </font></Label>
+        <TextField fx:id="titleField" promptText="Search by..." style="-fx-background-color: #2A2A2A; -fx-text-fill: #FFFFFF; -fx-prompt-text-fill: #888; -fx-background-radius: 4; -fx-border-color: #444; -fx-border-radius: 4; -fx-padding: 8 12;" GridPane.columnIndex="1" GridPane.columnSpan="3" GridPane.rowIndex="0" />
 
         <!-- Row 2 -->
-        <Label style="-fx-text-fill: #FFFFFF; -fx-font-weight: bold;" text="Keywords:" GridPane.columnIndex="0" GridPane.rowIndex="1" />
-        <TextField fx:id="keywordsField" promptText="Title, plot, actors..." style="-fx-background-color: #2A2A2A; -fx-text-fill: #FFFFFF; -fx-prompt-text-fill: #888; -fx-background-radius: 4; -fx-border-color: #444; -fx-border-radius: 4; -fx-padding: 8 12;" GridPane.columnIndex="1" GridPane.columnSpan="3" GridPane.rowIndex="1" />
+        <Label style="-fx-text-fill: #FFFFFF; -fx-font-weight: bold;" text="Keywords:" GridPane.columnIndex="0" GridPane.rowIndex="1">
+         <font>
+            <Font size="21.0" />
+         </font></Label>
+        <TextField fx:id="keywordsField" promptText="Title, actors..." style="-fx-background-color: #2A2A2A; -fx-text-fill: #FFFFFF; -fx-prompt-text-fill: #888; -fx-background-radius: 4; -fx-border-color: #444; -fx-border-radius: 4; -fx-padding: 8 12;" GridPane.columnIndex="1" GridPane.columnSpan="3" GridPane.rowIndex="1" />
 
         <!-- Row 3 -->
-        <Label style="-fx-text-fill: #FFFFFF; -fx-font-weight: bold;" text="Content Type:" GridPane.columnIndex="0" GridPane.rowIndex="2" />
+        <Label style="-fx-text-fill: #FFFFFF; -fx-font-weight: bold;" text="Content Type:" GridPane.columnIndex="0" GridPane.rowIndex="2">
+         <font>
+            <Font size="13.0" />
+         </font></Label>
         <HBox spacing="10" GridPane.columnIndex="1" GridPane.rowIndex="2">
             <CheckBox fx:id="movieCheckBox" selected="true" style="-fx-text-fill: #FFFFFF;" text="Movies" />
             <CheckBox fx:id="seriesCheckBox" selected="true" style="-fx-text-fill: #FFFFFF;" text="TV Series" />
@@ -44,34 +49,41 @@
         </HBox>
 
         <!-- Row 4 -->
-        <Label style="-fx-text-fill: #FFFFFF; -fx-font-weight: bold;" text="Genre:" GridPane.columnIndex="0" GridPane.rowIndex="3" />
+        <Label style="-fx-text-fill: #FFFFFF; -fx-font-weight: bold;" text="Genre:" GridPane.columnIndex="0" GridPane.rowIndex="3">
+         <font>
+            <Font size="21.0" />
+         </font></Label>
         <VBox spacing="2" GridPane.columnIndex="1" GridPane.rowIndex="3">
-            <!-- Custom Dropdown Button -->
-            <Button fx:id="genreDropdownButton" onAction="#toggleGenreDropdown" style="-fx-background-color: #2A2A2A; -fx-text-fill: #888; -fx-background-radius: 4; -fx-border-color: #444; -fx-border-radius: 4; -fx-padding: 8 12; -fx-alignment: CENTER_LEFT; -fx-pref-width: 200;" text="Select genre...">
-                <graphic>
-                    <HBox alignment="CENTER_RIGHT" spacing="5">
-                        <Region HBox.hgrow="ALWAYS" />
-                        <Text fill="#888" style="-fx-font-size: 10;" text="▼" />
-                    </HBox>
-                </graphic>
-            </Button>
-            
-            <!-- Dropdown List -->
-            <VBox fx:id="genreDropdownList" style="-fx-background-color: #2A2A2A; -fx-border-color: #444; -fx-border-radius: 4; -fx-padding: 5; -fx-max-height: 200; -fx-pref-width: 200;" visible="false">
-                <ScrollPane fitToWidth="true" hbarPolicy="NEVER" style="-fx-background: transparent; -fx-padding: 0; -fx-background-color: transparent;">
-                    <VBox fx:id="genreListContainer" spacing="2" style="-fx-background-color: transparent;" />
-                </ScrollPane>
+            <!-- Genre Selection Dropdown -->
+            <VBox spacing="5">
+                <Button fx:id="genreDropdownButton" onAction="#toggleGenreDropdown" style="-fx-background-color: #2A2A2A; -fx-text-fill: #FFFFFF; -fx-background-radius: 4; -fx-border-color: #444; -fx-border-radius: 4; -fx-padding: 8 12; -fx-pref-width: 200; -fx-alignment: CENTER_LEFT;" text="Select...">
+                    <graphic>
+                        <HBox alignment="CENTER_LEFT" spacing="5">
+                            <Text fill="WHITE" />
+                            <Text fill="WHITE" style="-fx-font-size: 10;" text="▼" />
+                        </HBox>
+                    </graphic>
+                </Button>
+                
+                <!-- Hidden dropdown list for genres -->
+                <VBox fx:id="genreListContainer" managed="false" style="-fx-background-color: #2A2A2A; -fx-border-color: #444; -fx-border-radius: 4; -fx-padding: 5;" visible="false">
+                    <ListView fx:id="genreDropdownList" style="-fx-background-color: #2A2A2A; -fx-pref-height: 200; -fx-pref-width: 200;" />
+                </VBox>
+                
+                <!-- Hidden field to store selected genre -->
+                <TextField fx:id="selectedGenre" visible="false" />
             </VBox>
         </VBox>
-        
-        <!-- Hidden field to store selected genre -->
-        <TextField fx:id="selectedGenre" visible="false" GridPane.columnIndex="1" GridPane.rowIndex="3"/>
 
         <Label style="-fx-text-fill: #FFFFFF; -fx-font-weight: bold; -fx-padding: 5 0 0 0;" text="Minimum Rating:" GridPane.columnIndex="2" GridPane.rowIndex="3" />
         <HBox alignment="CENTER_LEFT" spacing="5" GridPane.columnIndex="3" GridPane.rowIndex="3">
             <Slider fx:id="ratingSlider" majorTickUnit="2" max="10" minorTickCount="1" prefWidth="150" showTickLabels="true" showTickMarks="true" snapToTicks="true" style="-fx-padding: 5 0;" />
             <Label fx:id="ratingValueLabel" style="-fx-text-fill: #FFD54F; -fx-font-weight: bold; -fx-min-width: 30;" text="0.0" />
         </HBox>
+        
+        <!-- Row 5 - Sort By -->
+        <Label style="-fx-text-fill: #FFFFFF; -fx-font-weight: bold;" text="Sort By:" GridPane.columnIndex="0" GridPane.rowIndex="4" />
+        <ComboBox fx:id="sortByCombo" promptText="Pick..." style="-fx-background-color: #FFFFFF; -fx-text-fill: #000000; -fx-prompt-text-fill: #888; -fx-background-radius: 4; -fx-border-color: #444; -fx-border-radius: 4; -fx-pref-width: 200;" GridPane.columnIndex="1" GridPane.columnSpan="3" GridPane.rowIndex="4" />
 
         <columnConstraints>
             <ColumnConstraints hgrow="NEVER" />
@@ -81,6 +93,7 @@
         </columnConstraints>
 
         <rowConstraints>
+            <RowConstraints />
             <RowConstraints />
             <RowConstraints />
             <RowConstraints />

@@ -1,5 +1,8 @@
 package com.papel.imdb_clone.exceptions;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -19,6 +22,8 @@ public class DuplicateEntryException extends InvalidEntityException {
         super(entityName, entityId,
                 String.format("Duplicate entry found for %s: %s", fieldName, fieldValue),
                 createFieldErrors(fieldName, fieldValue), null);
+        Logger logger = LoggerFactory.getLogger(DuplicateEntryException.class);
+        logger.error("Duplicate entry found for {}", fieldName);
     }
 
 

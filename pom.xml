@@ -189,7 +189,31 @@
                     <skip>${skip.deploy}</skip>
                 </configuration>
             </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-pmd-plugin</artifactId>
+                <version>3.21.0</version>
+                <configuration>
+                    <rulesets>
+                        <ruleset>/category/java/bestpractices.xml/UnusedImports</ruleset>
+                        <ruleset>/category/java/codestyle.xml/UnusedPrivateField</ruleset>
+                        <ruleset>/category/java/codestyle.xml/UnusedLocalVariable</ruleset>
+                        <ruleset>/category/java/codestyle.xml/UnusedPrivateMethod</ruleset>
+                        <ruleset>/category/java/bestpractices.xml/UnusedFormalParameter</ruleset>
+                    </rulesets>
+                    <linkXRef>false</linkXRef>
+                    <sourceEncoding>utf-8</sourceEncoding>
+                    <minimumTokens>100</minimumTokens>
+                    <targetJdk>${maven.compiler.target}</targetJdk>
+                </configuration>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>check</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
     </build>
 </project>
-

@@ -9,110 +9,165 @@ import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.Node;
+import javafx.scene.control.Alert;
 import javafx.scene.control.Label;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
+import javafx.stage.Window;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Map;
+import java.util.Objects;
 
 import static com.papel.imdb_clone.util.UIUtils.showError;
 
 /**
- * Main controller for the application's primary interface.
- * Handles navigation between different views and manages the application state.
+ * MainController serves as the primary controller for the application's main window.
+ * It manages the overall application state, handles navigation between views, and coordinates
+ * between different UI components and services.
+ *
+ * <p>Key responsibilities include:
+ * <ul>
+ *     <li>Managing the main application window and its layout</li>
+ *     <li>Handling user session state and authentication</li>
+ *     <li>Coordinating between different UI components</li>
+ *     <li>Providing navigation between different application views</li>
+ *     <li>Managing application lifecycle and resource cleanup</li>
+ * </ul>
+ *
+ * <p>This controller is tightly coupled with the main application window's FXML layout
+ * and serves as the central hub for application-wide functionality.
  */
+
 public class MainController extends BorderPane {
     private static final Logger logger = LoggerFactory.getLogger(MainController.class);
+    private static final String MOVIES_VIEW = "/fxml/content/movie-view.fxml";
+    private static final String SERIES_VIEW = "/fxml/content/series-view.fxml";
+    private static final String ADVANCED_SEARCH_VIEW = "/fxml/search/advanced-search-view.fxml";
 
+    // Service dependencies
+    private final ServiceLocator serviceLocator = ServiceLocator.getInstance();
     private UICoordinator uiCoordinator;
 
     // UI Components
-    @FXML
-    private VBox sidebar;
-    @FXML
-    private Label statusLabel;
-    @FXML
-    private Label userLabel;
-    @FXML
-    private VBox featuredContent;
+    @FXML private VBox sidebar;
+    @FXML private Label statusLabel;
+    @FXML private Label userLabel;
+    @FXML private VBox featuredContent;
+    
+    // Application state
     private Map<String, Object> data;
-
-    @FXML
-    private void showMovies(ActionEvent event) {
-        try {
-            //Navigate to movies view
-            NavigationService navigationService = NavigationService.getInstance();
-            Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
-            navigationService.navigateTo("/fxml/content/movie-view.fxml", data, stage, "Movies");
-        } catch (Exception e) {
-            logger.error("Error navigating to movies view", e);
-            showError("Navigation Error", "Failed to navigate to movies view: " + e.getMessage());
-        }
-    }
-
-    //Navigate to advanced search view
-    @FXML
-    private void showAdvancedSearch(ActionEvent event) {
-        try {
-            //Navigate to advanced search view
-            NavigationService navigationService = NavigationService.getInstance();
-            Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
-            navigationService.navigateTo("/fxml/search/advanced-search-view.fxml", data, stage, "Advanced Search");
-        } catch (Exception e) {
-            logger.error("Error navigating to advanced search", e);
-            showError("Navigation Error", "Failed to open advanced search: " + e.getMessage());
-        }
-    }
-
-
-    //Navigate to TV shows view
-    @FXML
-    private void showTVShows(ActionEvent event) {
-        try {
-            NavigationService navigationService = NavigationService.getInstance();
-            Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
-            navigationService.navigateTo("/fxml/content/series-view.fxml", data, stage, "TV Shows");
-        } catch (Exception e) {
-            logger.error("Error navigating to TV shows view", e);
-            showError("Navigation Error", "Failed to navigate to TV shows: " + e.getMessage());
-        }
-    }
-
-    // State
     private Stage primaryStage;
     private User currentUser;
     private String sessionToken;
-    private String initializationError;
-    private boolean isInitializing = false;
     private boolean isInitialized = false;
+    private boolean isInitializing = false;
+
+    // ===== Navigation Methods =====
+
+    /**
+     * Handles navigation to the movies view.
+     *
+     * @param event The action event that triggered this navigation
+     * @throws IllegalStateException if navigation fails
+     */
+    @FXML
+    private void showMovies(ActionEvent event) {
+        navigateToView(event, MOVIES_VIEW, "Movies");
+    }
+
+    /**
+     * Handles navigation to the TV shows view.
+     *
+     * @param event The action event that triggered this navigation
+     * @throws IllegalStateException if navigation fails
+     */
+    @FXML
+    private void showTVShows(ActionEvent event) {
+        navigateToView(event, SERIES_VIEW, "TV Shows");
+    }
+
+    /**
+     * Handles navigation to the advanced search view.
+     *
+     * @param event The action event that triggered this navigation
+     * @throws IllegalStateException if navigation fails
+     */
+    @FXML
+    private void showAdvancedSearch(ActionEvent event) {
+        navigateToView(event, ADVANCED_SEARCH_VIEW, "Advanced Search");
+    }
+    
+    /**
+     * Common method to handle view navigation.
+     *
+     * @param event The action event that triggered the navigation
+     * @param viewPath The FXML path of the view to navigate to
+     * @param title The title to display in the window
+     * @throws IllegalStateException if navigation fails
+     */
+    private void navigateToView(ActionEvent event, String viewPath, String title) {
+        Objects.requireNonNull(event, "ActionEvent cannot be null");
+        Objects.requireNonNull(viewPath, "View path cannot be null");
+        
+        try {
+            Node source = (Node) event.getSource();
+            Window window = source.getScene().getWindow();
+            if (!(window instanceof Stage)) {
+                throw new IllegalStateException("Could not determine the current stage");
+            }
+            
+            NavigationService navigationService = NavigationService.getInstance();
+            navigationService.navigateTo(viewPath, data, (Stage) window, title);
+            logger.debug("Navigated to {} view", title);
+            
+        } catch (Exception e) {
+            String errorMsg = String.format("Failed to navigate to %s view: %s", title, e.getMessage());
+            logger.error(errorMsg, e);
+            showError("Navigation Error", errorMsg);
+            throw new IllegalStateException(errorMsg, e);
+        }
+    }
+
+    // ===== Initialization Methods =====
 
     /**
      * Default constructor for FXML loader.
      * Note: The initialize() method will be called after FXML injection.
      */
     public MainController() {
-        // Initialize services from ServiceLocator in initialize()
+        // Services will be initialized in the initialize() method
     }
 
     /**
      * Constructor for programmatic creation with user session.
+     *
+     * @param user The authenticated user, or null for guest access
+     * @param sessionToken The session token for the authenticated user, or null
+     * @throws IllegalStateException if service initialization fails
      */
     public MainController(User user, String sessionToken) {
         this();
-        setUserSession(user, sessionToken);
-
-        // Initialize services from ServiceLocator
-        initializeServices();
-
-        if (this.uiCoordinator != null) {
-            this.uiCoordinator.setUserSession(user, sessionToken);
+        Objects.requireNonNull(sessionToken, "Session token cannot be null");
+        
+        try {
+            setUserSession(user, sessionToken);
+            initializeServices();
+            
+            if (this.uiCoordinator != null) {
+                this.uiCoordinator.setUserSession(user, sessionToken);
+            }
+            
+            logger.info("MainController initialized for user: {}", 
+                user != null ? user.getUsername() : "<guest>");
+                
+        } catch (Exception e) {
+            String errorMsg = String.format("Failed to initialize MainController: %s", e.getMessage());
+            logger.error(errorMsg, e);
+            throw new IllegalStateException(errorMsg, e);
         }
-
-        logger.info("RefactoredMainController constructed with user {} and session token",
-                user != null ? user.getUsername() : "null");
     }
 
 
@@ -123,9 +178,13 @@ public class MainController extends BorderPane {
      * @throws IllegalStateException if required services cannot be initialized
      */
     private void initializeServices() {
-        // Prevent re-entrancy
-        if (isInitialized || isInitializing) {
-            logger.debug("Services already initialized or initializing, skipping...");
+        // Prevent re-entrancy and redundant initialization
+        if (isInitialized) {
+            logger.debug("Services already initialized, skipping...");
+            return;
+        }
+        if (isInitializing) {
+            logger.warn("Service initialization already in progress");
             return;
         }
 
@@ -133,50 +192,77 @@ public class MainController extends BorderPane {
         try {
             logger.info("Initializing services...");
 
-            // Get ServiceLocator instance first
-            ServiceLocator serviceLocator = ServiceLocator.getInstance();
+            // Initialize core services
+            DataManager dataManager = initializeDataManager();
+            initializeUICoordinator();
+            
+            // Load initial data if needed
+            loadInitialData(dataManager);
 
-            // Initialize data manager through ServiceLocator
-            // Core services and coordinators
-            DataManager dataManager = serviceLocator.getDataManager();
-            if (dataManager == null) {
-                throw new IllegalStateException("Failed to get DataManager from ServiceLocator");
-            }
-
-            logger.info("DataManager initialized successfully");
-
-            // Only load data if it hasn't been loaded yet
-            if (!dataManager.isDataLoaded()) {
-                try {
-                    logger.info("Loading initial data...");
-                    dataManager.loadAllData();
-                    logger.info("Initial data loaded successfully");
-                } catch (Exception e) {
-                    logger.error("Error loading initial data: {}", e.getMessage(), e);
-                    throw new IllegalStateException("Failed to load initial data: " + e.getMessage(), e);
-                }
-            }
-
-            // Get UICoordinator from ServiceLocator instead of creating a new instance
-            this.uiCoordinator = serviceLocator.getUICoordinator();
-            if (this.uiCoordinator == null) {
-                throw new IllegalStateException("Failed to get UICoordinator from ServiceLocator");
-            }
-
-            // Set user session if available
-            if (this.currentUser != null && this.sessionToken != null) {
-                this.uiCoordinator.setUserSession(this.currentUser, this.sessionToken);
-            }
-
-            logger.info("Services initialized successfully");
+            logger.info("All services initialized successfully");
             isInitialized = true;
+            
         } catch (Exception e) {
-            //Log error and throw runtime exception
             String errorMsg = String.format("Failed to initialize services: %s", e.getMessage());
             logger.error(errorMsg, e);
-            throw new RuntimeException(errorMsg, e);
+            throw new IllegalStateException(errorMsg, e);
         } finally {
             isInitializing = false;
+        }
+    }
+    
+    /**
+     * Initializes the DataManager service.
+     *
+     * @return The initialized DataManager instance
+     * @throws IllegalStateException if DataManager cannot be initialized
+     */
+    private DataManager initializeDataManager() {
+        DataManager dataManager = serviceLocator.getDataManager();
+        if (dataManager == null) {
+            throw new IllegalStateException("Failed to get DataManager from ServiceLocator");
+        }
+        logger.info("DataManager initialized successfully");
+        return dataManager;
+    }
+    
+    /**
+     * Initializes the UICoordinator service and sets up the user session.
+     *
+     * @throws IllegalStateException if UICoordinator cannot be initialized
+     */
+    private void initializeUICoordinator() {
+        this.uiCoordinator = serviceLocator.getUICoordinator();
+        if (this.uiCoordinator == null) {
+            throw new IllegalStateException("Failed to get UICoordinator from ServiceLocator");
+        }
+        
+        // Set user session if available
+        if (this.currentUser != null && this.sessionToken != null) {
+            this.uiCoordinator.setUserSession(this.currentUser, this.sessionToken);
+        }
+        logger.info("UICoordinator initialized successfully");
+    }
+    
+    /**
+     * Loads initial application data if it hasn't been loaded yet.
+     *
+     * @param dataManager The DataManager instance to use for loading data
+     * @throws IllegalStateException if data loading fails
+     */
+    private void loadInitialData(DataManager dataManager) {
+        if (dataManager == null || dataManager.isDataLoaded()) {
+            return;
+        }
+        
+        try {
+            logger.info("Loading initial application data...");
+            dataManager.loadAllData();
+            logger.info("Initial data loaded successfully");
+        } catch (Exception e) {
+            String errorMsg = String.format("Failed to load initial data: %s", e.getMessage());
+            logger.error(errorMsg, e);
+            throw new IllegalStateException(errorMsg, e);
         }
     }
 
@@ -184,119 +270,133 @@ public class MainController extends BorderPane {
      * Initializes the controller after its root element has been completely processed.
      * This method is automatically called by JavaFX after the FXML file has been loaded.
      * It sets up the UI components, initializes services, and loads initial data.
+     * 
+     * <p>This method performs the following operations:
+     * <ol>
+     *   <li>Initializes required services</li>
+     *   <li>Loads and initializes all views</li>
+     *   <li>Sets up the initial view (home view)</li>
+     *   <li>Updates the UI state</li>
+     * </ol>
+     * 
+     * @throws IllegalStateException if any critical initialization step fails
      */
     @FXML
     public void initialize() {
-        logger.info("Initializing RefactoredMainController...");
+        logger.info("Initializing MainController...");
 
         try {
-            // Initialize services first
+            // 1. Initialize required services
             initializeServices();
+            validateServiceDependencies();
 
-            if (uiCoordinator == null) {
-                throw new IllegalStateException("UICoordinator not initialized");
-            }
+            // 2. Load and initialize views asynchronously
+            Platform.runLater(this::initializeUI);
 
-            // Always try to load views, regardless of areViewsLoaded()
-            logger.info("Loading all views...");
-            if (uiCoordinator.loadAndInitializeViews()) {
+        } catch (Exception e) {
+            String errorMsg = String.format("Failed to initialize MainController: %s", e.getMessage());
+            logger.error(errorMsg, e);
+            showError("Initialization Error", "Failed to initialize the application: " + e.getMessage());
+            throw new IllegalStateException(errorMsg, e);
+        }
+    }
+    
+    /**
+     * Validates that all required service dependencies are properly initialized.
+     * 
+     * @throws IllegalStateException if any required service is not available
+     */
+    private void validateServiceDependencies() {
+        if (uiCoordinator == null) {
+            throw new IllegalStateException("UICoordinator not initialized");
+        }
+        if (serviceLocator == null) {
+            throw new IllegalStateException("ServiceLocator not available");
+        }
+    }
+    
+    /**
+     * Initializes the UI components asynchronously.
+     * This method is called on the JavaFX Application Thread.
+     */
+    private void initializeUI() {
+        try {
+            // 1. Load all views
+            logger.info("Loading application views...");
+            boolean hasViewLoadingErrors = uiCoordinator.loadAndInitializeViews();
+            
+            if (hasViewLoadingErrors) {
                 logger.warn("Some views failed to load, but continuing with available views");
             }
 
-            // Set initial view
-            Platform.runLater(() -> {
-                try {
-
-                    // Get home view and set it as center
-                    Node homeView = uiCoordinator.getHomeView();
-                    if (homeView != null) {
-                        setCenter(homeView);
-                        updateUserInterface();
-                        logger.info("Successfully initialized UI with home view");
-                    } else {
-                        logger.error("Failed to load home view");
-                    }
-                } catch (Exception e) {
-                    logger.error("Error initializing UI: {}", e.getMessage(), e);
-                    showError("Initialization Error", "Failed to initialize UI: " + e.getMessage());
-                }
-            });
-
+            // 2. Set up the initial view
+            setupInitialView();
+            
+            // 3. Update UI state
+            updateUserInterface();
+            
+            logger.info("UI initialization completed successfully");
+            
         } catch (Exception e) {
-            logger.error("Initialization failed", e);
-            showError("Initialization Error", e.getMessage());
+            String errorMsg = String.format("Failed to initialize UI: %s", e.getMessage());
+            logger.error(errorMsg, e);
+            showError("UI Initialization Error", errorMsg);
+            throw new IllegalStateException(errorMsg, e);
+        }
+    }
+    
+    /**
+     * Sets up the initial view (home view) in the center of the main window.
+     */
+    private void setupInitialView() {
+        Node homeView = uiCoordinator.getHomeView();
+        if (homeView != null) {
+            setCenter(homeView);
+            logger.debug("Successfully set home view");
+        } else {
+            throw new IllegalStateException("Failed to load home view");
         }
     }
 
     /**
      * Initializes coordinators and updates the UI.
-     * This can be called from initialize() or setPrimaryStage().
+     * This method is called when the primary stage is set or during initialization.
+     * 
+     * @deprecated This method is being phased out in favor of the new initialization flow.
+     *             Use {@link #initialize()} and {@link #initializeUI()} instead.
      */
+    @Deprecated
     private void initializeCoordinatorsAndUI() {
+        logger.warn("initializeCoordinatorsAndUI() is deprecated and will be removed in a future version");
         if (primaryStage == null) {
-            logger.warn("Primary stage is null in initializeCoordinatorsAndUI");
+            logger.warn("Primary stage is not set, skipping coordinator initialization");
             return;
         }
 
-        //Initialize coordinators and UI on JavaFX thread
+        // Delegate to the new initialization flow
         Platform.runLater(() -> {
             try {
-                logger.info("Initializing coordinators and UI...");
-
-                // Ensure services are initialized
-                if (uiCoordinator == null) {
-                    initializeServices();
-                    if (uiCoordinator == null) {
-                        throw new IllegalStateException("Failed to initialize UICoordinator");
-                    }
-                }
-
-                // Initialize coordinators
-                boolean coordinatorsInitialized = initializeCoordinators();
-                logger.info("Coordinators initialized: {}", coordinatorsInitialized);
-
-                if (!coordinatorsInitialized) {
-                    throw new IllegalStateException("Failed to initialize coordinators");
-                }
-
-                // Ensure views are loaded
-                if (uiCoordinator.areViewsLoaded()) {
-                    logger.info("Loading views...");
-                    if (uiCoordinator.loadAndInitializeViews()) {
-                        logger.warn("Some views failed to load, but continuing with available views");
-                    }
-                }
-
-                // Set initial view to home
-                Node homeView = uiCoordinator.getHomeView();
-                if (homeView != null) {
-                    setCenter(homeView);
-                    logger.info("Successfully set initial view to home");
-                    updateUserInterface();
-                } else {
-                    throw new IllegalStateException("Failed to load home view");
-                }
-
-                logger.info("RefactoredMainController initialized successfully");
-                isInitialized = true;
-
+                initializeServices();
+                validateServiceDependencies();
+                initializeUI();
             } catch (Exception e) {
-                logger.error("Error initializing coordinators and UI: {}", e.getMessage(), e);
+                logger.error("Failed to initialize coordinators and UI: {}", e.getMessage(), e);
                 showError("Initialization Error", "Failed to initialize application: " + e.getMessage());
-            } finally {
-                //Set isInitializing to false which means initialization is complete which means
-                //the application is ready to be used
-                isInitializing = false;
             }
         });
     }
 
     /**
      * Initializes the UI coordinators and sets up the views.
+     * 
+     * @deprecated This method is being phased out in favor of the new initialization flow.
+     *             Coordinator initialization is now handled in {@link #initializeServices()}.
      *
      * @return true if initialization was successful, false otherwise
      */
+    @Deprecated
     private boolean initializeCoordinators() {
+        logger.warn("initializeCoordinators() is deprecated and will be removed in a future version");
         try {
             if (uiCoordinator == null) {
                 logger.error("UICoordinator is not initialized");
@@ -325,103 +425,180 @@ public class MainController extends BorderPane {
 
     /**
      * Updates UI elements that depend on the current user/session state and refreshes views.
+     * This method is called whenever the UI needs to be refreshed to reflect the current state.
      */
     private void updateUserInterface() {
         try {
             updateUserLabel();
+            updateSidebarState();
+            updateStatusBar();
+            logger.debug("UI updated to reflect current application state");
         } catch (Exception e) {
-            logger.warn("Failed to update user interface state", e);
+            String errorMsg = String.format("Failed to update user interface: %s", e.getMessage());
+            logger.warn(errorMsg, e);
+            // Don't show error to user for non-critical UI updates
         }
+    }
+    
+    /**
+     * Updates the sidebar state based on the current user's permissions.
+     */
+    private void updateSidebarState() {
+        if (sidebar == null) {
+            logger.warn("Sidebar component is not initialized");
+            return;
+        }
+        
+        // Enable/disable sidebar items based on user permissions
+        // Example: Disable admin features for non-admin users
+        boolean isAdmin = currentUser != null && currentUser.isAdmin();
+        sidebar.setDisable(!isAdmin);
+    }
+    
+    /**
+     * Updates the status bar with the current application state.
+     */
+    private void updateStatusBar() {
+        if (statusLabel == null) {
+            return;
+        }
+        
+        String status = currentUser != null 
+            ? String.format("Logged in as %s", currentUser.getUsername())
+            : "Not logged in";
+            
+        statusLabel.setText(status);
     }
 
     /**
      * Updates the user label in the UI to reflect the current user's information.
-     * If no user is logged in, it may clear or hide the user label.
+     * If no user is logged in, it displays "Guest" as the username.
+     * 
+     * <p>This method handles the following scenarios:
+     * <ul>
+     *   <li>User is logged in: Displays the username</li>
+     *   <li>User is not logged in: Displays "Guest"</li>
+     *   <li>userLabel is not initialized: Logs a warning</li>
+     * </ul>
      */
     private void updateUserLabel() {
-        if (userLabel != null) {
-            if (currentUser != null) {
-                String username = currentUser.getUsername();
-                logger.debug("Updating user label for user: {}, session token: {}", 
-                    username, 
-                    sessionToken != null ? "[HIDDEN]" + sessionToken.substring(Math.max(0, sessionToken.length() - 4)) : "null");
-                userLabel.setText(username);
-            } else {
-                logger.debug("No user logged in, setting guest mode");
-                userLabel.setText("Guest");
-            }
+        if (userLabel == null) {
+            logger.warn("userLabel is not initialized in FXML. Cannot update user display.");
+            return;
+        }
+        
+        if (currentUser != null) {
+            String username = currentUser.getUsername();
+            // Log only first few and last few characters of session token for security
+            String tokenPreview = sessionToken != null 
+                ? String.format("%s...%s", 
+                    sessionToken.substring(0, Math.min(4, sessionToken.length())),
+                    sessionToken.substring(sessionToken.length() - 4))
+                : "<no-token>";
+                
+            logger.debug("Updating user label for user: {}, session: {}", username, tokenPreview);
+            userLabel.setText(username);
+            userLabel.getStyleClass().remove("guest-label");
+            userLabel.getStyleClass().add("user-label");
         } else {
-            logger.warn("userLabel is not initialized in FXML. Current user: {}, Session token: {}", 
-                currentUser != null ? currentUser.getUsername() : "null",
-                sessionToken != null ? "[HIDDEN]" + sessionToken.substring(Math.max(0, sessionToken.length() - 4)) : "null");
+            logger.debug("No user logged in, showing guest mode");
+            userLabel.setText("Guest");
+            userLabel.getStyleClass().remove("user-label");
+            userLabel.getStyleClass().add("guest-label");
         }
     }
 
 
     /**
-     * Sets the current user's session information.
+     * Sets the current user's session information and updates the UI accordingly.
+     * This method is thread-safe and can be called from any thread.
      *
-     * @param user         The current user, or null if no user is logged in
+     * @param user         The current user, or null if logging out
      * @param sessionToken The session token, or null if no session exists
+     * @throws IllegalArgumentException if sessionToken is null when user is not null
      */
     public void setUserSession(User user, String sessionToken) {
-        logger.info("Setting user session for user: {}", user != null ? user.getUsername() : "<none>");
+        // Validate parameters
+        if (user != null && sessionToken == null) {
+            throw new IllegalArgumentException("Session token cannot be null when user is not null");
+        }
+        
+        // Update state
         this.currentUser = user;
         this.sessionToken = sessionToken;
+        
+        // Log the session change (without exposing sensitive information)
+        logger.info("User session updated - User: {}", 
+            user != null ? user.getUsername() : "<none>");
 
-        // Update the UI coordinator if available
-        if (uiCoordinator != null) {
-            uiCoordinator.setUserSession(user, sessionToken);
-        }
-
-        // Update the UI to reflect the current user
+        // Update UI coordinator on the JavaFX Application Thread
         Platform.runLater(() -> {
-            updateUserInterface();
-            updateUserLabel();
+            try {
+                // Update UI coordinator if available
+                if (uiCoordinator != null) {
+                    uiCoordinator.setUserSession(user, sessionToken);
+                }
+                
+                // Update the UI to reflect the current user
+                updateUserInterface();
+                
+            } catch (Exception e) {
+                String errorMsg = String.format("Failed to update UI for user session: %s", e.getMessage());
+                logger.error(errorMsg, e);
+                showError("Session Error", "Failed to update user interface");
+            }
         });
     }
 
     /**
-     * Sets the primary stage for the application and initializes the UI coordinator if needed.
-     * This method should be called once during application startup.
+     * Sets the primary stage for the application.
+     * This method must be called exactly once during application startup,
+     * before any UI operations are performed.
      *
-     * @param primaryStage The primary stage of the JavaFX application
+     * @param primaryStage The primary stage of the JavaFX application (must not be null)
+     * @throws IllegalStateException if the primary stage is already set
+     * @throws IllegalArgumentException if primaryStage is null
      */
     public void setPrimaryStage(Stage primaryStage) {
-        if (primaryStage == null) {
-            logger.warn("Attempted to set null primary stage");
-            return;
-        }
+        Objects.requireNonNull(primaryStage, "Primary stage cannot be null");
 
-        if (this.primaryStage != null) {
-            logger.warn("Primary stage is already set");
-            return;
+        synchronized (this) {
+            if (this.primaryStage != null) {
+                String errorMsg = "Primary stage is already set";
+                logger.error(errorMsg);
+                throw new IllegalStateException(errorMsg);
+            }
+            
+            this.primaryStage = primaryStage;
+            logger.info("Primary stage set successfully");
+            
+            // Configure primary stage properties
+            configurePrimaryStage(primaryStage);
         }
-
-        this.primaryStage = primaryStage;
-        logger.info("Primary stage set in RefactoredMainController");
-
-        // Ensure services are initialized
-        if (!isInitialized && !isInitializing) {
-            Platform.runLater(() -> {
-                try {
-                    // Initialize services
-                    initializeServices();
-                    if (uiCoordinator != null) {
-                        uiCoordinator.setPrimaryStage(primaryStage);
-                        initializeCoordinatorsAndUI();
-                    }
-                    //Set isInitializing to false which means initialization is complete which means
-                    //the application is ready to be used
-                    isInitializing = false;
-                } catch (Exception e) {
-                    logger.error("Failed to initialize services after setting primary stage: {}", e.getMessage(), e);
-                    showError("Initialization Error", "Failed to initialize application: " + e.getMessage());
-                }
-            });
-        } else if (uiCoordinator != null) {
-            uiCoordinator.setPrimaryStage(primaryStage);
-        }
+    }
+    
+    /**
+     * Configures the primary stage with default settings.
+     * 
+     * @param stage The primary stage to configure
+     */
+    private void configurePrimaryStage(Stage stage) {
+        stage.setOnCloseRequest(event -> {
+            logger.info("Application shutdown requested");
+            // Add any cleanup code here if needed
+        });
+        
+        // Set minimum size constraints
+        stage.setMinWidth(1024);
+        stage.setMinHeight(768);
+        
+        // Set window title
+        stage.setTitle("IMDb Clone");
+        
+        // Set up window state change listeners
+        stage.iconifiedProperty().addListener((obs, wasIconified, isNowIconified) -> {
+            logger.debug("Window {}minimized", isNowIconified ? "" : "not ");
+        });
     }
     // Navigate to celebrities view
     @FXML

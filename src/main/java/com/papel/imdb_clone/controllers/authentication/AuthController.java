@@ -24,22 +24,28 @@ import java.util.List;
 import java.util.Map;
 import java.util.ResourceBundle;
 
+/**
+ * Controller for handling user authentication including login and registration.
+ * Manages the authentication UI and coordinates with AuthService for user operations.
+ */
+
 public class AuthController extends BaseController {
-    // Logger,which is used to log messages for debugging and error tracking
     private static final Logger logger = LoggerFactory.getLogger(AuthController.class);
 
-    // UI Components - Registration Login which is handled by one fxml view auth.fxml
+    // UI Components
     public Hyperlink registerLink;
     public StackPane registerContainer;
     public Hyperlink loginLink;
-
+    public Label passwordStrengthLabel;
 
     // Services
-    private final AuthService authService = AuthService.getInstance();
-    private final NavigationService navigationService = NavigationService.getInstance();
-    // Validator,which is used to validate user input
-    private final UserInputValidator inputValidator = new UserInputValidator();
-    public Label passwordStrengthLabel;
+    private final transient AuthService authService = AuthService.getInstance();
+    private final transient NavigationService navigationService = NavigationService.getInstance();
+    private final transient UserInputValidator inputValidator = new UserInputValidator();
+    
+    // Session management
+    private transient String sessionToken;
+    private transient Map<String, Object> data;
 
 
     // UI Components - Login
@@ -99,95 +105,103 @@ public class AuthController extends BaseController {
 
     //successMessage and sessiontoken
     private String successMessage;
-    private String sessionToken;
-    private Map<String, Object> data;
 
 
-    // Initialize the controller which is called when the controller is loaded
-
-    /**Initialize AuthController
-     *
-     * @param currentUserId for current user id
+    /**
+     * Initializes the controller with the current user ID.
+     * 
+     * @param currentUserId The ID of the currently logged-in user, or -1 if no user is logged in
      */
     @Override
     protected void initializeController(int currentUserId) {
         try {
-            // Initialize UI bindings and listeners
             setupLoginForm(loginPasswordVisibleField);
             setupRegistrationForm(passwordVisibleField, confirmPasswordVisibleField);
-
         } catch (Exception e) {
-            // Log error and show error message
             logger.error("Error initializing AuthController: {}", e.getMessage(), e);
             UIUtils.showError("Initialization Error", "Failed to initialize authentication system.");
         }
     }
 
+    /**
+     * Sets up the login form with necessary bindings and listeners.
+     * 
+     * @param loginPasswordVisibleField The text field for showing/hiding the password
+     */
     private void setupLoginForm(TextField loginPasswordVisibleField) {
         this.loginPasswordVisibleField = loginPasswordVisibleField;
-        // Bind(means connect state with property) login button state, which is disabled when the username or password is empty
+        
+        // Disable login button when username or password is empty
         loginButton.disableProperty().bind(
-                loginUsernameField.textProperty().isEmpty()
-                        .or(loginPasswordField.textProperty().isEmpty())
+            loginUsernameField.textProperty().isEmpty()
+                .or(loginPasswordField.textProperty().isEmpty())
         );
-
     }
 
+    /**
+     * Sets up the registration form with validation and bindings.
+     * 
+     * @param passwordVisibleField The text field for showing/hiding the password
+     * @param confirmPasswordVisibleField The text field for showing/hiding the confirm password
+     */
     private void setupRegistrationForm(TextField passwordVisibleField, TextField confirmPasswordVisibleField) {
-        // Bind register button state with validation
-        //means that the button is disabled when the first name, last name, username, email, password, or confirm password is empty or invalid
+        this.passwordVisibleField = passwordVisibleField;
+        this.confirmPasswordVisibleField = confirmPasswordVisibleField;
+        
+        // Disable register button when form is invalid
         registerButton.disableProperty().bind(
-                //or means that the button is disabled when the first name is empty or the last name is empty
-                firstNameField.textProperty().isEmpty()
-                        .or(lastNameField.textProperty().isEmpty())
-                        .or(registerUsernameField.textProperty().isEmpty()
-                                //or means that the button is disabled when the username is empty or invalid
-                                .or(Bindings.createBooleanBinding(() ->
-                                                inputValidator.isValidUsername(registerUsernameField.getText()),
-                                        registerUsernameField.textProperty())))
-                        //or means that the button is disabled when the email is empty or invalid
-                        .or(emailField.textProperty().isEmpty()
-                                .or(Bindings.createBooleanBinding(() ->
-                                                inputValidator.isValidEmail(emailField.getText()),
-                                        emailField.textProperty())))
-                        .or(passwordField.textProperty().isEmpty()
-                                //or means that the button is disabled when the password is empty or the confirm password is empty or the password is not equal to the confirm password
-                                .or(Bindings.createBooleanBinding(() ->
-                                                !passwordField.getText().equals(confirmPasswordField.getText()),
-                                        passwordField.textProperty(),
-                                        confirmPasswordField.textProperty())))
+            firstNameField.textProperty().isEmpty()
+                .or(lastNameField.textProperty().isEmpty())
+                .or(registerUsernameField.textProperty().isEmpty()
+                    .or(Bindings.createBooleanBinding(() -> 
+                        !inputValidator.isValidUsername(registerUsernameField.getText()),
+                        registerUsernameField.textProperty())))
+                .or(emailField.textProperty().isEmpty()
+                    .or(Bindings.createBooleanBinding(() -> 
+                        !inputValidator.isValidEmail(emailField.getText()),
+                        emailField.textProperty())))
+                .or(passwordField.textProperty().isEmpty()
+                    .or(Bindings.createBooleanBinding(
+                        () -> !passwordField.getText().equals(confirmPasswordField.getText()),
+                        passwordField.textProperty(),
+                        confirmPasswordField.textProperty())))
         );
-        // Handle Enter key press in password field for registration and login
+        
+        // Handle Enter key press in password fields
         passwordField.setOnKeyPressed(this::handleRegisterKeyPress);
         confirmPasswordField.setOnKeyPressed(this::handleRegisterKeyPress);
-
-
     }
 
-    // Handle Enter key press in password field for registration
+    /**
+     * Handles key press events in the registration form.
+     * Submits the form when Enter key is pressed.
+     * 
+     * @param keyEvent The key event that was triggered
+     */
     private void handleRegisterKeyPress(KeyEvent keyEvent) {
         if (keyEvent.getCode() == KeyCode.ENTER) {
             registerButton.fire();
         }
     }
-    // Handle validation error which is used to display the error message
+    /**
+     * Handles validation errors by displaying them in the specified label.
+     * 
+     * @param e The validation exception containing error details
+     * @param errorLabel The label to display the error message in
+     */
     private void handleValidationError(ValidationException e, Label errorLabel) {
         StringBuilder errorMessage = new StringBuilder();
 
         if (e.hasFieldErrors()) {
-            // Collect all field errors
-            Map<String, List<String>> fieldErrors = e.getFieldErrors();
-            // Iterate through all field errors and append them to the error message
-            fieldErrors.forEach((field, errors) ->
-                    errors.forEach(error ->
-                            errorMessage.append("• ").append(error).append("\n")
-                    )
+            e.getFieldErrors().forEach((field, errors) ->
+                errors.forEach(error ->
+                    errorMessage.append("• ").append(error).append("\n")
+                )
             );
         } else {
             errorMessage.append(e.getMessage());
         }
 
-        // Set error message and style
         errorLabel.setText(errorMessage.toString());
         errorLabel.setStyle("-fx-text-fill: #d32f2f; -fx-wrap-text: true;");
         errorLabel.setVisible(true);
@@ -196,40 +210,45 @@ public class AuthController extends BaseController {
     }
 
     /**
-     * Handles authentication errors and updates the UI accordingly
-     * @param e The AuthException that occurred
-     * @param errorLabel The label to display the error message
+     * Handles authentication errors and updates the UI accordingly.
+     * 
+     * @param e The authentication exception that occurred
+     * @param errorLabel The label to display the error message in
      */
     private void handleAuthError(AuthException e, Label errorLabel) {
         String errorMessage = e.getMessage();
 
-        // Use default message if specific message isn't available
         if (errorMessage == null || errorMessage.isEmpty()) {
-            errorMessage = e.getErrorType() != null ?
-                    e.getErrorType().getDefaultMessage() :
-                    "An authentication error occurred";
+            errorMessage = e.getErrorType() != null
+                ? e.getErrorType().getDefaultMessage()
+                : "An authentication error occurred";
         }
 
         errorLabel.setText(errorMessage);
         errorLabel.setStyle("-fx-text-fill: #d32f2f; -fx-font-weight: bold; -fx-wrap-text: true;");
         errorLabel.setVisible(true);
         errorLabel.setManaged(true);
-
-        // Log the error
         logger.warn("Authentication error: {}", errorMessage);
     }
 
-    // Handle unexpected error which is used to display the error message
+    /**
+     * Handles unexpected errors by showing an error dialog and logging the details.
+     * 
+     * @param operation The operation that was being performed when the error occurred
+     * @param e The exception that was thrown
+     */
     private void handleUnexpectedError(String operation, Exception e) {
         String errorMessage = String.format("An unexpected error occurred during %s. Please try again.", operation);
         UIUtils.showError("Error", errorMessage);
         logger.error("Unexpected error during {}: {}", operation, e.getMessage(), e);
     }
 
-    // Set stage which is used to display the authentication window
+    /**
+     * Sets the stage for this controller and displays any success messages.
+     * 
+     * @param stage The JavaFX stage to set for this controller
+     */
     public void setStage(Stage stage) {
-        // Stage,which is used to display the authentication window
-        // Set success message if there is one
         if (successMessage != null && !successMessage.isEmpty()) {
             loginErrorLabel.setStyle("-fx-text-fill: #2e7d32;");
             loginErrorLabel.setText(successMessage);
@@ -238,12 +257,14 @@ public class AuthController extends BaseController {
         }
     }
 
+    /**
+     * Handles the login button action.
+     * Validates input and attempts to authenticate the user.
+     */
     @FXML
     private void handleLogin() {
         try {
-            // Clear previous errors
             loginErrorLabel.setText("");
-
             String username = loginUsernameField.getText().trim();
             String password = loginPasswordField.getText();
 
@@ -256,14 +277,9 @@ public class AuthController extends BaseController {
 
             // Authenticate user
             String token = authService.login(username, password);
-
             if (token != null) {
-                // Store session token and get current user
                 this.sessionToken = token;
-                // Current user,which is used to store the current user and session token which is used to authenticate the user
-                Object currentUser = authService.getCurrentUser(token);
-
-                // Log successful login
+                authService.getCurrentUser(token);
                 logger.info("User logged in successfully: {}", username);
 
                 // Clear sensitive data
@@ -271,9 +287,13 @@ public class AuthController extends BaseController {
                 loginPasswordField.clear();
 
                 // Navigate to main application
-                navigationService.navigateTo("/fxml/base/home-view.fxml", data, (Stage) loginButton.getScene().getWindow(), "IMDb Clone");
+                navigationService.navigateTo(
+                    "/fxml/base/home-view.fxml", 
+                    data, 
+                    (Stage) loginButton.getScene().getWindow(), 
+                    "IMDb Clone"
+                );
             }
-
         } catch (AuthException e) {
             logger.warn("Login failed: {}", e.getMessage());
             handleAuthError(e, loginErrorLabel);
@@ -286,10 +306,13 @@ public class AuthController extends BaseController {
     }
 
 
+    /**
+     * Handles the registration form submission.
+     * Validates input and creates a new user account.
+     */
     @FXML
     private void handleRegister() {
         try {
-            // Clear previous errors
             registerErrorLabel.setText("");
 
             // Get and validate input
@@ -302,18 +325,16 @@ public class AuthController extends BaseController {
 
             logger.info("Starting registration process for user: {}", username);
 
-            // Basic input validation
+            // Input validation
             if (firstName.isEmpty() || lastName.isEmpty() || username.isEmpty() ||
-                    email.isEmpty() || password.isEmpty() || confirmPassword.isEmpty()) {
+                email.isEmpty() || password.isEmpty() || confirmPassword.isEmpty()) {
                 throw new ValidationException("All fields are required", "VALIDATION_ERROR", null, null);
             }
 
-            // Email format validation
             if (!email.matches("^[A-Za-z0-9+_.-]+@(.+)$")) {
                 throw new ValidationException("Please enter a valid email address", "VALIDATION_ERROR", null, null);
             }
 
-            // Password confirmation check
             if (!password.equals(confirmPassword)) {
                 throw new ValidationException("Passwords do not match", "VALIDATION_ERROR", null, null);
             }
@@ -322,7 +343,6 @@ public class AuthController extends BaseController {
             logger.debug("Creating new user object for: {}", username);
             User newUser = new User(firstName, lastName, username, 'M', email);
             
-            // Register the user
             authService.register(newUser, password, confirmPassword);
             
             // Show success message and switch to login form
@@ -330,7 +350,6 @@ public class AuthController extends BaseController {
             loginErrorLabel.setText("Registration successful! Please log in.");
             loginErrorLabel.setVisible(true);
 
-            // Clear form and switch to login
             clearRegistrationForm();
             showLoginForm(null);
 
@@ -340,7 +359,6 @@ public class AuthController extends BaseController {
         } catch (ValidationException e) {
             handleValidationError(e, registerErrorLabel);
         } catch (Exception e) {
-            // Handle unexpected error with style
             registerErrorLabel.setStyle("-fx-text-fill: #d32f2f;");
             registerErrorLabel.setText("Registration failed: " + e.getMessage());
             registerErrorLabel.setVisible(true);
@@ -348,23 +366,23 @@ public class AuthController extends BaseController {
         }
     }
 
-    
-    /**Clear registration form
+    /**
+     * Clears all fields in the registration form.
      */
     private void clearRegistrationForm() {
-
-        // Clear text fields if they're not null
+        // Clear text fields
         if (firstNameField != null) firstNameField.clear();
         if (lastNameField != null) lastNameField.clear();
         if (registerUsernameField != null) registerUsernameField.clear();
         if (emailField != null) emailField.clear();
-        // Clear password fields if they're not null
+        
+        // Clear password fields
         if (passwordField != null) passwordField.clear();
         if (passwordVisibleField != null) passwordVisibleField.clear();
         if (confirmPasswordField != null) confirmPasswordField.clear();
         if (confirmPasswordVisibleField != null) confirmPasswordVisibleField.clear();
 
-        // Clear gender toggle group if it's not null
+        // Clear gender selection
         if (genderToggleGroup != null && genderToggleGroup.getSelectedToggle() != null) {
             genderToggleGroup.getSelectedToggle().setSelected(false);
         }
@@ -372,25 +390,26 @@ public class AuthController extends BaseController {
 
 
 
-    /**Show register form
-     *
-     * @param event for action event
+    /**
+     * Switches the view to show the registration form.
+     * 
+     * @param event The action event that triggered this method
      */
     @FXML
     public void showRegisterForm(ActionEvent event) {
-        // Hide login form and show register form
         loginContainer.setVisible(false);
         registerContainer.setVisible(true);
-        // Consume event if it's not null which means it's a mouse click that triggered this method
+        
         if (event != null) {
             event.consume();
         }
     }
 
-    /**Initialize AuthController
-     *
-     * @param url for corresponding FXML file
-     * @param resourceBundle that contains the FXML file that this controller is associated with f
+    /**
+     * Initializes the controller after its root element has been processed.
+     * 
+     * @param url The location used to resolve relative paths for the root object, or null if unknown
+     * @param resourceBundle The resources used to localize the root object, or null if none
      */
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {

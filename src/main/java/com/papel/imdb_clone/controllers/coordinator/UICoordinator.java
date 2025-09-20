@@ -8,6 +8,7 @@ import com.papel.imdb_clone.service.content.MoviesService;
 import com.papel.imdb_clone.service.content.SeriesService;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Node;
+import javafx.scene.control.Label;
 import javafx.stage.Stage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -274,35 +275,57 @@ private void loadContentView() throws IOException {
         return;
     }
 
-    // Set the loading flag to prevent concurrent loads
     isViewLoading = true;
     try {
         logger.info("Loading main content view...");
         
         // Load movie view
-        FXMLLoader movieLoader = new FXMLLoader(getClass().getResource("/fxml/content/movie-view.fxml"));
-        movieView = movieLoader.load();
-        // Controllers
-        MoviesController moviesController = movieLoader.getController();
-        moviesController.setContentService(movieService);
-        
-        // Load series view
-        FXMLLoader seriesLoader = new FXMLLoader(getClass().getResource("/fxml/content/series-view.fxml"));
-        seriesView = seriesLoader.load();
-        SeriesController seriesController = seriesLoader.getController();
-        seriesController.setContentService(seriesService);
-        
-        // Initialize controllers with current user if available
-        if (currentUser != null) {
-            moviesController.initialize(currentUser.getId());
-            seriesController.initialize(currentUser.getId());
+        try {
+            FXMLLoader movieLoader = new FXMLLoader(getClass().getResource("/fxml/content/movie-view.fxml"));
+            movieView = movieLoader.load();
+            MoviesController moviesController = movieLoader.getController();
+            moviesController.setContentService(movieService);
+            
+            if (currentUser != null) {
+                moviesController.initialize(currentUser.getId());
+            }
+        } catch (Exception e) {
+            logger.error("Failed to load movie view: " + e.getMessage(), e);
+            // Continue with other views even if one fails
         }
         
-        // Load other views
-        homeView = loadView("/fxml/base/home-view.fxml");
-        searchView = loadView("/fxml/search/advanced-search-view.fxml");
+        // Load series view
+        try {
+            FXMLLoader seriesLoader = new FXMLLoader(getClass().getResource("/fxml/content/series-view.fxml"));
+            seriesView = seriesLoader.load();
+            SeriesController seriesController = seriesLoader.getController();
+            seriesController.setContentService(seriesService);
+            
+            if (currentUser != null) {
+                seriesController.initialize(currentUser.getId());
+            }
+        } catch (Exception e) {
+            logger.error("Failed to load series view: " + e.getMessage(), e);
+            // Continue with other views even if one fails
+        }
         
-        logger.info("Successfully loaded all views");
+        // Load home view
+        try {
+            homeView = loadView("/fxml/base/home-view.fxml");
+        } catch (Exception e) {
+            logger.error("Failed to load home view: " + e.getMessage(), e);
+            // Continue with other views even if one fails
+        }
+        
+        // Load search view
+        try {
+            searchView = loadView("/fxml/search/advanced-search-view.fxml");
+        } catch (Exception e) {
+            logger.error("Failed to load search view: " + e.getMessage(), e);
+            // Continue with other views even if one fails
+        }
+        
+        logger.info("View loading completed");
     } finally {
         isViewLoading = false;
     }
@@ -317,11 +340,15 @@ private void loadContentView() throws IOException {
         if (homeView == null) {
             logger.warn("Home view was not preloaded, attempting to load on demand");
             try {
-                loadContentView();
+                // Try to load just the home view
+                homeView = loadView("/fxml/base/home-view.fxml");
                 logger.info("Successfully loaded home view on demand");
-            } catch (IOException e) {
-                logger.error("Failed to load home view on demand: {}", e.getMessage(), e);
-                return null;
+            } catch (Exception e) {
+                logger.error("Critical: Failed to load home view on demand: " + e.getMessage(), e);
+                // Create a simple error view as fallback
+                Label errorLabel = new Label("Failed to load home view. Please check the logs for details.");
+                errorLabel.setStyle("-fx-text-fill: red; -fx-padding: 20;");
+                homeView = errorLabel;
             }
         }
         return homeView;

@@ -1,5 +1,8 @@
 package com.papel.imdb_clone.exceptions;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -10,6 +13,7 @@ import java.util.Map;
  */
 public class AuthException extends ValidationException {
 
+    private static final Logger logger = LoggerFactory.getLogger(AuthException.class);
     /**
      * Creates a new AuthException with error type and message.
      */
@@ -17,6 +21,7 @@ public class AuthException extends ValidationException {
 
     public AuthException(AuthErrorType errorType, String message) {
         this(errorType, message, null, null);
+        logger.error("Authentication error: {}", message);
     }
 
     /**
@@ -24,6 +29,7 @@ public class AuthException extends ValidationException {
      */
     public AuthException(AuthErrorType errorType, String message, Throwable cause) {
         this(errorType, message, null, cause);
+        logger.error("Authentication error: {}", message, cause);
     }
 
     /**
@@ -34,12 +40,9 @@ public class AuthException extends ValidationException {
         super(message, errorType != null ? errorType.name() : "AUTH_ERROR", fieldErrors, cause);
         this.errorType = errorType != null ? errorType : AuthErrorType.INTERNAL_ERROR;
         super.addDetail("errorType", this.errorType);
+        logger.error("Authentication error: {}", message, cause);
     }
 
-    public AuthException(String userAndPasswordAreRequired) {
-        super(userAndPasswordAreRequired, "AUTH_ERROR", null, null);
-        this.errorType = AuthErrorType.INVALID_INPUT;
-    }
     
     /**
      * Gets the error type of this exception

@@ -254,36 +254,78 @@ public class CelebritiesController implements Initializable {
     
     /**
      * Handles the refresh button action to reload all celebrities.
+     * This method clears all search fields and reloads both actors and directors.
      */
     @FXML
     private void handleRefresh() {
         try {
-            logger.info("Refreshing celebrities...");
+            logger.info("Starting refresh of all celebrity data...");
+            
             // Clear search fields
-            if (actorSearchField != null) actorSearchField.clear();
-            if (directorSearchField != null) directorSearchField.clear();
-            if (unifiedSearchField != null) unifiedSearchField.clear();
+            Platform.runLater(() -> {
+                if (actorSearchField != null) {
+                    actorSearchField.clear();
+                }
+                else if (directorSearchField != null) {
+                    directorSearchField.clear();
+                }
+                //both for actor and director search
+                else if (unifiedSearchField != null) {
+                    unifiedSearchField.clear();
+                }
+            });
+            
+            // Clear current data
+            actors.clear();
+            directors.clear();
             
             // Reload all celebrities
             loadCelebrities();
             
+            // Update UI with refreshed data
+            Platform.runLater(() -> {
+                if (actorsTable != null) {
+                    actorsTable.refresh();
+                }
+                else if (directorsTable != null) {
+                    directorsTable.refresh();
+                }
+            });
+            
             // Show success message
             if (statusLabel != null) {
-                statusLabel.setText("Celebrities refreshed successfully");
+                String successMessage = String.format("Successfully refreshed %d actors and %d directors", 
+                    actors.size(), directors.size());
+                statusLabel.setText(successMessage);
+                logger.info(successMessage);
+                
                 // Clear the status message after 3 seconds
                 new java.util.Timer().schedule(
                     new java.util.TimerTask() {
                         @Override
                         public void run() {
-                            Platform.runLater(() -> statusLabel.setText(""));
+                            Platform.runLater(() -> {
+                                if (statusLabel != null) {
+                                    statusLabel.setText("");
+                                    logger.info("Refresh completed");
+                                }
+                            });
                         }
                     },
                     3000
                 );
             }
         } catch (Exception e) {
-            logger.error("Error refreshing celebrities: {}", e.getMessage(), e);
-            showError("Refresh Error", "Failed to refresh celebrities: " + e.getMessage());
+            String errorMsg = "Failed to refresh celebrities: " + e.getMessage();
+            logger.error(errorMsg, e);
+            
+            // Show error in UI on the JavaFX Application Thread
+            Platform.runLater(() -> {
+                showError("Refresh Error", errorMsg);
+                if (statusLabel != null) {
+                    statusLabel.setText("Error refreshing data. Please try again.");
+                }
+            });
         }
     }
 

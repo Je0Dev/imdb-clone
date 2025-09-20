@@ -35,7 +35,6 @@ public class EditContentController {
     @FXML private TextField yearField;
     @FXML private TextField ratingField;
     @FXML private TextField directorField;
-    @FXML private TextField runtimeField;
     @FXML private TextArea plotArea;
     
     // Genre checkboxes
@@ -44,7 +43,6 @@ public class EditContentController {
     @FXML private CheckBox animationCheckBox;
     @FXML private CheckBox comedyCheckBox;
     @FXML private CheckBox crimeCheckBox;
-    @FXML private CheckBox documentaryCheckBox;
     @FXML private CheckBox dramaCheckBox;
     @FXML private CheckBox familyCheckBox;
     @FXML private CheckBox fantasyCheckBox;
@@ -76,7 +74,7 @@ public class EditContentController {
         try {
             // Initialize type combo box
             typeComboBox.setItems(FXCollections.observableArrayList(
-                "Movie", "TV Show", "Documentary", "Short Film"
+                "Movie", "TV Show"
             ));
             
             // Set up input validation
@@ -124,12 +122,6 @@ public class EditContentController {
             }
         });
         
-        // Allow only numeric input for runtime
-        runtimeField.textProperty().addListener((observable, oldValue, newValue) -> {
-            if (!newValue.matches("\\d*") && !newValue.isEmpty()) {
-                runtimeField.setText(oldValue);
-            }
-        });
     }
     
     /**
@@ -188,7 +180,6 @@ public class EditContentController {
                     case ANIMATION: animationCheckBox.setSelected(true); break;
                     case COMEDY: comedyCheckBox.setSelected(true); break;
                     case CRIME: crimeCheckBox.setSelected(true); break;
-                    case DOCUMENTARY: documentaryCheckBox.setSelected(true); break;
                     case DRAMA: dramaCheckBox.setSelected(true); break;
                     case FAMILY: familyCheckBox.setSelected(true); break;
                     case FANTASY: fantasyCheckBox.setSelected(true); break;
@@ -227,7 +218,6 @@ public class EditContentController {
             if (animationCheckBox.isSelected()) selectedGenres.add(Genre.ANIMATION);
             if (comedyCheckBox.isSelected()) selectedGenres.add(Genre.COMEDY);
             if (crimeCheckBox.isSelected()) selectedGenres.add(Genre.CRIME);
-            if (documentaryCheckBox.isSelected()) selectedGenres.add(Genre.DOCUMENTARY);
             if (dramaCheckBox.isSelected()) selectedGenres.add(Genre.DRAMA);
             if (familyCheckBox.isSelected()) selectedGenres.add(Genre.FAMILY);
             if (fantasyCheckBox.isSelected()) selectedGenres.add(Genre.FANTASY);

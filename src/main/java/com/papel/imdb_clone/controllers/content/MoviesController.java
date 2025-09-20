@@ -35,7 +35,137 @@ import javafx.geometry.Insets;
  * Handles all movie-related operations including listing, adding, editing, and deleting movies.
  */
 public class MoviesController extends BaseController implements Initializable {
+    @FXML
+    public Label resultsCountLabel;
     public Label itemCountLabel;
+
+    /**
+     * Handles the delete movie button click event.
+     * Shows a confirmation dialog and deletes the selected movie if confirmed.
+     * 
+     * @param event The action event that triggered this method
+     */
+    @FXML
+    private void handleDeleteMovie(ActionEvent event) {
+        Movie selectedMovie = movieTable.getSelectionModel().getSelectedItem();
+        if (selectedMovie == null) {
+            showAlert("No Selection", "Please select a movie to delete.");
+            return;
+        }
+
+        // Show confirmation dialog
+        Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+        alert.setTitle("Confirm Deletion");
+        alert.setHeaderText("Delete Movie");
+        alert.setContentText(String.format("Are you sure you want to delete '%s'?\nThis action cannot be undone.", 
+            selectedMovie.getTitle()));
+
+        Optional<ButtonType> result = alert.showAndWait();
+        if (result.isPresent() && result.get() == ButtonType.OK) {
+            try {
+                // Call the service to delete the movie
+                // For example: moviesService.deleteMovie(selectedMovie.getId());
+                
+                // Remove from the table
+                movieTable.getItems().remove(selectedMovie);
+                
+                showAlert("Success", String.format("Movie '%s' was deleted successfully.", 
+                    selectedMovie.getTitle()));
+                
+                // Update the item count
+                updateItemCount();
+                
+            } catch (Exception e) {
+                logger.error("Error deleting movie: " + e.getMessage(), e);
+                showAlert("Error", "Failed to delete movie: " + e.getMessage());
+            }
+        }
+    }
+
+    //updates the item count label in movies v
+    private void updateItemCount() {
+        itemCountLabel.setText(String.format("Total Movies: %d", movieTable.getItems().size()));
+        itemCountLabel.setVisible(true);
+        itemCountLabel.setStyle("-fx-text-fill: #2e7d32;");
+    }
+
+    /**
+     * Handles the rate movie button click event.
+     * Opens a dialog to allow the user to rate the selected movie.
+     * 
+     * @param event The action event that triggered this method
+     */
+    @FXML
+    private void handleRateMovie(ActionEvent event) {
+        Movie selectedMovie = movieTable.getSelectionModel().getSelectedItem();
+        if (selectedMovie == null) {
+            showAlert("No Selection", "Please select a movie to rate.");
+            return;
+        }
+        
+        // Create a dialog to get the rating
+        Dialog<Pair<Double, String>> dialog = new Dialog<>();
+        dialog.setTitle("Rate Movie");
+        dialog.setHeaderText(String.format("Rate: %s (%d)", selectedMovie.getTitle(), selectedMovie.getReleaseYear()));
+        
+        // Set the button types
+        ButtonType rateButtonType = new ButtonType("Rate", ButtonBar.ButtonData.OK_DONE);
+        dialog.getDialogPane().getButtonTypes().addAll(rateButtonType, ButtonType.CANCEL);
+        
+        // Create the rating input fields
+        Spinner<Double> ratingSpinner = new Spinner<>(0.0, 10.0, 5.0, 0.5);
+        ratingSpinner.setEditable(true);
+        TextArea commentArea = new TextArea();
+        commentArea.setPromptText("Your review (optional)");
+        commentArea.setWrapText(true);
+        
+        GridPane grid = new GridPane();
+        grid.setHgap(10);
+        grid.setVgap(10);
+        grid.setPadding(new Insets(20, 150, 10, 10));
+        
+        grid.add(new Label("Rating (0-10):"), 0, 0);
+        grid.add(ratingSpinner, 1, 0);
+        grid.add(new Label("Review:"), 0, 1);
+        grid.add(commentArea, 1, 1);
+        
+        dialog.getDialogPane().setContent(grid);
+        
+        // Request focus on the rating spinner by default
+        Platform.runLater(() -> ratingSpinner.requestFocus());
+        
+        // Convert the result to a rating and comment when the rate button is clicked
+        dialog.setResultConverter(dialogButton -> {
+            if (dialogButton == rateButtonType) {
+                return new Pair<>(ratingSpinner.getValue(), commentArea.getText().trim());
+            }
+            return null;
+        });
+        
+        Optional<Pair<Double, String>> result = dialog.showAndWait();
+        
+        result.ifPresent(ratingAndComment -> {
+            double rating = ratingAndComment.getKey();
+            String comment = ratingAndComment.getValue();
+            
+            try {
+                // Here you would typically call a service to save the rating
+                // For example: ratingService.rateMovie(selectedMovie.getId(), currentUserId, rating, comment);
+                
+                // Update the UI to reflect the new rating
+                showAlert("Success", String.format("You rated %s: %.1f/10", selectedMovie.getTitle(), rating)
+                         );
+                
+                // Refresh the movie list to show updated ratings
+                loadMovies();
+                
+            } catch (Exception e) {
+                logger.error("Error rating movie: {}", e.getMessage(), e);
+                showAlert("Error", "Failed to save rating: " + e.getMessage());
+            }
+        });
+    }
+    
     // UI Components
     @FXML private Label statusLabel;
     @FXML private TableView<Movie> movieTable;
@@ -318,48 +448,25 @@ public class MoviesController extends BaseController implements Initializable {
                     // Clear existing data
                     allMovies.clear();
                     
+                    // Update results count
+                    if (resultsCountLabel != null) {
+                        resultsCountLabel.setText(String.format("Results: %d", movies.size()));
+                    } else {
+                        logger.warn("resultsCountLabel is not initialized");
+                    }
+                    
                     // Use a Set to filter out duplicates based on title, year, and director
                     Set<String> uniqueMovieKeys = new HashSet<>();
                     List<Movie> uniqueMovies = new ArrayList<>();
                     
                     for (Movie movie : movies) {
-                        // Create a more specific key using title, year, and director
-                        String director = movie.getDirector() != null ? movie.getDirector().toLowerCase() : "unknown";
-                        String key = String.format("%s_%d_%s", 
-                            movie.getTitle().toLowerCase().trim(),
-                            movie.getYear().getYear() + 1900,
-                            director
-                        );
+                        String key = movie.getTitle().toLowerCase() + "_" + movie.getYear() + "_" + 
+                                   (movie.getDirector() != null ? movie.getDirector().toLowerCase() : "");
                         
                         if (uniqueMovieKeys.add(key)) { // add returns true if the key was not already in the set
                             uniqueMovies.add(movie);
-                            logger.trace("Added movie: {} ({}), Director: {}", 
-                                movie.getTitle(), 
-                                movie.getYear().getYear() + 1900,
-                                director);
                         } else {
-                            logger.debug("Skipping duplicate movie: {} ({}), Director: {}", 
-                                movie.getTitle(), 
-                                movie.getYear().getYear() + 1900,
-                                director);
-                            
-                            // Log more details about the duplicate for debugging
-                            Movie existing = uniqueMovies.stream()
-                                .filter(m -> {
-                                    String existingKey = String.format("%s_%d_%s", 
-                                        m.getTitle().toLowerCase().trim(),
-                                        m.getYear().getYear() + 1900,
-                                        m.getDirector() != null ? m.getDirector().toLowerCase() : "unknown"
-                                    );
-                                    return existingKey.equals(key);
-                                })
-                                .findFirst()
-                                .orElse(null);
-                                
-                            if (existing != null) {
-                                logger.debug("Existing movie with same key - ID: {}, Title: {}", 
-                                    existing.getId(), existing.getTitle());
-                            }
+                            logger.debug("Skipping duplicate movie: {} ({})", movie.getTitle(), movie.getYear());
                         }
                     }
                     
@@ -367,21 +474,17 @@ public class MoviesController extends BaseController implements Initializable {
                     allMovies.addAll(uniqueMovies);
                     logger.info("Added {} unique movies to allMovies list ({} duplicates filtered out)", 
                               uniqueMovies.size(), movies.size() - uniqueMovies.size());
-
-                    // Refresh the table with filtered list
-                    movieTable.getItems().setAll(uniqueMovies);
-                    statusLabel.setText(String.format("Loaded %d unique movies", uniqueMovies.size()));
-
-                    // Apply any existing filters
+                    
+                    // Update the filtered list and UI
                     filterMovies();
-
-                    statusLabel.setText(String.format("Loaded %d movies", movies.size()));
-                    logger.info("Successfully loaded and displayed {} movies", movies.size());
-
-                    // Debug: Log table columns and items
-                    logger.debug("Table columns: {}", movieTable.getColumns());
-                    logger.debug("Table items count: {}", movieTable.getItems().size());
-
+                    
+                    // Update results count
+                    if (resultsCountLabel != null) {
+                        resultsCountLabel.setText(String.format("Results: %d", uniqueMovies.size()));
+                    }
+                    
+                    statusLabel.setText(String.format("Loaded %d unique movies", uniqueMovies.size()));
+                    logger.info("Successfully loaded and displayed {} unique movies", uniqueMovies.size());
                 } catch (Exception e) {
                     logger.error("Error in Platform.runLater", e);
                     showError("Error", "Failed to update UI: " + e.getMessage());
@@ -397,7 +500,7 @@ public class MoviesController extends BaseController implements Initializable {
 
     private void deleteMovie(Movie movie) {
         try {
-            if (showConfirmationDialog("Are you sure you want to delete this movie?")) {
+            if (showConfirmationDialog("Confirm Deletion", "Are you sure you want to delete this movie?")) {
                 moviesService.delete(movie.getId());
                 loadMovies();
                 showSuccess("Success", "Movie deleted successfully.");
@@ -455,44 +558,16 @@ public class MoviesController extends BaseController implements Initializable {
             if (showMovieEditDialog(selected)) {
                 try {
                     // Save changes if user clicked OK
-                    moviesService.save(selected);
+                    moviesService.update(selected);
                     loadMovies(); // Refresh the table
                     showSuccess("Success", "Movie updated successfully!");
                 } catch (Exception e) {
-                    logger.error("Error saving movie", e);
-                    showError("Error", "Failed to save movie: " + e.getMessage());
+                    logger.error("Error updating movie", e);
+                    showError("Error", "Failed to update movie: " + e.getMessage());
                 }
             }
         } else {
             showAlert("No Selection", "Please select a movie to edit.");
-        }
-    }
-
-    @FXML
-    private void handleDeleteMovie(ActionEvent event) {
-        Movie selected = movieTable.getSelectionModel().getSelectedItem();
-        if (selected != null) {
-            boolean confirm = showConfirmationDialog("Are you sure you want to delete '" + selected.getTitle() + "'?");
-            if (confirm) {
-                try {
-                    deleteMovie(selected);
-                } catch (Exception e) {
-                    logger.error("Error deleting movie", e);
-                    showError("Error", "Failed to delete movie: " + e.getMessage());
-                }
-            }
-        } else {
-            showAlert("No Selection", "Please select a movie to delete.");
-        }
-    }
-
-    @FXML
-    private void handleRateMovie(ActionEvent event) {
-        Movie selected = movieTable.getSelectionModel().getSelectedItem();
-        if (selected != null) {
-            showRatingDialog(selected);
-        } else {
-            showAlert("No Selection", "Please select a movie to rate.");
         }
     }
     

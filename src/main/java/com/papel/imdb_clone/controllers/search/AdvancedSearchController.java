@@ -517,7 +517,16 @@ public class AdvancedSearchController extends BaseSearchController {
                 // Results are already handled in the call() method through Platform.runLater
                 // This is a fallback in case the Platform.runLater in call() didn't execute
                 ObservableList<Content> results = currentSearchTask.getValue();
-                if (results != null && resultsTableController != null) {
+                if (results == null) {
+                    logger.warn("Search completed but no results were returned");
+                    updateStatus("No results found");
+                    if (resultsCountLabel != null) {
+                        resultsCountLabel.setText("No results found");
+                    }
+                    return;
+                }
+                
+                if (resultsTableController != null) {
                     resultsTableController.setResults(results);
                     
                     // Update the results count label if not already updated
@@ -527,8 +536,7 @@ public class AdvancedSearchController extends BaseSearchController {
                     
                     updateStatus(String.format("Found %d results", results.size()));
                 }
-                //Assert that results are not null which means the search was successful
-                assert results != null;
+                
                 logger.info("Search completed. Found {} results.", results.size());
 
                 // Log the first few results for debugging

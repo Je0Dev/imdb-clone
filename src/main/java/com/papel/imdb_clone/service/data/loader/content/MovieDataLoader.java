@@ -222,11 +222,22 @@ public class MovieDataLoader extends BaseDataLoader {
                             List<Actor> actors = new ArrayList<>();
 
                             for (String actorName : actorNames) {
-                                actorName = actorName.trim();
-                                if (!actorName.isEmpty()) {
-                                    String[] actorNameParts = actorName.split("\\s+", 2);
+                                try {
+                                    actorName = actorName.trim();
+                                    if (actorName.isEmpty()) {
+                                        continue;
+                                    }
+                                    
+                                    // Split name into parts, handling multiple spaces
+                                    String[] actorNameParts = actorName.split("\\s+");
+                                    if (actorNameParts.length == 0) {
+                                        logger.warn("Empty actor name parts for '{}'", actorName);
+                                        continue;
+                                    }
+                                    
                                     String actorFirstName = actorNameParts[0];
-                                    String actorLastName = actorNameParts.length > 1 ? actorNameParts[1] : "";
+                                    String actorLastName = actorNameParts.length > 1 ? 
+                                        actorName.substring(actorName.indexOf(' ') + 1).trim() : "";
 
                                     // Use Actor factory method to get or create instance
                                     Actor actor = Actor.getInstance(
@@ -240,9 +251,14 @@ public class MovieDataLoader extends BaseDataLoader {
                                     // Ensure actor is saved in the service
                                     if (actor.getId() == 0) { // Assuming 0 means not saved yet
                                         actor = actorService.save(actor);
+                                        logger.info("Created new Actor: {} {}", actorFirstName, 
+                                            actorLastName.isEmpty() ? "" : actorLastName);
                                     }
 
                                     actors.add(actor);
+                                } catch (Exception e) {
+                                    logger.warn("Error processing actor '{}': {}", actorName, e.getMessage());
+                                    continue;
                                 }
                             }
 
@@ -331,45 +347,55 @@ public class MovieDataLoader extends BaseDataLoader {
                                 }
                             }
 
-                            // Set actors with improved error handling
+                            // Set actors with improved error handling and name processing
                             for (String actorName : actorNames) {
-                                if (actorName != null && !actorName.trim().isEmpty()) {
-                                    try {
-                                        // Split actor name into first and last name
-                                        String[] newActorNameParts = actorName.trim().split("\\s+", 2);
-                                        String newActorFirstName = newActorNameParts[0];
-                                        String newActorLastName = newActorNameParts.length > 1 ? newActorNameParts[1] : "";
-
-                                        // Try to find existing actor by name
-                                        Optional<Actor> actorOpt = actorService.findByFullName(newActorFirstName, newActorLastName);
-
-                                        if (actorOpt.isPresent()) {
-                                            movie.addActor(actorOpt.get());
-                                        } else {
-                                            // Create new actor if not found
-                                            Actor newActor = Actor.getInstance(
-                                                newActorFirstName,
-                                                newActorLastName,
-                                                null, // birth date unknown
-                                                '?',  // gender unknown
-                                                Ethnicity.UNKNOWN
-                                            );
-                                            newActor.setFirstName(newActorFirstName);
-                                            if (!newActorLastName.isEmpty()) {
-                                                newActor.setLastName(newActorLastName);
-                                            }
-                                            // save actor
-                                            newActor = actorService.save(newActor);
-                                            movie.addActor(newActor);
-                                            logger.debug("Created new actor: {} {}", newActorFirstName, newActorLastName);
-                                        }
-                                    } catch (Exception e) {
-                                        logger.warn("Error processing actor '{}' at line {}: {}",
-                                                actorName, lineNumber, e.getMessage());
-                                        // Continue with next actor rather than failing
+                                try {
+                                    if (actorName == null || actorName.trim().isEmpty()) {
+                                        continue;
                                     }
+                                    
+                                    // Process actor name
+                                    actorName = actorName.trim();
+                                    String[] nameParts = actorName.split("\\s+");
+                                    if (nameParts.length == 0) {
+                                        logger.warn("Empty actor name at line {}: {}", lineNumber, actorName);
+                                        continue;
+                                    }
+                                    
+                                    String newActorFirstName = nameParts[0];
+                                    String newActorLastName = nameParts.length > 1 ? 
+                                        actorName.substring(actorName.indexOf(' ') + 1).trim() : "";
+
+                                    // Try to find existing actor by name
+                                    Optional<Actor> actorOpt = actorService.findByFullName(newActorFirstName, newActorLastName);
+
+                                    if (actorOpt.isPresent()) {
+                                        movie.addActor(actorOpt.get());
+                                    } else {
+                                        // Create new actor if not found
+                                        Actor newActor = Actor.getInstance(
+                                            newActorFirstName,
+                                            newActorLastName,
+                                            null, // birth date unknown
+                                            '?',  // gender unknown
+                                            Ethnicity.UNKNOWN
+                                        );
+                                        newActor.setFirstName(newActorFirstName);
+                                        if (!newActorLastName.isEmpty()) {
+                                            newActor.setLastName(newActorLastName);
+                                        }
+                                        // save actor
+                                        newActor = actorService.save(newActor);
+                                        movie.addActor(newActor);
+                                        logger.info("Created new Actor: {} {}", newActorFirstName, 
+                                            newActorLastName.isEmpty() ? "" : newActorLastName);
+                                    }
+                                } catch (Exception e) {
+                                    logger.warn("Error processing actor '{}' at line {}: {}",
+                                            actorName, lineNumber, e.getMessage());
+                                    // Continue with next actor rather than failing
                                 }
-                            }
+                                }
 
 
                             try {
@@ -411,6 +437,7 @@ public class MovieDataLoader extends BaseDataLoader {
             }
 
         } catch (IOException e) {
+            // log error for file reading
             logger.error("Error reading movies file: {}", e.getMessage(), e);
             throw new FileParsingException("Error reading movies file: " + e.getMessage());
         } finally {

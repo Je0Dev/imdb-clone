@@ -132,4 +132,7 @@ public class User implements Serializable {
     public void setJoinDate(LocalDate joinDate) {
     }
 
+    public boolean isAdmin() {
+        return true;
+    }
 }
