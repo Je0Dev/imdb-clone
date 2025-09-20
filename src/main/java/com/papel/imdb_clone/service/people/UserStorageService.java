@@ -53,13 +53,16 @@ public class UserStorageService {
             data.add(usersByUsername);
             data.add(usersByEmail);
 
+            // Write the data to the file
             oos.writeObject(data);
-            
+
+            // Calculate and log the duration
             long duration = System.currentTimeMillis() - startTime;
             logger.info(String.format("Successfully saved %d users in %d ms", 
                 usersByUsername.size(), duration));
                 
         } catch (IOException e) {
+            // Log error and rethrow
             String errorMsg = "Error saving user data: " + e.getMessage();
             logger.log(Level.SEVERE, errorMsg, e);
             throw new RuntimeException(errorMsg, e);

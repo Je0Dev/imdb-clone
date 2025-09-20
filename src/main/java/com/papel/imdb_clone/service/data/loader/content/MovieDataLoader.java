@@ -33,7 +33,6 @@ public class MovieDataLoader extends BaseDataLoader {
     private final MoviesService movieService;
     private final CelebrityService<Actor> actorService;
     private final CelebrityService<Director> directorService;
-    private final CelebrityManager celebrityManager;
     private char gender;
     private String ethnicity;
     private LocalDate birthDate;
@@ -61,7 +60,7 @@ public class MovieDataLoader extends BaseDataLoader {
         this.movieService = movieService;
         this.actorService = actorService;
         this.directorService = directorService;
-        this.celebrityManager = CelebrityManager.getInstance();
+        CelebrityManager celebrityManager = CelebrityManager.getInstance();
     }
 
 
@@ -84,12 +83,13 @@ public class MovieDataLoader extends BaseDataLoader {
 
     /**
      * load filename
-     * @param filename
-     * @throws IOException
+     * @param filename the name of the file to load
+     * @throws IOException if the file cannot be loaded
      */
     public void load(String filename) throws IOException {
         long startTime = System.currentTimeMillis();
         logger.info("Starting to load movies from: {}", filename);
+        //initialize variables
         int count = 0;
         int errors = 0;
         int duplicates = 0;
@@ -102,7 +102,7 @@ public class MovieDataLoader extends BaseDataLoader {
             validateInput(inputStream, filename);
             String line;
 
-            /**
+            /*
              * read file line by line and parse it
              */
             while ((line = reader.readLine()) != null) {
@@ -398,6 +398,7 @@ public class MovieDataLoader extends BaseDataLoader {
                 }
             }
 
+            // Log summary of the loading process
             long endTime = System.currentTimeMillis();
             long duration = (endTime - startTime) / 1000;
 

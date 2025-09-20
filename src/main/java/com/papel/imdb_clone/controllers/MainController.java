@@ -43,6 +43,7 @@ public class MainController extends BorderPane {
     @FXML
     private void showMovies(ActionEvent event) {
         try {
+            //Navigate to movies view
             NavigationService navigationService = NavigationService.getInstance();
             Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
             navigationService.navigateTo("/fxml/content/movie-view.fxml", data, stage, "Movies");
@@ -51,10 +52,12 @@ public class MainController extends BorderPane {
             showError("Navigation Error", "Failed to navigate to movies view: " + e.getMessage());
         }
     }
-    
+
+    //Navigate to advanced search view
     @FXML
     private void showAdvancedSearch(ActionEvent event) {
         try {
+            //Navigate to advanced search view
             NavigationService navigationService = NavigationService.getInstance();
             Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
             navigationService.navigateTo("/fxml/search/advanced-search-view.fxml", data, stage, "Advanced Search");
@@ -63,7 +66,9 @@ public class MainController extends BorderPane {
             showError("Navigation Error", "Failed to open advanced search: " + e.getMessage());
         }
     }
-    
+
+
+    //Navigate to TV shows view
     @FXML
     private void showTVShows(ActionEvent event) {
         try {
@@ -166,6 +171,7 @@ public class MainController extends BorderPane {
             logger.info("Services initialized successfully");
             isInitialized = true;
         } catch (Exception e) {
+            //Log error and throw runtime exception
             String errorMsg = String.format("Failed to initialize services: %s", e.getMessage());
             logger.error(errorMsg, e);
             throw new RuntimeException(errorMsg, e);
@@ -193,7 +199,7 @@ public class MainController extends BorderPane {
 
             // Always try to load views, regardless of areViewsLoaded()
             logger.info("Loading all views...");
-            if (!uiCoordinator.loadAndInitializeViews()) {
+            if (uiCoordinator.loadAndInitializeViews()) {
                 logger.warn("Some views failed to load, but continuing with available views");
             }
 
@@ -232,11 +238,7 @@ public class MainController extends BorderPane {
             return;
         }
 
-        if (this == null) {
-            logger.warn("Controller not properly initialized in initializeCoordinatorsAndUI");
-            return;
-        }
-
+        //Initialize coordinators and UI on JavaFX thread
         Platform.runLater(() -> {
             try {
                 logger.info("Initializing coordinators and UI...");
@@ -260,7 +262,7 @@ public class MainController extends BorderPane {
                 // Ensure views are loaded
                 if (uiCoordinator.areViewsLoaded()) {
                     logger.info("Loading views...");
-                    if (!uiCoordinator.loadAndInitializeViews()) {
+                    if (uiCoordinator.loadAndInitializeViews()) {
                         logger.warn("Some views failed to load, but continuing with available views");
                     }
                 }
@@ -282,6 +284,8 @@ public class MainController extends BorderPane {
                 logger.error("Error initializing coordinators and UI: {}", e.getMessage(), e);
                 showError("Initialization Error", "Failed to initialize application: " + e.getMessage());
             } finally {
+                //Set isInitializing to false which means initialization is complete which means
+                //the application is ready to be used
                 isInitializing = false;
             }
         });
@@ -407,6 +411,9 @@ public class MainController extends BorderPane {
                         uiCoordinator.setPrimaryStage(primaryStage);
                         initializeCoordinatorsAndUI();
                     }
+                    //Set isInitializing to false which means initialization is complete which means
+                    //the application is ready to be used
+                    isInitializing = false;
                 } catch (Exception e) {
                     logger.error("Failed to initialize services after setting primary stage: {}", e.getMessage(), e);
                     showError("Initialization Error", "Failed to initialize application: " + e.getMessage());
@@ -423,6 +430,7 @@ public class MainController extends BorderPane {
             if (primaryStage == null) {
                 primaryStage = (Stage) ((Node) actionEvent.getSource()).getScene().getWindow();
             }
+            //Navigate to celebrities view
             NavigationService.getInstance().showCelebrities(primaryStage);
         } catch (Exception e) {
             logger.error("Failed to navigate to celebrities view: {}", e.getMessage(), e);

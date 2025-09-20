@@ -20,7 +20,8 @@ public class SeriesService extends BaseContentService<Series> {
     private SeriesService() {
         super(Series.class);
     }
-    
+
+    //return singleton instance of SeriesService which means that only one instance of SeriesService can exist at a time
     public static synchronized SeriesService getInstance() {
         if (instance == null) {
             instance = new SeriesService();
@@ -93,6 +94,7 @@ public class SeriesService extends BaseContentService<Series> {
             
             logger.info("Initialized with " + contentList.size() + " sample series");
         } finally {
+            //unlock the write lock when done, which means that other threads can modify the list
             lock.writeLock().unlock();
         }
     }

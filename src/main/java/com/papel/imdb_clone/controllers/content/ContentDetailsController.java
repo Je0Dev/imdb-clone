@@ -58,8 +58,6 @@ public class ContentDetailsController {
     
     // Data
     private String contentId;
-    private String contentType; // "movie" or "tv"
-    private Content content;
 
     @FXML
     public void initialize() {
@@ -93,8 +91,8 @@ public class ContentDetailsController {
                                  String language, List<String> countries, String posterPath) {
         
         this.contentId = contentId;
-        this.contentType = contentType;
-        
+        // "movie" or "tv"
+
         // Set basic info
         titleLabel.setText(title);
         yearLabel.setText(year);
@@ -177,7 +175,7 @@ public class ContentDetailsController {
     private String formatCurrency(long amount) {
         return NumberFormat.getCurrencyInstance(Locale.US).format(amount);
     }
-    
+
     // Handle close button action
     @FXML
     private void handleClose() {
@@ -191,14 +189,12 @@ public class ContentDetailsController {
     private void goBack() {
         NavigationService.getInstance().goBack();
     }
-    
+
     /**
      * Toggle edit mode for the content details
      * @param editMode true to enable editing, false to disable
      */
     public void setEditMode(boolean editMode) {
-        // In a real implementation, you would enable/disable editing of fields here
-        // For now, we'll just show a message
         if (editMode) {
             // Show a dialog indicating edit mode is enabled
             Alert alert = new Alert(Alert.AlertType.INFORMATION);
@@ -207,32 +203,16 @@ public class ContentDetailsController {
             alert.setContentText("You are now in edit mode. Make your changes and click 'Save' when done.");
             alert.showAndWait();
             
-            // In a real implementation, you would enable form fields for editing here
-            // For example:
-            // titleField.setEditable(true);
-            // overviewArea.setEditable(true);
+            //  enable form fields for editing here
+            //titleField.setEditable(true);
+            //overviewArea.setEditable(true);
             // etc.
         }
     }
-    
-    // Load similar content (to be implemented)
-    private void loadSimilarContent(String contentId, String contentType) {
-        // In a real app, you would fetch similar content from your API
-        // and create UI elements for each similar item
-        similarContentContainer.getChildren().clear();
-        
-        // Example of adding a placeholder for similar content
-        Label placeholder = new Label("Similar content will be shown here");
-        placeholder.setStyle("-fx-text-fill: #666; -fx-font-style: italic;");
-        similarContentContainer.getChildren().add(placeholder);
-    }
-
     public void setContentId(String id) {
         this.contentId = id;
     }
 
     public void setContent(Content content) {
-        this.content = content;
-        
     }
 }

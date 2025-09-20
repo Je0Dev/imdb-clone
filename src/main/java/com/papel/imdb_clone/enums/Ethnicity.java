@@ -1,5 +1,6 @@
 package com.papel.imdb_clone.enums;
 
+//Enum for ethnicity
 public enum Ethnicity {
 
     // Regional Ethnicities

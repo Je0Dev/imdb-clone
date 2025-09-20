@@ -18,8 +18,8 @@ public class SearchCriteria {
     private List<Genre> genres;
     private Genre genre;
     private ContentType contentType;
-    private final String sortBy; // "title", "year", "rating", "duration"
-    private final boolean sortDescending;
+    private String sortBy; // "title", "year", "rating", "duration"
+    private boolean sortDescending;
     private Integer startYear;
     private Integer endYear;
 
@@ -104,14 +104,12 @@ public class SearchCriteria {
 
     //set sort field
     public void setSortField(String sortBy) {
-        // This is a no-op since sortBy is final
-        // The field is only set in the constructor
+        this.sortBy = sortBy;
     }
 
     //set sort order
     public void setSortOrder(String sortOrder) {
-        // This is a no-op since sortDescending is final
-        // The field is only set in the constructor
+        this.sortDescending = sortOrder.equals("desc");
     }
 
     //get sort field

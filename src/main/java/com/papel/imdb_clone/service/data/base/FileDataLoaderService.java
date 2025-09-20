@@ -32,19 +32,20 @@ public class FileDataLoaderService implements DataLoaderService {
 
     /**
      * Constructor for FileDataLoaderService.
-     * @param userRepository
-     * @param movieRepository
-     * @param seriesRepository
-     * @param seriesService
-     * @param actorService
-     * @param directorService
-     * @param moviesService
+     * @param userRepository InMemoryUserRepository
+     * @param movieRepository InMemoryMovieRepository
+     * @param seriesRepository InMemorySeriesRepository
+     * @param seriesService SeriesService
+     * @param actorService CelebrityService<Actor>
+     * @param directorService CelebrityService<Director>
+     * @param moviesService MoviesService
      */
     public FileDataLoaderService(
             InMemoryUserRepository userRepository,
             InMemoryMovieRepository movieRepository,
             InMemorySeriesRepository seriesRepository,
 
+//SeriesService seriesService,
 SeriesService seriesService,
             CelebrityService<Actor> actorService,
             CelebrityService<Director> directorService,
@@ -153,6 +154,7 @@ SeriesService seriesService,
             long taskStartTime = System.currentTimeMillis();
 
             try {
+                //load data using the appropriate loader based on the data type
                 switch (dataType) {
                     case "Users":
                         loadUsers(filename);
@@ -187,6 +189,7 @@ SeriesService seriesService,
             }
         }
 
+        // Log summary of the loading process
         long totalTime = System.currentTimeMillis() - startTime;
         logger.info("\n=== Data Loading Summary ===");
         logger.info("Successfully loaded: {}/{} data sources", successCount, loadTasks.length);

@@ -47,10 +47,6 @@ public class EntityNotFoundException extends InvalidEntityException {
                 (entityType != null ? entityType.getSimpleName() : null);
     }
 
-    //create exception with entity type, identifier, and cause
-    public EntityNotFoundException(Class<?> entityType, Object identifier, Throwable cause) {
-        this(entityType, identifier, null, cause);
-    }
 
     //create exception with entity type, identifier, message, and cause
     public EntityNotFoundException(Class<?> entityType, Object identifier, String message, Throwable cause) {
@@ -59,14 +55,6 @@ public class EntityNotFoundException extends InvalidEntityException {
                 identifier,
                 message,
                 cause);
-    }
-
-    //create exception with entity type, identifier, message, and cause
-    public EntityNotFoundException(Class<?> entityType, String finalEntityName, Object identifier, String message) {
-        super(finalEntityName, identifier, message, createFieldErrors(entityType, identifier), null);
-        this.entityType = entityType;
-        this.identifier = identifier;
-        this.entityName = finalEntityName;
     }
 
     /**

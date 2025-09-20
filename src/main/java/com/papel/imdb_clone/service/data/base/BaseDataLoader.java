@@ -90,9 +90,11 @@ public abstract class BaseDataLoader {
                         i++; // Skip the next quote
                         continue;
                     }
+                    //end of quoted field
                     inQuotes = false;
                     continue;
                 } else if (atStart) {
+                    //start of quoted field
                     inQuotes = true;
                     atStart = false;
                     continue;
@@ -119,7 +121,8 @@ public abstract class BaseDataLoader {
         if (line.endsWith(",")) {
             fields.add("");
         }
-        
+
+        //return array of fields
         return fields.toArray(new String[0]);
     }
 }

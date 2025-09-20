@@ -37,6 +37,7 @@ public class ActorDataLoader extends BaseDataLoader {
     public void load(String filename) throws IOException {
         long startTime = System.currentTimeMillis();
         logger.info("Starting to load actors from: {}", filename);
+        // Initialize variables
         int count = 0;
         int errors = 0;
         int duplicates = 0;
@@ -46,9 +47,11 @@ public class ActorDataLoader extends BaseDataLoader {
         try (InputStream inputStream = getResourceAsStream(filename);
              BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream))) {
 
+            // Validate input
             validateInput(inputStream, filename);
             String line;
 
+            // Read file line by line
             while ((line = reader.readLine()) != null) {
                 lineNumber++;
                 if (line.trim().isEmpty() || line.trim().startsWith("#")) {
@@ -105,6 +108,7 @@ public class ActorDataLoader extends BaseDataLoader {
                         String nationality = parts[4].trim();
                         Ethnicity ethnicity = null;
                         try {
+                            // Set ethnicity if nationality is not empty and not N/A
                             if (!nationality.isEmpty() && !nationality.equalsIgnoreCase("N/A")) {
                                 ethnicity = Ethnicity.fromLabel(nationality);
                             }
@@ -176,7 +180,7 @@ public class ActorDataLoader extends BaseDataLoader {
 
     /**
      * Parses a date string into a LocalDate object.
-     * @param dateStr
+     * @param dateStr the date string to parse
      * @return LocalDate object or null if the date string is invalid
      */
     private LocalDate parseDate(String dateStr) {

@@ -63,6 +63,16 @@ public class UIUtils {
     }
 
 
+    /**
+     * Creates an alert with the specified type, title, header, and content.
+     * The dialog is shown on the JavaFX Application Thread.
+     *
+     * @param type    The type of the alert
+     * @param title   The title of the alert
+     * @param header  The header text (optional, can be null)
+     * @param content The detailed error message
+     * @throws IllegalArgumentException if title or content is null
+     */
     private static Alert createAlert(Alert.AlertType type, String title, String header, String content) {
         Alert alert = new Alert(type);
         alert.setTitle(title);
@@ -90,6 +100,7 @@ public class UIUtils {
     }
 
     public static void showContentDetails(Content rowData) {
+        //show content details
         Platform.runLater(() -> {
             Alert alert = createAlert(Alert.AlertType.INFORMATION, "Content Details", null, rowData.toString());
             alert.showAndWait();

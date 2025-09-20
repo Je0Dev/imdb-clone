@@ -8,14 +8,12 @@ import java.util.List;
  * Represents a season of a series.
  */
 public class Season {
-    private int episodeCount;
     private int id;
     private int year;
     private List<Episode> episodes;
     private int seasonNumber;
     private Object title;
     private Date releaseDate;
-    private Series series;
 
     /**
      * Default constructor for Season.
@@ -31,7 +29,6 @@ public class Season {
         this(seasonNumber, series);
         this.seasonNumber = seasonNumber;
         this.title = title;
-        this.episodeCount = episodeCount;
     }
 
     //getters and setters
@@ -84,7 +81,6 @@ public class Season {
     }
 
     public void setSeries(Series series) {
-        this.series = series;
     }
 
     //set episodes type E to a list of episodes

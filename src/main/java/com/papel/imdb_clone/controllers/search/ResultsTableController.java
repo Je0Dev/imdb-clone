@@ -3,6 +3,7 @@ package com.papel.imdb_clone.controllers.search;
 import com.papel.imdb_clone.controllers.content.ContentDetailsController;
 import com.papel.imdb_clone.model.content.Content;
 import com.papel.imdb_clone.model.content.Movie;
+import javafx.application.Platform;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
@@ -13,6 +14,7 @@ import javafx.scene.control.cell.PropertyValueFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -61,24 +63,42 @@ public class ResultsTableController extends BaseSearchController {
         try {
             logger.info("Initializing ResultsTableController...");
             
-            // First, set up the table columns
-            setupTableColumns();
-            
-            // Set up the row double-click handler
-            setupRowDoubleClickHandler();
-            
             // Make sure the table is properly initialized
             if (resultsTable == null) {
                 logger.error("Results table is null in initialize()");
                 return;
             }
             
-            // Set the items in the table
+            // Set the items in the table first
             resultsTable.setItems(searchResults);
             
+            // Set up the table columns
+            setupTableColumns();
+            
+            // Set up the row double-click handler
+            setupRowDoubleClickHandler();
+            
+            // Configure table properties
+            resultsTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
+            resultsTable.setTableMenuButtonVisible(true);
+            
+            // Make sure the table is visible
+            resultsTable.setVisible(true);
+            
             // Log the table and column states
-            logger.info("Table initialized with columns: " + resultsTable.getColumns());
-            logger.info("Table items count: " + (resultsTable.getItems() != null ? resultsTable.getItems().size() : 0));
+            logger.info("Table initialized with columns: {}", resultsTable.getColumns());
+            logger.info("Table items count: {}", resultsTable.getItems().size());
+            
+            // Log column visibility
+            if (resultsTable.getColumns() != null) {
+                logger.info("Column visibility:");
+                for (TableColumn<?, ?> col : resultsTable.getColumns()) {
+                    logger.info("  - {}: visible={}, width={}", 
+                        col.getText(), 
+                        col.isVisible(),
+                        col.getWidth());
+                }
+            }
             
         } catch (Exception e) {
             logger.error("Error initializing ResultsTableController", e);
@@ -96,6 +116,8 @@ public class ResultsTableController extends BaseSearchController {
             searchResults.clear();
             return;
         }
+        //Assert that results are not null which means the search was successful
+        assert true;
         searchResults.setAll(results);
         updateResultsCount(results.size());
     }
@@ -107,57 +129,78 @@ public class ResultsTableController extends BaseSearchController {
      */
     public void updateResults(List<Content> results) {
         logger.info("=== Starting updateResults ===");
-        logger.info("Received results list: " + (results != null ? results.size() : "null") + " items");
+        logger.info("Received results list: {} items", results != null ? results.size() : "null");
         
-        if (results == null || results.isEmpty()) {
-            logger.warn("No results to display - results list is " + (results == null ? "null" : "empty"));
-            searchResults.clear();
-            updateResultsCount(0);
+        // Make sure we're on the JavaFX Application Thread
+        if (!Platform.isFxApplicationThread()) {
+            Platform.runLater(() -> updateResults(results));
             return;
         }
         
-        // Log first few items to verify data
-        int itemsToLog = Math.min(3, results.size());
-        logger.info("First " + itemsToLog + " items in results:");
-        for (int i = 0; i < itemsToLog; i++) {
-            Content item = results.get(i);
-            logger.info("  " + (i+1) + ". " + item.getTitle() + " (ID: " + item.getId() + ")");
-        }
-        
-        // Clear the current items
-        logger.debug("Clearing current search results (current size: " + searchResults.size() + ")");
-        searchResults.clear();
-        
-        // Add all new items
-        logger.debug("Adding " + results.size() + " new items to searchResults");
-        searchResults.addAll(results);
-        
-        // Verify the items were added
-        logger.info("searchResults size after update: " + searchResults.size());
-        
-        // Update the results count
-        updateResultsCount(searchResults.size());
-        
-        // Log the table state
-        if (resultsTable != null) {
-            logger.info("Table state after update:");
-            logger.info("  - Table items: " + (resultsTable.getItems() != null ? resultsTable.getItems().size() : "null"));
-            logger.info("  - Table columns: " + (resultsTable.getColumns() != null ? resultsTable.getColumns().size() : "null"));
-            
-            // Log column names
-            if (resultsTable.getColumns() != null && !resultsTable.getColumns().isEmpty()) {
-                logger.info("  - Column names: " + resultsTable.getColumns().stream()
-                    .map(col -> col.getText())
-                    .collect(Collectors.joining(", ")));
+        try {
+            //Assert that results are not null which means the search was successful
+            assert true;
+            if (results == null || results.isEmpty()) {
+                logger.warn("No results to display - results list is {}", results == null ? "null" : "empty");
+                searchResults.clear();
+                updateResultsCount(0);
+                
+                // Make sure the table is visible even when there are no results
+                if (resultsTable != null) {
+                    resultsTable.setPlaceholder(new Label("No results found"));
+                }
+                return;
             }
             
-            // Force refresh of the table
-            resultsTable.refresh();
-        } else {
-            logger.error("resultsTable is null in updateResults!");
+            // Log first few items to verify data
+            int itemsToLog = Math.min(3, results.size());
+            logger.info("First {} items in results:", itemsToLog);
+            for (int i = 0; i < itemsToLog; i++) {
+                Content item = results.get(i);
+                logger.info("  {}. {} (ID: {})", i + 1, item.getTitle(), item.getId());
+            }
+            
+            // Clear the current items and add all new items
+            logger.debug("Updating search results (current size: {}, new size: {})", searchResults.size(), results.size());
+            
+            // Use setAll to update the observable list in one operation
+            searchResults.setAll(results);
+            
+            // Verify the items were added
+            logger.info("searchResults size after update: {}", searchResults.size());
+            
+            // Update the results count
+            updateResultsCount(searchResults.size());
+            
+            // Make sure the table is visible
+            if (resultsTable != null) {
+                // Ensure the table is visible
+                resultsTable.setVisible(true);
+                
+                // Log the table state for debugging
+                for (String s : Arrays.asList("Table state after update:", "  - Table items: " + (resultsTable.getItems() != null ? resultsTable.getItems().size() : "null"), "  - Table columns: " + (resultsTable.getColumns() != null ? resultsTable.getColumns().size() : "null"))) {
+                    logger.info(s);
+                }
+
+                // Force refresh of the table
+                resultsTable.refresh();
+                
+                // Log the first item's data to verify it's properly bound
+                if (!resultsTable.getItems().isEmpty()) {
+                    Content firstItem = resultsTable.getItems().getFirst();
+                    logger.debug("First item in table: {} (ID: {})", firstItem.getTitle(), firstItem.getId());
+                }
+            } else {
+                logger.error("resultsTable is null in updateResults!");
+            }
+            
+            logger.info("=== Finished updateResults ===");
+        } catch (Exception e) {
+            logger.error("Error updating results table", e);
+            if (resultsTable != null) {
+                resultsTable.setPlaceholder(new Label("Error loading results: " + e.getMessage()));
+            }
         }
-        
-        logger.info("=== Finished updateResults ===");
     }
 
     /**
@@ -193,9 +236,9 @@ public class ResultsTableController extends BaseSearchController {
         logger.info("Setting up table columns...");
 
         try {
-            // Clear existing columns to avoid duplicates
-            resultsTable.getColumns().clear();
-
+            // Don't clear columns as they are defined in FXML
+            // Just make sure they are properly configured
+            
             // Set up title column with tooltip
             if (resultTitleColumn != null) {
                 logger.debug("Setting up title column");
@@ -224,10 +267,7 @@ public class ResultsTableController extends BaseSearchController {
                     }
                 });
 
-                // Make sure the column is added to the table
-                if (!resultsTable.getColumns().contains(resultTitleColumn)) {
-                    resultsTable.getColumns().add(resultTitleColumn);
-                }
+                // Column is already defined in FXML, no need to add it again
             }
 
             // Set up type column
@@ -240,9 +280,7 @@ public class ResultsTableController extends BaseSearchController {
                     return new SimpleStringProperty(type);
                 });
                 
-                if (!resultsTable.getColumns().contains(resultTypeColumn)) {
-                    resultsTable.getColumns().add(resultTypeColumn);
-                }
+                // Column is already defined in FXML, no need to add it again
             }
 
             // Set up year column
@@ -255,9 +293,7 @@ public class ResultsTableController extends BaseSearchController {
                            new SimpleIntegerProperty(0).asObject();
                 });
                 
-                if (!resultsTable.getColumns().contains(resultYearColumn)) {
-                    resultsTable.getColumns().add(resultYearColumn);
-                }
+                // Column is already defined in FXML, no need to add it again
             }
 
             // Set up genre column
@@ -277,9 +313,7 @@ public class ResultsTableController extends BaseSearchController {
                     return new SimpleStringProperty(genres);
                 });
                 
-                if (!resultsTable.getColumns().contains(resultGenreColumn)) {
-                    resultsTable.getColumns().add(resultGenreColumn);
-                }
+                // Column is already defined in FXML, no need to add it again
             }
 
             // Set up IMDb rating column
@@ -293,9 +327,7 @@ public class ResultsTableController extends BaseSearchController {
                     return new SimpleStringProperty(String.format("%.1f", content.getImdbRating()));
                 });
                 
-                if (!resultsTable.getColumns().contains(resultImdbColumn)) {
-                    resultsTable.getColumns().add(resultImdbColumn);
-                }
+                // Column is already defined in FXML, no need to add it again
             }
 
             // Set up director column
@@ -308,12 +340,10 @@ public class ResultsTableController extends BaseSearchController {
                     return new SimpleStringProperty(director);
                 });
                 
-                if (!resultsTable.getColumns().contains(resultDirectorColumn)) {
-                    resultsTable.getColumns().add(resultDirectorColumn);
-                }
+                // Column is already defined in FXML, no need to add it again
             }
-            
-            logger.info("Table columns setup completed. Total columns: " + resultsTable.getColumns().size());
+
+            logger.info("Table columns setup completed. Total columns: {}", resultsTable.getColumns().size());
             
         } catch (Exception e) {
             logger.error("Error setting up table columns", e);
@@ -383,7 +413,6 @@ public class ResultsTableController extends BaseSearchController {
             return row;
         });
     }
-
 
     /**
      * Sets up the type column in the results table

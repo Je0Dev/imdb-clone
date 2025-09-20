@@ -30,8 +30,6 @@ module com.papel.imdb_clone {
     opens com.papel.imdb_clone.controllers.content to javafx.fxml;
     exports com.papel.imdb_clone.controllers.authentication;
     opens com.papel.imdb_clone.controllers.authentication to javafx.fxml;
-    exports com.papel.imdb_clone.controllers.base;
-    opens com.papel.imdb_clone.controllers.base to javafx.fxml;
     exports com.papel.imdb_clone.controllers.search;
     opens com.papel.imdb_clone.controllers.search to javafx.fxml;
 }

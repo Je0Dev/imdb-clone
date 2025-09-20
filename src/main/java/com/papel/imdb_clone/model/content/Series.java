@@ -126,7 +126,8 @@ public class Series extends Content {
                         season.getSeasonNumber(), getTitle());
                     continue;
                 }
-                
+
+                //Derive total episodes from season
                 logger.debug("Season {} has {} episodes", season.getSeasonNumber(), episodes.size());
                 total += episodes.size();
                 
@@ -184,7 +185,7 @@ public class Series extends Content {
                 cal.set(Calendar.DAY_OF_MONTH, 1);
                 this.year = cal.getTime();
             } catch (Exception e) {
-                logger.error("Error updating year from startYear: " + startYear, e);
+                logger.error("Error updating year from startYear: {}", startYear, e);
             }
         }
     }

@@ -37,15 +37,14 @@ public class User implements Serializable {
      */
     private static final Pattern EMAIL_PATTERN = Pattern.compile(
             "^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$");
-    private LocalDate joinDate;
 
     /**
      * Constructor for User
-     * @param firstName
-     * @param lastName
-     * @param username
-     * @param gender
-     * @param email
+     * @param firstName The user's first name
+     * @param lastName The user's last name
+     * @param username The user's username
+     * @param gender The user's gender
+     * @param email The user's email address
      */
     public User(String firstName, String lastName, String username, char gender, String email) {
         this.id = nextId++;
@@ -131,7 +130,6 @@ public class User implements Serializable {
 
     //set join date for when the user joins the application
     public void setJoinDate(LocalDate joinDate) {
-        this.joinDate = joinDate;
     }
 
 }

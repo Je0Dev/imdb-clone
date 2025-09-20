@@ -15,9 +15,9 @@ public class UserRating {
 
     /**
      * Constructor for UserRating
-     * @param userId
-     * @param contentId
-     * @param rating
+     * @param userId The user's ID
+     * @param contentId The content's ID
+     * @param rating The user's rating
      */
     public UserRating(int userId, int contentId, int rating) {
         this.userId = userId;
@@ -28,10 +28,10 @@ public class UserRating {
 
     /**
      * Constructor for UserRating with title
-     * @param userId
-     * @param contentId
-     * @param rating
-     * @param title
+     * @param userId The user's ID
+     * @param contentId The content's ID
+     * @param rating The user's rating
+     * @param title The user's review title
      */
     public UserRating(int userId, int contentId, int rating, String title) {
         this(userId, contentId, rating);

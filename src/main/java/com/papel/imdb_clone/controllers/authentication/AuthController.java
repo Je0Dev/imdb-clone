@@ -1,6 +1,6 @@
 package com.papel.imdb_clone.controllers.authentication;
 
-import com.papel.imdb_clone.controllers.base.BaseController;
+import com.papel.imdb_clone.controllers.BaseController;
 import com.papel.imdb_clone.exceptions.AuthException;
 import com.papel.imdb_clone.exceptions.ValidationException;
 import com.papel.imdb_clone.model.people.User;

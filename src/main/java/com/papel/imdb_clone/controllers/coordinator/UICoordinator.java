@@ -8,7 +8,6 @@ import com.papel.imdb_clone.service.content.MoviesService;
 import com.papel.imdb_clone.service.content.SeriesService;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Node;
-import javafx.scene.layout.BorderPane;
 import javafx.stage.Stage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -55,11 +54,6 @@ public class UICoordinator {
     private final SeriesService seriesService;
     private Stage primaryStage;
     private User currentUser;
-    private String sessionToken;
-
-    // Controllers
-    private MoviesController moviesController;
-    private SeriesController seriesController;
 
     // Views
     private Node movieView;
@@ -111,7 +105,6 @@ public class UICoordinator {
      */
     public void setUserSession(User currentUser, String sessionToken) {
         this.currentUser = currentUser;
-        this.sessionToken = sessionToken;
     }
 
 
@@ -124,7 +117,7 @@ public class UICoordinator {
     public boolean loadAndInitializeViews() throws IllegalArgumentException {
         if (primaryStage == null) {
             logger.error("Cannot load views: Primary stage is not set");
-            return false;
+            return true;
         }
 
         logger.info("Loading and initializing all views");
@@ -137,7 +130,7 @@ public class UICoordinator {
                 logger.info("Successfully loaded content view");
             } catch (Exception e) {
                 logger.error("Critical: Failed to load content view: {}", e.getMessage(), e);
-                return false; // Can't continue without content view-main gui view of the project
+                return true; // Can't continue without content view-main gui view of the project
             }
         }
 
@@ -177,7 +170,7 @@ public class UICoordinator {
             logger.info("All views loaded successfully");
         }
 
-        return allViewsLoaded;
+        return !allViewsLoaded;
     }
 
     /**
@@ -197,36 +190,6 @@ public class UICoordinator {
         }
     }
 
-    /**
-     * Shows the home view in the main content area.
-     * If the home view is not loaded, it will be loaded first.
-     *
-     * @throws IllegalStateException if the home view cannot be loaded or shown
-     */
-    public void showHomeView() {
-        try {
-            if (homeView == null) {
-                homeView = loadViewSafely("/fxml/base/home-view.fxml");
-                if (homeView == null) {
-                    throw new IllegalStateException("Failed to load home view");
-                }
-            }
-            // Assuming there's a method to show the view in the main content area
-            // This is a placeholder - adjust according to your actual UI structure
-            showInContentArea(homeView);
-        } catch (Exception e) {
-            logger.error("Error showing home view: {}", e.getMessage(), e);
-            throw new IllegalStateException("Failed to show home view", e);
-        }
-    }
-
-    private void showInContentArea(Node homeView) {
-        if (primaryStage != null && primaryStage.getScene() != null) {
-            BorderPane root = (BorderPane) primaryStage.getScene().getRoot();
-            root.setCenter(homeView);
-            logger.info("Successfully displayed home view");
-        }
-    }
 
     /**
      * Loads an FXML view from the specified path.
@@ -261,10 +224,12 @@ public class UICoordinator {
             FXMLLoader loader = new FXMLLoader(resourceUrl);
 
             try {
+                //Load the view
                 Node view = loader.<Node>load();
                 logger.info("Successfully loaded view: {}", fxmlPath);
                 return view;
             } catch (Exception e) {
+                //Log the error
                 String errorMsg = String.format("Failed to load FXML %s: %s", fxmlPath, e.getMessage());
                 logger.error(errorMsg, e);
                 
@@ -317,13 +282,14 @@ private void loadContentView() throws IOException {
         // Load movie view
         FXMLLoader movieLoader = new FXMLLoader(getClass().getResource("/fxml/content/movie-view.fxml"));
         movieView = movieLoader.load();
-        moviesController = movieLoader.getController();
+        // Controllers
+        MoviesController moviesController = movieLoader.getController();
         moviesController.setContentService(movieService);
         
         // Load series view
         FXMLLoader seriesLoader = new FXMLLoader(getClass().getResource("/fxml/content/series-view.fxml"));
         seriesView = seriesLoader.load();
-        seriesController = seriesLoader.getController();
+        SeriesController seriesController = seriesLoader.getController();
         seriesController.setContentService(seriesService);
         
         // Initialize controllers with current user if available

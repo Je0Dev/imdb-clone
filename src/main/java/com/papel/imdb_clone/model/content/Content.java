@@ -29,12 +29,12 @@ public abstract class Content {
 
     /**
      * Content constructor
-     * @param title
-     * @param year
-     * @param genre
-     * @param director
-     * @param userRatings
-     * @param imdbRating
+     * @param title content title
+     * @param year content release year
+     * @param genre content genre
+     * @param director content director
+     * @param userRatings user ratings
+     * @param imdbRating imdb rating
      */
     public Content(String title, Date year, Genre genre, String director, Map<Integer, Integer> userRatings, Double imdbRating) {
         this.title = title;
@@ -136,6 +136,7 @@ public abstract class Content {
      */
     public int getYearAsInt() {
         if (this.year != null) {
+            //Derive year from date
             Calendar cal = Calendar.getInstance();
             cal.setTime(this.year);
             return cal.get(Calendar.YEAR);
@@ -273,7 +274,7 @@ public abstract class Content {
                 cal.set(Calendar.DAY_OF_MONTH, 1);
                 this.releaseDate = cal.getTime();
             } catch (Exception e) {
-                logger.error("Error updating release date for year: " + startYear, e);
+                logger.error("Error updating release date for year: {}", startYear, e);
             }
         }
     }

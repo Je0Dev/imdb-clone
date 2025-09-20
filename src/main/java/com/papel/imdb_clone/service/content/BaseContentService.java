@@ -21,20 +21,24 @@ public abstract class BaseContentService<T extends Content> implements ContentSe
         initializeSampleData();
     }
 
+    //return all content
     @Override
     public List<T> getAll() {
         lock.readLock().lock();
         try {
+            //return copy of content list
             return new ArrayList<>(contentList);
         } finally {
             lock.readLock().unlock();
         }
     }
 
+    //return content by id
     @Override
     public Optional<T> getById(int id) {
         lock.readLock().lock();
         try {
+            //return first content that matches the id
             return contentList.stream()
                     .filter(content -> content.getId() == id)
                     .findFirst();
@@ -43,10 +47,12 @@ public abstract class BaseContentService<T extends Content> implements ContentSe
         }
     }
 
+    //save content
     @Override
     public T save(T content) {
         lock.writeLock().lock();
         try {
+            //if content has id, update nextId which is used for generating new ids for new content
             content.setId(nextId.getAndIncrement());
             contentList.add(content);
             return content;
@@ -55,11 +61,13 @@ public abstract class BaseContentService<T extends Content> implements ContentSe
         }
     }
 
+    //update content
     @Override
     public T update(T content) {
         lock.writeLock().lock();
         try {
             int index = -1;
+            //find index of content with given id
             for (int i = 0; i < contentList.size(); i++) {
                 if (contentList.get(i).getId() == content.getId()) {
                     index = i;
@@ -77,16 +85,19 @@ public abstract class BaseContentService<T extends Content> implements ContentSe
         }
     }
 
+    //delete content by id
     @Override
     public boolean delete(int id) {
         lock.writeLock().lock();
         try {
+            //remove content with given id
             return contentList.removeIf(content -> content.getId() == id);
         } finally {
             lock.writeLock().unlock();
         }
     }
-    
+
+    //remove content
     @Override
     public boolean remove(T content) {
         if (content == null) {
@@ -95,15 +106,19 @@ public abstract class BaseContentService<T extends Content> implements ContentSe
         return delete(content.getId());
     }
 
+    //find content by title and year
     @Override
     public Optional<T> findByTitleAndYear(String title, int year) {
+        //read lock which means that other threads can read the list but cannot modify it
         lock.readLock().lock();
         try {
+            //return first content that matches the title and year
             return contentList.stream()
                     .filter(content -> content.getTitle().equalsIgnoreCase(title) && 
                                      content.getReleaseDate().getYear() == year)
                     .findFirst();
         } finally {
+            //unlock the read lock when done, which means that other threads can read the list
             lock.readLock().unlock();
         }
     }

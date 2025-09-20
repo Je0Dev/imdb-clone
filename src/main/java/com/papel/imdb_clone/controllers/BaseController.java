@@ -1,13 +1,10 @@
-package com.papel.imdb_clone.controllers.base;
+package com.papel.imdb_clone.controllers;
 
 import com.papel.imdb_clone.data.DataManager;
 import com.papel.imdb_clone.service.search.ServiceLocator;
 import com.papel.imdb_clone.util.UIUtils;
 import javafx.fxml.Initializable;
-import javafx.scene.Node;
 import javafx.scene.control.*;
-import javafx.scene.layout.GridPane;
-import javafx.scene.layout.Priority;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

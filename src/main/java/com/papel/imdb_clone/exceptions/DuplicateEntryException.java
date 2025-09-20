@@ -10,8 +10,6 @@ import java.util.Map;
  * Can be used for any type of duplicate entry (username, email, content, etc.).
  */
 public class DuplicateEntryException extends InvalidEntityException {
-    private final String fieldName;
-    private final Object fieldValue;
 
 
     /**
@@ -21,8 +19,6 @@ public class DuplicateEntryException extends InvalidEntityException {
         super(entityName, entityId,
                 String.format("Duplicate entry found for %s: %s", fieldName, fieldValue),
                 createFieldErrors(fieldName, fieldValue), null);
-        this.fieldName = fieldName;
-        this.fieldValue = fieldValue;
     }
 
 

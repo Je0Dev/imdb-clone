@@ -203,6 +203,7 @@ public class CelebritiesController implements Initializable {
                                     int maxWorks = Math.min(3, validWorks.size());
                                     String worksText = String.join(", ", validWorks.subList(0, maxWorks));
                                     if (validWorks.size() > 3) {
+                                        //Add ellipsis if there are more than 3 works
                                         worksText += "...";
                                     }
                                     logger.debug("Notable works for {} {}: {}", 
@@ -220,6 +221,7 @@ public class CelebritiesController implements Initializable {
                 } catch (Exception e) {
                     logger.error("Unexpected error getting actor notable works: {}", e.getMessage(), e);
                 }
+                //Return no notable works if there are no works
                 return new SimpleStringProperty("No notable works");
             });
 

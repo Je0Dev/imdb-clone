@@ -27,7 +27,7 @@ public class InMemorySeriesRepository implements SeriesRepository {
     /**
      * Finds a series by its ID.
      * @param id The series ID
-     * @return
+     * @return Optional containing the series if found, empty otherwise
      */
     @Override
     public Optional<Series> findById(int id) {
@@ -47,7 +47,7 @@ public class InMemorySeriesRepository implements SeriesRepository {
     /**
      * Finds a series by its title.
      * @param title The series title to search for
-     * @return
+     * @return Optional containing the series if found, empty otherwise
      */
     @Override
     public Optional<Series> findByTitle(String title) {
@@ -68,7 +68,7 @@ public class InMemorySeriesRepository implements SeriesRepository {
 
     /**
      * Returns a list of all series.
-     * @return
+     * @return List of all series
      */
     @Override
     public List<Series> findAll() {
@@ -83,7 +83,7 @@ public class InMemorySeriesRepository implements SeriesRepository {
     /**
      * Saves a series to the repository.
      * @param series The series to save
-     * @return
+     * @return The saved series
      */
     @Override
     public Series save(Series series) {
@@ -91,6 +91,7 @@ public class InMemorySeriesRepository implements SeriesRepository {
             throw new IllegalArgumentException("Series cannot be null");
         }
 
+        //Lock the write lock to prevent concurrent modification which means that other threads cannot modify the list while this thread is writing to it
         lock.writeLock().lock();
         try {
             /*
@@ -135,7 +136,7 @@ public class InMemorySeriesRepository implements SeriesRepository {
     /**
      * Deletes a series by its ID.
      * @param id The ID of the series to delete
-     * @return
+     * @return true if the series was deleted, false otherwise
      */
     @Override
     public boolean deleteById(int id) {
@@ -180,16 +181,4 @@ public class InMemorySeriesRepository implements SeriesRepository {
         return seriesList.size();
     }
 
-    //delete series by id
-    public void delete(int id) {
-        deleteById(id);
-        logger.debug("Deleted series with ID: {}", id);
-    }
-
-    public void remove(Series selected) {
-        deleteById(selected.getId());
-        seriesList.remove(selected);
-        logger.info("Removed series with ID: {}", selected.getId());
-
-    }
 }

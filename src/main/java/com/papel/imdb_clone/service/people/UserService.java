@@ -32,6 +32,7 @@ public class UserService {
      */
     public static synchronized UserService getInstance(DataManager dataManager) throws IllegalArgumentException {
       try{
+          // Check if instance is already created
         if (instance == null) {
             instance = new UserService(dataManager);
         }

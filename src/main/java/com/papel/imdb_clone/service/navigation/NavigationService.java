@@ -38,7 +38,7 @@ public class NavigationService {
      * Navigate to a new view.
      *
      * @param fxmlPath     Path to the FXML file relative to resources
-     * @param data
+     * @param data         Data to pass to the controller
      * @param currentStage The current stage to update
      * @param title        Title for the new window
      */
@@ -67,16 +67,22 @@ public class NavigationService {
             // Initialize controllers with required services
             Object controller = loader.getController();
             if (controller != null) {
-                if (controller instanceof MainController mainController) {
-                    mainController.setPrimaryStage(currentStage);
-                } else if (controller instanceof MoviesController moviesController) {
-                    MoviesService moviesService = MoviesService.getInstance();
-                    moviesController.setContentService(moviesService);
-                    moviesController.initializeController(0); // Replace with actual user ID
-                } else if (controller instanceof SeriesController seriesController) {
-                    SeriesService seriesService = SeriesService.getInstance();
-                    seriesController.setContentService(seriesService);
-                    seriesController.initializeController(0); // Replace with actual user ID
+                switch (controller) {
+                    case MainController mainController -> mainController.setPrimaryStage(currentStage);
+                    case MoviesController moviesController -> {
+                        MoviesService moviesService = MoviesService.getInstance();
+                        moviesController.setContentService(moviesService);
+                        moviesController.initializeController(0); // Replace with actual user ID
+                    }
+                    case SeriesController seriesController -> {
+                        SeriesService seriesService = SeriesService.getInstance();
+                        seriesController.setContentService(seriesService);
+                        seriesController.initializeController(0); // Replace with actual user ID
+                    }
+                    default -> {
+                        logger.warn("Controller not found for FXML path: {}", fxmlPath);
+                        throw new IllegalArgumentException("Controller not found for FXML path: " + fxmlPath);
+                    }
                 }
             }
 
@@ -102,6 +108,7 @@ public class NavigationService {
     }
 
 
+    //Navigate to celebrities view
     public void showCelebrities(Stage currentStage) {
         try {
             if (currentStage == null) {

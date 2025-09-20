@@ -116,6 +116,7 @@ public class UserDataLoader extends BaseDataLoader {
                     count, duplicates, errors, lineNumber);
 
         } catch (IOException e) {
+            // Log error and rethrow
             logger.error("Error reading users file: {}", e.getMessage(), e);
             throw new FileParsingException("Error reading users file: " + e.getMessage());
         }

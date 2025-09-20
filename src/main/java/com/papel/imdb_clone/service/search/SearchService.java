@@ -169,6 +169,7 @@ public class SearchService {
                     logger.trace("Content or title is null in text search filter");
                     return false;
                 }
+                // Convert title to lowercase for case-insensitive comparison
                 String title = content.getTitle().toLowerCase();
                 boolean matches = title.contains(finalSearchText);
                 logger.trace("Text search filter - Title: '{}', Search: '{}', Match: {}",
@@ -224,7 +225,7 @@ public class SearchService {
             logger.debug("Adding rating filter for min rating: {}", minRating);
             filters.add(content -> {
                 if (content == null) {
-                    logger.trace("Content is null in rating filter");
+                    logger.trace("Content is null in min rating filter");
                     return false;
                 }
                 Double rating = content.getImdbRating();
@@ -241,7 +242,7 @@ public class SearchService {
             logger.debug("Adding rating filter for max rating: {}", maxRating);
             filters.add(content -> {
                 if (content == null) {
-                    logger.trace("Content is null in rating filter");
+                    logger.trace("Content is null in max rating filter");
                     return false;
                 }
                 //get the rating from the content

@@ -264,7 +264,7 @@ public class EditContentController {
             // Update genres
             content.setGenres(selectedGenres);
             
-            showStatus("Changes saved successfully");
+            showStatus();
             
             // Close the edit window after a short delay
             new java.util.Timer().schedule(
@@ -348,7 +348,7 @@ public class EditContentController {
         }
         
         // Show errors if any
-        if (errors.length() > 0) {
+        if (!errors.isEmpty()) {
             showError("Validation Error", "Please fix the following errors:\n\n" + errors);
             return false;
         }
@@ -363,16 +363,14 @@ public class EditContentController {
      * @param message The error message to display
      */
     private void showError(String title, String message) {
-        uiUtils.showError(title, message);
+        UIUtils.showError(title, message);
         statusLabel.setText("Error: " + title);
     }
     
     /**
      * Displays a status message to the user.
-     * 
-     * @param message The status message to display
      */
-    private void showStatus(String message) {
-        statusLabel.setText(message);
+    private void showStatus() {
+        statusLabel.setText("Changes saved successfully");
     }
 }

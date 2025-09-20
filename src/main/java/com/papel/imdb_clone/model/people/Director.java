@@ -19,7 +19,7 @@ public class Director extends Celebrity {
     private static final CelebrityManager celebrityManager = CelebrityManager.getInstance();
     
     private final List<String> bestWorks;
-    private Ethnicity ethnicity;
+    private final Ethnicity ethnicity;
     private String notableWorks = ""; // Initialize to empty string to avoid NPE
     
     /**
@@ -140,6 +140,7 @@ public class Director extends Celebrity {
             } else {
                 genderStr = String.valueOf(getGender());
             }
+            //Add gender to string
             sb.append("<br>Gender: ").append(genderStr);
         }
         
@@ -151,6 +152,7 @@ public class Director extends Celebrity {
         // Add notable works if available
         List<String> works = getNotableWorks();
         if (!works.isEmpty()) {
+            //Add notable works to string
             sb.append("<br><br><b>Notable Works:</b><br>");
             for (int i = 0; i < Math.min(5, works.size()); i++) {
                 sb.append("• ").append(works.get(i));
@@ -159,6 +161,7 @@ public class Director extends Celebrity {
                 }
             }
             if (works.size() > 5) {
+                //Add more works to string
                 sb.append("<br>... and ").append(works.size() - 5).append(" more");
             }
         }
@@ -202,7 +205,7 @@ public class Director extends Celebrity {
     public void setLastName(String lastName) {
         super.setLastName(lastName);
     }
-
+    
     public void addBestWork(String work) {
         if (work != null && !work.trim().isEmpty()) {
             bestWorks.add(work.trim());

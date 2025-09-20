@@ -1,6 +1,6 @@
 package com.papel.imdb_clone.controllers.content;
 
-import com.papel.imdb_clone.controllers.base.BaseController;
+import com.papel.imdb_clone.controllers.BaseController;
 import com.papel.imdb_clone.enums.Genre;
 import com.papel.imdb_clone.model.people.Actor;
 import com.papel.imdb_clone.service.content.MoviesService;

@@ -91,6 +91,7 @@ public class MoviesService extends BaseContentService<Movie> {
 
             logger.info("Initialized with " + contentList.size() + " sample movies");
         } finally {
+            //unlock the write lock when done, which means that other threads can modify the list
             lock.writeLock().unlock();
         }
     }

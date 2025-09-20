@@ -163,6 +163,7 @@ public class DirectorDataLoader extends BaseDataLoader {
                 }
             }
 
+            // Log summary of the loading process
             long endTime = System.currentTimeMillis();
             long duration = (endTime - startTime) / 1000;
             
@@ -184,7 +185,7 @@ public class DirectorDataLoader extends BaseDataLoader {
 
     /**
      * Parses a date string into a LocalDate object.
-     * @param dateStr
+     * @param dateStr the date string to parse
      * @return LocalDate object which means the date of birth of the director
      */
     private LocalDate parseDate(String dateStr) {

@@ -33,18 +33,21 @@ public class SearchFormController extends BaseSearchController {
     
     private final ObservableList<String> selectedGenres = FXCollections.observableArrayList();
     private SearchFormListener searchFormListener;
-    
+
+    //Listener interface for search form events
     public interface SearchFormListener {
         void onSearchCriteriaChanged(SearchCriteria criteria);
         void onSearchRequested(SearchCriteria criteria);
     }
-    
+
+    //Set search form listener
     public void setSearchFormListener(SearchFormListener listener) {
         this.searchFormListener = listener;
     }
-    
+
+
     @FXML
-    /**
+    /*
      * Initializes the search form with default values and configurations.
      * This method should be called after the FXML fields have been injected.
      */
@@ -81,11 +84,13 @@ public class SearchFormController extends BaseSearchController {
         logger.debug("Search form initialized with default values");
     }
 
+    //Update rating label
     private void updateRatingLabel(int i) {
         if (ratingValueLabel != null) ratingValueLabel.setText(String.format("%.1f", (float) i));
         if (ratingSlider != null) ratingSlider.setValue(i);
     }
 
+    //Initialize the search form
     @FXML
     public void initialize() {
         setupGenreComboBox();
@@ -126,6 +131,7 @@ public class SearchFormController extends BaseSearchController {
             private final CheckBox checkBox = new CheckBox();
             
             {
+                //Setup genre combo box
                 checkBox.selectedProperty().addListener((obs, wasSelected, isNowSelected) -> {
                     String item = getItem();
                     if (item != null) {
@@ -140,7 +146,8 @@ public class SearchFormController extends BaseSearchController {
                     }
                 });
             }
-            
+
+            //Setup genre combo box
             @Override
             protected void updateItem(String item, boolean empty) {
                 super.updateItem(item, empty);
@@ -167,7 +174,8 @@ public class SearchFormController extends BaseSearchController {
         // Update the prompt text initially
         updateGenrePrompt();
     }
-    
+
+    //Update genre prompt
     private void updateGenrePrompt() {
         if (selectedGenres.isEmpty()) {
             genreComboBox.setPromptText("Select genres...");
@@ -180,7 +188,8 @@ public class SearchFormController extends BaseSearchController {
             genreComboBox.setValue("");
         }
     }
-    
+
+    //Setup rating slider
     private void setupRatingSlider() {
         if (ratingSlider != null && ratingValueLabel != null) {
             ratingSlider.valueProperty().addListener((obs, oldVal, newVal) -> {
@@ -188,7 +197,8 @@ public class SearchFormController extends BaseSearchController {
             });
         }
     }
-    
+
+    //Setup sort options
     private void setupSortOptions() {
         if (sortByCombo != null) {
             sortByCombo.getItems().addAll(
@@ -270,9 +280,10 @@ public class SearchFormController extends BaseSearchController {
             List<Genre> genres = selectedGenres.stream()
                 .map(genreName -> {
                     try {
+                        //Convert genre name to uppercase and return the enum value
                         return Genre.valueOf(genreName.toUpperCase());
                     } catch (IllegalArgumentException e) {
-                        logger.warn("Invalid genre selected: " + genreName, e);
+                        logger.warn("Invalid genre selected: {}", genreName, e);
                         return null;
                     }
                 })
@@ -304,6 +315,7 @@ public class SearchFormController extends BaseSearchController {
                 }
             }
 
+            //Return the search criteria
             return criteria;
 
         } catch (Exception e) {

@@ -27,8 +27,8 @@ public class AwardsDataLoader extends BaseDataLoader {
 
     /**
      * Constructor for AwardsDataLoader
-     * @param movieRepository
-     * @param seriesService
+     * @param movieRepository the movie repository
+     * @param seriesService the series service
      */
     public AwardsDataLoader(InMemoryMovieRepository movieRepository, SeriesService seriesService) {
         this.movieRepository = movieRepository;
@@ -150,10 +150,12 @@ public class AwardsDataLoader extends BaseDataLoader {
                 }
             }
 
+            // Log the result
             logger.info("Successfully updated awards for {} items ({} not found, {} errors, {} total lines)",
                     count, notFound, errors, lineNumber);
 
         } catch (IOException e) {
+            // Log error and rethrow
             logger.error("Error reading awards file: {}", e.getMessage(), e);
             throw new FileParsingException("Error reading awards file: " + e.getMessage());
         }

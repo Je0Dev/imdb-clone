@@ -11,6 +11,7 @@ import java.util.Base64;
  * Utility class for hashing and verifying passwords using PBKDF2.
  */
 public class PasswordHasher {
+    // Constants for the hash function
     private static final int ITERATIONS = 10000;
     private static final int KEY_LENGTH = 256;
     private static final String ALGORITHM = "PBKDF2WithHmacSHA256";
@@ -25,6 +26,7 @@ public class PasswordHasher {
     public static String hashPassword(String password) {
         byte[] salt = new byte[16];
         RANDOM.nextBytes(salt);
+        // Generate the hash
         byte[] hash = pbkdf2(password.toCharArray(), salt, ITERATIONS, KEY_LENGTH);
         return String.format("pbkdf2:%s:%s",
                 Base64.getEncoder().encodeToString(salt),
@@ -43,11 +45,13 @@ public class PasswordHasher {
             return false;
         }
 
+        // Split the stored hash into algorithm, iterations, salt, and hash
         String[] parts = storedHash.split(":");
         if (parts.length != 3) {
             return false;
         }
 
+        // Extract the salt and hash from the stored hash which helps to verify the password
         byte[] salt = Base64.getDecoder().decode(parts[1]);
         byte[] hash = Base64.getDecoder().decode(parts[2]);
         byte[] testHash = pbkdf2(password.toCharArray(), salt, ITERATIONS, hash.length * 8);
@@ -57,9 +61,18 @@ public class PasswordHasher {
         for (int i = 0; i < hash.length && i < testHash.length; i++) {
             diff |= hash[i] ^ testHash[i];
         }
+        // Return true if the password matches the hash
         return diff == 0;
     }
 
+    /**
+     * Helper method to perform PBKDF2 hashing.
+     * @param password the password to hash
+     * @param salt the salt to use which means random bytes
+     * @param iterations the iterations to use  which means the number of times to hash the password
+     * @param keyLength the key length to use which means the length of the key in bits
+     * @return the hash of the password
+     */
     private static byte[] pbkdf2(char[] password, byte[] salt, int iterations, int keyLength) {
         try {
             PBEKeySpec spec = new PBEKeySpec(password, salt, iterations, keyLength);

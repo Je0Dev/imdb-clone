@@ -43,9 +43,11 @@ public class CelebrityService<T extends Celebrity> {
             return List.of();
         }
 
+        // Convert name to lowercase and trim whitespace
         String searchTerm = name.toLowerCase().trim();
         lock.readLock().lock();
         try {
+            // Search in our local list
             return celebrities.stream()
                     .filter(celebrity -> celebrity.getFullName().toLowerCase().contains(searchTerm))
                     .collect(Collectors.toList());
@@ -78,6 +80,7 @@ public class CelebrityService<T extends Celebrity> {
             
             return localCelebrity;
         } finally {
+            // Release read lock
             lock.readLock().unlock();
         }
     }
@@ -113,12 +116,10 @@ public class CelebrityService<T extends Celebrity> {
             if (isNew) {
                 celebrities.add(celebrity);
                 logger.info("Created new {}: {}", celebrityType.getSimpleName(), celebrity.getFullName());
-            } else if (index != -1) {
+            } else {
+                // Update existing celebrity
                 celebrities.set(index, celebrity);
                 logger.info("Updated {}: {}", celebrityType.getSimpleName(), celebrity.getFullName());
-            } else {
-                // This should not happen as CelebrityManager should have handled it
-                throw new IllegalStateException("Failed to add or update celebrity: " + celebrity.getFullName());
             }
             
             return celebrity;
@@ -140,12 +141,14 @@ public class CelebrityService<T extends Celebrity> {
             return Optional.empty();
         }
 
+        // Convert names to lowercase and trim whitespace
         String searchFirstName = firstName.trim().toLowerCase();
         String searchLastName = lastName.trim().toLowerCase();
 
         lock.readLock().lock();
         try {
             return celebrities.stream()
+                    // Search in our local list to find a match which has the same first and last name
                     .filter(celebrity ->
                             celebrity.getFirstName().toLowerCase().equals(searchFirstName) &&
                                     celebrity.getLastName().toLowerCase().equals(searchLastName))
@@ -155,20 +158,6 @@ public class CelebrityService<T extends Celebrity> {
         }
     }
 
-    /**
-     * Gets all celebrities of this service's type.
-     *
-     * @return List of all celebrities
-     */
-    public List<T> findAll() {
-        lock.readLock().lock();
-        try {
-            // Return a defensive copy of our local list
-            return new java.util.ArrayList<>(celebrities);
-        } finally {
-            lock.readLock().unlock();
-        }
-    }
 
     /**
      * Gets all celebrities of this service's type.

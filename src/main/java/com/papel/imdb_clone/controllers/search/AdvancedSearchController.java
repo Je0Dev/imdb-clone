@@ -2,6 +2,7 @@ package com.papel.imdb_clone.controllers.search;
 
 import com.papel.imdb_clone.enums.Genre;
 import com.papel.imdb_clone.model.content.Content;
+import com.papel.imdb_clone.model.content.Movie;
 import javafx.application.Platform;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.scene.control.TableCell;
@@ -61,14 +62,90 @@ public class AdvancedSearchController extends BaseSearchController {
         super(); // Initialize base controller
     }
 
+    /**
+     * Initializes the table columns with their respective cell value factories.
+     */
+    private void initializeTableColumns() {
+        try {
+            logger.info("Initializing table columns...");
+            
+            // Clear existing columns to avoid duplicates
+            resultsTable.getColumns().clear();
+            
+            // Title Column
+            TableColumn<Content, String> titleColumn = new TableColumn<>("TITLE");
+            titleColumn.setCellValueFactory(new PropertyValueFactory<>("title"));
+            titleColumn.setPrefWidth(250);
+            titleColumn.setStyle("-fx-font-weight: bold; -fx-text-fill: #00E5FF; -fx-font-size: 14;");
+            
+            // Type Column
+            TableColumn<Content, String> typeColumn = new TableColumn<>("TYPE");
+            typeColumn.setCellValueFactory(cellData -> {
+                Content content = cellData.getValue();
+                return new SimpleStringProperty(content instanceof Movie ? "Movie" : "Series");
+            });
+            typeColumn.setPrefWidth(100);
+            typeColumn.setStyle("-fx-text-fill: #40C4FF; -fx-font-weight: bold;");
+            
+            // Year Column
+            TableColumn<Content, Integer> yearColumn = new TableColumn<>("YEAR");
+            yearColumn.setCellValueFactory(new PropertyValueFactory<>("year"));
+            yearColumn.setStyle("-fx-text-fill: #69F0AE; -fx-font-weight: bold;");
+            
+            // Genre Column
+            TableColumn<Content, String> genreColumn = new TableColumn<>("GENRE");
+            genreColumn.setCellValueFactory(cellData -> {
+                List<String> genreNames = cellData.getValue().getGenres().stream()
+                    .map(Enum::name)
+                    .collect(Collectors.toList());
+                return new SimpleStringProperty(String.join(", ", genreNames));
+            });
+            genreColumn.setPrefWidth(200);
+            genreColumn.setStyle("-fx-text-fill: #FF8A65; -fx-font-weight: bold;");
+            
+            // Add columns to the table
+            resultsTable.getColumns().addAll(titleColumn, typeColumn, yearColumn, genreColumn);
+            
+            logger.info("Table columns initialized successfully");
+        } catch (Exception e) {
+            logger.error("Error initializing table columns", e);
+        }
+    }
+    
     @FXML
     public void initialize() {
         try {
-            // Initialize the table columns
-            initializeTableColumns();
+            logger.info("Initializing AdvancedSearchController...");
+            
+            // Initialize the table
+            if (resultsTable != null) {
+                logger.info("Initializing results table...");
+                
+                // Set up the table
+                resultsTable.setVisible(true);
+                resultsTable.setManaged(true);
+                
+                // Set up the selection model
+                resultsTable.getSelectionModel().setSelectionMode(SelectionMode.SINGLE);
+                
+                // Update the manage details button state based on selection
+                resultsTable.getSelectionModel().selectedItemProperty().addListener((obs, oldSelection, newSelection) -> {
+                    if (manageDetailsButton != null) {
+                        manageDetailsButton.setDisable(newSelection == null);
+                    }
+                });
+                
+                // Initialize table columns
+                initializeTableColumns();
+                
+                logger.info("Results table initialized with {} columns", resultsTable.getColumns().size());
+            } else {
+                logger.error("Results table is not injected");
+            }
 
             // Initialize the search form controller if available
             if (searchFormController != null) {
+                logger.info("Initializing SearchFormController...");
                 // Initialize the form with default values
                 searchFormController.initializeForm();
 
@@ -77,7 +154,7 @@ public class AdvancedSearchController extends BaseSearchController {
                     @Override
                     public void onSearchCriteriaChanged(SearchCriteria criteria) {
                         // Update UI based on search criteria changes if needed
-                        if (criteria != null && hasSearchCriteria(criteria)) {
+                        if (hasSearchCriteria(criteria)) {
                             updateStatus("Ready to search");
                         } else {
                             updateStatus("Enter search criteria");
@@ -86,9 +163,10 @@ public class AdvancedSearchController extends BaseSearchController {
 
                     @Override
                     public void onSearchRequested(SearchCriteria criteria) {
-                        if (criteria == null || !hasSearchCriteria(criteria)) {
-                            showInfo("Search", "Please enter some search criteria");
-                            return;
+                        logger.info("Search requested with criteria: {}", criteria);
+                        // If criteria is null, create a new one with default sorting
+                        if (criteria == null) {
+                            criteria = new SearchCriteria("title", false);
                         }
                         performSearch(criteria);
                     }
@@ -176,7 +254,6 @@ public class AdvancedSearchController extends BaseSearchController {
         }
     }
 
-
     /**
      * Checks if the search criteria contains any search terms.
      *
@@ -184,12 +261,6 @@ public class AdvancedSearchController extends BaseSearchController {
      * @return true if the criteria contains search terms, false otherwise
      */
     private boolean hasSearchCriteria(SearchCriteria criteria) {
-        // Always return true to allow searches with no criteria (showing all content)
-        // The search service will handle the case of no criteria by returning all content
-        return true;
-        
-        // Note: The original implementation is kept below for reference
-        /*
         if (criteria == null) {
             return false;
         }
@@ -218,13 +289,9 @@ public class AdvancedSearchController extends BaseSearchController {
         }
         
         // Check for genres (at least one genre selected)
-        if (criteria.getGenres() != null && !criteria.getGenres().isEmpty()) {
-            return true;
-        }
+        return criteria.getGenres() != null && !criteria.getGenres().isEmpty();
         
         // No valid search criteria found
-        return false;
-        */
     }
 
     /**
@@ -257,30 +324,37 @@ public class AdvancedSearchController extends BaseSearchController {
         }
 
         // Log the search criteria for debugging
-        logger.debug("Performing search with criteria: {}", criteria);
+        logger.info("Performing search with criteria: {}", criteria);
 
         // Cancel any ongoing search
         if (currentSearchTask != null && currentSearchTask.isRunning()) {
+            logger.info("Cancelling previous search task");
             currentSearchTask.cancel();
         }
 
-        // Clear previous results
-        if (resultsTableController != null) {
-            resultsTableController.clearResults();
-            
-            // Make sure the table's selection model is properly set up
-            TableView<Content> table = resultsTableController.getResultsTable();
-            if (table != null) {
-                table.getSelectionModel().setSelectionMode(SelectionMode.SINGLE);
-                
-                // Update the manage details button state based on selection
-                table.getSelectionModel().selectedItemProperty().addListener((obs, oldSelection, newSelection) -> {
-                    if (manageDetailsButton != null) {
-                        manageDetailsButton.setDisable(newSelection == null);
-                    }
-                });
-            }
+        // Make sure the results table is available
+        if (resultsTable == null) {
+            logger.error("Results table is not available");
+            showError("Error", "Search results cannot be displayed");
+            return;
         }
+
+        // Clear previous results
+        resultsTable.getItems().clear();
+        
+        // Update status
+        updateStatus("Searching...");
+        // Make sure the table is visible and managed
+        resultsTable.setVisible(true);
+        resultsTable.setManaged(true);
+        
+        // Set up the table's selection model if not already done
+        resultsTable.getSelectionModel().setSelectionMode(SelectionMode.SINGLE);
+        
+        // Log table state before search
+        logger.info("Table state before search - Items: {}, Columns: {}", 
+            resultsTable.getItems().size(), 
+            resultsTable.getColumns().size());
 
         // Update status
         updateStatus("Searching...");
@@ -293,11 +367,51 @@ public class AdvancedSearchController extends BaseSearchController {
                     // Perform the search using the search service
                     List<Content> results = searchService.search(criteria);
                     logger.info("Found {} results for search criteria: {}", results.size(), criteria);
+                    
+                    // Update the UI on the JavaFX Application Thread
+                    Platform.runLater(() -> {
+                        try {
+                            // Update the table with search results
+                            ObservableList<Content> observableResults = FXCollections.observableArrayList(results);
+                            resultsTable.setItems(observableResults);
+                            
+                            // Update the results count label
+                            if (resultsCountLabel != null) {
+                                resultsCountLabel.setText(String.format("Results: %d", results.size()));
+                            }
+                            
+                            // Update status
+                            updateStatus(String.format("Found %d results", results.size()));
+                            
+                            // Log the update
+                            logger.info("Updated table with {} items", results.size());
+                            
+                            // Force a refresh of the table
+                            resultsTable.refresh();
+                            
+                        } catch (Exception e) {
+                            logger.error("Error updating table with search results", e);
+                            showError("Error", "Failed to display search results: " + e.getMessage());
+                        }
+                    });
+
+                    //Return the results
                     return FXCollections.observableArrayList(results);
                 } catch (Exception e) {
                     logger.error("Error during search: {}", e.getMessage(), e);
                     Platform.runLater(() -> {
                         showError("Search Error", "Failed to perform search: " + e.getMessage());
+                        updateStatus("Search failed");
+                        
+                        // Clear the results table on error
+                        if (resultsTableController != null) {
+                            resultsTableController.clearResults();
+                        }
+                        
+                        // Clear the results count label
+                        if (resultsCountLabel != null) {
+                            resultsCountLabel.setText("");
+                        }
                         updateStatus("Search failed");
                     });
                     throw e;
@@ -308,7 +422,21 @@ public class AdvancedSearchController extends BaseSearchController {
         // Handle successful search completion
         currentSearchTask.setOnSucceeded(event -> {
             try {
+                // Results are already handled in the call() method through Platform.runLater
+                // This is a fallback in case the Platform.runLater in call() didn't execute
                 ObservableList<Content> results = currentSearchTask.getValue();
+                if (results != null && resultsTableController != null) {
+                    resultsTableController.setResults(results);
+                    
+                    // Update the results count label if not already updated
+                    if (resultsCountLabel != null) {
+                        resultsCountLabel.setText(String.format("Results: %d", results.size()));
+                    }
+                    
+                    updateStatus(String.format("Found %d results", results.size()));
+                }
+                //Assert that results are not null which means the search was successful
+                assert results != null;
                 logger.info("Search completed. Found {} results.", results.size());
 
                 // Log the first few results for debugging
@@ -337,16 +465,13 @@ public class AdvancedSearchController extends BaseSearchController {
                     }
 
                     // Make sure the Manage Details button is properly set up
-                    TableView<Content> table = resultsTableController.getResultsTable();
-                    if (table != null) {
-                        logger.debug("Table has {} items", table.getItems() != null ? table.getItems().size() : 0);
-                        logger.debug("Table columns: {}", table.getColumns());
+                    logger.debug("Table has {} items", resultsTable.getItems() != null ? resultsTable.getItems().size() : 0);
+                    logger.debug("Table columns: {}", resultsTable.getColumns());
 
-                        if (manageDetailsButton != null) {
-                            // Update the button state based on current selection
-                            manageDetailsButton.setDisable(table.getSelectionModel().getSelectedItem() == null);
-                            logger.debug("Manage Details button disabled state: {}", manageDetailsButton.isDisabled());
-                        }
+                    if (manageDetailsButton != null) {
+                        // Update the button state based on current selection
+                        manageDetailsButton.setDisable(resultsTable.getSelectionModel().getSelectedItem() == null);
+                        logger.debug("Manage Details button disabled state: {}", manageDetailsButton.isDisabled());
                     }
                     updateStatus(String.format("Found %d results", results.size()));
                 }
@@ -394,23 +519,6 @@ public class AdvancedSearchController extends BaseSearchController {
     }
 
     /**
-     * Resets all search filters and clears the results.
-     */
-    @FXML
-    public void resetFilters() {
-        if (searchFormController != null) {
-            // This will trigger a search with empty criteria
-            searchFormController.handleReset();
-        }
-        if (resultsTableController != null) {
-            resultsTableController.clearResults();
-        }
-        updateStatus("Filters reset");
-    }
-
-            
-            
-    /**
      * Handles the manage details button click event.
      * Opens the edit view for the selected content item.
      */
@@ -453,101 +561,6 @@ public class AdvancedSearchController extends BaseSearchController {
         }
     }
 
-    /**
-     * Initializes the table columns with their respective cell value factories.
-     */
-    private void initializeTableColumns() {
-        if (resultsTableController != null) {
-            TableView<Content> table = resultsTableController.getResultsTable();
-            
-            // Set up title column
-            resultTitleColumn = new TableColumn<>("TITLE");
-            resultTitleColumn.setCellValueFactory(new PropertyValueFactory<>("title"));
-            
-            // Set up type column
-            resultTypeColumn = new TableColumn<>("TYPE");
-            resultTypeColumn.setCellValueFactory(new PropertyValueFactory<>("contentType"));
-            
-            // Set up year column
-            resultYearColumn = new TableColumn<>("YEAR");
-            resultYearColumn.setCellValueFactory(new PropertyValueFactory<>("year"));
-            
-            // Set up genre column
-            resultGenreColumn = new TableColumn<>("GENRE");
-            resultGenreColumn.setCellValueFactory(cellData -> {
-                Content content = ((TableColumn.CellDataFeatures<Content, ?>)cellData).getValue();
-                String genres = "";
-                if (content != null && content.getGenres() != null) {
-                    genres = content.getGenres().stream()
-                            .map(Genre::getDisplayName)
-                            .map(Object::toString)
-                            .collect(Collectors.joining(", "));
-                }
-                return new SimpleStringProperty(genres);
-            });
-            
-            // Add columns to the table
-            table.getColumns().setAll(
-                resultTitleColumn,
-                resultTypeColumn,
-                resultYearColumn,
-                resultGenreColumn
-            );
-            
-            // Set up cell factories for better rendering
-            resultTitleColumn.setCellFactory(column -> new TableCell<Content, String>() {
-                @Override
-                protected void updateItem(String item, boolean empty) {
-                    super.updateItem(item, empty);
-                    if (empty || item == null) {
-                        setText(null);
-                    } else {
-                        setText(item);
-                        setStyle("-fx-text-fill: #00E5FF; -fx-font-weight: bold;");
-                    }
-                }
-            });
-            
-            resultTypeColumn.setCellFactory(column -> new TableCell<Content, String>() {
-                @Override
-                protected void updateItem(String item, boolean empty) {
-                    super.updateItem(item, empty);
-                    if (empty || item == null) {
-                        setText(null);
-                    } else {
-                        setText(item);
-                        setStyle("-fx-text-fill: #40C4FF; -fx-alignment: CENTER;");
-                    }
-                }
-            });
-            
-            resultYearColumn.setCellFactory(column -> new TableCell<Content, String>() {
-                @Override
-                protected void updateItem(String item, boolean empty) {
-                    super.updateItem(item, empty);
-                    if (empty || item == null) {
-                        setText(null);
-                    } else {
-                        setText(item);
-                        setStyle("-fx-text-fill: #69F0AE; -fx-alignment: CENTER;");
-                    }
-                }
-            });
-            
-            resultGenreColumn.setCellFactory(column -> new TableCell<Content, String>() {
-                @Override
-                protected void updateItem(String item, boolean empty) {
-                    super.updateItem(item, empty);
-                    if (empty || item == null) {
-                        setText(null);
-                    } else {
-                        setText(item);
-                        setStyle("-fx-text-fill: #FF8A65; -fx-alignment: CENTER_LEFT; -fx-padding: 0 10;");
-                    }
-                }
-            });
-        }
-    }
     
     /**
      * Handles the table click event.
@@ -564,6 +577,4 @@ public class AdvancedSearchController extends BaseSearchController {
             }
         }
     }
-    
-    // performSearch method is already defined above
 }

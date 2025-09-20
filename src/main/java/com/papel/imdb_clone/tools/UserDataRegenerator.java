@@ -43,14 +43,16 @@ public class UserDataRegenerator {
                 if (line.startsWith("#") || line.isEmpty()) {
                     continue;
                 }
-                
+
+                // Split the line into parts
                 String[] parts = line.split(",");
                 if (parts.length < 5) {
                     String msg = String.format("Warning: Invalid line format (expected at least 5 parts), skipping: %s", line);
                     System.out.println(msg);
                     continue;
                 }
-                
+
+
                 try {
                     int id = Integer.parseInt(parts[0].trim());
                     String username = parts[1].trim();
@@ -99,11 +101,13 @@ public class UserDataRegenerator {
                     logger.warning(msg);
                 }
             }
-            
+
+            // Log the completion message which means the number of users that were successfully registered
             String completionMsg = String.format("[INFO] User registration complete. Successfully registered %d users.", count);
             System.out.println(completionMsg);
             
         } catch (IOException e) {
+            // Log the error message which means the file was not found or could not be read
             String errorMsg = "[ERROR] Failed to read users_updated.txt: " + e.getMessage();
             System.out.println(errorMsg);
             logger.log(Level.SEVERE, errorMsg, e);

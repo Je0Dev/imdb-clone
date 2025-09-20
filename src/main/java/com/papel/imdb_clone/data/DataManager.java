@@ -22,7 +22,7 @@ import java.io.IOException;
 import java.util.List;
 
 /**
- * Refactored DataManager that delegates to specialized services and repositories.
+ * DataManager that delegates to specialized services and repositories.
  * This class serves as a facade for the data layer, providing a unified interface
  * while maintaining separation of concerns.
  */
@@ -41,7 +41,7 @@ public class DataManager {
                 ServiceLocator locator = ServiceLocator.getInstance();
                 instance.registerServices();
             } catch (Exception e) {
-                logger.warn("Could not register services with ServiceLocator: " + e.getMessage());
+                logger.warn("Could not register services with ServiceLocator: {}", e.getMessage());
             }
         }
         return instance;

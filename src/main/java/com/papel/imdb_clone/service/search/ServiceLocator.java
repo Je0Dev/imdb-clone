@@ -27,7 +27,7 @@ import java.util.concurrent.ConcurrentMap;
  */
 public class ServiceLocator {
     private static final Logger logger = LoggerFactory.getLogger(ServiceLocator.class);
-    private static ServiceLocator instance;
+    private static volatile ServiceLocator instance;
     private static final ConcurrentMap<Object, Object> services = new ConcurrentHashMap<>();
     private static volatile DataManager dataManager;
     private static volatile UICoordinator uiCoordinator;
@@ -44,7 +44,7 @@ public class ServiceLocator {
      * Ensures that only one instance of ServiceLocator is created.
      * Thread-safe implementation using double-checked locking.
      * Sychronized method to ensure thread safety means that only one thread can access the method at a time.
-     * @return
+     * @return ServiceLocator instance which means the object that implements the ServiceLocator interface
      */
     public static synchronized ServiceLocator getInstance() {
         if (instance == null) {
@@ -65,7 +65,7 @@ public class ServiceLocator {
      * it synchronizes on the ServiceLocator class to ensure thread safety.
      * If the primary stage is not already set and the provided stage is not null,
      * it synchronizes on the ServiceLocator class to ensure thread safety.
-     * @param stage
+     * @param stage Stage object which means the main window of the application
      */
     public static void setPrimaryStage(Stage stage) {
         if (primaryStage == null && stage != null) {
@@ -182,7 +182,7 @@ public class ServiceLocator {
     /**
      * Get the RefactoredDataManager instance.
      * If the RefactoredDataManager is not already initialized, it synchronizes on the ServiceLocator class to ensure thread safety.
-     * @return
+     * @return DataManager instance which means the object that implements the DataManager interface
      */
     public DataManager getDataManager() {
         if (dataManager == null) {
@@ -200,7 +200,7 @@ public class ServiceLocator {
      * Get the UICoordinator instance.
      * If the UICoordinator is not already initialized, it synchronizes on the ServiceLocator class to ensure thread safety.
      * If the primary stage is not set, it throws an IllegalStateException.
-     * @return
+     * @return UICoordinator instance which means the object that implements the UICoordinator interface
      */
     public UICoordinator getUICoordinator() {
         if (uiCoordinator == null) {

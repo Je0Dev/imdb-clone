@@ -1,6 +1,6 @@
 package com.papel.imdb_clone.controllers.content;
 
-import com.papel.imdb_clone.controllers.base.BaseController;
+import com.papel.imdb_clone.controllers.BaseController;
 import com.papel.imdb_clone.enums.Ethnicity;
 import com.papel.imdb_clone.model.content.Episode;
 import com.papel.imdb_clone.model.content.Season;
@@ -46,6 +46,7 @@ import java.util.stream.Collectors;
 public class SeriesController extends BaseController implements Initializable {
     private static final Logger logger = LoggerFactory.getLogger(SeriesController.class);
     private Map<String, Object> data;
+    private int currentUserId;
 
     @FXML
     private void handleManageSeries(ActionEvent event) {
@@ -58,7 +59,7 @@ public class SeriesController extends BaseController implements Initializable {
             }
 
         } catch (Exception e) {
-            logger.error("Error in handleManageSeries: " + e.getMessage(), e);
+            logger.error("Error in handleManageSeries: {}", e.getMessage(), e);
             showErrorAlert("Failed to manage series", e.getMessage());
         }
     }
@@ -379,54 +380,28 @@ public class SeriesController extends BaseController implements Initializable {
     }
 
     private void sortSeriesTable(String sortOption) {
-        if (filteredSeries == null || sortOption == null) {
+        if (sortOption == null) {
             return;
         }
         
-        Comparator<Series> comparator = null;
-        
-        // Determine the appropriate comparator based on the selected sort option
-        switch (sortOption) {
-            case "Title (A-Z)":
-                comparator = Comparator.comparing(Series::getTitle, String.CASE_INSENSITIVE_ORDER);
-                break;
-                
-            case "Title (Z-A)":
-                comparator = Comparator.comparing(Series::getTitle, String.CASE_INSENSITIVE_ORDER).reversed();
-                break;
-                
-            case "Year (Newest First)":
-                comparator = Comparator.comparingInt(Series::getStartYear).reversed();
-                break;
-                
-            case "Year (Oldest First)":
-                comparator = Comparator.comparingInt(Series::getStartYear);
-                break;
-                
-            case "Rating (Highest First)":
-                comparator = Comparator.comparingDouble(Series::getRating).reversed();
-                break;
-                
-            case "Rating (Lowest First)":
-                comparator = Comparator.comparingDouble(Series::getRating);
-                break;
-                
-            case "Seasons (Most First)":
-                comparator = Comparator.comparingInt(Series::getTotalSeasons).reversed();
-                break;
-                
-            case "Seasons (Fewest First)":
-                comparator = Comparator.comparingInt(Series::getTotalSeasons);
-                break;
-                
-            case "Episodes (Most First)", "Episodes (Fewest First)":
-                comparator = (s1, s2) -> Integer.compare(
+        Comparator<Series> comparator = switch (sortOption) {
+            case "Title (A-Z)" -> Comparator.comparing(Series::getTitle, String.CASE_INSENSITIVE_ORDER);
+            case "Title (Z-A)" -> Comparator.comparing(Series::getTitle, String.CASE_INSENSITIVE_ORDER).reversed();
+            case "Year (Newest First)" -> Comparator.comparingInt(Series::getStartYear).reversed();
+            case "Year (Oldest First)" -> Comparator.comparingInt(Series::getStartYear);
+            case "Rating (Highest First)" -> Comparator.comparingDouble(Series::getRating).reversed();
+            case "Rating (Lowest First)" -> Comparator.comparingDouble(Series::getRating);
+            case "Seasons (Most First)" -> Comparator.comparingInt(Series::getTotalSeasons).reversed();
+            case "Seasons (Fewest First)" -> Comparator.comparingInt(Series::getTotalSeasons);
+            case "Episodes (Most First)", "Episodes (Fewest First)" -> (s1, s2) -> Integer.compare(
                     s1.getSeasons().stream().mapToInt(season -> season.getEpisodes().size()).sum(),
                     s2.getSeasons().stream().mapToInt(season -> season.getEpisodes().size()).sum()
-                );
-                break;
-        }
-        
+            );
+            default -> null;
+
+            // Determine the appropriate comparator based on the selected sort option
+        };
+
         if (comparator != null) {
             // Create a sorted list and update the table
             FXCollections.sort(filteredSeries, comparator);
@@ -635,23 +610,17 @@ public class SeriesController extends BaseController implements Initializable {
      */
     private Comparator<Series> getSortComparator(String sortOption) {
         if (sortOption == null) return null;
-        
-        switch (sortOption) {
-            case "Title (A-Z)":
-                return Comparator.comparing(Series::getTitle, String.CASE_INSENSITIVE_ORDER);
-            case "Title (Z-A)":
-                return Comparator.comparing(Series::getTitle, String.CASE_INSENSITIVE_ORDER).reversed();
-            case "Year (Newest)":
-                return Comparator.comparingInt(Series::getStartYear).reversed();
-            case "Year (Oldest)":
-                return Comparator.comparingInt(Series::getStartYear);
-            case "Rating (Highest)":
-                return Comparator.comparingDouble(Series::getRating).reversed();
-            case "Rating (Lowest)":
-                return Comparator.comparingDouble(Series::getRating);
-            default: // Relevance or unknown
-                return null;
-        }
+
+        return switch (sortOption) {
+            case "Title (A-Z)" -> Comparator.comparing(Series::getTitle, String.CASE_INSENSITIVE_ORDER);
+            case "Title (Z-A)" -> Comparator.comparing(Series::getTitle, String.CASE_INSENSITIVE_ORDER).reversed();
+            case "Year (Newest)" -> Comparator.comparingInt(Series::getStartYear).reversed();
+            case "Year (Oldest)" -> Comparator.comparingInt(Series::getStartYear);
+            case "Rating (Highest)" -> Comparator.comparingDouble(Series::getRating).reversed();
+            case "Rating (Lowest)" -> Comparator.comparingDouble(Series::getRating);
+            default -> // Relevance or unknown
+                    null;
+        };
     }
     
     @FXML
@@ -822,7 +791,7 @@ public class SeriesController extends BaseController implements Initializable {
                 StringBuilder castText = new StringBuilder();
                 for (Actor actor : series.getActors()) {
                     if (actor != null && actor.getFullName() != null) {
-                        if (castText.length() > 0) {
+                        if (!castText.isEmpty()) {
                             castText.append("\n");
                         }
                         castText.append(actor.getFullName());
@@ -889,7 +858,7 @@ public class SeriesController extends BaseController implements Initializable {
                         List<Genre> newGenres = genreCheckBoxes.entrySet().stream()
                             .filter(entry -> entry.getKey().isSelected())
                             .map(Map.Entry::getValue)
-                            .collect(Collectors.toList());
+                            .toList();
                         series.getGenres().clear();
                         series.getGenres().addAll(newGenres);
                         
@@ -941,10 +910,6 @@ public class SeriesController extends BaseController implements Initializable {
         }
     }
 
-    /**
-     * Shows a dialog for rating a TV series.
-     * @param series The series to be rated
-     */
     /**
      * Shows a dialog for rating a TV series.
      * @param series The series to be rated
@@ -1053,9 +1018,7 @@ public class SeriesController extends BaseController implements Initializable {
      * @return The current user's ID
      */
     private int getCurrentUserId() {
-        // TODO: Replace this with actual user ID from your authentication system
-        // For now, return a default user ID
-        return 1;
+        return currentUserId;
     }
 
     /**

@@ -48,6 +48,16 @@ Top Gun: Maverick,2022,ACTION,130,Joseph Kosinski,8.3,Tom Cruise;Miles Teller
 The Batman,2022,ACTION,176,Matt Reeves,7.9,Robert Pattinson;Zoë Kravitz
 Dune: Part Two,2024,SCI_FI,166,Denis Villeneuve,8.8,Timothée Chalamet;Zendaya
 Killers of the Flower Moon,2023,CRIME,206,Martin Scorsese,7.7,Leonardo DiCaprio;Robert De Niro
+Barbie,2023,COMEDY,114,Greta Gerwig,7.3,Margot Robbie;Ryan Gosling
+The Holdovers,2023,COMEDY,133,Alexander Payne,8.1,Paul Giamatti;Da'Vine Joy Randolph
+Poor Things,2023,COMEDY,141,Yorgos Lanthimos,8.4,Emma Stone;Mark Ruffalo
+The Zone of Interest,2023,DRAMA,105,Jonathan Glazer,8.3,Christian Friedel;Sandra Hüller
+Anatomy of a Fall,2023,CRIME,152,Justine Triet,7.9,Sandra Hüller;Swann Arlaud
+The Killer,2023,THRILLER,119,David Fincher,6.8,Michael Fassbender;Tilda Swinton
+Killers of the Flower Moon,2023,CRIME,206,Martin Scorsese,7.7,Leonardo DiCaprio;Robert De Niro
+The Iron Claw,2023,DRAMA,132,Sean Durkin,7.9,Zac Efron;Jeremy Allen White
+American Fiction,2023,COMEDY,117,Cord Jefferson,7.7,Jeffrey Wright;Tracee Ellis Ross
+All of Us Strangers,2023,ROMANCE,105,Andrew Haigh,7.7,Andrew Scott;Paul Mescal
 Poor Things,2023,COMEDY,141,Yorgos Lanthimos,8.4,Emma Stone;Mark Ruffalo
 The Holdovers,2023,COMEDY,133,Alexander Payne,8.0,Paul Giamatti;Da'Vine Joy Randolph
 Past Lives,2023,ROMANCE,106,Celine Song,8.0,Greta Lee;Teo Yoo

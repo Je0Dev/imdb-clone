@@ -356,19 +356,7 @@ public class SeriesDataLoader extends BaseDataLoader {
                                                 actor.getNotableWorks().toString() : "";
 
                                         if (!currentWorks.contains(series.getTitle())) {
-                                            String updatedWorks = currentWorks.isEmpty() ?
-                                                    series.getTitle() :
-                                                    currentWorks + ", " + series.getTitle();
-
-                                            // Clean up the works string
-                                            updatedWorks = updatedWorks.replace(", ,", ",")
-                                                    .replaceAll("\\s*,\\s*", ", ")
-                                                    .replaceAll("^\\s*,\\s*|\\s*\\.\\s*$|\\.\\s*(?=,|$)", "")
-                                                    .trim();
-
-                                            if (updatedWorks.endsWith(",")) {
-                                                updatedWorks = updatedWorks.substring(0, updatedWorks.length() - 1).trim();
-                                            }
+                                            String updatedWorks = getString(currentWorks, series);
 
                                             actor.setNotableWorks(updatedWorks);
                                             actorService.save(actor);
@@ -424,4 +412,21 @@ public class SeriesDataLoader extends BaseDataLoader {
         } finally {
             logger.debug("Series data loading process completed");
         }}
+
+    private static String getString(String currentWorks, Series series) {
+        String updatedWorks = currentWorks.isEmpty() ?
+                series.getTitle() :
+                currentWorks + ", " + series.getTitle();
+
+        // Clean up the works string
+        updatedWorks = updatedWorks.replace(", ,", ",")
+                .replaceAll("\\s*,\\s*", ", ")
+                .replaceAll("^\\s*,\\s*|\\s*\\.\\s*$|\\.\\s*(?=,|$)", "")
+                .trim();
+
+        if (updatedWorks.endsWith(",")) {
+            updatedWorks = updatedWorks.substring(0, updatedWorks.length() - 1).trim();
+        }
+        return updatedWorks;
     }
+}

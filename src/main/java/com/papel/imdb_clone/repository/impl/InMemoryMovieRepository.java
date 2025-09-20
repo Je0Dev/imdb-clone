@@ -39,7 +39,7 @@ public class InMemoryMovieRepository implements MovieRepository {
     /**
      * Finds a movie by its ID.
      * @param id The movie ID
-     * @return
+     * @return Optional containing the movie if found, empty otherwise
      */
     @Override
     public Optional<Movie> findById(int id) {
@@ -56,8 +56,8 @@ public class InMemoryMovieRepository implements MovieRepository {
 
     /**
      * Finds movies by title.
-     * @param title
-     * @return
+     * @param title the title of the movie
+     * @return List of movies that match the title
      */
     @Override
     public List<Movie> findByTitle(String title) {
@@ -80,7 +80,7 @@ public class InMemoryMovieRepository implements MovieRepository {
     /**
      * Saves a movie to the repository.
      * @param movie The movie to save
-     * @return
+     * @return The saved movie
      */
     @Override
     public Movie save(Movie movie) {
@@ -88,6 +88,7 @@ public class InMemoryMovieRepository implements MovieRepository {
             throw new IllegalArgumentException("Movie cannot be null");
         }
 
+        //Lock the write lock to prevent concurrent modification which means that other threads cannot modify the list while this thread is writing to it
         lock.writeLock().lock();
         try {
             if (movie.getId() == 0) {
@@ -154,8 +155,8 @@ public class InMemoryMovieRepository implements MovieRepository {
 
     /**
      * Finds a movie by its title and release year.
-     * @param title
-     * @param startYear
+     * @param title the title of the movie
+     * @param startYear the release year of the movie
      * @return the movie if found, null otherwise
      */
     @Override

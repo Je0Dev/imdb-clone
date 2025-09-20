@@ -215,6 +215,7 @@ public class AuthService {
             logger.info("User logged in successfully: {}", username);
             return sessionToken;
         } catch (Exception e) {
+            // Log the error and throw an AuthException
             logger.error("Error during login for user {}: {}", username, e.getMessage(), e);
             throw new AuthException(
                     AuthException.AuthErrorType.INTERNAL_ERROR,
@@ -299,6 +300,7 @@ public class AuthService {
             
             logger.info("User registered successfully: {}", user.getUsername());
         } catch (Exception e) {
+            // Log the error and throw an AuthException
             logger.error("Registration failed for user {}: {}", user.getUsername(), e.getMessage(), e);
             throw new AuthException(
                     AuthException.AuthErrorType.REGISTRATION_FAILED,

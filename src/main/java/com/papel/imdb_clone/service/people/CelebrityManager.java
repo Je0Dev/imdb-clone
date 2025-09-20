@@ -15,9 +15,6 @@ public class CelebrityManager {
     private final Map<Integer, Celebrity> celebritiesById = new ConcurrentHashMap<>();
     private static final CelebrityManager instance = new CelebrityManager();
     private final AtomicInteger nextId = new AtomicInteger(1);
-    
-    // For testing purposes
-    private static boolean testing = false;
 
     private CelebrityManager() {
         // Private constructor to enforce singleton
@@ -39,7 +36,7 @@ public class CelebrityManager {
     public synchronized boolean celebrityExists(Celebrity celebrity) {
         if (celebrity == null) return false;
         String key = generateKey(celebrity);
-        return key != null && celebritiesByKey.containsKey(key);
+        return celebritiesByKey.containsKey(key);
     }
 
     /**
@@ -52,7 +49,7 @@ public class CelebrityManager {
         }
 
         String key = generateKey(celebrity);
-        if (key == null || celebritiesByKey.containsKey(key)) {
+        if (celebritiesByKey.containsKey(key)) {
             return;
         }
 
@@ -94,17 +91,7 @@ public class CelebrityManager {
         return Optional.ofNullable((T) celebritiesById.get(id));
     }
 
-    /**
-     * Clears all registered celebrities (mainly for testing).
-     */
-    public synchronized void clear() {
-        celebritiesByKey.clear();
-        celebritiesById.clear();
-        if (!testing) {
-            nextId.set(1);
-        }
-    }
-    
+
     /**
      * Helper method to generate a consistent key for a celebrity
      * @param celebrity The celebrity to generate a key for
