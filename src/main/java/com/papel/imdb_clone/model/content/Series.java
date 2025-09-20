@@ -6,12 +6,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Represents a series of episodes.
  */
 public class Series extends Content {
-    private Date year;
+    // Year is managed by the parent class's startYear field
     private List<Season> seasons;
     private String director;  // Changed from Director to String to match parent class
     private List<Actor> actors;
@@ -56,7 +57,6 @@ public class Series extends Content {
         // Set the current year as default
         Calendar cal = Calendar.getInstance();
         cal.setTime(new java.util.Date());
-        this.year = cal.getTime();
         this.startYear = cal.get(Calendar.YEAR);
     }
 
@@ -76,12 +76,7 @@ public class Series extends Content {
         this.rating = userRating;
         this.startYear = startYear;
         
-        // Set the year based on startYear
-        Calendar cal = Calendar.getInstance();
-        cal.set(Calendar.YEAR, startYear);
-        cal.set(Calendar.MONTH, 0); // January
-        cal.set(Calendar.DAY_OF_MONTH, 1);
-        this.year = cal.getTime();
+        // startYear is already set in the constructor parameter
     }
 
     public List<Season> getSeasons() {
@@ -149,18 +144,7 @@ public class Series extends Content {
     }
 
     //getters and setters
-    @Override
-    public int getStartYear() {
-        // If startYear is 0 but we have a year, update startYear from year
-        int yearValue = super.getStartYear();
-        if (yearValue == 0 && this.year != null) {
-            Calendar cal = Calendar.getInstance();
-            cal.setTime(this.year);
-            yearValue = cal.get(Calendar.YEAR);
-            super.setStartYear(yearValue);
-        }
-        return yearValue;
-    }
+    // Using parent class's getStartYear() implementation
 
     /**
      * Sets the list of actors in the series
@@ -173,21 +157,8 @@ public class Series extends Content {
 
     @Override
     public void setStartYear(int startYear) {
-        // Update the parent's startYear
+        // Delegate to parent class implementation
         super.setStartYear(startYear);
-        
-        // Also update the year field to maintain consistency
-        if (startYear > 0) {
-            try {
-                Calendar cal = Calendar.getInstance();
-                cal.set(Calendar.YEAR, startYear);
-                cal.set(Calendar.MONTH, Calendar.JANUARY);
-                cal.set(Calendar.DAY_OF_MONTH, 1);
-                this.year = cal.getTime();
-            } catch (Exception e) {
-                logger.error("Error updating year from startYear: {}", startYear, e);
-            }
-        }
     }
 
     //set seasons to list of seasons
@@ -263,7 +234,7 @@ public class Series extends Content {
         return String.format(
             "%s (%d-%s, %d seasons, %d episodes, %.1f/10)",
             getTitle(),
-            getYear() != null ? getYear().getYear() + 1900 : 0,
+            getStartYear(),
             endYear > 0 ? String.valueOf(endYear) : "Present",
             getTotalSeasons(),
             getTotalEpisodes(),
@@ -276,16 +247,38 @@ public class Series extends Content {
     }
 
 
-    public Double getRating() {
+    public double getRating() {
         return rating;
     }
 
+    /**
+     * Sets the nominations for this series.
+     * @param nominations A string containing nominations (comma-separated)
+     */
     public void setNominations(String nominations) {
+        if (nominations != null && !nominations.trim().isEmpty()) {
+            this.awards = Arrays.stream(nominations.split(","))
+                    .map(String::trim)
+                    .filter(s -> !s.isEmpty())
+                    .collect(Collectors.toList());
+        } else {
+            this.awards = new ArrayList<>();
+        }
     }
 
-
+    /**
+     * Sets the awards for this series.
+     * @param awards A string containing awards (comma-separated)
+     */
     public void setAwards(String awards) {
-        this.awards = new ArrayList<>();
+        if (awards != null && !awards.trim().isEmpty()) {
+            this.awards = Arrays.stream(awards.split(","))
+                    .map(String::trim)
+                    .filter(s -> !s.isEmpty())
+                    .collect(Collectors.toList());
+        } else {
+            this.awards = new ArrayList<>();
+        }
     }
 
     public String getCreator() {
@@ -299,4 +292,5 @@ public class Series extends Content {
     public int getEndYear() {
         return endYear;
     }
+
 }

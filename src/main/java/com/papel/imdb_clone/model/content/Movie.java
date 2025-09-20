@@ -34,10 +34,10 @@ public class Movie extends Content {
 
     //constructor for simple movie creation
     public Movie(String title, int year, String genre, String director, Map<Integer, Integer> userRatings, double imdbRating) {
-        super(title, new Date(year - 1900, Calendar.JANUARY, 1),
+        super(title, createDateFromYear(year),
                 null,
                 director, userRatings, imdbRating);
-        this.releaseDate = new Date(year - 1900, Calendar.JANUARY, 1);
+        this.releaseDate = createDateFromYear(year);
         if (genre != null && !genre.trim().isEmpty()) {
             try {
                 this.addGenre(Genre.valueOf(genre.toUpperCase().replace(" ", "_")));
@@ -49,13 +49,22 @@ public class Movie extends Content {
         initializeRichContentFields();
     }
 
+    // Helper method to create a Date from year
+    private static Date createDateFromYear(int year) {
+        Calendar cal = Calendar.getInstance();
+        cal.set(Calendar.YEAR, year);
+        cal.set(Calendar.MONTH, Calendar.JANUARY);
+        cal.set(Calendar.DAY_OF_MONTH, 1);
+        return cal.getTime();
+    }
+
     // Constructor for FileDataLoaderService
     public Movie(String title, Date year, List<Genre> genres,
                  double imdbRating, String director, List<Actor> actors) {
-        super(title, year != null ? year : new Date(),
+        super(title, year != null ? year : createDateFromYear(Calendar.getInstance().get(Calendar.YEAR)),
                 null, // No default genre
                 director, new HashMap<>(), imdbRating);
-        this.releaseDate = year != null ? new Date(year.getTime()) : null;
+        this.releaseDate = year != null ? new Date(year.getTime()) : createDateFromYear(Calendar.getInstance().get(Calendar.YEAR));
         // Only set genres if the list is not empty and doesn't contain null values
         if (genres != null) {
             this.genres = genres.stream()

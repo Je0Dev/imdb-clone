@@ -3,12 +3,16 @@ package com.papel.imdb_clone.controllers.search;
 import com.papel.imdb_clone.enums.Genre;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
+import javafx.scene.control.Label;
+import javafx.scene.control.TextField;
 import javafx.scene.control.cell.CheckBoxListCell;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.awt.*;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -30,9 +34,21 @@ public class SearchFormController extends BaseSearchController {
     @FXML private ComboBox<String> sortByCombo;
     @FXML private CheckBox movieCheckBox;
     @FXML private CheckBox seriesCheckBox;
+    @FXML private javafx.scene.control.Button genreDropdownButton;
+    @FXML private javafx.scene.layout.VBox genreDropdownList;
+    @FXML private javafx.scene.layout.VBox genreListContainer;
+    @FXML private TextField selectedGenre;
     
     private final ObservableList<String> selectedGenres = FXCollections.observableArrayList();
     private SearchFormListener searchFormListener;
+
+
+
+    public void toggleGenreDropdown(ActionEvent actionEvent) {
+        genreDropdownList.setVisible(!genreDropdownList.isVisible());
+        genreDropdownButton.setText(genreDropdownList.isVisible() ? "▼" : "▲");
+        actionEvent.consume();
+    }
 
     //Listener interface for search form events
     public interface SearchFormListener {
@@ -93,16 +109,24 @@ public class SearchFormController extends BaseSearchController {
     //Initialize the search form
     @FXML
     public void initialize() {
-        setupGenreComboBox();
+        setupGenreDropdown();
         setupRatingSlider();
         setupSortOptions();
         setupYearFields();
         
         // Set default values
-        movieCheckBox.setSelected(true);
-        seriesCheckBox.setSelected(true);
+        if (movieCheckBox != null) movieCheckBox.setSelected(true);
+        if (seriesCheckBox != null) seriesCheckBox.setSelected(true);
     }
-    
+
+    private void setupGenreDropdown() {
+        genreDropdownButton.setOnAction(event -> {
+            genreDropdownList.setVisible(!genreDropdownList.isVisible());
+            genreDropdownButton.setText(genreDropdownList.isVisible() ? "▼" : "▲");
+            event.consume();
+        });
+    }
+
     private void setupYearFields() {
         yearFrom.setPromptText("Year from");
         yearTo.setPromptText("Year to");
@@ -129,7 +153,7 @@ public class SearchFormController extends BaseSearchController {
         // Set up the cell factory to display checkboxes
         genreComboBox.setCellFactory(lv -> new ListCell<>() {
             private final CheckBox checkBox = new CheckBox();
-            
+
             {
                 //Setup genre combo box
                 checkBox.selectedProperty().addListener((obs, wasSelected, isNowSelected) -> {

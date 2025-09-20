@@ -3,10 +3,13 @@ package com.papel.imdb_clone.controllers.search;
 import com.papel.imdb_clone.enums.Genre;
 import com.papel.imdb_clone.model.content.Content;
 import com.papel.imdb_clone.model.content.Movie;
+import com.papel.imdb_clone.model.content.Series;
 import javafx.application.Platform;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
+
+import java.util.Optional;
 import java.util.stream.Collectors;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -14,8 +17,9 @@ import javafx.concurrent.Task;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
-import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.VBox;
+import javafx.scene.layout.*;
+import javafx.geometry.Insets;
+import javafx.scene.control.ButtonBar.ButtonData;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -65,6 +69,14 @@ public class AdvancedSearchController extends BaseSearchController {
     /**
      * Initializes the table columns with their respective cell value factories.
      */
+    // Class fields for table columns
+    private TableColumn<Content, String> titleColumn;
+    private TableColumn<Content, String> typeColumn;
+    private TableColumn<Content, Integer> yearColumn;
+    private TableColumn<Content, String> genreColumn;
+    private TableColumn<Content, Integer> seasonsColumn;
+    private TableColumn<Content, Integer> episodesColumn;
+
     private void initializeTableColumns() {
         try {
             logger.info("Initializing table columns...");
@@ -73,38 +85,118 @@ public class AdvancedSearchController extends BaseSearchController {
             resultsTable.getColumns().clear();
             
             // Title Column
-            TableColumn<Content, String> titleColumn = new TableColumn<>("TITLE");
+            titleColumn = new TableColumn<>("TITLE");
             titleColumn.setCellValueFactory(new PropertyValueFactory<>("title"));
-            titleColumn.setPrefWidth(250);
+            titleColumn.setPrefWidth(200);
             titleColumn.setStyle("-fx-font-weight: bold; -fx-text-fill: #00E5FF; -fx-font-size: 14;");
             
             // Type Column
-            TableColumn<Content, String> typeColumn = new TableColumn<>("TYPE");
+            typeColumn = new TableColumn<>("TYPE");
             typeColumn.setCellValueFactory(cellData -> {
                 Content content = cellData.getValue();
                 return new SimpleStringProperty(content instanceof Movie ? "Movie" : "Series");
             });
-            typeColumn.setPrefWidth(100);
+            typeColumn.setPrefWidth(80);
             typeColumn.setStyle("-fx-text-fill: #40C4FF; -fx-font-weight: bold;");
             
             // Year Column
-            TableColumn<Content, Integer> yearColumn = new TableColumn<>("YEAR");
-            yearColumn.setCellValueFactory(new PropertyValueFactory<>("year"));
-            yearColumn.setStyle("-fx-text-fill: #69F0AE; -fx-font-weight: bold;");
+            yearColumn = new TableColumn<>("YEAR");
+            yearColumn.setCellValueFactory(cellData -> {
+                Content content = cellData.getValue();
+                if (content != null && content.getReleaseDate() != null) {
+                    // getYear() returns year - 1900, so we need to add 1900 to get the actual year
+                    int year = content.getReleaseDate().getYear() + 1900;
+                    return new javafx.beans.property.SimpleIntegerProperty(year).asObject();
+                }
+                return new javafx.beans.property.SimpleIntegerProperty(0).asObject();
+            });
+            yearColumn.setCellFactory(column -> new TableCell<Content, Integer>() {
+                @Override
+                protected void updateItem(Integer year, boolean empty) {
+                    super.updateItem(year, empty);
+                    if (empty || year == null || year <= 0) {
+                        setText("N/A");
+                    } else {
+                        setText(String.valueOf(year));
+                    }
+                    setStyle("-fx-text-fill: #69F0AE; -fx-font-weight: bold; -fx-alignment: CENTER;");
+                }
+            });
+            yearColumn.setPrefWidth(70);
             
-            // Genre Column
-            TableColumn<Content, String> genreColumn = new TableColumn<>("GENRE");
+            // Genre Column with better spacing
+            genreColumn = new TableColumn<>("GENRE");
             genreColumn.setCellValueFactory(cellData -> {
                 List<String> genreNames = cellData.getValue().getGenres().stream()
                     .map(Enum::name)
+                    .map(genre -> " " + genre + " ")  // Add spaces around each genre
                     .collect(Collectors.toList());
-                return new SimpleStringProperty(String.join(", ", genreNames));
+                return new SimpleStringProperty(String.join(" • ", genreNames));  // Add bullet separator
             });
-            genreColumn.setPrefWidth(200);
+            genreColumn.setPrefWidth(300);
             genreColumn.setStyle("-fx-text-fill: #FF8A65; -fx-font-weight: bold;");
             
-            // Add columns to the table
-            resultsTable.getColumns().addAll(titleColumn, typeColumn, yearColumn, genreColumn);
+            // Seasons Column (initially hidden)
+            seasonsColumn = new TableColumn<>("SEASONS");
+            seasonsColumn.setCellValueFactory(cellData -> {
+                Content content = cellData.getValue();
+                if (content instanceof Series) {
+                    return new javafx.beans.property.SimpleIntegerProperty().asObject();
+                }
+                return new javafx.beans.property.SimpleObjectProperty<Integer>();
+            });
+            seasonsColumn.setCellFactory(column -> new TableCell<Content, Integer>() {
+                @Override
+                protected void updateItem(Integer item, boolean empty) {
+                    super.updateItem(item, empty);
+                    if (empty || item == null) {
+                        setText("N/A");
+                    } else {
+                        setText(String.valueOf(item));
+                    }
+                    setStyle("-fx-text-fill: #80D8FF; -fx-font-weight: bold; -fx-alignment: CENTER;");
+                }
+            });
+            seasonsColumn.setPrefWidth(80);
+            seasonsColumn.setStyle("-fx-text-fill: #80D8FF; -fx-font-weight: bold; -fx-alignment: CENTER;");
+            seasonsColumn.setVisible(false);
+            
+            // Episodes Column (initially hidden)
+            episodesColumn = new TableColumn<>("EPISODES");
+            episodesColumn.setCellValueFactory(cellData -> {
+                Content content = cellData.getValue();
+                if (content instanceof Series) {
+                    return new javafx.beans.property.SimpleIntegerProperty(((Series) content).getTotalEpisodes()).asObject();
+                }
+                return new javafx.beans.property.SimpleObjectProperty<Integer>();
+            });
+            episodesColumn.setCellFactory(column -> new TableCell<Content, Integer>() {
+                @Override
+                protected void updateItem(Integer item, boolean empty) {
+                    super.updateItem(item, empty);
+                    if (empty || item == null) {
+                        setText("N/A");
+                    } else {
+                        setText(String.valueOf(item));
+                    }
+                    setStyle("-fx-text-fill: #80D8FF; -fx-font-weight: bold; -fx-alignment: CENTER;");
+                }
+            });
+            episodesColumn.setPrefWidth(90);
+            episodesColumn.setStyle("-fx-text-fill: #80D8FF; -fx-font-weight: bold; -fx-alignment: CENTER;");
+            episodesColumn.setVisible(false);
+            
+            // Add all columns to the table
+            resultsTable.getColumns().addAll(titleColumn, typeColumn, yearColumn, genreColumn, seasonsColumn, episodesColumn);
+            
+            // Add listener to show/hide columns based on selection
+            resultsTable.getSelectionModel().selectedItemProperty().addListener((obs, oldSelection, newSelection) -> {
+                if (newSelection != null) {
+                    boolean isSeries = !(newSelection instanceof Movie);
+                    seasonsColumn.setVisible(isSeries);
+                    episodesColumn.setVisible(isSeries);
+                }
+            });
             
             logger.info("Table columns initialized successfully");
         } catch (Exception e) {
@@ -499,6 +591,7 @@ public class AdvancedSearchController extends BaseSearchController {
 
     /**
      * Navigates to the content details view for the specified content.
+     * Shows a detailed dialog with content information when double-clicked.
      *
      * @param content The content to view details for
      */
@@ -509,12 +602,71 @@ public class AdvancedSearchController extends BaseSearchController {
         }
 
         try {
-            // TODO: Implement navigation to content details view
-            // For now, just show an info dialog
-            showInfo("Content Details", "Viewing details for: " + content.getTitle());
+            // Create a dialog to show the content details
+            Alert detailsDialog = new Alert(Alert.AlertType.INFORMATION);
+            detailsDialog.setTitle("Content Details");
+            
+            // Create a styled header with title and year
+            String headerText = String.format("%s (%d)", content.getTitle(), content.getYear());
+            Label headerLabel = new Label(headerText);
+            headerLabel.setStyle("-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #00BCD4;");
+            
+            // Create a VBox to hold the content
+            VBox contentBox = new VBox(10);
+            contentBox.setPadding(new Insets(10));
+            
+            // Add type
+            Label typeLabel = new Label("Type: " + (content instanceof Movie ? "Movie" : "Series"));
+            
+            // Add genres with better spacing
+            Label genresLabel = new Label();
+            if (content.getGenres() != null && !content.getGenres().isEmpty()) {
+                String genres = content.getGenres().stream()
+                    .map(Enum::name)
+                    .map(genre -> " " + genre + " ")  // Add spaces around each genre
+                    .collect(Collectors.joining(" • "));  // Add bullet separator
+                genresLabel.setText("Genres: " + genres);
+            }
+            genresLabel.setStyle("-fx-padding: 0 0 10 0;");
+            
+            // Add series-specific details if it's a series
+            if (!(content instanceof Movie)) {
+                // Add any series-specific details here if needed
+            }
+            
+            // Add instructions for editing
+            Label editNote = new Label("To edit this content, select it and click the 'MANAGE DETAILS' button.");
+            editNote.setStyle("-fx-font-style: italic; -fx-text-fill: #888; -fx-padding: 10 0 0 0;");
+            
+            // Add all elements to the content box
+            contentBox.getChildren().addAll(headerLabel, typeLabel, genresLabel, editNote);
+            
+            // Set the dialog content
+            detailsDialog.getDialogPane().setContent(contentBox);
+            
+            // Add buttons
+            ButtonType editButton = new ButtonType("Edit Content", ButtonBar.ButtonData.OTHER);
+            ButtonType closeButton = new ButtonType("Close", ButtonBar.ButtonData.CANCEL_CLOSE);
+            detailsDialog.getButtonTypes().setAll(editButton, closeButton);
+            
+            // Show the dialog and handle the user's choice
+            Optional<ButtonType> result = detailsDialog.showAndWait();
+            if (result.isPresent() && result.get() == editButton) {
+                // User clicked Edit Content, navigate to edit view
+                Map<String, Object> data = new HashMap<>();
+                data.put("contentId", content.getId());
+                data.put("contentType", content.getContentType());
+                
+                navigationService.navigateTo(
+                    "/fxml/content/edit-content-view.fxml",
+                    data,
+                    getStage(),
+                    "Edit " + content.getTitle()
+                );
+            }
         } catch (Exception e) {
-            logger.error("Error navigating to content details", e);
-            showError("Navigation Error", "Could not open content details: " + e.getMessage());
+            logger.error("Error showing content details", e);
+            showError("Error", "Could not show content details: " + e.getMessage());
         }
     }
 

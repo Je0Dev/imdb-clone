@@ -6,6 +6,7 @@ import com.papel.imdb_clone.service.navigation.NavigationService;
 import com.papel.imdb_clone.util.UIUtils;
 import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
+import javafx.scene.Node;
 import javafx.scene.control.*;
 import javafx.stage.Stage;
 import org.slf4j.Logger;
@@ -291,9 +292,32 @@ public class EditContentController {
      */
     @FXML
     private void handleCancel() {
-        // Close the window without saving
-        Stage stage = (Stage) statusLabel.getScene().getWindow();
-        stage.close();
+        try {
+            // Try to get the window from statusLabel if available
+            Node source = statusLabel != null ? statusLabel : titleField;
+            if (source != null && source.getScene() != null) {
+                Stage stage = (Stage) source.getScene().getWindow();
+                if (stage != null) {
+                    stage.close();
+                    return;
+                }
+            }
+            
+            // Fallback: try to get the window from any other available component
+            for (Node node : new Node[]{titleField, typeComboBox, yearField}) {
+                if (node != null && node.getScene() != null) {
+                    Stage stage = (Stage) node.getScene().getWindow();
+                    if (stage != null) {
+                        stage.close();
+                        return;
+                    }
+                }
+            }
+            
+            logger.warn("Could not close window: No valid window reference found");
+        } catch (Exception e) {
+            logger.error("Error while trying to close the window", e);
+        }
     }
     
     /**

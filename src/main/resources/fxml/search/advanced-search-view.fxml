@@ -36,7 +36,7 @@
     <center>
         <VBox spacing="10" style="-fx-padding: 0 20 20 20;" VBox.vgrow="ALWAYS">
             <ScrollPane fitToWidth="true" style="-fx-background-color: transparent; -fx-padding: 0;" VBox.vgrow="ALWAYS">
-                <TableView fx:id="resultsTable" style="-fx-background-color: #1A1A1A; -fx-text-fill: #FFFFFF; -fx-table-cell-border-color: #333;" styleClass="content-table" VBox.vgrow="ALWAYS" HBox.hgrow="ALWAYS" onMouseClicked="#handleTableClick">
+                <TableView fx:id="resultsTable" style="-fx-background-color: #1A1A1A; -fx-text-fill: #FFFFFF; -fx-table-cell-border-color: #333;" styleClass="content-table" VBox.vgrow="ALWAYS" HBox.hgrow="ALWAYS">
                     <columns>
                         <!-- Title Column -->
                         <TableColumn fx:id="resultTitleColumn" prefWidth="250"  text="TITLE" style="-fx-font-weight: bold; -fx-text-fill: #00E5FF; -fx-font-size: 14;">

@@ -1,10 +1,14 @@
 package com.papel.imdb_clone.service.navigation;
 
+import com.papel.imdb_clone.controllers.content.EditContentController;
 import com.papel.imdb_clone.controllers.content.MoviesController;
+import com.papel.imdb_clone.controllers.people.CelebritiesController;
 import com.papel.imdb_clone.controllers.MainController;
 import com.papel.imdb_clone.controllers.content.SeriesController;
+import com.papel.imdb_clone.controllers.search.AdvancedSearchController;
 import com.papel.imdb_clone.service.content.MoviesService;
 import com.papel.imdb_clone.service.content.SeriesService;
+import com.papel.imdb_clone.service.search.SearchService;
 import com.papel.imdb_clone.service.search.ServiceLocator;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
@@ -64,7 +68,7 @@ public class NavigationService {
             
             Parent root = loader.load();
             
-            // Initialize controllers with required services
+            // Initialize controllers with required services 
             Object controller = loader.getController();
             if (controller != null) {
                 switch (controller) {
@@ -78,6 +82,18 @@ public class NavigationService {
                         SeriesService seriesService = SeriesService.getInstance();
                         seriesController.setContentService(seriesService);
                         seriesController.initializeController(0); // Replace with actual user ID
+                    }
+                    case AdvancedSearchController advancedSearchController -> {
+                        // The controller initializes itself, no additional setup needed
+                        logger.debug("AdvancedSearchController initialized");
+                    }
+                    case EditContentController editContentController -> {
+                        // The controller initializes itself, no additional setup needed
+                        logger.debug("EditContentController initialized");
+                    }
+                    case CelebritiesController celebritiesController -> {
+                        // The controller initializes itself, no additional setup needed
+                        logger.debug("CelebritiesController initialized");
                     }
                     default -> {
                         logger.warn("Controller not found for FXML path: {}", fxmlPath);

@@ -10,6 +10,7 @@ import com.papel.imdb_clone.service.content.SeriesService;
 import com.papel.imdb_clone.enums.Genre;
 import com.papel.imdb_clone.model.content.Series;
 
+import com.papel.imdb_clone.service.search.ServiceLocator;
 import com.papel.imdb_clone.util.UIUtils;
 import javafx.application.Platform;
 import javafx.beans.property.ObjectProperty;
@@ -123,11 +124,17 @@ public class SeriesController extends BaseController implements Initializable {
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {
-        // Required by Initializable
+        // This method is called by JavaFX during FXML loading
+        // The actual initialization with user context happens in initializeController
     }
 
     @Override
     public void initializeController(int currentUserId) throws Exception {
+        this.currentUserId = currentUserId;
+        
+        // Initialize dataManager through the service locator instead of calling super.initialize()
+        this.dataManager = ServiceLocator.getInstance().getDataManager();
+        
         // Initialize series service if not already set
         if (seriesService == null) {
             seriesService = SeriesService.getInstance();
@@ -148,6 +155,8 @@ public class SeriesController extends BaseController implements Initializable {
         seriesTable.getSelectionModel().selectedItemProperty().addListener(
             (obs, oldSelection, newSelection) -> selectedSeries.set(newSelection)
         );
+        
+        logger.info("SeriesController initialized with user ID: {}", currentUserId);
     }
     
     // Setter for series service (for dependency injection)

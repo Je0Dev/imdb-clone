@@ -7,7 +7,6 @@
       xmlns="http://javafx.com/javafx/17.0.12"
       xmlns:fx="http://javafx.com/fxml/1"
       fx:controller="com.papel.imdb_clone.controllers.people.CelebritiesController">
-
     <!-- Top Navigation Bar -->
     <VBox style="-fx-background-color: #0f0f0f; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.4), 10, 0, 0, 3);">
         <!-- Top Navigation -->

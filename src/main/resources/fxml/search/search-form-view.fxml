@@ -4,8 +4,9 @@
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 
-<VBox style="-fx-padding: 10; -fx-background-color: #1E1E1E; -fx-background-radius: 6; -fx-border-color: #333; -fx-border-radius: 6;" 
-      xmlns="http://javafx.com/javafx/17.0.12" 
+<?import javafx.scene.text.Text?>
+<VBox style="-fx-padding: 10; -fx-background-color: #1E1E1E; -fx-background-radius: 6; -fx-border-color: #333; -fx-border-radius: 6;"
+      xmlns="http://javafx.com/javafx/17.0.12"
       xmlns:fx="http://javafx.com/fxml/1"
       fx:controller="com.papel.imdb_clone.controllers.search.SearchFormController"
       spacing="15.0">
@@ -44,9 +45,29 @@
 
         <!-- Row 4 -->
         <Label style="-fx-text-fill: #FFFFFF; -fx-font-weight: bold;" text="Genre:" GridPane.columnIndex="0" GridPane.rowIndex="3" />
-        <ComboBox fx:id="genreComboBox" prefWidth="200" promptText="Select genre..." style="-fx-background-color: #2A2A2A; -fx-text-fill: #FFFFFF; -fx-prompt-text-fill: #888; -fx-background-radius: 4; -fx-border-color: #444; -fx-border-radius: 4; -fx-padding: 5 10;" GridPane.columnIndex="1" GridPane.rowIndex="3" />
+        <VBox spacing="2" GridPane.columnIndex="1" GridPane.rowIndex="3">
+            <!-- Custom Dropdown Button -->
+            <Button fx:id="genreDropdownButton" onAction="#toggleGenreDropdown" style="-fx-background-color: #2A2A2A; -fx-text-fill: #888; -fx-background-radius: 4; -fx-border-color: #444; -fx-border-radius: 4; -fx-padding: 8 12; -fx-alignment: CENTER_LEFT; -fx-pref-width: 200;" text="Select genre...">
+                <graphic>
+                    <HBox alignment="CENTER_RIGHT" spacing="5">
+                        <Region HBox.hgrow="ALWAYS" />
+                        <Text fill="#888" style="-fx-font-size: 10;" text="▼" />
+                    </HBox>
+                </graphic>
+            </Button>
+            
+            <!-- Dropdown List -->
+            <VBox fx:id="genreDropdownList" style="-fx-background-color: #2A2A2A; -fx-border-color: #444; -fx-border-radius: 4; -fx-padding: 5; -fx-max-height: 200; -fx-pref-width: 200;" visible="false">
+                <ScrollPane fitToWidth="true" hbarPolicy="NEVER" style="-fx-background: transparent; -fx-padding: 0; -fx-background-color: transparent;">
+                    <VBox fx:id="genreListContainer" spacing="2" style="-fx-background-color: transparent;" />
+                </ScrollPane>
+            </VBox>
+        </VBox>
+        
+        <!-- Hidden field to store selected genre -->
+        <TextField fx:id="selectedGenre" visible="false" GridPane.columnIndex="1" GridPane.rowIndex="3"/>
 
-        <Label style="-fx-text-fill: #FFFFFF; -fx-font-weight: bold;" text="Minimum Rating:" GridPane.columnIndex="2" GridPane.rowIndex="3" />
+        <Label style="-fx-text-fill: #FFFFFF; -fx-font-weight: bold; -fx-padding: 5 0 0 0;" text="Minimum Rating:" GridPane.columnIndex="2" GridPane.rowIndex="3" />
         <HBox alignment="CENTER_LEFT" spacing="5" GridPane.columnIndex="3" GridPane.rowIndex="3">
             <Slider fx:id="ratingSlider" majorTickUnit="2" max="10" minorTickCount="1" prefWidth="150" showTickLabels="true" showTickMarks="true" snapToTicks="true" style="-fx-padding: 5 0;" />
             <Label fx:id="ratingValueLabel" style="-fx-text-fill: #FFD54F; -fx-font-weight: bold; -fx-min-width: 30;" text="0.0" />
