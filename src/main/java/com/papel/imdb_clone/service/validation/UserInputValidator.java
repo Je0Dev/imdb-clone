@@ -6,6 +6,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Pattern;
 
+
 /**
  * Service for validating user input with detailed error messages.
  */
@@ -14,6 +15,14 @@ public class UserInputValidator {
     private static final Pattern EMAIL_PATTERN = Pattern.compile("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.\\w+$");
     private static final Pattern USERNAME_PATTERN = Pattern.compile("^[a-zA-Z0-9_.]{3,20}$");
     private static final Pattern PASSWORD_PATTERN = Pattern.compile("^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[@#$%^&+=])(?=\\S+$).{8,}$");
+    
+    /**
+     * Constructs a new UserInputValidator instance.
+     * Explicit constructor is required for proper module encapsulation.
+     */
+    public UserInputValidator() {
+        // No initialization needed for now
+    }
 
     /**
     /**

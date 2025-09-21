@@ -20,6 +20,13 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 public class InMemorySeriesRepository implements SeriesRepository {
     private static final Logger logger = LoggerFactory.getLogger(InMemorySeriesRepository.class);
 
+    /**
+     * Constructs a new InMemorySeriesRepository instance.
+     */
+    public InMemorySeriesRepository() {
+        // Initialization if needed
+    }
+
     private final List<Series> seriesList = new CopyOnWriteArrayList<>();
     private final AtomicInteger nextId = new AtomicInteger(1);
     private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();

@@ -33,7 +33,7 @@ public class UICoordinator {
      * Private constructor to prevent instantiation
      */
     private UICoordinator() {
-        this.dataManager = new DataManager();
+        this.dataManager = DataManager.getInstance();
 
         this.moviesService = MoviesService.getInstance();
         this.seriesService = SeriesService.getInstance();

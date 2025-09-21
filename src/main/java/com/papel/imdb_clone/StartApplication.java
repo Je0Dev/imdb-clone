@@ -8,6 +8,9 @@ import javafx.application.Application;
  * Main application entry point for the IMDB Clone application.
  */
 public class StartApplication {
+    private StartApplication() {
+        // Private constructor to prevent instantiation
+    }
 
     /**
      * Launches the ImprovedMovieApp application.

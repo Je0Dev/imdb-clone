@@ -22,6 +22,7 @@ import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
+import com.papel.imdb_clone.service.search.ServiceLocator;
 import javafx.util.Pair;
 
 import java.net.URL;
@@ -34,10 +35,18 @@ import javafx.geometry.Insets;
  * Controller for managing movies in the application.
  * Handles all movie-related operations including listing, adding, editing, and deleting movies.
  */
-public class MoviesController extends BaseController implements Initializable {
+public class MoviesController extends BaseController {
     @FXML
     public Label resultsCountLabel;
     public Label itemCountLabel;
+    
+    private MoviesService moviesService;
+    private final NavigationService navigationService;
+    
+    public MoviesController() {
+        super();
+        this.navigationService = NavigationService.getInstance();
+    }
 
     /**
      * Handles the delete movie button click event.
@@ -199,7 +208,6 @@ public class MoviesController extends BaseController implements Initializable {
     private final ObservableList<Movie> allMovies = FXCollections.observableArrayList();
     private final ObservableList<Movie> filteredMovies = FXCollections.observableArrayList();
     private final ObjectProperty<Movie> selectedMovie = new SimpleObjectProperty<>();
-    private MoviesService moviesService;
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {

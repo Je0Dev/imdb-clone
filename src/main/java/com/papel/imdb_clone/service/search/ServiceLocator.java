@@ -30,7 +30,8 @@ public class ServiceLocator {
     private static volatile ServiceLocator instance;
     private static final ConcurrentMap<Object, Object> services = new ConcurrentHashMap<>();
     private static volatile DataManager dataManager;
-    private static volatile UICoordinator uiCoordinator;
+    // Using Object type to avoid direct dependency on UICoordinator in this class
+    private static volatile Object uiCoordinatorInstance;
     private static Stage primaryStage;
     private static volatile boolean servicesInitialized = false;
     private static final Object lock = new Object();
@@ -160,7 +161,14 @@ public class ServiceLocator {
 
                 // Initialize UI Coordinator if primary stage is available
                 if (primaryStage != null) {
-                    uiCoordinator = new UICoordinator(dataManager);
+                    try {
+                        // Use reflection to create the UICoordinator instance
+                        Class<?> clazz = Class.forName("com.papel.imdb_clone.controllers.coordinator.UICoordinator");
+                        uiCoordinatorInstance = clazz.getDeclaredConstructor(Stage.class).newInstance(primaryStage);
+                    } catch (Exception e) {
+                        throw new IllegalStateException("Failed to initialize UICoordinator", e);
+                    }
+                    UICoordinator uiCoordinator = (UICoordinator) uiCoordinatorInstance;
                     uiCoordinator.setPrimaryStage(primaryStage);
                     registerService(UICoordinator.class, uiCoordinator);
                     logger.info("UICoordinator initialized successfully with primary stage");
@@ -202,20 +210,37 @@ public class ServiceLocator {
      * If the primary stage is not set, it throws an IllegalStateException.
      * @return UICoordinator instance which means the object that implements the UICoordinator interface
      */
-    public UICoordinator getUICoordinator() {
-        if (uiCoordinator == null) {
+    @SuppressWarnings("unchecked")
+    public static <T> T getUICoordinator(Class<T> coordinatorClass) {
+        if (uiCoordinatorInstance == null) {
             synchronized (lock) {
-                if (uiCoordinator == null) {
+                if (uiCoordinatorInstance == null) {
                     if (primaryStage == null) {
                         throw new IllegalStateException("Cannot get UICoordinator: Primary stage is not set");
                     }
-                    uiCoordinator = new UICoordinator(getDataManager());
-                    uiCoordinator.setPrimaryStage(primaryStage);
-                    registerService(UICoordinator.class, uiCoordinator);
+                    try {
+                        ServiceLocator instance = getInstance();
+                        UICoordinator coordinator = new UICoordinator(instance.getDataManager());
+                        coordinator.setPrimaryStage(primaryStage);
+                        uiCoordinatorInstance = coordinator;
+                        instance.registerService(UICoordinator.class, coordinator);
+                        logger.info("UICoordinator initialized successfully");
+                    } catch (Exception e) {
+                        logger.error("Failed to initialize UICoordinator", e);
+                        throw new IllegalStateException("Failed to initialize UICoordinator", e);
+                    }
                 }
             }
         }
-        return uiCoordinator;
+        try {
+            return coordinatorClass.cast(uiCoordinatorInstance);
+        } catch (ClassCastException e) {
+            String errorMsg = String.format("Requested coordinator class %s does not match the actual type %s", 
+                coordinatorClass.getName(), 
+                uiCoordinatorInstance.getClass().getName());
+            logger.error(errorMsg, e);
+            throw new IllegalArgumentException(errorMsg, e);
+        }
     }
 
     /**
@@ -269,18 +294,29 @@ public class ServiceLocator {
     }
 
     /**
-     * Get a service instance by class
-     * @param serviceClass that the service implements
-     * @return the service instance which means the object that implements the service
-     * @param <T> which means the type of the service that we want to get
+     * Get a service instance by class with type safety.
+     * @param <T> The type of the service to retrieve
+     * @param serviceClass The class object of the service to retrieve
+     * @return The service instance
+     * @throws IllegalArgumentException if the service is not found
+     * @throws ClassCastException if the service cannot be cast to the requested type
      */
     @SuppressWarnings("unchecked")
     public static <T> T getService(Class<T> serviceClass) {
-        if (!services.containsKey(serviceClass)) {
-            throw new IllegalArgumentException("Service not found: " + serviceClass.getName());
+        Object service = services.get(serviceClass);
+        if (service == null) {
+            // Try with the class name as a fallback
+            service = services.get(serviceClass.getName());
+            if (service == null) {
+                throw new IllegalArgumentException("Service not found: " + serviceClass.getName());
+            }
         }
-        logger.debug("Service found: {}", serviceClass.getName());
-
-        return (T) services.get(serviceClass);
+        
+        try {
+            logger.debug("Service found: {}", serviceClass.getName());
+            return serviceClass.cast(service);
+        } catch (ClassCastException e) {
+            throw new ClassCastException("Service " + serviceClass.getName() + " cannot be cast to the requested type");
+        }
     }
 }

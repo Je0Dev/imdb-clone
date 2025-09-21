@@ -19,6 +19,13 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 public class InMemoryUserRepository implements UserRepository {
     private static final Logger logger = LoggerFactory.getLogger(InMemoryUserRepository.class);
 
+    /**
+     * Constructs a new InMemoryUserRepository instance.
+     */
+    public InMemoryUserRepository() {
+        // Initialization if needed
+    }
+
     private final List<User> users = new CopyOnWriteArrayList<>();
     private final AtomicInteger nextId = new AtomicInteger(1);
     private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();

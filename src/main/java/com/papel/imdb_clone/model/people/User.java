@@ -51,7 +51,11 @@ public class User implements Serializable {
         this.firstName = firstName;
         this.lastName = lastName;
         this.username = username;
-        setEmail(email);
+        // Initialize email directly to avoid 'this' escape
+        if (email == null || !EMAIL_PATTERN.matcher(email).matches()) {
+            throw new IllegalArgumentException("Invalid email format");
+        }
+        this.email = email.toLowerCase();
     }
 
     //getters and setters
@@ -104,12 +108,12 @@ public class User implements Serializable {
         return password;
     }
 
-    //set email if it follows-matches the EMAIL_PATTERN above
+    // Set email - must match the EMAIL_PATTERN
     public void setEmail(String email) {
         if (email == null || !EMAIL_PATTERN.matcher(email).matches()) {
-            throw new InvalidEntityException("Invalid email address: " + email);
+            throw new IllegalArgumentException("Invalid email format");
         }
-        this.email = email;
+        this.email = email.toLowerCase();
     }
 
 

@@ -21,7 +21,6 @@ public abstract class BaseSearchController {
     
     protected final SearchService searchService;
     protected final NavigationService navigationService;
-    protected final UIUtils uiUtils;
     
     @FXML
     protected Label statusLabel;
@@ -29,7 +28,6 @@ public abstract class BaseSearchController {
     protected BaseSearchController() {
         this.searchService = ServiceLocator.getService(SearchService.class);
         this.navigationService = NavigationService.getInstance();
-        this.uiUtils = new UIUtils();
         
         if (this.searchService == null) {
             String errorMsg = "Failed to initialize SearchService: service is null";

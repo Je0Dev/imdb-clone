@@ -28,6 +28,13 @@ public class NavigationService {
     private static final Logger logger = LoggerFactory.getLogger(NavigationService.class);
     private static NavigationService instance;
     private final Stack<Scene> sceneStack = new Stack<>();
+    
+    /**
+     * Private constructor to enforce singleton pattern and module encapsulation.
+     */
+    private NavigationService() {
+        // Private constructor to prevent direct instantiation
+    }
     private Object currentController;
 
 

@@ -23,7 +23,6 @@ public class EditContentController {
     
     // Services
     private final NavigationService navigationService;
-    private final UIUtils uiUtils;
     
     // Content being edited
     private Content content;
@@ -63,7 +62,6 @@ public class EditContentController {
      */
     public EditContentController() {
         this.navigationService = NavigationService.getInstance();
-        this.uiUtils = new UIUtils();
     }
     
     /**

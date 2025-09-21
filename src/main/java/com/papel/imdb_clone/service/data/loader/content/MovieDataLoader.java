@@ -60,7 +60,6 @@ public class MovieDataLoader extends BaseDataLoader {
         this.movieService = movieService;
         this.actorService = actorService;
         this.directorService = directorService;
-        CelebrityManager celebrityManager = CelebrityManager.getInstance();
     }
 
 
@@ -319,10 +318,12 @@ public class MovieDataLoader extends BaseDataLoader {
                                     String directorLastName = dirNameParts.length > 1 ? dirNameParts[1] : "";
 
                                     // Try to find existing director by name
-                                    List<Director> directorOpt = (List<Director>) directorService.findByName(directorName);
-
-                                    if (!directorOpt.isEmpty()) {
-                                        movie.setDirector(String.valueOf(directorOpt.getLast()));
+                                    List<?> foundDirectors = directorService.findByName(directorName);
+                                    
+                                    if (!foundDirectors.isEmpty() && foundDirectors.get(0) instanceof Director) {
+                                        @SuppressWarnings("unchecked")
+                                        List<Director> directorList = (List<Director>) foundDirectors;
+                                        movie.setDirector(String.valueOf(directorList.getLast()));
                                     } else {
                                         // Create new director if not found
                                         Director newDirector = Director.getInstance(

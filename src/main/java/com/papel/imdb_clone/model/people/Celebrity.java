@@ -118,11 +118,16 @@ public abstract class Celebrity {
      * Generates a unique key for this celebrity used for duplicate detection.
      * @return A string key combining name, birth date, and gender
      */
-    protected String generateKey() {
+    public String generateKey() {
         return String.format("%s|%s|%s", 
             firstName != null ? firstName.toLowerCase() : "",
             lastName != null ? lastName.toLowerCase() : "",
             birthDate != null ? birthDate.toString() : ""
         );
+    }
+
+    //setter for id
+    public void setId(int andIncrement) {
+        this.id = andIncrement;
     }
 }

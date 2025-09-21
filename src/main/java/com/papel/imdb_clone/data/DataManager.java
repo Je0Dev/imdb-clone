@@ -27,26 +27,11 @@ import java.util.List;
  * while maintaining separation of concerns.
  */
 public class DataManager {
-    private static DataManager instance;
+    private static volatile DataManager instance;
+    private static final Object lock = new Object();
+    
     private boolean dataLoaded;
     private User user;
-
-    public static synchronized DataManager getInstance() {
-        if (instance == null) {
-            // First create instance without service registration to break circular dependency,which means
-            // that the instance is created first and then the services are registered.
-            instance = new DataManager(true);
-            // Then register services if ServiceLocator is available
-            try {
-                ServiceLocator locator = ServiceLocator.getInstance();
-                instance.registerServices();
-            } catch (Exception e) {
-                logger.warn("Could not register services with ServiceLocator: {}", e.getMessage());
-            }
-        }
-        return instance;
-    }
-
     private static final Logger logger = LoggerFactory.getLogger(DataManager.class);
 
     // Repositories
@@ -62,32 +47,23 @@ public class DataManager {
     private final DataLoaderService dataLoaderService;
 
     /**
-     * Private constructor for singleton pattern
-     */
-    public DataManager() {
-        this(false);
-    }
-
-    /**
      * Private constructor to enforce singleton pattern.
-     *
-     * @param skipServiceRegistration If true, skips service registration (for testing or special cases)
      */
-    private DataManager(boolean skipServiceRegistration) {
-        logger.info("Initializing RefactoredDataManager...");
+    private DataManager() {
+        logger.info("Initializing DataManager...");
 
-        // Initialize repositories
+        // Initialize repositories first (no dependencies)
         this.userRepository = new InMemoryUserRepository();
         this.movieRepository = new InMemoryMovieRepository();
         this.seriesRepository = new InMemorySeriesRepository();
 
-        // Initialize services
+        // Initialize services (depend on repositories but not each other)
         this.moviesService = MoviesService.getInstance();
         this.seriesService = SeriesService.getInstance();
         this.actorService = new CelebrityService<>(Actor.class);
         this.directorService = new CelebrityService<>(Director.class);
 
-        // Initialize file data loader service as the DataLoaderService implementation
+        // Initialize the data loader service last (depends on all repositories and services)
         this.dataLoaderService = new FileDataLoaderService(
                 userRepository,
                 movieRepository,
@@ -97,12 +73,37 @@ public class DataManager {
                 directorService,
                 moviesService);
 
-        // Only register services if not skipped
-        if (!skipServiceRegistration) {
-            registerServices();
+        logger.info("DataManager initialization complete");
+    }
+    
+    /**
+     * Returns the singleton instance of DataManager.
+     * Implements thread-safe lazy initialization with double-checked locking.
+     *
+     * @return the singleton instance of DataManager
+     */
+    public static DataManager getInstance() {
+        DataManager result = instance;
+        if (result == null) {
+            synchronized (lock) {
+                result = instance;
+                if (result == null) {
+                    instance = result = new DataManager();
+                    // Register services after instance is fully constructed
+                    result.initializeServices();
+                }
+            }
         }
-
-        logger.info("RefactoredDataManager initialization complete");
+        return result;
+    }
+    
+    /**
+     * Initializes and registers services after the object is fully constructed.
+     * This prevents 'this' escape issues.
+     */
+    private void initializeServices() {
+        // Register services after object is fully constructed
+        registerServices();
     }
 
     /**

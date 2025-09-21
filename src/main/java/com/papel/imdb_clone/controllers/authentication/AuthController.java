@@ -1,6 +1,7 @@
 package com.papel.imdb_clone.controllers.authentication;
 
 import com.papel.imdb_clone.controllers.BaseController;
+import com.papel.imdb_clone.data.DataManager;
 import com.papel.imdb_clone.exceptions.AuthException;
 import com.papel.imdb_clone.exceptions.ValidationException;
 import com.papel.imdb_clone.model.people.User;
@@ -31,6 +32,21 @@ import java.util.ResourceBundle;
 public class AuthController extends BaseController {
     private static final Logger logger = LoggerFactory.getLogger(AuthController.class);
 
+    /**
+     * Constructs a new AuthController with the specified dependencies.
+     *
+     * @param dataManager The data manager for accessing application data
+     * @param authService The authentication service for handling login/registration
+     * @param navigationService The navigation service for managing view transitions
+     * @param userInputValidator The validator for user input
+     */
+    public AuthController() {
+        super();
+        this.authService = AuthService.getInstance();
+        this.navigationService = NavigationService.getInstance();
+        this.inputValidator = new UserInputValidator();
+    }
+
     // UI Components
     public Hyperlink registerLink;
     public StackPane registerContainer;
@@ -38,9 +54,9 @@ public class AuthController extends BaseController {
     public Label passwordStrengthLabel;
 
     // Services
-    private final transient AuthService authService = AuthService.getInstance();
-    private final transient NavigationService navigationService = NavigationService.getInstance();
-    private final transient UserInputValidator inputValidator = new UserInputValidator();
+    private final transient AuthService authService;
+    private final transient NavigationService navigationService;
+    private final transient UserInputValidator inputValidator;
     
     // Session management
     private transient String sessionToken;

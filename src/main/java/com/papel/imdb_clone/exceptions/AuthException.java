@@ -125,8 +125,23 @@ public class AuthException extends ValidationException {
     }
 
     private void addFieldError(String field, String error) {
-        fieldErrors.computeIfAbsent(field, k -> new ArrayList<>()).add(error);
+        Map<String, List<String>> currentErrors = new HashMap<>(getFieldErrors());
+        currentErrors.computeIfAbsent(field, k -> new ArrayList<>()).add(error);
         addDetail(field, error);
+        
+        // Create a new AuthException with updated fields
+        AuthException updated = new AuthException(
+            getErrorType(), 
+            getMessage(), 
+            currentErrors, 
+            getCause()
+        );
+        
+        // Copy all existing details to the new exception
+        getFieldErrors().forEach((f, errs) -> 
+            errs.forEach(e -> updated.addDetail(f, e)));
+        
+        throw updated;
     }
 
     /**

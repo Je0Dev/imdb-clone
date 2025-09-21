@@ -16,7 +16,8 @@ import java.util.stream.Collectors;
  * Extends Celebrity with actor-specific fields and functionality.
  */
 public class Actor extends Celebrity {
-    private static final CelebrityManager celebrityManager = CelebrityManager.getInstance();
+    @SuppressWarnings("unchecked")
+    private static final CelebrityManager<Actor> celebrityManager = CelebrityManager.getInstance(Actor.class);
     
     private Ethnicity ethnicity;
     private String role; // Actor's role in a specific movie/show
@@ -58,10 +59,9 @@ public class Actor extends Celebrity {
      * Internal factory method that handles the actual instance creation/lookup.
      */
     private static Actor getInstance(Actor actor) {
-        return (Actor) celebrityManager.findCelebrity(actor).orElseGet(() -> {
-            celebrityManager.addCelebrity(actor);
-            return actor;
-        });
+        return celebrityManager.findCelebrity(actor).orElseGet(() -> 
+            celebrityManager.addCelebrity(actor)
+        );
     }
 
     /**

@@ -7,10 +7,19 @@ import java.security.SecureRandom;
 import java.security.spec.InvalidKeySpecException;
 import java.util.Base64;
 
+
 /**
  * Utility class for hashing and verifying passwords using PBKDF2.
+ * This class cannot be instantiated.
  */
 public class PasswordHasher {
+    /**
+     * Private constructor to prevent instantiation of this utility class.
+     */
+    private PasswordHasher() {
+        throw new UnsupportedOperationException("This is a utility class and cannot be instantiated");
+    }
+    
     // Constants for the hash function
     private static final int ITERATIONS = 10000;
     private static final int KEY_LENGTH = 256;

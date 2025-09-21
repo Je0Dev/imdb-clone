@@ -78,8 +78,25 @@ public class ResultsTableController extends BaseSearchController {
             // Set up the row double-click handler
             setupRowDoubleClickHandler();
             
-            // Configure table properties
+            // Configure table properties with the recommended resize policy
             resultsTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
+            // Set a custom resize policy that respects column constraints
+            resultsTable.setColumnResizePolicy(tv -> {
+                double width = resultsTable.getWidth();
+                double totalWeight = resultsTable.getColumns().stream()
+                    .mapToDouble(c -> {
+                        Object constraint = c.getProperties().get("weight");
+                        return constraint instanceof Number ? ((Number) constraint).doubleValue() : 1.0;
+                    })
+                    .sum();
+                
+                for (TableColumn<Content, ?> column : resultsTable.getColumns()) {
+                    Object constraint = column.getProperties().get("weight");
+                    double weight = constraint instanceof Number ? ((Number) constraint).doubleValue() : 1.0;
+                    column.setPrefWidth(width * (weight / totalWeight));
+                }
+                return true;
+            });
             resultsTable.setTableMenuButtonVisible(true);
             
             // Make sure the table is visible
@@ -232,21 +249,25 @@ public class ResultsTableController extends BaseSearchController {
             logger.error("Results table is not initialized");
             return;
         }
-
-        logger.info("Setting up table columns...");
-
         try {
-            // Don't clear columns as they are defined in FXML
-            // Just make sure they are properly configured
+            logger.debug("Setting up table columns...");
             
-            // Set up title column with tooltip
+            // Set column weights for the custom resize policy
+            resultTitleColumn.getProperties().put("weight", 3.0);
+            resultYearColumn.getProperties().put("weight", 1.0);
+            resultTypeColumn.getProperties().put("weight", 1.0);
+            resultGenreColumn.getProperties().put("weight", 2.0);
+            resultImdbColumn.getProperties().put("weight", 1.0);
+            resultDirectorColumn.getProperties().put("weight", 2.0);
+            if (resultSeasonsColumn != null) resultSeasonsColumn.getProperties().put("weight", 1.0);
+            if (resultEpisodesColumn != null) resultEpisodesColumn.getProperties().put("weight", 1.0);
+            
+            // Set up title column
             if (resultTitleColumn != null) {
                 logger.debug("Setting up title column");
                 resultTitleColumn.setCellValueFactory(cellData -> {
                     Content content = cellData.getValue();
-                    return content != null ?
-                            new SimpleStringProperty(content.getTitle()) :
-                            new SimpleStringProperty("");
+                    return new SimpleStringProperty(content != null ? content.getTitle() : "");
                 });
 
                 resultTitleColumn.setCellFactory(column -> new TableCell<>() {
@@ -266,8 +287,6 @@ public class ResultsTableController extends BaseSearchController {
                         }
                     }
                 });
-
-                // Column is already defined in FXML, no need to add it again
             }
 
             // Set up type column
@@ -380,6 +399,15 @@ public class ResultsTableController extends BaseSearchController {
             showError("Navigation Error", "Could not open content details: " + e.getMessage());
         }
     }
+    
+    /**
+     * Gets the currently selected content in the table.
+     *
+     * @return The selected content, or null if no content is selected
+     */
+    public Content getSelectedContent() {
+        return resultsTable != null ? resultsTable.getSelectionModel().getSelectedItem() : null;
+    }
 
     /**
      * Sets up the row double-click handler for the results table.
@@ -413,31 +441,4 @@ public class ResultsTableController extends BaseSearchController {
             return row;
         });
     }
-
-    /**
-     * Sets up the type column in the results table
-     */
-    private void setupTypeColumn() {
-        if (resultTypeColumn != null) {
-            resultTypeColumn.setCellValueFactory(cellData -> {
-                Content content = cellData.getValue();
-                if (content == null) return new SimpleStringProperty("");
-                String type = content instanceof Movie ? "Movie" : "Series";
-                return new SimpleStringProperty(type);
-            });
-        }
-    }
-    public void handleManageDetails() {
-        Content selected = getSelectedContent();
-        if (selected != null) {
-            showContentDetails(selected);
-        } else {
-            showError("No Selection", "Please select an item first.");
-        }
-    }
-
-    public Content getSelectedContent() {
-        return resultsTable != null ? resultsTable.getSelectionModel().getSelectedItem() : null;
-    }
-
 }

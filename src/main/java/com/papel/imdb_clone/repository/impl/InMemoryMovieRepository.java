@@ -16,17 +16,18 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.stream.Collectors;
 
 /**
- * A thread means a separate path of execution in a program.
- * The program can have multiple threads running concurrently,
- * each thread can access and modify shared data
- */
-
-/**
  * In-memory implementation of MovieRepository.
  * Thread-safe implementation using CopyOnWriteArrayList and ReentrantReadWriteLock.
  */
 public class InMemoryMovieRepository implements MovieRepository {
     private static final Logger logger = LoggerFactory.getLogger(InMemoryMovieRepository.class);
+
+    /**
+     * Constructs a new InMemoryMovieRepository instance.
+     */
+    public InMemoryMovieRepository() {
+        // Initialization if needed
+    }
 
     /**
      * List of movies stored in memory.

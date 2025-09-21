@@ -132,8 +132,11 @@ public class AdvancedSearchController extends BaseSearchController {
             yearColumn.setCellValueFactory(cellData -> {
                 Content content = cellData.getValue();
                 if (content != null && content.getReleaseDate() != null) {
-                    // Use Year class to get the year value
-                    int year = Year.of(content.getReleaseDate().getYear() + 1900).getValue();
+                    // Convert Date to LocalDate and get the year
+                    int year = content.getReleaseDate().toInstant()
+                            .atZone(java.time.ZoneId.systemDefault())
+                            .toLocalDate()
+                            .getYear();
                     return new javafx.beans.property.SimpleIntegerProperty(year).asObject();
                 }
                 return new javafx.beans.property.SimpleIntegerProperty(0).asObject();
@@ -214,8 +217,12 @@ public class AdvancedSearchController extends BaseSearchController {
             episodesColumn.setStyle("-fx-text-fill: #80D8FF; -fx-font-weight: bold; -fx-alignment: CENTER;");
             episodesColumn.setVisible(false);
             
-            // Add all columns to the table
-            resultsTable.getColumns().addAll(titleColumn, typeColumn, yearColumn, genreColumn, seasonsColumn, episodesColumn);
+            // Add all columns to the table using a type-safe approach
+            @SuppressWarnings("unchecked")
+            List<TableColumn<Content, ?>> columns = List.of(
+                titleColumn, typeColumn, yearColumn, genreColumn, seasonsColumn, episodesColumn
+            );
+            resultsTable.getColumns().addAll(columns);
             
             // Add listener to show/hide columns based on selection
             resultsTable.getSelectionModel().selectedItemProperty().addListener((obs, oldSelection, newSelection) -> {
@@ -721,7 +728,7 @@ public class AdvancedSearchController extends BaseSearchController {
             if (resultsTableController != null && resultsTableController.getResultsTable() != null) {
                 selectedContent = resultsTableController.getResultsTable().getSelectionModel().getSelectedItem();
             } else if (resultsTable != null && resultsTable.getSelectionModel() != null) {
-                selectedContent = (Content) resultsTable.getSelectionModel().getSelectedItem();
+                selectedContent = resultsTable.getSelectionModel().getSelectedItem();
             }
             
             if (selectedContent == null) {

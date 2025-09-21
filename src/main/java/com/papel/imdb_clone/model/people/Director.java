@@ -16,7 +16,8 @@ import java.util.stream.Collectors;
  * Uses CelebrityManager to prevent duplicate instances.
  */
 public class Director extends Celebrity {
-    private static final CelebrityManager celebrityManager = CelebrityManager.getInstance();
+    @SuppressWarnings("unchecked")
+    private static final CelebrityManager<Director> celebrityManager = CelebrityManager.getInstance(Director.class);
     
     private final List<String> bestWorks;
     private final Ethnicity ethnicity;
@@ -59,10 +60,9 @@ public class Director extends Celebrity {
      * Internal factory method that handles the actual instance creation/lookup.
      */
     private static Director getInstance(Director director) {
-        return (Director) celebrityManager.findCelebrity(director).orElseGet(() -> {
-            celebrityManager.addCelebrity(director);
-            return director;
-        });
+        return celebrityManager.findCelebrity(director).orElseGet(() -> 
+            celebrityManager.addCelebrity(director)
+        );
     }
 
     //getters

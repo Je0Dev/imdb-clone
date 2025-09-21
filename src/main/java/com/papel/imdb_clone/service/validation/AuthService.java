@@ -172,14 +172,6 @@ public class AuthService {
     }
 
     /**
-     * Authenticates a user and creates a new session.
-     *
-     * @param username The username of the user
-     * @param password The plaintext password
-     * @return Session token
-     * @throws AuthException if authentication fails
-     */
-    /**
      * Authenticates a user and creates a new session with detailed logging.
      *
      * @param username The username of the user
@@ -280,14 +272,6 @@ public class AuthService {
         return getCurrentUser(null);
     }
 
-    /**
-     * Registers a new user with the system.
-     *
-     * @param user The user to register
-     * @param password The plaintext password
-     * @param confirmPassword The password confirmation
-     * @throws AuthException if registration fails
-     */
     /**
      * Registers a new user with comprehensive validation and logging.
      *

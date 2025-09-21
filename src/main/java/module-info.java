@@ -23,13 +23,13 @@ module com.papel.imdb_clone {
     opens com.papel.imdb_clone.controllers.content to javafx.fxml, javafx.base;
     opens com.papel.imdb_clone.controllers.authentication to javafx.fxml, javafx.base;
     opens com.papel.imdb_clone.controllers.search to javafx.fxml, javafx.base;
+    opens com.papel.imdb_clone.controllers.coordinator to javafx.fxml, javafx.base, com.fasterxml.jackson.databind;
     
     // Model packages - only open specific model packages that exist
     opens com.papel.imdb_clone.model.content to com.fasterxml.jackson.databind, javafx.base, javafx.fxml;
     opens com.papel.imdb_clone.model.people to com.fasterxml.jackson.databind, javafx.base, javafx.fxml;
     opens com.papel.imdb_clone.model.rating to com.fasterxml.jackson.databind, javafx.base, javafx.fxml;
-    
-    // Service packages
+
     // Service packages - only open existing subpackages
     opens com.papel.imdb_clone.service.people to javafx.base, com.fasterxml.jackson.databind;
     opens com.papel.imdb_clone.service.content to javafx.base, com.fasterxml.jackson.databind;

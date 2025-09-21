@@ -108,19 +108,25 @@ public class Series extends Content {
             }
             
             try {
-                // Use reflection to get episodes
-                List<Episode> episodes =
-                        (List<Episode>) season.getClass()
-                    .getMethod("getEpisodes")
-                    .invoke(season);
-                    
+                // Get episodes using the interface method
+                List<?> episodes = season.getEpisodes();
+                
                 if (episodes == null) {
                     logger.warn("Episodes list is null for season {} of series: {}", 
                         season.getSeasonNumber(), getTitle());
                     continue;
                 }
 
-                //Derive total episodes from season
+                // Verify all items in the list are Episodes
+                for (Object episode : episodes) {
+                    if (!(episode instanceof Episode)) {
+                        logger.warn("Non-Episode object found in episodes list for season {} of series: {}", 
+                            season.getSeasonNumber(), getTitle());
+                        continue;
+                    }
+                }
+
+                // Derive total episodes from season
                 logger.debug("Season {} has {} episodes", season.getSeasonNumber(), episodes.size());
                 total += episodes.size();
                 

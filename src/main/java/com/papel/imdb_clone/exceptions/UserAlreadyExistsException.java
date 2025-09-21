@@ -10,6 +10,7 @@ import java.util.Map;
  * This is a specific type of AuthException for user registration conflicts.
  */
 public class UserAlreadyExistsException extends AuthException {
+    private static final long serialVersionUID = 1L;
     private static final String DEFAULT_FIELD = "email";
 
 

@@ -10,10 +10,39 @@ import java.util.Map;
  * This is a specific type of InvalidEntityException for entity not found scenarios.
  */
 public class EntityNotFoundException extends InvalidEntityException {
+    private static final long serialVersionUID = 1L;
 
-    private final Class<?> entityType;
+    // Store class name as String for serialization
+    private final String entityTypeName;
     private final Object identifier;
     private final String entityName;
+    private transient Class<?> entityType; // Marked as transient to avoid serialization issues
+    
+    /**
+     * Custom serialization method to handle the non-serializable Class object.
+     */
+    private void writeObject(java.io.ObjectOutputStream out) throws java.io.IOException {
+        out.defaultWriteObject();
+        // Store the class name as a string
+        out.writeObject(entityType != null ? entityType.getName() : null);
+    }
+    
+    /**
+     * Custom deserialization method to handle the non-serializable Class object.
+     */
+    private void readObject(java.io.ObjectInputStream in) throws java.io.IOException, ClassNotFoundException {
+        in.defaultReadObject();
+        // Restore the class object from the stored class name
+        String className = (String) in.readObject();
+        if (className != null) {
+            try {
+                this.entityType = Class.forName(className);
+            } catch (ClassNotFoundException e) {
+                // If the class is not found, leave it as null
+                this.entityType = null;
+            }
+        }
+    }
 
 
     /**

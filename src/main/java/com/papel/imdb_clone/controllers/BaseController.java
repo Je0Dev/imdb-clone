@@ -38,6 +38,18 @@ public abstract class BaseController implements Initializable {
     protected DataManager dataManager;
 
     /**
+     * Constructs a new BaseController with the specified DataManager.
+     *
+     * @param dataManager The DataManager instance to be used by this controller
+     */
+    protected BaseController() {
+        this.dataManager = ServiceLocator.getInstance().getDataManager();
+        if (this.dataManager == null) {
+            throw new IllegalStateException("Failed to initialize DataManager from ServiceLocator");
+        }
+    }
+
+    /**
      * Initializes the controller with the specified user ID.
      * This method serves as the main entry point for controller initialization.
      *
@@ -46,10 +58,6 @@ public abstract class BaseController implements Initializable {
      */
     public final void initialize(int currentUserId) {
         try {
-            this.dataManager = ServiceLocator.getInstance().getDataManager();
-            if (this.dataManager == null) {
-                throw new IllegalStateException("DataManager not available in ServiceLocator");
-            }
             initializeController(currentUserId);
             logger.debug("{} initialized successfully for user ID: {}", 
                 getClass().getSimpleName(), currentUserId);

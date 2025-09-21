@@ -10,8 +10,19 @@ import java.util.Objects;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * Utility class for loading data files from various locations.
+ * This class cannot be instantiated.
+ */
 public class DataFileLoader {
     private static final Logger logger = LoggerFactory.getLogger(DataFileLoader.class);
+    
+    /**
+     * Private constructor to prevent instantiation of this utility class.
+     */
+    private DataFileLoader() {
+        throw new UnsupportedOperationException("This is a utility class and cannot be instantiated");
+    }
     private static final Map<String, String[]> FILE_TYPE_PATHS = Map.of(
         // Content files (movies, series)
         "content", new String[]{

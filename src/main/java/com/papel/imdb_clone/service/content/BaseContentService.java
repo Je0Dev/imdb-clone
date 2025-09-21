@@ -19,6 +19,15 @@ public abstract class BaseContentService<T extends Content> implements ContentSe
 
     protected BaseContentService(Class<T> contentType) {
         this.contentType = contentType;
+        // Initialize data after construction to prevent 'this' escape
+        initializeData();
+    }
+    
+    /**
+     * Initialize data after construction to prevent 'this' escape.
+     * This method is called by the constructor after the object is fully constructed.
+     */
+    private void initializeData() {
         initializeSampleData();
     }
 
@@ -113,10 +122,12 @@ public abstract class BaseContentService<T extends Content> implements ContentSe
         //read lock which means that other threads can read the list but cannot modify it
         lock.readLock().lock();
         try {
-            //return first content that matches the title and year
+            // Convert java.util.Date to java.time.Instant then to LocalDate to get the year
             return contentList.stream()
                     .filter(content -> content.getTitle().equalsIgnoreCase(title) && 
-                                     Year.of(content.getReleaseDate().getYear() + 1900).getValue() == year)
+                                     content.getReleaseDate().toInstant()
+                                            .atZone(java.time.ZoneId.systemDefault())
+                                            .getYear() == year)
                     .findFirst();
         } finally {
             //unlock the read lock when done, which means that other threads can read the list

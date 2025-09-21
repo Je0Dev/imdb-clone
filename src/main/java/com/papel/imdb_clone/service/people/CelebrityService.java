@@ -22,13 +22,14 @@ public class CelebrityService<T extends Celebrity> {
     private static final Logger logger = LoggerFactory.getLogger(CelebrityService.class);
 
     private final List<T> celebrities = new CopyOnWriteArrayList<>();
-    private final CelebrityManager celebrityManager = CelebrityManager.getInstance();
+    private final CelebrityManager<T> celebrityManager;
     private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
     private final Class<T> celebrityType;
 
 
     public CelebrityService(Class<T> celebrityType) {
         this.celebrityType = celebrityType;
+        this.celebrityManager = CelebrityManager.getInstance(celebrityType);
     }
 
 
@@ -72,7 +73,7 @@ public class CelebrityService<T extends Celebrity> {
                     
             // If not found locally, check with CelebrityManager
             if (localCelebrity.isEmpty()) {
-                Optional<Celebrity> celeb = celebrityManager.findById(id);
+                Optional<T> celeb = celebrityManager.getCelebrityById(id);
                 if (celeb.isPresent() && celebrityType.isInstance(celeb.get())) {
                     return Optional.of(celebrityType.cast(celeb.get()));
                 }

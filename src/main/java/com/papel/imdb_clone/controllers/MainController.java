@@ -149,17 +149,20 @@ public class MainController extends BorderPane {
      * @throws IllegalStateException if service initialization fails
      */
     public MainController(User user, String sessionToken) {
-        this();
-        Objects.requireNonNull(sessionToken, "Session token cannot be null");
+        // Initialize fields directly first
+        this.currentUser = user;
+        this.sessionToken = Objects.requireNonNull(sessionToken, "Session token cannot be null");
         
         try {
-            setUserSession(user, sessionToken);
-            initializeServices();
+            // Initialize services without using 'this' in a way that could escape
+            this.uiCoordinator = ServiceLocator.getUICoordinator(UICoordinator.class);
             
+            // Set up the UI coordinator if available
             if (this.uiCoordinator != null) {
                 this.uiCoordinator.setUserSession(user, sessionToken);
             }
             
+            // Log initialization
             logger.info("MainController initialized for user: {}", 
                 user != null ? user.getUsername() : "<guest>");
                 
@@ -232,7 +235,7 @@ public class MainController extends BorderPane {
      * @throws IllegalStateException if UICoordinator cannot be initialized
      */
     private void initializeUICoordinator() {
-        this.uiCoordinator = serviceLocator.getUICoordinator();
+        this.uiCoordinator = serviceLocator.getUICoordinator(UICoordinator.class);
         if (this.uiCoordinator == null) {
             throw new IllegalStateException("Failed to get UICoordinator from ServiceLocator");
         }

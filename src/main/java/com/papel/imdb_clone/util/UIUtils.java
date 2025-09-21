@@ -13,7 +13,13 @@ import java.util.logging.Logger;
  * Unified utility class for all UI operations including dialogs, layouts, and basic validation.
  * Combines functionality from DialogFactory, DialogUtils, and UI-related ValidationUtils methods.
  */
-public class UIUtils {
+public final class UIUtils {
+    /**
+     * Private constructor to prevent instantiation of this utility class.
+     */
+    private UIUtils() {
+        throw new UnsupportedOperationException("This is a utility class and cannot be instantiated");
+    }
 
     /**
      * The primary stage of the application, used for dialog positioning.

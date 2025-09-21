@@ -24,7 +24,7 @@ public class DirectorDataLoader extends BaseDataLoader {
     private static final Logger logger = LoggerFactory.getLogger(DirectorDataLoader.class);
     private final CelebrityService<Director> directorService;
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-    private Ethnicity Ethnicity;
+    private Ethnicity ethnicity;
 
     public DirectorDataLoader(CelebrityService<Director> directorService) {
         this.directorService = directorService;
@@ -131,7 +131,7 @@ public class DirectorDataLoader extends BaseDataLoader {
                                 lastName,
                                 birthDate,
                                 gender,
-                                ethnicity != null ? ethnicity : Ethnicity.UNKNOWN
+                                ethnicity != null ? ethnicity : com.papel.imdb_clone.enums.Ethnicity.UNKNOWN
                             );
                             
                             // Set notable works if provided

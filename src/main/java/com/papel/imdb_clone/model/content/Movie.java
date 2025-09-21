@@ -29,24 +29,30 @@ public class Movie extends Content {
     //default constructor
     public Movie() {
         super("", new Date(), null, "Unknown", new HashMap<>(), 0.0);
-        initializeRichContentFields();
+        // Initialize fields directly instead of calling methods that might use 'this'
+        this.awards = new ArrayList<>();
+        this.genres = new ArrayList<>();
     }
 
     //constructor for simple movie creation
     public Movie(String title, int year, String genre, String director, Map<Integer, Integer> userRatings, double imdbRating) {
-        super(title, createDateFromYear(year),
-                null,
-                director, userRatings, imdbRating);
+        super(title, createDateFromYear(year), null, director, userRatings, imdbRating);
         this.releaseDate = createDateFromYear(year);
+        this.awards = new ArrayList<>();
+        this.genres = new ArrayList<>();
+        
+        // Handle genre after object is fully initialized
         if (genre != null && !genre.trim().isEmpty()) {
             try {
-                this.addGenre(Genre.valueOf(genre.toUpperCase().replace(" ", "_")));
+                Genre genreEnum = Genre.valueOf(genre.toUpperCase().replace(" ", "_"));
+                if (this.genres != null) {
+                    this.genres.add(genreEnum);
+                }
             } catch (IllegalArgumentException e) {
                 // If genre is invalid, don't add any genre
                 System.err.println("Invalid genre: " + genre);
             }
         }
-        initializeRichContentFields();
     }
 
     // Helper method to create a Date from year
@@ -61,30 +67,42 @@ public class Movie extends Content {
     // Constructor for FileDataLoaderService
     public Movie(String title, Date year, List<Genre> genres,
                  double imdbRating, String director, List<Actor> actors) {
-        super(title, year != null ? year : createDateFromYear(Calendar.getInstance().get(Calendar.YEAR)),
+        super(title, year != null ? new Date(year.getTime()) : createDateFromYear(Calendar.getInstance().get(Calendar.YEAR)),
                 null, // No default genre
                 director, new HashMap<>(), imdbRating);
+        
+        // Initialize fields directly
         this.releaseDate = year != null ? new Date(year.getTime()) : createDateFromYear(Calendar.getInstance().get(Calendar.YEAR));
-        // Only set genres if the list is not empty and doesn't contain null values
+        this.awards = new ArrayList<>();
+        
+        // Initialize genres safely
         if (genres != null) {
-            this.genres = genres.stream()
-                .filter(Objects::nonNull)
-                .collect(Collectors.toList());
+            this.genres = new ArrayList<>();
+            for (Genre g : genres) {
+                if (g != null) {
+                    this.genres.add(g);
+                }
+            }
         } else {
             this.genres = new ArrayList<>();
         }
+        
+        // Set actors safely after object construction
         if (actors != null) {
-            // Use setActors to properly set the actors list
-            this.setActors(actors);
+            this.setActors(new ArrayList<>(actors)); // Defensive copy
         }
-        initializeRichContentFields();
     }
 
-    //initialize rich content fields like awards and genres
-    private void initializeRichContentFields() {
-        this.awards = new ArrayList<>();
-        // Don't add parent's genre to avoid duplicates
-        // The genres list should only be modified through addGenre or setGenres
+    // Method to add a genre, ensuring thread safety and avoiding duplicates
+    public void addGenre(Genre genre) {
+        if (genre != null) {
+            if (this.genres == null) {
+                this.genres = new ArrayList<>();
+            }
+            if (!this.genres.contains(genre)) {
+                this.genres.add(genre);
+            }
+        }
     }
 
 
@@ -118,11 +136,7 @@ public class Movie extends Content {
         this.genres = genres != null ? new ArrayList<>(genres) : new ArrayList<>();
     }
 
-    public void addGenre(Genre genre) {
-        if (genre != null && !this.genres.contains(genre)) {
-            this.genres.add(genre);
-        }
-    }
+   
     
     @Override
     public List<Genre> getGenres() {

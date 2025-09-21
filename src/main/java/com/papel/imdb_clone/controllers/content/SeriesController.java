@@ -56,7 +56,7 @@ import java.util.stream.Collectors;
  * @version 1.0
  * @since 2025-09-20
  */
-public class SeriesController extends BaseController implements Initializable {
+public class SeriesController extends BaseController {
     /** Logger instance for this class */
     private static final Logger logger = LoggerFactory.getLogger(SeriesController.class);
     
@@ -186,6 +186,12 @@ public class SeriesController extends BaseController implements Initializable {
     
     /** Service for handling series-related business logic */
     private SeriesService seriesService;
+    private final NavigationService navigationService;
+    
+    public SeriesController() {
+        super();
+        this.navigationService = NavigationService.getInstance();
+    }
 
     /**
      * Initializes the controller class. This method is automatically called
@@ -215,10 +221,7 @@ public class SeriesController extends BaseController implements Initializable {
         // Initialize dataManager through the service locator instead of calling super.initialize()
         this.dataManager = ServiceLocator.getInstance().getDataManager();
         
-        // Initialize series service if not already set
-        if (seriesService == null) {
-            seriesService = SeriesService.getInstance();
-        }
+        // SeriesService is already initialized in the constructor
         
         // Set up the table
         setupTableColumns();
