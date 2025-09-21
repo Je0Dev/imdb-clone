@@ -107,8 +107,8 @@ public class ServiceLocator {
 
                 // Initialize repositories with concrete types
                 InMemoryUserRepository userRepository = dataManager.getUserRepository();
-                InMemoryMovieRepository movieRepository = (InMemoryMovieRepository) dataManager.getMovieRepository();
-                InMemorySeriesRepository seriesRepository = (InMemorySeriesRepository) dataManager.getSeriesRepository();
+                InMemoryMovieRepository movieRepository = dataManager.getMovieRepository();
+                InMemorySeriesRepository seriesRepository = dataManager.getSeriesRepository();
 
                 UserService userService = UserService.getInstance(dataManager);
                 registerService(UserService.class, userService);

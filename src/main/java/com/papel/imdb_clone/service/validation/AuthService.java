@@ -179,11 +179,31 @@ public class AuthService {
      * @return Session token
      * @throws AuthException if authentication fails
      */
+    /**
+     * Authenticates a user and creates a new session with detailed logging.
+     *
+     * @param username The username of the user
+     * @param password The plaintext password
+     * @return Session token
+     * @throws AuthException if authentication fails
+     */
     public String login(String username, String password) throws AuthException {
-        if (username == null || username.trim().isEmpty() || password == null || password.trim().isEmpty()) {
+        logger.debug("Attempting login for user: {}", username);
+        
+        // Input validation
+        if (username == null || username.trim().isEmpty()) {
+            logger.warn("Login failed: Username is empty");
             throw new AuthException(
                     AuthException.AuthErrorType.INVALID_CREDENTIALS,
-                    "Username and password are required"
+                    "Username is required"
+            );
+        }
+        
+        if (password == null || password.trim().isEmpty()) {
+            logger.warn("Login failed: Password is empty for user: {}", username);
+            throw new AuthException(
+                    AuthException.AuthErrorType.INVALID_CREDENTIALS,
+                    "Password is required"
             );
         }
 
@@ -196,15 +216,27 @@ public class AuthService {
             );
         }
         
-        // Verify password using secure hashing
-        String storedPassword = user.getPassword();
-        boolean passwordMatches = com.papel.imdb_clone.util.PasswordHasher.verifyPassword(password, storedPassword);
+        logger.debug("User found, verifying password for: {}", username);
         
-        if (!passwordMatches) {
-            logger.warn("Login failed: Incorrect password for user - {}", username);
+        // Verify password using secure hashing
+        try {
+            String storedPassword = user.getPassword();
+            boolean passwordMatches = com.papel.imdb_clone.util.PasswordHasher.verifyPassword(password, storedPassword);
+            
+            if (!passwordMatches) {
+                logger.warn("Login failed: Incorrect password for user - {}", username);
+                throw new AuthException(
+                        AuthException.AuthErrorType.INVALID_CREDENTIALS,
+                        "Invalid username or password"
+                );
+            }
+            
+            logger.debug("Password verified successfully for user: {}", username);
+        } catch (Exception e) {
+            logger.error("Error during password verification for user {}: {}", username, e.getMessage(), e);
             throw new AuthException(
-                    AuthException.AuthErrorType.INVALID_CREDENTIALS,
-                    "Invalid username or password"
+                    AuthException.AuthErrorType.INTERNAL_ERROR,
+                    "An error occurred during authentication"
             );
         }
 
@@ -256,32 +288,82 @@ public class AuthService {
      * @param confirmPassword The password confirmation
      * @throws AuthException if registration fails
      */
+    /**
+     * Registers a new user with comprehensive validation and logging.
+     *
+     * @param user The user to register
+     * @param password The plaintext password
+     * @param confirmPassword The password confirmation
+     * @throws AuthException if registration fails
+     */
     public void register(User user, String password, String confirmPassword) throws AuthException {
-        if (user == null || password == null || password.trim().isEmpty()) {
+        logger.info("Starting registration for new user: {}", user != null ? user.getUsername() : "null");
+        
+        // Input validation
+        if (user == null) {
+            logger.error("Registration failed: User object is null");
             throw new AuthException(
                     AuthException.AuthErrorType.INVALID_INPUT,
-                    "User and password are required"
+                    "User information is required"
+            );
+        }
+        
+        if (password == null || password.trim().isEmpty()) {
+            logger.warn("Registration failed: Password is empty for user: {}", user.getUsername());
+            throw new AuthException(
+                    AuthException.AuthErrorType.INVALID_INPUT,
+                    "Password is required"
             );
         }
 
         // Password confirmation check
         if (!password.equals(confirmPassword)) {
+            logger.warn("Registration failed: Password confirmation does not match for user: {}", user.getUsername());
             throw new AuthException(
                     AuthException.AuthErrorType.PASSWORD_MISMATCH,
                     "Passwords do not match"
             );
         }
+        
+        // Password strength validation
+        if (password.length() < 8) {
+            logger.warn("Registration failed: Password too short for user: {}", user.getUsername());
+            throw new AuthException(
+                    AuthException.AuthErrorType.INVALID_PASSWORD,
+                    "Password must be at least 8 characters long"
+            );
+        }
 
         // Check if username already exists
-        if (usersByUsername.containsKey(user.getUsername())) {
+        String username = user.getUsername();
+        if (username == null || username.trim().isEmpty()) {
+            logger.warn("Registration failed: Username is empty");
+            throw new AuthException(
+                    AuthException.AuthErrorType.INVALID_INPUT,
+                    "Username is required"
+            );
+        }
+        
+        if (usersByUsername.containsKey(username)) {
+            logger.warn("Registration failed: Username already exists - {}", username);
             throw new AuthException(
                     AuthException.AuthErrorType.USERNAME_EXISTS,
                     "Username already exists"
             );
         }
 
-        // Check if email already exists
-        if (usersByEmail.containsKey(user.getEmail())) {
+        // Check if email is valid and not already registered
+        String email = user.getEmail();
+        if (email == null || email.trim().isEmpty() || !email.matches("^[A-Za-z0-9+_.-]+@(.+)$")) {
+            logger.warn("Registration failed: Invalid email format - {}", email);
+            throw new AuthException(
+                    AuthException.AuthErrorType.INVALID_EMAIL,
+                    "Please provide a valid email address"
+            );
+        }
+        
+        if (usersByEmail.containsKey(email)) {
+            logger.warn("Registration failed: Email already registered - {}", email);
             throw new AuthException(
                     AuthException.AuthErrorType.EMAIL_EXISTS,
                     "Email already registered"
@@ -289,16 +371,25 @@ public class AuthService {
         }
 
         try {
-            // Set the user's password and add to storage
-            user.setPassword(password);
-            user.setId(nextUserId++);
-            usersByUsername.put(user.getUsername(), user);
-            usersByEmail.put(user.getEmail(), user);
+            logger.debug("All validations passed, creating user account for: {}", username);
             
-            // Save the updated user list
+            // Hash the password before storing
+            String hashedPassword = PasswordHasher.hashPassword(password);
+            user.setPassword(hashedPassword);
+            user.setId(nextUserId);
+            
+            // Add user to in-memory maps
+            usersByUsername.put(username, user);
+            usersByEmail.put(email, user);
+            
+            // Save to persistent storage
             saveUsers();
             
-            logger.info("User registered successfully: {}", user.getUsername());
+            // Increment ID only after successful save
+            nextUserId++;
+            
+            logger.info("User registered successfully - ID: {}, Username: {}, Email: {}", 
+                user.getId(), username, email);
         } catch (Exception e) {
             // Log the error and throw an AuthException
             logger.error("Registration failed for user {}: {}", user.getUsername(), e.getMessage(), e);

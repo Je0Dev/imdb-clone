@@ -7,7 +7,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Search criteria for filtering content.
+ * Search criteria such as title, year, rating, genre, content type, and sort order for filtering content.
  */
 public class SearchCriteria {
     private String query;

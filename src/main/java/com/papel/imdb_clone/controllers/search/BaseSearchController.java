@@ -11,7 +11,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Base controller class that provides common functionality for search-related controllers.
+ * Base controller class that provides common functionality for search-related controllers such as
+ * SearchFormController and AdvancedSearchController that each implement the SearchFormListener interface that
+ * is used to notify the parent controller when the search button is clicked and the search criteria are built to show
+ * the results in the table below the search form.
  */
 public abstract class BaseSearchController {
     protected static final Logger logger = LoggerFactory.getLogger(BaseSearchController.class);

@@ -10,18 +10,36 @@
     <name>imdb_clone</name>
 
     <properties>
+        <!-- Project Encoding -->
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+        
+        <!-- Java Version -->
+        <java.version>21</java.version>
+        <maven.compiler.source>${java.version}</maven.compiler.source>
+        <maven.compiler.target>${java.version}</maven.compiler.target>
+        
+        <!-- Dependencies Versions -->
         <junit.version>5.10.2</junit.version>
-        <maven.compiler.source>21</maven.compiler.source>
-        <maven.compiler.target>21</maven.compiler.target>
         <javafx.version>21.0.3</javafx.version>
+        <slf4j.version>2.0.13</slf4j.version>
+        <jackson.version>2.17.1</jackson.version>
+        <controlsfx.version>11.2.1</controlsfx.version>
+        <jbcrypt.version>0.4</jbcrypt.version>
+        <commons-text.version>1.11.0</commons-text.version>
+        
+        <!-- Plugin Versions -->
         <javafx.maven.plugin.version>0.0.8</javafx.maven.plugin.version>
+        <maven.compiler.plugin.version>3.13.0</maven.compiler.plugin.version>
+        <exec-maven-plugin.version>3.2.0</exec-maven-plugin.version>
+        <maven-pmd-plugin.version>3.22.0</maven-pmd-plugin.version>
+        
+        <!-- Deployment -->
         <skip.deploy>true</skip.deploy>
     </properties>
 
     <dependencies>
-
-        <!-- JavaFX modules - now using the property for consistent version -->
+        <!-- JavaFX Dependencies -->
         <dependency>
             <groupId>org.openjfx</groupId>
             <artifactId>javafx-controls</artifactId>
@@ -32,7 +50,6 @@
             <artifactId>javafx-fxml</artifactId>
             <version>${javafx.version}</version>
         </dependency>
-        <!-- Added common JavaFX modules for broader compatibility -->
         <dependency>
             <groupId>org.openjfx</groupId>
             <artifactId>javafx-graphics</artifactId>
@@ -43,48 +60,59 @@
             <artifactId>javafx-media</artifactId>
             <version>${javafx.version}</version>
         </dependency>
-
-        <!-- SLF4J API -->
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-api</artifactId>
-            <version>2.0.7</version>
-        </dependency>
-
-        <!-- SLF4J Simple binding -->
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-simple</artifactId>
-            <version>2.0.7</version>
-        </dependency>
         <dependency>
             <groupId>org.openjfx</groupId>
             <artifactId>javafx-web</artifactId>
             <version>${javafx.version}</version>
         </dependency>
-
-        <!-- ControlsFX - Keep an eye on compatibility with JavaFX 21.0.3.
-             If you encounter issues, you might need to check ControlsFX documentation
-             for JavaFX 21 compatibility. -->
+        
+        <!-- UI Components -->
         <dependency>
             <groupId>org.controlsfx</groupId>
             <artifactId>controlsfx</artifactId>
-            <version>11.2.1</version>
+            <version>${controlsfx.version}</version>
         </dependency>
-
-        <!-- Jackson for JSON parsing and Java Time support -->
+        
+        <!-- Logging -->
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <version>${slf4j.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-simple</artifactId>
+            <version>${slf4j.version}</version>
+            <scope>runtime</scope>
+        </dependency>
+        
+        <!-- JSON Processing -->
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
-            <version>2.16.1</version>
+            <version>${jackson.version}</version>
         </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.datatype</groupId>
             <artifactId>jackson-datatype-jsr310</artifactId>
-            <version>2.16.1</version>
+            <version>${jackson.version}</version>
         </dependency>
-
-        <!-- JUnit dependencies -->
+        
+        <!-- Security -->
+        <dependency>
+            <groupId>org.mindrot</groupId>
+            <artifactId>jbcrypt</artifactId>
+            <version>${jbcrypt.version}</version>
+        </dependency>
+        
+        <!-- Utilities -->
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-text</artifactId>
+            <version>${commons-text.version}</version>
+        </dependency>
+        
+        <!-- Testing -->
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-api</artifactId>
@@ -97,36 +125,22 @@
             <version>${junit.version}</version>
             <scope>test</scope>
         </dependency>
-
-        <!-- BCrypt for password hashing -->
-        <dependency>
-            <groupId>org.mindrot</groupId>
-            <artifactId>jbcrypt</artifactId>
-            <version>0.4</version>
-        </dependency>
-
-        <!-- Apache Commons Text for string escaping -->
-        <dependency>
-            <groupId>org.apache.commons</groupId>
-            <artifactId>commons-text</artifactId>
-            <version>1.10.0</version>
-        </dependency>
     </dependencies>
 
     <build>
         <plugins>
+            <!-- Maven Compiler Plugin -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.13.0</version>
+                <version>${maven.compiler.plugin.version}</version>
                 <configuration>
-                    <release>21</release>
-                    <source>24</source>
-                    <target>24</target>
-                    <compilerArgs>--enable-preview
-                        <arg>--add-opens=java.base/java.lang=ALL-UNNAMED</arg>
-                        <arg>--add-opens=java.base/java.util=ALL-UNNAMED</arg>
+                    <release>${java.version}</release>
+                    <compilerArgs>
+                        <arg>-Xlint:all</arg>
                     </compilerArgs>
+                    <showWarnings>true</showWarnings>
+                    <showDeprecation>true</showDeprecation>
                 </configuration>
                 <dependencies>
                     <dependency>
@@ -149,12 +163,9 @@
                     <stripDebug>true</stripDebug>
                     <noHeaderFiles>true</noHeaderFiles>
                     <options>
-                        <option>--add-opens</option>
-                        <option>java.base/java.lang=ALL-UNNAMED</option>
-                        <option>--add-opens</option>
-                        <option>java.base/java.util=ALL-UNNAMED</option>
-                        <option>--add-opens</option>
-                        <option>java.base/java.security=ALL-UNNAMED</option>
+                        <option>--add-opens=java.base/java.lang=ALL-UNNAMED</option>
+                        <option>--add-opens=java.base/java.util=ALL-UNNAMED</option>
+                        <option>--add-opens=java.base/java.security=ALL-UNNAMED</option>
                     </options>
                 </configuration>
                 <executions>
@@ -172,10 +183,11 @@
                     </execution>
                 </executions>
             </plugin>
+            <!-- Exec Maven Plugin -->
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>exec-maven-plugin</artifactId>
-                <version>3.1.0</version>
+                <version>${exec-maven-plugin.version}</version>
                 <configuration>
                     <mainClass>com.papel.imdb_clone.tools.UserDataRegenerator</mainClass>
                 </configuration>
@@ -189,10 +201,18 @@
                     <skip>${skip.deploy}</skip>
                 </configuration>
             </plugin>
+            <!-- PMD Plugin for Code Analysis -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-pmd-plugin</artifactId>
-                <version>3.21.0</version>
+                <version>${maven-pmd-plugin.version}</version>
+                <dependencies>
+                    <dependency>
+                        <groupId>net.sourceforge.pmd</groupId>
+                        <artifactId>pmd-java</artifactId>
+                        <version>6.55.0</version>
+                    </dependency>
+                </dependencies>
                 <configuration>
                     <rulesets>
                         <ruleset>/category/java/bestpractices.xml/UnusedImports</ruleset>

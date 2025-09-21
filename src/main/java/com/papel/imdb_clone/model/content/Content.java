@@ -25,6 +25,7 @@ public abstract class Content {
     private List<Actor> actors = new ArrayList<>();
     private static final Logger logger = LoggerFactory.getLogger(Content.class);
     private Object contentType;
+    private String series;
 
 
     /**
@@ -42,7 +43,7 @@ public abstract class Content {
         this.director = director;
         this.userRatings = new HashMap<>();
         this.imdbRating = imdbRating;
-        
+
         // Initialize release date and year
         if (year != null) {
             this.year = new Date(year.getTime());
@@ -285,5 +286,9 @@ public abstract class Content {
 
     public Object getContentType() {
         return contentType;
+    }
+
+    public String getSeries() {
+        return series;
     }
 }

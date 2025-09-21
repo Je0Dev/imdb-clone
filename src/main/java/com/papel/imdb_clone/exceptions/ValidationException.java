@@ -1,25 +1,37 @@
 package com.papel.imdb_clone.exceptions;
 
+import java.io.Serializable;
 import java.util.*;
 
 /**
  * Unified exception for validation errors throughout the application.
  * Supports both simple error messages and field-level validation errors.
  */
-public class ValidationException extends RuntimeException {
-    //field errors
-    public final Map<String, List<String>> fieldErrors = new HashMap<>();
-    private final Map<String, Object> details = new HashMap<>();
-
+public class ValidationException extends RuntimeException implements Serializable {
+    private static final long serialVersionUID = 1L;
+    // Field errors - using LinkedHashMap for predictable iteration order
+    final Map<String, List<String>> fieldErrors;
+    
+    // Transient as it may contain non-serializable objects
+    private final transient Map<String, Object> details;
+    
+    // Error code for the exception
+    private final String errorCode;
+    
+    // Initialize collections in constructor to ensure they're never null
+    {
+        fieldErrors = new LinkedHashMap<>();
+        details = new LinkedHashMap<>();
+    }
 
     /**
      * Creates a new ValidationException with all possible parameters.
      */
     public ValidationException(String message, String errorCode,
-                               Map<String, List<String>> fieldErrors,
-                               Throwable cause) {
+                             Map<String, List<String>> fieldErrors,
+                             Throwable cause) {
         super(message, cause);
-        //set error code
+        this.errorCode = errorCode;
         if (fieldErrors != null) {
             this.fieldErrors.putAll(fieldErrors);
         }

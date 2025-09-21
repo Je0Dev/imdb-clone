@@ -135,7 +135,8 @@ public class SearchFormController extends BaseSearchController {
             } else {
                 logger.warn("Search form listener is not set");
             }
-            
+            // notify about search request
+            notifySearchCriteriaChanged(criteria);
             actionEvent.consume();
             updateDropdownButtonText(false);
         } catch (Exception e) {

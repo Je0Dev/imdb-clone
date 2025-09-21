@@ -1,44 +1,53 @@
 package com.papel.imdb_clone.controllers.search;
 
-import com.papel.imdb_clone.enums.Genre;
 import com.papel.imdb_clone.model.content.Content;
 import com.papel.imdb_clone.model.content.Movie;
 import com.papel.imdb_clone.model.content.Series;
 import javafx.application.Platform;
 import javafx.beans.property.SimpleStringProperty;
-import javafx.scene.control.TableCell;
-import javafx.scene.control.TableColumn;
-
-import java.util.Optional;
-import java.util.stream.Collectors;
 import javafx.collections.FXCollections;
-import javafx.collections.ObservableList;
-import javafx.concurrent.Task;
-import javafx.fxml.FXML;
+import javafx.geometry.Insets;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
-import javafx.scene.layout.*;
-import javafx.geometry.Insets;
-import javafx.scene.control.ButtonBar.ButtonData;
+import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.VBox;
+import javafx.fxml.FXML;
+import javafx.collections.ObservableList;
+import javafx.concurrent.Task;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
+import java.time.Year;
+import java.util.*;
 
 /**
  * Main controller for the advanced search functionality.
- * Coordinates between the search form and results table.
+ * Coordinates between the search form and results table that are used to display the search results which are
+ * built using the search criteria from the search form.
  */
 public class AdvancedSearchController extends BaseSearchController {
     private static final Logger logger = LoggerFactory.getLogger(AdvancedSearchController.class);
-    public TableView resultsTable;
-    public TableColumn resultTitleColumn;
-    public TableColumn resultTypeColumn;
-    public TableColumn resultYearColumn;
-    public TableColumn resultGenreColumn;
+    
+    @FXML
+    private TableView<Content> resultsTable;
+    
+    @FXML
+    private TableColumn<Content, String> resultTitleColumn;
+    
+    @FXML
+    private TableColumn<Content, String> resultTypeColumn;
+    
+    @FXML
+    private TableColumn<Content, Integer> resultYearColumn;
+    
+    @FXML
+    private TableColumn<Content, String> resultGenreColumn;
 
     @FXML
     private BorderPane mainContainer;
@@ -54,8 +63,8 @@ public class AdvancedSearchController extends BaseSearchController {
     private Label resultsCountLabel;
 
     private Task<ObservableList<Content>> currentSearchTask;
-    private final long defaultCacheExpiration = 30;
-    private final TimeUnit timeUnit = TimeUnit.MINUTES;
+    private static final long DEFAULT_CACHE_EXPIRATION = 30;
+    private static final TimeUnit CACHE_TIME_UNIT = TimeUnit.MINUTES;
     private Map<String, Object> data;
 
     /**
@@ -67,14 +76,33 @@ public class AdvancedSearchController extends BaseSearchController {
     }
 
     /**
-     * Initializes the table columns with their respective cell value factories.
+     * Table column for displaying content titles.
      */
-    // Class fields for table columns
     private TableColumn<Content, String> titleColumn;
+    
+    /**
+     * Table column for displaying content types (Movie/Series).
+     */
     private TableColumn<Content, String> typeColumn;
+    
+    /**
+     * Table column for displaying release years.
+     */
     private TableColumn<Content, Integer> yearColumn;
+    
+    /**
+     * Table column for displaying genres.
+     */
     private TableColumn<Content, String> genreColumn;
+    
+    /**
+     * Table column for displaying number of seasons (Series only).
+     */
     private TableColumn<Content, Integer> seasonsColumn;
+    
+    /**
+     * Table column for displaying total number of episodes (Series only).
+     */
     private TableColumn<Content, Integer> episodesColumn;
 
     private void initializeTableColumns() {
@@ -104,8 +132,8 @@ public class AdvancedSearchController extends BaseSearchController {
             yearColumn.setCellValueFactory(cellData -> {
                 Content content = cellData.getValue();
                 if (content != null && content.getReleaseDate() != null) {
-                    // getYear() returns year - 1900, so we need to add 1900 to get the actual year
-                    int year = content.getReleaseDate().getYear() + 1900;
+                    // Use Year class to get the year value
+                    int year = Year.of(content.getReleaseDate().getYear() + 1900).getValue();
                     return new javafx.beans.property.SimpleIntegerProperty(year).asObject();
                 }
                 return new javafx.beans.property.SimpleIntegerProperty(0).asObject();
@@ -639,7 +667,10 @@ public class AdvancedSearchController extends BaseSearchController {
             
             // Add series-specific details if it's a series
             if (!(content instanceof Movie)) {
-                // Add any series-specific details here if needed
+                //add  any series details here
+                Label seriesLabel = new Label("Series: " + content.getSeries());
+                seriesLabel.setStyle("-fx-padding: 0 0 10 0;");
+                contentBox.getChildren().add(seriesLabel);
             }
             
             // Add instructions for editing
@@ -729,7 +760,6 @@ public class AdvancedSearchController extends BaseSearchController {
     @FXML
     public void handleTableClick() {
         if (resultsTable != null) {
-            @SuppressWarnings("unchecked")
             TableView<Content> tableView = (TableView<Content>) resultsTable;
             Content selectedContent = tableView.getSelectionModel().getSelectedItem();
             if (selectedContent != null) {

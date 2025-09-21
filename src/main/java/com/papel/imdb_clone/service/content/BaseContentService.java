@@ -2,9 +2,10 @@ package com.papel.imdb_clone.service.content;
 
 import com.papel.imdb_clone.model.content.Content;
 
+import java.time.Year;
 import java.util.*;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
  * Base abstract class for content services providing common CRUD operations.
@@ -115,7 +116,7 @@ public abstract class BaseContentService<T extends Content> implements ContentSe
             //return first content that matches the title and year
             return contentList.stream()
                     .filter(content -> content.getTitle().equalsIgnoreCase(title) && 
-                                     content.getReleaseDate().getYear() == year)
+                                     Year.of(content.getReleaseDate().getYear() + 1900).getValue() == year)
                     .findFirst();
         } finally {
             //unlock the read lock when done, which means that other threads can read the list

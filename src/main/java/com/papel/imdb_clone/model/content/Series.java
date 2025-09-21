@@ -85,9 +85,7 @@ public class Series extends Content {
         }
         return seasons;
     }
-    
 
-    
     public int getTotalSeasons() {
         return seasons != null ? seasons.size() : 0;
     }

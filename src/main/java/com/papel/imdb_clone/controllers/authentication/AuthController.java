@@ -20,7 +20,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.URL;
-import java.util.List;
 import java.util.Map;
 import java.util.ResourceBundle;
 
@@ -233,14 +232,13 @@ public class AuthController extends BaseController {
 
     /**
      * Handles unexpected errors by showing an error dialog and logging the details.
-     * 
-     * @param operation The operation that was being performed when the error occurred
+     *
      * @param e The exception that was thrown
      */
-    private void handleUnexpectedError(String operation, Exception e) {
-        String errorMessage = String.format("An unexpected error occurred during %s. Please try again.", operation);
+    private void handleUnexpectedError(Exception e) {
+        String errorMessage = String.format("An unexpected error occurred during %s. Please try again.", "login");
         UIUtils.showError("Error", errorMessage);
-        logger.error("Unexpected error during {}: {}", operation, e.getMessage(), e);
+        logger.error("Unexpected error during {}: {}", "login", e.getMessage(), e);
     }
 
     /**
@@ -301,7 +299,7 @@ public class AuthController extends BaseController {
             handleValidationError(e, loginErrorLabel);
         } catch (Exception e) {
             logger.error("Unexpected error during login: {}", e.getMessage(), e);
-            handleUnexpectedError("login", e);
+            handleUnexpectedError(e);
         }
     }
 
@@ -444,10 +442,12 @@ public class AuthController extends BaseController {
         registerErrorLabel.setVisible(false);
     }
 
+    //get session token
     public String getSessionToken() {
         return sessionToken;
     }
 
+    //set session token
     public void setSessionToken(String sessionToken) {
         this.sessionToken = sessionToken;
     }

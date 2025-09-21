@@ -8,16 +8,7 @@ import java.util.logging.Logger;
 
 /**
  * Application configuration management class.
- * <p>
- * This class follows the Singleton pattern to ensure a single point of access
- * to application configuration. It loads configuration from both the
- * application.properties file and system properties, with system properties
- * taking precedence.
- * </p>
- * <p>
- * The configuration is loaded once during the first instantiation and cached
- * for the lifetime of the application.
- * </p>
+ *
  */
 public class ApplicationConfig {
     private static final Logger LOGGER = Logger.getLogger(ApplicationConfig.class.getName());
