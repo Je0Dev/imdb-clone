@@ -1,8 +1,24 @@
 package com.papel.imdb_clone.controllers.content;
 
+
 import com.papel.imdb_clone.enums.Genre;
 import com.papel.imdb_clone.model.content.Content;
+import com.papel.imdb_clone.service.content.ContentService;
+import com.papel.imdb_clone.service.content.MoviesService;
+import com.papel.imdb_clone.service.content.SeriesService;
 import com.papel.imdb_clone.service.navigation.NavigationService;
+import com.papel.imdb_clone.service.search.ServiceLocator;
+import com.papel.imdb_clone.util.UIUtils;
+import javafx.collections.FXCollections;
+import javafx.fxml.FXML;
+import javafx.scene.Node;
+import javafx.scene.control.*;
+import javafx.stage.Stage;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 import com.papel.imdb_clone.util.UIUtils;
 import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
@@ -14,20 +30,27 @@ import org.slf4j.LoggerFactory;
 
 import java.util.*;
 
+import static com.papel.imdb_clone.util.UIUtils.showError;
+
 /**
  * Controller for the Edit Content view.
  * Handles editing of content details including title, type, year, rating, etc.
  */
-public class EditContentController {
+/**
+ * Controller for editing content of a specific type.
+ * @param <T> The type of content being edited (e.g., Movie, Series)
+ */
+public class EditContentController<T extends Content> {
     private static final Logger logger = LoggerFactory.getLogger(EditContentController.class);
-    
+
     // Services
     private final NavigationService navigationService;
-    
+
     // Content being edited
-    private Content content;
+    private T content;
+    private ContentService<T> contentService;
     private static final int DEFAULT_RUNTIME = 0;
-    
+
     // FXML injected fields
     @FXML private TextField titleField;
     @FXML private ComboBox<String> typeComboBox;
@@ -35,7 +58,7 @@ public class EditContentController {
     @FXML private TextField ratingField;
     @FXML private TextField directorField;
     @FXML private TextArea plotArea;
-    
+
     // Genre checkboxes
     @FXML private CheckBox actionCheckBox;
     @FXML private CheckBox adventureCheckBox;
@@ -54,36 +77,74 @@ public class EditContentController {
     @FXML private CheckBox thrillerCheckBox;
     @FXML private CheckBox warCheckBox;
     @FXML private CheckBox westernCheckBox;
-    
+
     @FXML private Label statusLabel;
-    
+
     /**
      * Constructor initializes required services.
      */
     public EditContentController() {
         this.navigationService = NavigationService.getInstance();
     }
-    
+
     /**
      * Initializes the controller class.
      */
     @FXML
     public void initialize() {
         try {
-            // Initialize type combo box
-            typeComboBox.setItems(FXCollections.observableArrayList(
-                "Movie", "TV Show"
-            ));
-            
-            // Set up input validation
             setupValidation();
-            
+            // Get the content service based on the content type
+            String contentType = (String) navigationService.getUserData("contentType");
+            if (contentType != null) {
+                if (contentType.equalsIgnoreCase("movie")) {
+                    @SuppressWarnings("unchecked")
+                    ContentService<T> movieService = (ContentService<T>) ServiceLocator.getInstance().getService(MoviesService.class);
+                    this.contentService = movieService;
+                } else if (contentType.equalsIgnoreCase("series")) {
+                    @SuppressWarnings("unchecked")
+                    ContentService<T> seriesService = (ContentService<T>) ServiceLocator.getInstance().getService(SeriesService.class);
+                    this.contentService = seriesService;
+                }
+            }
+
+            if (this.contentService == null) {
+                logger.error("Failed to initialize content service for type: {}", contentType);
+                showError("Error", "Failed to initialize content service");
+                navigationService.goBack();
+                return;
+            }
+
+            // Get the content ID from the navigation data
+            Object contentIdObj = navigationService.getUserData("contentId");
+            if (contentIdObj != null) {
+                int contentId = (int) contentIdObj;
+                logger.info("Loading content with ID: {}", contentId);
+
+                // Load the content by ID
+                @SuppressWarnings("unchecked")
+                Optional<T> contentOpt = (Optional<T>) contentService.getById(contentId);
+                if (contentOpt.isPresent()) {
+                    this.content = contentOpt.get();
+                    loadContent(this.content);
+                    logger.info("Successfully loaded content: {}", this.content.getTitle());
+                } else {
+                    logger.error("Content not found with ID: {}", contentId);
+                    showError("Error", "Content not found. Please try again.");
+                    navigationService.goBack();
+                }
+            } else {
+                logger.error("No content ID provided for editing");
+                showError("Error", "No content selected for editing.");
+                navigationService.goBack();
+            }
         } catch (Exception e) {
-            logger.error("Error initializing EditContentController", e);
+            logger.error("Error initializing EditContentController: {}", e.getMessage(), e);
             showError("Initialization Error", "Failed to initialize the edit form: " + e.getMessage());
+            navigationService.goBack();
         }
     }
-    
+
     /**
      * Sets up input validation for form fields.
      */
@@ -101,7 +162,7 @@ public class EditContentController {
                 }
             }
         });
-        
+
         // Allow only numeric input for rating (0.0 to 10.0)
         ratingField.textProperty().addListener((observable, oldValue, newValue) -> {
             if (!newValue.matches("\\d*\\.?\\d*") && !newValue.isEmpty()) {
@@ -119,56 +180,57 @@ public class EditContentController {
                 }
             }
         });
-        
+
     }
-    
+
     /**
      * Sets the content to be edited and loads its data into the form.
-     * 
+     *
      * @param content The content to edit
      */
+    @SuppressWarnings("unchecked")
     public void setContent(Content content) {
-        this.content = content;
-        loadContent(content);
+        this.content = (T) content;
+        loadContent(this.content);
     }
-    
+
     /**
      * Loads content data into the form for editing.
-     * 
+     *
      * @param content The content to edit
      */
-    private void loadContent(Content content) {
+    private void loadContent(T content) {
         if (content == null) {
             logger.warn("Attempted to load null content");
             return;
         }
-        
+
         this.content = content;
-        
+
         // Populate form fields
         titleField.setText(content.getTitle());
-        
+
         // Set the first genre as the main genre in the combo box
         List<Genre> genres = content.getGenres();
         if (genres != null && !genres.isEmpty()) {
             typeComboBox.setValue(genres.getFirst().getDisplayName().toString());
         }
-        
+
         // Format the year
         if (content.getYear() != null) {
             Calendar cal = Calendar.getInstance();
             cal.setTime(content.getYear());
             yearField.setText(String.valueOf(cal.get(Calendar.YEAR)));
         }
-        
+
         // Set rating
         if (content.getImdbRating() != null) {
             ratingField.setText(String.format("%.1f", content.getImdbRating()));
         }
-        
+
         directorField.setText(content.getDirector());
         plotArea.setText(content.getTitle()); // Using title as plot since there's no plot field in Content
-        
+
         // Set genre checkboxes
         if (genres != null) {
             for (Genre genre : genres) {
@@ -195,86 +257,79 @@ public class EditContentController {
             }
         }
     }
-    
-    /**
-     * Handles the save button action.
-     */
-    @FXML
-    private void handleSave() {
-        if (!validateForm()) {
-            return;
-        }
-        
+
+
+    {
+        logger.warn("Invalid rating format");
+        // Update genres
+        List<Genre> selectedGenres = new ArrayList<>();
+        if (actionCheckBox.isSelected()) selectedGenres.add(Genre.ACTION);
+        if (adventureCheckBox.isSelected()) selectedGenres.add(Genre.ADVENTURE);
+        if (animationCheckBox.isSelected()) selectedGenres.add(Genre.ANIMATION);
+        if (comedyCheckBox.isSelected()) selectedGenres.add(Genre.COMEDY);
+        if (crimeCheckBox.isSelected()) selectedGenres.add(Genre.CRIME);
+        if (dramaCheckBox.isSelected()) selectedGenres.add(Genre.DRAMA);
+        if (familyCheckBox.isSelected()) selectedGenres.add(Genre.FAMILY);
+        if (fantasyCheckBox.isSelected()) selectedGenres.add(Genre.FANTASY);
+        if (historyCheckBox.isSelected()) selectedGenres.add(Genre.HISTORY);
+        if (horrorCheckBox.isSelected()) selectedGenres.add(Genre.HORROR);
+        if (musicCheckBox.isSelected()) selectedGenres.add(Genre.MUSICAL);
+        if (mysteryCheckBox.isSelected()) selectedGenres.add(Genre.MYSTERY);
+        if (romanceCheckBox.isSelected()) selectedGenres.add(Genre.ROMANCE);
+        if (scifiCheckBox.isSelected()) selectedGenres.add(Genre.SCI_FI);
+        if (thrillerCheckBox.isSelected()) selectedGenres.add(Genre.THRILLER);
+        if (warCheckBox.isSelected()) selectedGenres.add(Genre.WAR);
+        if (westernCheckBox.isSelected()) selectedGenres.add(Genre.WESTERN);
+
+        // Update content fields
+        content.setDirector(directorField.getText().trim());
+
+        // Update year
         try {
-            // Update content object with form data
-            content.title = titleField.getText().trim();
-            
-            // Update genres
-            List<Genre> selectedGenres = new ArrayList<>();
-            if (actionCheckBox.isSelected()) selectedGenres.add(Genre.ACTION);
-            if (adventureCheckBox.isSelected()) selectedGenres.add(Genre.ADVENTURE);
-            if (animationCheckBox.isSelected()) selectedGenres.add(Genre.ANIMATION);
-            if (comedyCheckBox.isSelected()) selectedGenres.add(Genre.COMEDY);
-            if (crimeCheckBox.isSelected()) selectedGenres.add(Genre.CRIME);
-            if (dramaCheckBox.isSelected()) selectedGenres.add(Genre.DRAMA);
-            if (familyCheckBox.isSelected()) selectedGenres.add(Genre.FAMILY);
-            if (fantasyCheckBox.isSelected()) selectedGenres.add(Genre.FANTASY);
-            if (historyCheckBox.isSelected()) selectedGenres.add(Genre.HISTORY);
-            if (horrorCheckBox.isSelected()) selectedGenres.add(Genre.HORROR);
-            if (musicCheckBox.isSelected()) selectedGenres.add(Genre.MUSICAL);
-            if (mysteryCheckBox.isSelected()) selectedGenres.add(Genre.MYSTERY);
-            if (romanceCheckBox.isSelected()) selectedGenres.add(Genre.ROMANCE);
-            if (scifiCheckBox.isSelected()) selectedGenres.add(Genre.SCI_FI);
-            if (thrillerCheckBox.isSelected()) selectedGenres.add(Genre.THRILLER);
-            if (warCheckBox.isSelected()) selectedGenres.add(Genre.WAR);
-            if (westernCheckBox.isSelected()) selectedGenres.add(Genre.WESTERN);
-            
-            // Update content fields
-            content.setDirector(directorField.getText().trim());
-            
-            // Update year
-            try {
-                int year = Integer.parseInt(yearField.getText().trim());
-                Calendar cal = Calendar.getInstance();
-                cal.set(Calendar.YEAR, year);
-                content.setYear(cal.getTime());
-                content.setStartYear(year);
-            } catch (NumberFormatException e) {
-                logger.warn("Invalid year format");
-            }
-            
-            // Update rating
-            try {
-                content.setImdbRating(Double.parseDouble(ratingField.getText().trim()));
-            } catch (NumberFormatException e) {
-                logger.warn("Invalid rating format");
-            }
-            
-            // Update genres
-            content.setGenres(selectedGenres);
-            
-            showStatus();
-            
-            // Close the edit window after a short delay
-            new java.util.Timer().schedule(
+            int year = Integer.parseInt(yearField.getText().trim());
+            Calendar cal = Calendar.getInstance();
+            cal.set(Calendar.YEAR, year);
+            content.setYear(cal.getTime());
+            content.setStartYear(year);
+        } catch (NumberFormatException e) {
+            logger.warn("Invalid year format");
+        }
+
+        // Update rating
+        try {
+            content.setImdbRating(Double.parseDouble(ratingField.getText().trim()));
+        } catch (NumberFormatException e) {
+            logger.warn("Invalid rating format");
+        }
+
+        // Update genres
+        content.setGenres(selectedGenres);
+
+        showStatus();
+
+        // Close the edit window after a short delay
+        new java.util.Timer().schedule(
                 new java.util.TimerTask() {
                     @Override
                     public void run() {
                         javafx.application.Platform.runLater(() -> {
                             Stage stage = (Stage) statusLabel.getScene().getWindow();
                             stage.close();
+                            try {
+                                contentService.update(content);
+                                navigationService.goBack();
+                            } catch (Exception e) {
+                                logger.error("Error saving content", e);
+                                showError("Save Error", "Failed to save changes: " + e.getMessage());
+                            }
                         });
                     }
                 },
                 1000
-            );
-            
-        } catch (Exception e) {
-            logger.error("Error saving content", e);
-            showError("Save Error", "Failed to save changes: " + e.getMessage());
-        }
+        );
+
     }
-    
+
     /**
      * Handles the cancel button action.
      */
@@ -290,7 +345,7 @@ public class EditContentController {
                     return;
                 }
             }
-            
+
             // Fallback: try to get the window from any other available component
             for (Node node : new Node[]{titleField, typeComboBox, yearField}) {
                 if (node != null && node.getScene() != null) {
@@ -301,26 +356,14 @@ public class EditContentController {
                     }
                 }
             }
-            
+
             logger.warn("Could not close window: No valid window reference found");
         } catch (Exception e) {
             logger.error("Error while trying to close the window", e);
         }
     }
-    
-    /**
-     * Handles the back button action.
-     */
-    @FXML
-    private void handleBack() {
-        handleCancel();
-    }
-    
-    /**
-     * Validates the form inputs.
-     * 
-     * @return true if the form is valid, false otherwise
-     */
+
+
     private boolean validateForm() {
         StringBuilder errors = new StringBuilder();
         
@@ -375,7 +418,7 @@ public class EditContentController {
      * @param message The error message to display
      */
     private void showError(String title, String message) {
-        UIUtils.showError(title, message);
+        showError(title, message);
         statusLabel.setText("Error: " + title);
     }
     

@@ -801,11 +801,52 @@ public class SeriesController extends BaseController {
     @FXML
     private void handleRateSeries(ActionEvent event) {
         Series selected = seriesTable.getSelectionModel().getSelectedItem();
-        if (selected != null) {
-            showRatingDialog(selected);
-        } else {
+        if (selected == null) {
             showAlert("No Selection", "Please select a series to rate.");
+            return;
         }
+
+        // Create a simple dialog to get the rating
+        TextInputDialog dialog = new TextInputDialog("5.0");
+        dialog.setTitle("Rate Series");
+        dialog.setHeaderText(String.format("Rate %s (%d) on a scale of 0-10", 
+            selected.getTitle(), selected.getReleaseYear()));
+        dialog.setContentText("Rating (0-10):");
+
+        // Show the dialog and process the result
+        dialog.showAndWait().ifPresent(ratingStr -> {
+            try {
+                double rating = Double.parseDouble(ratingStr);
+                if (rating < 0 || rating > 10) {
+                    showAlert("Invalid Rating", "Please enter a rating between 0 and 10");
+                    return;
+                }
+
+                // Get the current user ID
+                int currentUserId = getCurrentUserId();
+                
+                // Save the user's rating
+                selected.setUserRating(currentUserId, (int) (rating * 2)); // Convert 0-10 to 0-20 for storage
+                
+                // Update the series in the service
+                seriesService.update(selected);
+                
+                // Show success message
+                showAlert("Success", String.format("You rated %s: %.1f/10\nNew average rating: %.1f/10",
+                    selected.getTitle(),
+                    rating,
+                    selected.getImdbRating()));
+                
+                // Refresh the series list to show updated ratings
+                loadSeries();
+                
+            } catch (NumberFormatException e) {
+                showAlert("Invalid Input", "Please enter a valid number between 0 and 10");
+            } catch (Exception e) {
+                logger.error("Error rating series: {}", e.getMessage(), e);
+                showAlert("Error", "Failed to save rating: " + e.getMessage());
+            }
+        });
     }
     
     /**

@@ -13,6 +13,7 @@ import java.util.Map;
  * Can be used for any type of duplicate entry (username, email, content, etc.).
  */
 public class DuplicateEntryException extends InvalidEntityException {
+    private static final long serialVersionUID = 1L;
 
 
     /**

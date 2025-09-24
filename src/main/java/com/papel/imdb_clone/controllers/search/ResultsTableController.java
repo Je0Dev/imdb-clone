@@ -189,13 +189,45 @@ public class ResultsTableController extends BaseSearchController {
             // Update the results count
             updateResultsCount(searchResults.size());
             
+            // Check if we have any series in the results and log detailed info
+            boolean hasSeries = false;
+            int seriesCount = 0;
+            for (Content content : results) {
+                if (content instanceof com.papel.imdb_clone.model.content.Series) {
+                    hasSeries = true;
+                    seriesCount++;
+                    com.papel.imdb_clone.model.content.Series series = (com.papel.imdb_clone.model.content.Series) content;
+                    logger.debug("Found series: {} with {} seasons and {} total episodes", 
+                        series.getTitle(), 
+                        series.getSeasons().size(),
+                        series.getSeasons().stream().mapToInt(s -> s.getEpisodes().size()).sum());
+                }
+            }
+            
+            logger.info("Found {} series in search results. Has series: {}", seriesCount, hasSeries);
+            
+            // Update column visibility based on content type
+            if (resultSeasonsColumn != null) {
+                logger.debug("Setting seasons column visibility to: {}", hasSeries);
+                resultSeasonsColumn.setVisible(hasSeries);
+            }
+            if (resultEpisodesColumn != null) {
+                logger.debug("Setting episodes column visibility to: {}", hasSeries);
+                resultEpisodesColumn.setVisible(hasSeries);
+            }
+            
             // Make sure the table is visible
             if (resultsTable != null) {
                 // Ensure the table is visible
                 resultsTable.setVisible(true);
                 
                 // Log the table state for debugging
-                for (String s : Arrays.asList("Table state after update:", "  - Table items: " + (resultsTable.getItems() != null ? resultsTable.getItems().size() : "null"), "  - Table columns: " + (resultsTable.getColumns() != null ? resultsTable.getColumns().size() : "null"))) {
+                for (String s : Arrays.asList("Table state after update:", 
+                    "  - Table items: " + (resultsTable.getItems() != null ? resultsTable.getItems().size() : "null"), 
+                    "  - Table columns: " + (resultsTable.getColumns() != null ? resultsTable.getColumns().size() : "null"),
+                    "  - Has series: " + hasSeries,
+                    "  - Seasons column visible: " + (resultSeasonsColumn != null ? resultSeasonsColumn.isVisible() : "N/A"),
+                    "  - Episodes column visible: " + (resultEpisodesColumn != null ? resultEpisodesColumn.isVisible() : "N/A"))) {
                     logger.info(s);
                 }
 
@@ -252,7 +284,7 @@ public class ResultsTableController extends BaseSearchController {
         try {
             logger.debug("Setting up table columns...");
             
-            // Set column weights for the custom resize policy
+            // Set column weights(means how much space each column should take) for the custom resize policy
             resultTitleColumn.getProperties().put("weight", 3.0);
             resultYearColumn.getProperties().put("weight", 1.0);
             resultTypeColumn.getProperties().put("weight", 1.0);
@@ -358,15 +390,77 @@ public class ResultsTableController extends BaseSearchController {
                             content.getDirector() : "N/A";
                     return new SimpleStringProperty(director);
                 });
-                
-                // Column is already defined in FXML, no need to add it again
             }
-
-            logger.info("Table columns setup completed. Total columns: {}", resultsTable.getColumns().size());
             
+            // Set up seasons column
+            if (resultSeasonsColumn != null) {
+                logger.debug("Setting up seasons column");
+                resultSeasonsColumn.setCellValueFactory(cellData -> {
+                    Content content = cellData.getValue();
+                    if (content instanceof com.papel.imdb_clone.model.content.Series) {
+                        com.papel.imdb_clone.model.content.Series series = (com.papel.imdb_clone.model.content.Series) content;
+                        int seasonCount = series.getSeasons().size();
+                        logger.trace("Series '{}' has {} seasons", series.getTitle(), seasonCount);
+                        return new SimpleIntegerProperty(seasonCount).asObject();
+                    }
+                    return new SimpleIntegerProperty(0).asObject();
+                });
+                
+                // Add cell factory to handle the display
+                resultSeasonsColumn.setCellFactory(column -> new TableCell<Content, Integer>() {
+                    @Override
+                    protected void updateItem(Integer item, boolean empty) {
+                        super.updateItem(item, empty);
+                        if (empty || item == null) {
+                            setText("");
+                        } else {
+                            setText(String.valueOf(item));
+                            setStyle("-fx-alignment: CENTER;");
+                        }
+                    }
+                });
+                
+                // Initialize as not visible
+                resultSeasonsColumn.setVisible(false);
+            }
+            
+            // Set up episodes column
+            if (resultEpisodesColumn != null) {
+                logger.debug("Setting up episodes column");
+                resultEpisodesColumn.setCellValueFactory(cellData -> {
+                    Content content = cellData.getValue();
+                    if (content instanceof com.papel.imdb_clone.model.content.Series) {
+                        com.papel.imdb_clone.model.content.Series series = (com.papel.imdb_clone.model.content.Series) content;
+                        int episodeCount = series.getSeasons().stream()
+                                .mapToInt(s -> s.getEpisodes().size())
+                                .sum();
+                        logger.trace("Series '{}' has {} total episodes", series.getTitle(), episodeCount);
+                        return new SimpleIntegerProperty(episodeCount).asObject();
+                    }
+                    return new SimpleIntegerProperty(0).asObject();
+                });
+                
+                // Add cell factory to handle the display
+                resultEpisodesColumn.setCellFactory(column -> new TableCell<Content, Integer>() {
+                    @Override
+                    protected void updateItem(Integer item, boolean empty) {
+                        super.updateItem(item, empty);
+                        if (empty || item == null) {
+                            setText("");
+                        } else {
+                            setText(String.valueOf(item));
+                            setStyle("-fx-alignment: CENTER;");
+                        }
+                    }
+                });
+                
+                // Initialize as not visible
+                resultEpisodesColumn.setVisible(false);
+            }
         } catch (Exception e) {
             logger.error("Error setting up table columns", e);
-        }    }
+        }
+    }
 
     /**
      * Shows the content details for the selected content item.

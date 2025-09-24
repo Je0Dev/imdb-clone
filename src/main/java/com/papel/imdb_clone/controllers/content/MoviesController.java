@@ -42,7 +42,7 @@ public class MoviesController extends BaseController {
     
     private MoviesService moviesService;
     private final NavigationService navigationService;
-    
+
     public MoviesController() {
         super();
         this.navigationService = NavigationService.getInstance();
@@ -51,7 +51,7 @@ public class MoviesController extends BaseController {
     /**
      * Handles the delete movie button click event.
      * Shows a confirmation dialog and deletes the selected movie if confirmed.
-     * 
+     *
      * @param event The action event that triggered this method
      */
     @FXML
@@ -66,7 +66,7 @@ public class MoviesController extends BaseController {
         Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
         alert.setTitle("Confirm Deletion");
         alert.setHeaderText("Delete Movie");
-        alert.setContentText(String.format("Are you sure you want to delete '%s'?\nThis action cannot be undone.", 
+        alert.setContentText(String.format("Are you sure you want to delete '%s'?\nThis action cannot be undone.",
             selectedMovie.getTitle()));
 
         Optional<ButtonType> result = alert.showAndWait();
@@ -74,16 +74,16 @@ public class MoviesController extends BaseController {
             try {
                 // Call the service to delete the movie
                 // For example: moviesService.deleteMovie(selectedMovie.getId());
-                
+
                 // Remove from the table
                 movieTable.getItems().remove(selectedMovie);
-                
-                showAlert("Success", String.format("Movie '%s' was deleted successfully.", 
+
+                showAlert("Success", String.format("Movie '%s' was deleted successfully.",
                     selectedMovie.getTitle()));
-                
+
                 // Update the item count
                 updateItemCount();
-                
+
             } catch (Exception e) {
                 logger.error("Error deleting movie: " + e.getMessage(), e);
                 showAlert("Error", "Failed to delete movie: " + e.getMessage());
@@ -101,7 +101,7 @@ public class MoviesController extends BaseController {
     /**
      * Handles the rate movie button click event.
      * Opens a dialog to allow the user to rate the selected movie.
-     * 
+     *
      * @param event The action event that triggered this method
      */
     @FXML
@@ -111,70 +111,68 @@ public class MoviesController extends BaseController {
             showAlert("No Selection", "Please select a movie to rate.");
             return;
         }
-        
-        // Create a dialog to get the rating
-        Dialog<Pair<Double, String>> dialog = new Dialog<>();
+
+        // Create a simple dialog to get the rating
+        TextInputDialog dialog = new TextInputDialog("5.0");
         dialog.setTitle("Rate Movie");
-        dialog.setHeaderText(String.format("Rate: %s (%d)", selectedMovie.getTitle(), selectedMovie.getReleaseYear()));
-        
-        // Set the button types
-        ButtonType rateButtonType = new ButtonType("Rate", ButtonBar.ButtonData.OK_DONE);
-        dialog.getDialogPane().getButtonTypes().addAll(rateButtonType, ButtonType.CANCEL);
-        
-        // Create the rating input fields
-        Spinner<Double> ratingSpinner = new Spinner<>(0.0, 10.0, 5.0, 0.5);
-        ratingSpinner.setEditable(true);
-        TextArea commentArea = new TextArea();
-        commentArea.setPromptText("Your review (optional)");
-        commentArea.setWrapText(true);
-        
-        GridPane grid = new GridPane();
-        grid.setHgap(10);
-        grid.setVgap(10);
-        grid.setPadding(new Insets(20, 150, 10, 10));
-        
-        grid.add(new Label("Rating (0-10):"), 0, 0);
-        grid.add(ratingSpinner, 1, 0);
-        grid.add(new Label("Review:"), 0, 1);
-        grid.add(commentArea, 1, 1);
-        
-        dialog.getDialogPane().setContent(grid);
-        
-        // Request focus on the rating spinner by default
-        Platform.runLater(() -> ratingSpinner.requestFocus());
-        
-        // Convert the result to a rating and comment when the rate button is clicked
-        dialog.setResultConverter(dialogButton -> {
-            if (dialogButton == rateButtonType) {
-                return new Pair<>(ratingSpinner.getValue(), commentArea.getText().trim());
-            }
-            return null;
-        });
-        
-        Optional<Pair<Double, String>> result = dialog.showAndWait();
-        
-        result.ifPresent(ratingAndComment -> {
-            double rating = ratingAndComment.getKey();
-            String comment = ratingAndComment.getValue();
-            
+        dialog.setHeaderText(String.format("Rate %s (%d) on a scale of 0-10", 
+            selectedMovie.getTitle(), selectedMovie.getReleaseYear()));
+        dialog.setContentText("Rating (0-10):");
+
+        // Show the dialog and process the result
+        dialog.showAndWait().ifPresent(ratingStr -> {
             try {
-                // Here you would typically call a service to save the rating
-                // For example: ratingService.rateMovie(selectedMovie.getId(), currentUserId, rating, comment);
+                double rating = Double.parseDouble(ratingStr);
+                if (rating < 0 || rating > 10) {
+                    showAlert("Invalid Rating", "Please enter a rating between 0 and 10");
+                    return;
+                }
+
+                // Get the current user ID
+                int currentUserId = getCurrentUserId();
+                
+                // Save the user's rating
+                selectedMovie.setUserRating(currentUserId, (int) (rating * 2)); // Convert 0-10 to 0-20 for storage
+                
+                // Update the movie in the service
+                moviesService.update(selectedMovie);
                 
                 // Update the UI to reflect the new rating
-                showAlert("Success", String.format("You rated %s: %.1f/10", selectedMovie.getTitle(), rating)
-                         );
+                showAlert("Success", String.format("You rated %s: %.1f/10\nNew average rating: %.1f/10",
+                    selectedMovie.getTitle(),
+                    rating,
+                    selectedMovie.getImdbRating()));
                 
                 // Refresh the movie list to show updated ratings
                 loadMovies();
                 
+            } catch (NumberFormatException e) {
+                showAlert("Invalid Input", "Please enter a valid number between 0 and 10");
             } catch (Exception e) {
                 logger.error("Error rating movie: {}", e.getMessage(), e);
                 showAlert("Error", "Failed to save rating: " + e.getMessage());
             }
         });
     }
-    
+
+    /**
+     * Gets the ID of the currently authenticated user.
+     * 
+     * @return The ID of the current user
+     * @throws SecurityException if no user is currently authenticated
+     */
+    private int getCurrentUserId() {
+        // TODO: Replace with actual authentication logic
+        // This is a placeholder implementation that returns a default user ID
+        // In a real application, you would get this from your authentication context
+        // For example:
+        // return SecurityContext.getCurrentUser().getId();
+        
+        // For now, return a default user ID
+        final int DEFAULT_USER_ID = 1;
+        return DEFAULT_USER_ID;
+    }
+
     // UI Components
     @FXML private Label statusLabel;
     @FXML private TableView<Movie> movieTable;
@@ -268,9 +266,9 @@ public class MoviesController extends BaseController {
         // Set up year column to show only the year part
         movieYearColumn.setCellValueFactory(cellData -> {
             Movie movie = cellData.getValue();
-            if (movie != null && movie.getYear() != null) {
+            if (movie != null && movie.getReleaseDate() != null) {
                 Calendar cal = Calendar.getInstance();
-                cal.setTime(movie.getYear());
+                cal.setTime(movie.getReleaseDate());
                 return new SimpleStringProperty(String.valueOf(cal.get(Calendar.YEAR)));
             }
             return new SimpleStringProperty("");
@@ -612,9 +610,15 @@ public class MoviesController extends BaseController {
             Date defaultDate = cal.getTime();
             
             // Create a new movie with default values
-            Movie newMovie = new Movie("New Movie", defaultDate, 
-                new ArrayList<>(Collections.singletonList(Genre.DRAMA)),
-                0.0, "Unknown Director", new ArrayList<>());
+            Movie newMovie = new Movie(
+                "New Movie",
+                Calendar.getInstance().get(Calendar.YEAR),
+                Genre.DRAMA.name(),
+                "Unknown Director",
+                new HashMap<>(),
+                0.0
+            );
+            newMovie.setActors(new ArrayList<>());
             
             // Show the edit dialog for the new movie
             if (showMovieEditDialog(newMovie)) {
@@ -1024,19 +1028,15 @@ public class MoviesController extends BaseController {
                             filteredMovies.sort(Comparator.comparing(Movie::getTitle, String.CASE_INSENSITIVE_ORDER).reversed());
                             break;
                         case "Year (Newest)":
-                            filteredMovies.sort(Comparator.comparing(m -> m.getReleaseDate(), 
+                            filteredMovies.sort(Comparator.comparing(movie -> movie.getRating(), 
                                 Comparator.nullsLast(Comparator.reverseOrder())));
                             break;
-                        case "Year (Oldest)":
-                            filteredMovies.sort(Comparator.comparing(m -> m.getReleaseDate(), 
-                                Comparator.nullsFirst(Comparator.naturalOrder())));
-                            break;
                         case "Rating (High-Low)":
-                            filteredMovies.sort(Comparator.comparing(Movie::getRating, 
+                            filteredMovies.sort(Comparator.comparing(movie -> movie.getRating(), 
                                 Comparator.nullsLast(Comparator.reverseOrder())));
                             break;
                         case "Rating (Low-High)":
-                            filteredMovies.sort(Comparator.comparing(Movie::getRating, 
+                            filteredMovies.sort(Comparator.comparing(movie -> movie.getRating(), 
                                 Comparator.nullsLast(Comparator.naturalOrder())));
                             break;
                     }

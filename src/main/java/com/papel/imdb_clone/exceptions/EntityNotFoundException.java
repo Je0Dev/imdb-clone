@@ -1,5 +1,6 @@
 package com.papel.imdb_clone.exceptions;
 
+import java.io.Serializable;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -14,17 +15,26 @@ public class EntityNotFoundException extends InvalidEntityException {
 
     // Store class name as String for serialization
     private final String entityTypeName;
-    private final Object identifier;
+    private final Serializable identifier; // Changed to Serializable
     private final String entityName;
     private transient Class<?> entityType; // Marked as transient to avoid serialization issues
+    private final String serializedEntityType; // Store class name for deserialization
     
     /**
      * Custom serialization method to handle the non-serializable Class object.
      */
     private void writeObject(java.io.ObjectOutputStream out) throws java.io.IOException {
+        // Store the class name in the serializedEntityType field
+        String className = entityType != null ? entityType.getName() : null;
+        try {
+            java.lang.reflect.Field field = getClass().getDeclaredField("serializedEntityType");
+            field.setAccessible(true);
+            field.set(this, className);
+        } catch (Exception e) {
+            throw new java.io.NotSerializableException("Failed to serialize entity type: " + e.getMessage());
+        }
+        
         out.defaultWriteObject();
-        // Store the class name as a string
-        out.writeObject(entityType != null ? entityType.getName() : null);
     }
     
     /**
@@ -32,15 +42,19 @@ public class EntityNotFoundException extends InvalidEntityException {
      */
     private void readObject(java.io.ObjectInputStream in) throws java.io.IOException, ClassNotFoundException {
         in.defaultReadObject();
-        // Restore the class object from the stored class name
-        String className = (String) in.readObject();
-        if (className != null) {
+        
+        // Restore the class object from the stored name in serializedEntityType
+        if (this.serializedEntityType != null) {
             try {
-                this.entityType = Class.forName(className);
+                this.entityType = Class.forName(this.serializedEntityType);
             } catch (ClassNotFoundException e) {
-                // If the class is not found, leave it as null
                 this.entityType = null;
             }
+        }
+        
+        // Ensure identifier is serializable
+        if (this.identifier != null && !(this.identifier instanceof Serializable)) {
+            throw new java.io.InvalidObjectException("Identifier must be serializable");
         }
     }
 
@@ -71,9 +85,11 @@ public class EntityNotFoundException extends InvalidEntityException {
                 cause);
         //set entity type, identifier, and entity name
         this.entityType = entityType;
-        this.identifier = identifier;
+        this.identifier = (Serializable) identifier;
         this.entityName = entityName != null ? entityName :
                 (entityType != null ? entityType.getSimpleName() : null);
+        this.entityTypeName = entityType != null ? entityType.getName() : null;
+        this.serializedEntityType = entityType != null ? entityType.getName() : null;
     }
 
 

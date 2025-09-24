@@ -17,7 +17,7 @@ public class AuthException extends ValidationException {
     private static final Logger logger = LoggerFactory.getLogger(AuthException.class);
     
     private final AuthErrorType errorType;
-    
+
     public AuthException(AuthErrorType errorType, String message) {
         this(errorType, message, null, null);
     }
@@ -30,15 +30,50 @@ public class AuthException extends ValidationException {
         this(errorType, message, fieldErrors, null);
     }
     
-    public AuthException(AuthErrorType errorType, String message, 
-                        Map<String, List<String>> fieldErrors, Throwable cause) {
-        super(message, errorType != null ? errorType.name() : "AUTH_ERROR", 
-              fieldErrors != null ? new HashMap<>(fieldErrors) : null, cause);
+    // Private constructor that doesn't call any overridable methods
+    private AuthException(AuthErrorType errorType, String message, 
+                        Map<String, List<String>> fieldErrors, Throwable cause,
+                        boolean dummy) {
+        super(message, 
+              errorType != null ? errorType.name() : "AUTH_ERROR", 
+              fieldErrors != null ? new HashMap<>(fieldErrors) : null, 
+              cause);
+        
+        // Directly assign the final field - no method calls on 'this'
         this.errorType = errorType != null ? errorType : AuthErrorType.INTERNAL_ERROR;
-        addDetail("errorType", this.errorType.name());
-        logger.error("Authentication error: {}", message, cause);
     }
     
+    // Public factory method to create instances safely
+    public static AuthException create(AuthErrorType errorType, String message, 
+                                     Map<String, List<String>> fieldErrors, Throwable cause) {
+        // Create the exception without calling any overridable methods
+        AuthException ex = new AuthException(errorType, message, fieldErrors, cause, true);
+        
+        // Now that construction is complete, we can call methods
+        ex.addDetail("errorType", ex.errorType.name());
+        logger.error("Authentication error: {}", message, cause);
+        
+        return ex;
+    }
+    
+    // Delegate constructors to the factory method
+    public AuthException(AuthErrorType errorType, String message, 
+                        Map<String, List<String>> fieldErrors, Throwable cause) {
+        this(create(errorType, message, fieldErrors, cause));
+    }
+    
+    // Private constructor used by the factory method
+    private AuthException(AuthException other) {
+        super(other.getMessage(), other.getErrorCode(), other.getFieldErrors(), other.getCause());
+        this.errorType = other.errorType;
+        // Copy details
+        other.getDetails().forEach((k, v) -> this.addDetail(k, v));
+    }
+
+    private String getErrorCode() {
+        return errorType.name();
+    }
+
     public AuthErrorType getErrorType() {
         return errorType;
     }
@@ -54,6 +89,14 @@ public class AuthException extends ValidationException {
         private String message;
         private final Map<String, List<String>> fieldErrors = new HashMap<>();
         private Throwable cause;
+
+        /**
+         * Explicit constructor for Builder.
+         * Required to prevent exposure of default constructor in exported package.
+         */
+        public Builder() {
+            // Explicit constructor to prevent default constructor warning
+        }
 
         /**
          * Sets the error type.
@@ -118,7 +161,7 @@ public class AuthException extends ValidationException {
             } else {
                 AuthException ex = new AuthException(errorType, message, cause);
                 fieldErrors.forEach((field, errors) -> 
-                    errors.forEach(error -> ex.addFieldError(field, error)));
+                    errors.forEach(error -> ex.addDetail(field, error)));
                 return ex;
             }
         }

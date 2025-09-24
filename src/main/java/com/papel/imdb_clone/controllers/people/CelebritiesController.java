@@ -31,6 +31,14 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 public class CelebritiesController implements Initializable {
+    /**
+     * Explicit constructor for CelebritiesController.
+     * Required for JavaFX controller initialization.
+     */
+    public CelebritiesController() {
+        // No initialization needed
+    }
+    
     private static final Logger logger = LoggerFactory.getLogger(CelebritiesController.class);
 
     // Actor UI Components
@@ -203,7 +211,7 @@ public class CelebritiesController implements Initializable {
                                     int maxWorks = Math.min(3, validWorks.size());
                                     String worksText = String.join(", ", validWorks.subList(0, maxWorks));
                                     if (validWorks.size() > 3) {
-                                        //Add ellipsis if there are more than 3 works
+                                        // Add ellipsis if there are more than 3 works
                                         worksText += "...";
                                     }
                                     logger.debug("Notable works for {} {}: {}", 
@@ -211,18 +219,48 @@ public class CelebritiesController implements Initializable {
                                     return new SimpleStringProperty(worksText);
                                 }
                             }
-                            logger.debug("No valid notable works found for {} {}", 
+                            // If we get here, there are no notable works
+                            logger.debug("No notable works found for {} {}",
                                 actor.getFirstName(), actor.getLastName());
+                            return new SimpleStringProperty("-"); // Use dash for empty works
                         } catch (Exception e) {
                             logger.warn("Error processing notable works for {} {}: {}", 
                                 actor.getFirstName(), actor.getLastName(), e.getMessage());
+                            return new SimpleStringProperty("Error loading works");
                         }
                     }
                 } catch (Exception e) {
                     logger.error("Unexpected error getting actor notable works: {}", e.getMessage(), e);
                 }
-                //Return no notable works if there are no works
-                return new SimpleStringProperty("No notable works");
+                return new SimpleStringProperty("-"); // Default fallback
+            });
+            
+            // Set a tooltip to show all notable works on hover
+            actorNotableWorksColumn.setCellFactory(column -> {
+                return new TableCell<Actor, String>() {
+                    @Override
+                    protected void updateItem(String item, boolean empty) {
+                        super.updateItem(item, empty);
+                        if (item == null || empty) {
+                            setText(null);
+                            setTooltip(null);
+                        } else {
+                            setText(item);
+                            
+                            // Get the full list of notable works for the tooltip
+                            Actor actor = getTableView().getItems().get(getIndex());
+                            if (actor != null) {
+                                List<String> allWorks = actor.getNotableWorks();
+                                if (allWorks != null && !allWorks.isEmpty()) {
+                                    String tooltipText = String.join("\n• ", allWorks);
+                                    setTooltip(new Tooltip("• " + tooltipText));
+                                } else {
+                                    setTooltip(new Tooltip("No notable works available"));
+                                }
+                            }
+                        }
+                    }
+                };
             });
 
             // Set the items to the table
@@ -438,15 +476,48 @@ public class CelebritiesController implements Initializable {
                                 return new SimpleStringProperty(worksText);
                             }
                         }
+                        // If we get here, there are no notable works
+                        logger.debug("No notable works found for director {} {}", 
+                            director.getFirstName(), director.getLastName());
+                        return new SimpleStringProperty("-"); // Use dash for empty works
                     } catch (Exception e) {
                         logger.warn("Error processing notable works for director {} {}: {}", 
                             director.getFirstName(), director.getLastName(), e.getMessage());
+                        return new SimpleStringProperty("Error loading works");
                     }
                 }
             } catch (Exception e) {
                 logger.error("Unexpected error getting director notable works: {}", e.getMessage(), e);
             }
-            return new SimpleStringProperty("No notable works");
+            return new SimpleStringProperty("-"); // Default fallback
+        });
+        
+        // Add tooltip to show all notable works on hover
+        directorNotableWorksColumn.setCellFactory(column -> {
+            return new TableCell<Director, String>() {
+                @Override
+                protected void updateItem(String item, boolean empty) {
+                    super.updateItem(item, empty);
+                    if (item == null || empty) {
+                        setText(null);
+                        setTooltip(null);
+                    } else {
+                        setText(item);
+                        
+                        // Get the full list of notable works for the tooltip
+                        Director director = getTableView().getItems().get(getIndex());
+                        if (director != null) {
+                            List<String> allWorks = director.getNotableWorks();
+                            if (allWorks != null && !allWorks.isEmpty()) {
+                                String tooltipText = String.join("\n• ", allWorks);
+                                setTooltip(new Tooltip("• " + tooltipText));
+                            } else {
+                                setTooltip(new Tooltip("No notable works available"));
+                            }
+                        }
+                    }
+                }
+            };
         });
 
         // Set up search functionality
@@ -744,7 +815,8 @@ public class CelebritiesController implements Initializable {
 
         // Show the dialog and process the result
         Optional<String> result = dialog.showAndWait();
-        
+
+        // Log the result
         result.ifPresent(celebrityType -> {
             if ("Actor".equals(celebrityType)) {
                 showAddActorDialog();

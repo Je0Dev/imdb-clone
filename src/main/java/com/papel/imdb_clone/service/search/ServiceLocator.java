@@ -2,11 +2,13 @@ package com.papel.imdb_clone.service.search;
 
 import com.papel.imdb_clone.controllers.coordinator.UICoordinator;
 import com.papel.imdb_clone.data.DataManager;
+import com.papel.imdb_clone.model.content.Content;
 import com.papel.imdb_clone.model.people.Actor;
 import com.papel.imdb_clone.model.people.Director;
 import com.papel.imdb_clone.repository.impl.InMemoryMovieRepository;
 import com.papel.imdb_clone.repository.impl.InMemorySeriesRepository;
 import com.papel.imdb_clone.repository.impl.InMemoryUserRepository;
+import com.papel.imdb_clone.service.content.ContentService;
 import com.papel.imdb_clone.service.content.MoviesService;
 import com.papel.imdb_clone.service.content.SeriesService;
 import com.papel.imdb_clone.service.data.base.FileDataLoaderService;
@@ -45,6 +47,7 @@ public class ServiceLocator {
      * Ensures that only one instance of ServiceLocator is created.
      * Thread-safe implementation using double-checked locking.
      * Sychronized method to ensure thread safety means that only one thread can access the method at a time.
+     *
      * @return ServiceLocator instance which means the object that implements the ServiceLocator interface
      */
     public static synchronized ServiceLocator getInstance() {
@@ -66,6 +69,7 @@ public class ServiceLocator {
      * it synchronizes on the ServiceLocator class to ensure thread safety.
      * If the primary stage is not already set and the provided stage is not null,
      * it synchronizes on the ServiceLocator class to ensure thread safety.
+     *
      * @param stage Stage object which means the main window of the application
      */
     public static void setPrimaryStage(Stage stage) {
@@ -159,21 +163,23 @@ public class ServiceLocator {
                 registerService(SearchService.class, searchService);
                 logger.info("SearchService initialized successfully");
 
-                // Initialize UI Coordinator if primary stage is available
-                if (primaryStage != null) {
-                    try {
-                        // Use reflection to create the UICoordinator instance
-                        Class<?> clazz = Class.forName("com.papel.imdb_clone.controllers.coordinator.UICoordinator");
-                        uiCoordinatorInstance = clazz.getDeclaredConstructor(Stage.class).newInstance(primaryStage);
-                    } catch (Exception e) {
-                        throw new IllegalStateException("Failed to initialize UICoordinator", e);
+                // Initialize UI Coordinator
+                try {
+                    // Get the singleton instance of UICoordinator
+                    uiCoordinatorInstance = UICoordinator.getInstance();
+
+                    // If primary stage is available, set it
+                    if (primaryStage != null) {
+                        UICoordinator uiCoordinator = (UICoordinator) uiCoordinatorInstance;
+                        uiCoordinator.setPrimaryStage(primaryStage);
+                        logger.info("UICoordinator initialized successfully with primary stage");
+                    } else {
+                        logger.warn("Primary stage not set, will need to be set later");
                     }
-                    UICoordinator uiCoordinator = (UICoordinator) uiCoordinatorInstance;
-                    uiCoordinator.setPrimaryStage(primaryStage);
-                    registerService(UICoordinator.class, uiCoordinator);
-                    logger.info("UICoordinator initialized successfully with primary stage");
-                } else {
-                    logger.warn("Primary stage not set, UICoordinator initialization will be deferred");
+
+                    registerService(UICoordinator.class, (UICoordinator) uiCoordinatorInstance);
+                } catch (Exception e) {
+                    throw new IllegalStateException("Failed to initialize UICoordinator", e);
                 }
 
                 // Set services as initialized after all services are registered
@@ -192,6 +198,37 @@ public class ServiceLocator {
      * If the RefactoredDataManager is not already initialized, it synchronizes on the ServiceLocator class to ensure thread safety.
      * @return DataManager instance which means the object that implements the DataManager interface
      */
+    /**
+     * Get the SearchService instance.
+     *
+     * @return The SearchService instance
+     * @throws IllegalStateException if the SearchService is not found in the registry
+     */
+    public SearchService getSearchService() {
+        SearchService service = (SearchService) services.get(SearchService.class);
+        if (service == null) {
+            throw new IllegalStateException("SearchService not found in the service registry");
+        }
+        return service;
+    }
+
+    /**
+     * Get a service instance by its class.
+     *
+     * @param <T> The type of the service to retrieve
+     * @param serviceClass The class of the service to retrieve
+     * @return The service instance
+     * @throws IllegalStateException if the service is not found in the registry
+     */
+    @SuppressWarnings("unchecked")
+    public <T> T getService(Class<T> serviceClass) {
+        T service = (T) services.get(serviceClass);
+        if (service == null) {
+            throw new IllegalStateException("Service not found in the registry: " + serviceClass.getName());
+        }
+        return service;
+    }
+
     public DataManager getDataManager() {
         if (dataManager == null) {
             synchronized (lock) {
@@ -208,6 +245,7 @@ public class ServiceLocator {
      * Get the UICoordinator instance.
      * If the UICoordinator is not already initialized, it synchronizes on the ServiceLocator class to ensure thread safety.
      * If the primary stage is not set, it throws an IllegalStateException.
+     *
      * @return UICoordinator instance which means the object that implements the UICoordinator interface
      */
     @SuppressWarnings("unchecked")
@@ -235,9 +273,9 @@ public class ServiceLocator {
         try {
             return coordinatorClass.cast(uiCoordinatorInstance);
         } catch (ClassCastException e) {
-            String errorMsg = String.format("Requested coordinator class %s does not match the actual type %s", 
-                coordinatorClass.getName(), 
-                uiCoordinatorInstance.getClass().getName());
+            String errorMsg = String.format("Requested coordinator class %s does not match the actual type %s",
+                    coordinatorClass.getName(),
+                    uiCoordinatorInstance.getClass().getName());
             logger.error(errorMsg, e);
             throw new IllegalArgumentException(errorMsg, e);
         }
@@ -245,6 +283,7 @@ public class ServiceLocator {
 
     /**
      * Register a service instance with a qualifier for multiple implementations
+     *
      * @param serviceClass The class of the service to register
      */
     public <T> void registerService(Class<T> serviceClass, T serviceInstance, String qualifier) {
@@ -293,30 +332,5 @@ public class ServiceLocator {
         logger.info("Service shutdown complete");
     }
 
-    /**
-     * Get a service instance by class with type safety.
-     * @param <T> The type of the service to retrieve
-     * @param serviceClass The class object of the service to retrieve
-     * @return The service instance
-     * @throws IllegalArgumentException if the service is not found
-     * @throws ClassCastException if the service cannot be cast to the requested type
-     */
-    @SuppressWarnings("unchecked")
-    public static <T> T getService(Class<T> serviceClass) {
-        Object service = services.get(serviceClass);
-        if (service == null) {
-            // Try with the class name as a fallback
-            service = services.get(serviceClass.getName());
-            if (service == null) {
-                throw new IllegalArgumentException("Service not found: " + serviceClass.getName());
-            }
-        }
-        
-        try {
-            logger.debug("Service found: {}", serviceClass.getName());
-            return serviceClass.cast(service);
-        } catch (ClassCastException e) {
-            throw new ClassCastException("Service " + serviceClass.getName() + " cannot be cast to the requested type");
-        }
-    }
+
 }

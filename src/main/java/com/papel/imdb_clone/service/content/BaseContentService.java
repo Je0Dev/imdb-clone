@@ -19,15 +19,13 @@ public abstract class BaseContentService<T extends Content> implements ContentSe
 
     protected BaseContentService(Class<T> contentType) {
         this.contentType = contentType;
-        // Initialize data after construction to prevent 'this' escape
-        initializeData();
     }
     
     /**
-     * Initialize data after construction to prevent 'this' escape.
-     * This method is called by the constructor after the object is fully constructed.
+     * Initialize the service after construction.
+     * This should be called by subclasses after they are fully constructed.
      */
-    private void initializeData() {
+    protected final void initializeService() {
         initializeSampleData();
     }
 

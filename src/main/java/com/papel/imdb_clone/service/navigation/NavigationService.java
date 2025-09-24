@@ -18,6 +18,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.time.Instant;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Stack;
 
@@ -28,7 +30,8 @@ public class NavigationService {
     private static final Logger logger = LoggerFactory.getLogger(NavigationService.class);
     private static NavigationService instance;
     private final Stack<Scene> sceneStack = new Stack<>();
-    
+    private final Map<String, Object> userData = new HashMap<>();
+
     /**
      * Private constructor to enforce singleton pattern and module encapsulation.
      */
@@ -170,5 +173,23 @@ public class NavigationService {
      */
     public Object getCurrentController() {
         return currentController;
+    }
+
+    /**
+     * Gets user data for the specified content type.
+     * @param contentType The type of content to retrieve data for
+     * @return The user data object, or null if not found
+     */
+    public Object getUserData(String contentType) {
+        return userData.get(contentType);
+    }
+    
+    /**
+     * Sets user data for the specified content type.
+     * @param contentType The type of content to store data for
+     * @param data The data to store
+     */
+    public void setUserData(String contentType, Object data) {
+        userData.put(contentType, data);
     }
 }

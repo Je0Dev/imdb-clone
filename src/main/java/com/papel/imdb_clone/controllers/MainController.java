@@ -235,7 +235,7 @@ public class MainController extends BorderPane {
      * @throws IllegalStateException if UICoordinator cannot be initialized
      */
     private void initializeUICoordinator() {
-        this.uiCoordinator = serviceLocator.getUICoordinator(UICoordinator.class);
+        this.uiCoordinator = ServiceLocator.getUICoordinator(UICoordinator.class);
         if (this.uiCoordinator == null) {
             throw new IllegalStateException("Failed to get UICoordinator from ServiceLocator");
         }

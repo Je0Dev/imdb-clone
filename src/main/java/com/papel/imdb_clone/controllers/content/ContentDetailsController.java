@@ -28,6 +28,14 @@ import java.util.Objects;
  */
 
 public class ContentDetailsController {
+    /**
+     * Explicit constructor for ContentDetailsController.
+     * Required for JavaFX controller initialization.
+     */
+    public ContentDetailsController() {
+        // No initialization needed
+    }
+    
     private static final Logger logger = LoggerFactory.getLogger(ContentDetailsController.class);
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("MMMM d, yyyy");
     

@@ -35,6 +35,14 @@ import java.util.stream.Collectors;
  * @see BaseSearchController
  */
 public class SearchFormController extends BaseSearchController {
+    /**
+     * Explicit constructor for SearchFormController.
+     * Required for JavaFX controller initialization.
+     */
+    public SearchFormController() {
+        super();
+    }
+    
     private static final Logger logger = LoggerFactory.getLogger(SearchFormController.class);
 
     // UI Components

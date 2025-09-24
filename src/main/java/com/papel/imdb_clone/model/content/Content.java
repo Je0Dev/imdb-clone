@@ -186,8 +186,27 @@ public abstract class Content {
     }
 
 
-    public void setUserRating(Integer userRating) {
-        //User rating as integer
+    /**
+     * Sets a user's rating for this content and updates the average rating
+     * @param userId The ID of the user who is rating
+     * @param rating The rating value (0-10)
+     * @throws IllegalArgumentException if rating is not between 0 and 10
+     */
+    public void setUserRating(Integer userId, Integer rating) {
+        if (rating < 0 || rating > 10) {
+            throw new IllegalArgumentException("Rating must be between 0 and 10");
+        }
+        
+        if (userRatings == null) {
+            userRatings = new HashMap<>();
+        }
+        
+        // Store the user's rating
+        userRatings.put(userId, rating);
+        
+        // Calculate new average rating
+        double sum = userRatings.values().stream().mapToInt(Integer::intValue).sum();
+        this.imdbRating = sum / userRatings.size();
     }
 
     /**
@@ -290,5 +309,9 @@ public abstract class Content {
 
     public String getSeries() {
         return series;
+    }
+
+    public double getRating() {
+        return imdbRating;
     }
 }

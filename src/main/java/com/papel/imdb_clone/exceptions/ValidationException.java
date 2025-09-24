@@ -1,5 +1,6 @@
 package com.papel.imdb_clone.exceptions;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.io.Serializable;
 import java.util.*;
@@ -11,21 +12,26 @@ import java.util.stream.Collectors;
  */
 public class ValidationException extends RuntimeException implements Serializable {
     private static final long serialVersionUID = 1L;
-    // Field errors - using LinkedHashMap for predictable iteration order
+    // Field errors - using HashMap for serialization
     /**
      * Map of field names to their associated error messages.
      */
-    private final Map<String, List<String>> fieldErrors;
+    private final HashMap<String, List<String>> fieldErrors = new HashMap<>();
     
     /**
      * Map to store additional details about the validation error.
      */
-    private final LinkedHashMap<String, Serializable> details;
+    private final HashMap<String, Serializable> details = new HashMap<>();
     
     /**
      * Error code for the exception.
      */
-    private final String errorCode;
+    private final String errorCode = "VALIDATION_ERROR";
+    
+    // Add no-arg constructor for serialization
+    protected ValidationException() {
+        this("Validation failed", "VALIDATION_ERROR", null, null);
+    }
 
         /**
      * Creates a new ValidationException with all possible parameters.
@@ -39,9 +45,25 @@ public class ValidationException extends RuntimeException implements Serializabl
                              Map<String, List<String>> fieldErrors,
                              Throwable cause) {
         super(message, cause);
-        this.errorCode = errorCode;
-        this.fieldErrors = fieldResults(fieldErrors);
-        this.details = new LinkedHashMap<>();
+        if (errorCode != null) {
+            try {
+                // Use reflection to set the final field
+                java.lang.reflect.Field field = getClass().getDeclaredField("errorCode");
+                field.setAccessible(true);
+                field.set(this, errorCode);
+            } catch (Exception e) {
+                // Fallback to default error code
+                System.err.println("Failed to set error code: " + e.getMessage());
+            }
+        }
+        
+        if (fieldErrors != null) {
+            for (Map.Entry<String, List<String>> entry : fieldErrors.entrySet()) {
+                if (entry.getKey() != null && entry.getValue() != null) {
+                    this.fieldErrors.put(entry.getKey(), new ArrayList<>(entry.getValue()));
+                }
+            }
+        }
     }
     
     /**
@@ -83,6 +105,30 @@ public class ValidationException extends RuntimeException implements Serializabl
     public Map<String, List<String>> getFieldErrors() {
         return Collections.unmodifiableMap(fieldErrors);
     }
+    
+    /**
+     * Gets the details map containing additional information about the error.
+     * @return an unmodifiable map of details
+     */
+    public Map<String, Serializable> getDetails() {
+        return Collections.unmodifiableMap(details);
+    }
+    
+    /**
+     * Custom serialization method to ensure proper serialization of the exception
+     */
+    @Serial
+    private void writeObject(java.io.ObjectOutputStream out) throws java.io.IOException {
+        out.defaultWriteObject();
+    }
+    
+    /**
+     * Custom deserialization method to ensure proper deserialization of the exception
+     */
+    @Serial
+    private void readObject(java.io.ObjectInputStream in) throws java.io.IOException, ClassNotFoundException {
+        in.defaultReadObject();
+    }
 
 
     /**
@@ -110,10 +156,11 @@ public class ValidationException extends RuntimeException implements Serializabl
         private Throwable cause;
         
         /**
-         * Explicit constructor for serialization support.
+         * Constructor for Builder.
+         * Required for serialization support.
          */
         public Builder() {
-            // Required for serialization
+            // Initialize fields if needed
         }
 
         /**

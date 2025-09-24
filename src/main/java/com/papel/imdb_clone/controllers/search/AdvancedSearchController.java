@@ -104,6 +104,11 @@ public class AdvancedSearchController extends BaseSearchController {
      * Table column for displaying total number of episodes (Series only).
      */
     private TableColumn<Content, Integer> episodesColumn;
+    
+    /**
+     * Table column for displaying IMDb ratings.
+     */
+    private TableColumn<Content, Double> ratingColumn;
 
     private void initializeTableColumns() {
         try {
@@ -112,75 +117,107 @@ public class AdvancedSearchController extends BaseSearchController {
             // Clear existing columns to avoid duplicates
             resultsTable.getColumns().clear();
             
-            // Title Column
-            titleColumn = new TableColumn<>("TITLE");
-            titleColumn.setCellValueFactory(new PropertyValueFactory<>("title"));
-            titleColumn.setPrefWidth(200);
-            titleColumn.setStyle("-fx-font-weight: bold; -fx-text-fill: #00E5FF; -fx-font-size: 14;");
+            // Configure Title Column
+            if (resultTitleColumn != null) {
+                resultTitleColumn.setCellValueFactory(new PropertyValueFactory<>("title"));
+                resultTitleColumn.setPrefWidth(200);
+                resultTitleColumn.setStyle("-fx-font-weight: bold; -fx-text-fill: #00E5FF; -fx-font-size: 14;");
+            }
             
-            // Type Column
-            typeColumn = new TableColumn<>("TYPE");
-            typeColumn.setCellValueFactory(cellData -> {
-                Content content = cellData.getValue();
-                return new SimpleStringProperty(content instanceof Movie ? "Movie" : "Series");
-            });
-            typeColumn.setPrefWidth(80);
-            typeColumn.setStyle("-fx-text-fill: #40C4FF; -fx-font-weight: bold;");
+            // Configure Type Column
+            if (resultTypeColumn != null) {
+                resultTypeColumn.setCellValueFactory(cellData -> {
+                    Content content = cellData.getValue();
+                    return new SimpleStringProperty(content instanceof Movie ? "Movie" : "Series");
+                });
+                resultTypeColumn.setPrefWidth(80);
+                resultTypeColumn.setStyle("-fx-text-fill: #40C4FF; -fx-font-weight: bold; -fx-alignment: CENTER;");
+            }
             
-            // Year Column
-            yearColumn = new TableColumn<>("YEAR");
-            yearColumn.setCellValueFactory(cellData -> {
+            // Configure Year Column
+            if (resultYearColumn != null) {
+                resultYearColumn.setCellValueFactory(cellData -> {
+                    Content content = cellData.getValue();
+                    if (content != null && content.getReleaseDate() != null) {
+                        int year = content.getReleaseDate().toInstant()
+                                .atZone(java.time.ZoneId.systemDefault())
+                                .toLocalDate()
+                                .getYear();
+                        return new javafx.beans.property.SimpleIntegerProperty(year).asObject();
+                    }
+                    return new javafx.beans.property.SimpleIntegerProperty(0).asObject();
+                });
+                resultYearColumn.setCellFactory(column -> new TableCell<Content, Integer>() {
+                    @Override
+                    protected void updateItem(Integer year, boolean empty) {
+                        super.updateItem(year, empty);
+                        if (empty || year == null || year <= 0) {
+                            setText("N/A");
+                        } else {
+                            setText(String.valueOf(year));
+                        }
+                        setStyle("-fx-text-fill: #69F0AE; -fx-font-weight: bold; -fx-alignment: CENTER;");
+                    }
+                });
+                resultYearColumn.setPrefWidth(70);
+            }
+            
+            // Configure Genre Column
+            if (resultGenreColumn != null) {
+                resultGenreColumn.setCellValueFactory(cellData -> {
+                    Content content = cellData.getValue();
+                    if (content != null && content.getGenres() != null) {
+                        String genres = content.getGenres().stream()
+                            .map(Enum::name)
+                            .collect(Collectors.joining(" • "));
+                        return new SimpleStringProperty(genres);
+                    }
+                    return new SimpleStringProperty("N/A");
+                });
+                resultGenreColumn.setPrefWidth(300);
+                resultGenreColumn.setStyle("-fx-text-fill: #FF8A65; -fx-font-weight: bold;");
+            }
+            
+            // Initialize additional columns that might be used
+            // Rating Column
+            ratingColumn = new TableColumn<>("RATING");
+            ratingColumn.setCellValueFactory(cellData -> {
                 Content content = cellData.getValue();
-                if (content != null && content.getReleaseDate() != null) {
-                    // Convert Date to LocalDate and get the year
-                    int year = content.getReleaseDate().toInstant()
-                            .atZone(java.time.ZoneId.systemDefault())
-                            .toLocalDate()
-                            .getYear();
-                    return new javafx.beans.property.SimpleIntegerProperty(year).asObject();
-                }
-                return new javafx.beans.property.SimpleIntegerProperty(0).asObject();
+                double rating = content.getRating();
+                return new javafx.beans.property.SimpleDoubleProperty(
+                    rating > 0 ? rating : 0.0
+                ).asObject();
             });
-            yearColumn.setCellFactory(column -> new TableCell<Content, Integer>() {
+            ratingColumn.setCellFactory(column -> new TableCell<Content, Double>() {
                 @Override
-                protected void updateItem(Integer year, boolean empty) {
-                    super.updateItem(year, empty);
-                    if (empty || year == null || year <= 0) {
+                protected void updateItem(Double rating, boolean empty) {
+                    super.updateItem(rating, empty);
+                    if (empty || rating == null || rating <= 0) {
                         setText("N/A");
                     } else {
-                        setText(String.valueOf(year));
+                        setText(String.format("%.1f", rating));
                     }
-                    setStyle("-fx-text-fill: #69F0AE; -fx-font-weight: bold; -fx-alignment: CENTER;");
+                    setStyle("-fx-text-fill: #FFD740; -fx-font-weight: bold; -fx-alignment: CENTER;");
                 }
             });
-            yearColumn.setPrefWidth(70);
-            
-            // Genre Column with better spacing
-            genreColumn = new TableColumn<>("GENRE");
-            genreColumn.setCellValueFactory(cellData -> {
-                List<String> genreNames = cellData.getValue().getGenres().stream()
-                    .map(Enum::name)
-                    .map(genre -> " " + genre + " ")  // Add spaces around each genre
-                    .collect(Collectors.toList());
-                return new SimpleStringProperty(String.join(" • ", genreNames));  // Add bullet separator
-            });
-            genreColumn.setPrefWidth(300);
-            genreColumn.setStyle("-fx-text-fill: #FF8A65; -fx-font-weight: bold;");
+            ratingColumn.setPrefWidth(70);
             
             // Seasons Column (initially hidden)
             seasonsColumn = new TableColumn<>("SEASONS");
             seasonsColumn.setCellValueFactory(cellData -> {
                 Content content = cellData.getValue();
                 if (content instanceof Series) {
-                    return new javafx.beans.property.SimpleIntegerProperty().asObject();
+                    return new javafx.beans.property.SimpleIntegerProperty(
+                        ((Series) content).getSeasons() != null ? ((Series) content).getSeasons().size() : 0
+                    ).asObject();
                 }
-                return new javafx.beans.property.SimpleObjectProperty<Integer>();
+                return new javafx.beans.property.SimpleIntegerProperty(0).asObject();
             });
             seasonsColumn.setCellFactory(column -> new TableCell<Content, Integer>() {
                 @Override
                 protected void updateItem(Integer item, boolean empty) {
                     super.updateItem(item, empty);
-                    if (empty || item == null) {
+                    if (empty || item == null || item == 0) {
                         setText("N/A");
                     } else {
                         setText(String.valueOf(item));
@@ -189,7 +226,6 @@ public class AdvancedSearchController extends BaseSearchController {
                 }
             });
             seasonsColumn.setPrefWidth(80);
-            seasonsColumn.setStyle("-fx-text-fill: #80D8FF; -fx-font-weight: bold; -fx-alignment: CENTER;");
             seasonsColumn.setVisible(false);
             
             // Episodes Column (initially hidden)
@@ -197,15 +233,17 @@ public class AdvancedSearchController extends BaseSearchController {
             episodesColumn.setCellValueFactory(cellData -> {
                 Content content = cellData.getValue();
                 if (content instanceof Series) {
-                    return new javafx.beans.property.SimpleIntegerProperty(((Series) content).getTotalEpisodes()).asObject();
+                    return new javafx.beans.property.SimpleIntegerProperty(
+                        ((Series) content).getTotalEpisodes()
+                    ).asObject();
                 }
-                return new javafx.beans.property.SimpleObjectProperty<Integer>();
+                return new javafx.beans.property.SimpleIntegerProperty(0).asObject();
             });
             episodesColumn.setCellFactory(column -> new TableCell<Content, Integer>() {
                 @Override
                 protected void updateItem(Integer item, boolean empty) {
                     super.updateItem(item, empty);
-                    if (empty || item == null) {
+                    if (empty || item == null || item == 0) {
                         setText("N/A");
                     } else {
                         setText(String.valueOf(item));
@@ -217,12 +255,36 @@ public class AdvancedSearchController extends BaseSearchController {
             episodesColumn.setStyle("-fx-text-fill: #80D8FF; -fx-font-weight: bold; -fx-alignment: CENTER;");
             episodesColumn.setVisible(false);
             
-            // Add all columns to the table using a type-safe approach
-            @SuppressWarnings("unchecked")
-            List<TableColumn<Content, ?>> columns = List.of(
-                titleColumn, typeColumn, yearColumn, genreColumn, seasonsColumn, episodesColumn
-            );
-            resultsTable.getColumns().addAll(columns);
+            // Clear existing columns first
+            resultsTable.getColumns().clear();
+            
+            // Add all columns to the table
+            if (resultTitleColumn != null) resultsTable.getColumns().add(resultTitleColumn);
+            if (resultTypeColumn != null) resultsTable.getColumns().add(resultTypeColumn);
+            if (resultYearColumn != null) resultsTable.getColumns().add(resultYearColumn);
+            if (resultGenreColumn != null) resultsTable.getColumns().add(resultGenreColumn);
+            resultsTable.getColumns().add(ratingColumn);
+            resultsTable.getColumns().add(seasonsColumn);
+            resultsTable.getColumns().add(episodesColumn);
+            
+            // Set up the table's selection model
+            resultsTable.getSelectionModel().setSelectionMode(SelectionMode.SINGLE);
+            
+            // Add double-click handler for table rows
+            resultsTable.setRowFactory(tv -> {
+                TableRow<Content> row = new TableRow<>();
+                row.setOnMouseClicked(event -> {
+                    if (event.getClickCount() == 2 && !row.isEmpty()) {
+                        Content content = row.getItem();
+                        if (content != null) {
+                            navigateToContentDetails(content);
+                        }
+                    }
+                });
+                return row;
+            });
+            
+            logger.info("Table columns initialized successfully");
             
             // Add listener to show/hide columns based on selection
             resultsTable.getSelectionModel().selectedItemProperty().addListener((obs, oldSelection, newSelection) -> {
@@ -767,8 +829,7 @@ public class AdvancedSearchController extends BaseSearchController {
     @FXML
     public void handleTableClick() {
         if (resultsTable != null) {
-            TableView<Content> tableView = (TableView<Content>) resultsTable;
-            Content selectedContent = tableView.getSelectionModel().getSelectedItem();
+            Content selectedContent = resultsTable.getSelectionModel().getSelectedItem();
             if (selectedContent != null) {
                 navigateToContentDetails(selectedContent);
             }

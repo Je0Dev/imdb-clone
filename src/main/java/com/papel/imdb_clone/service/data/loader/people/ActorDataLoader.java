@@ -70,9 +70,19 @@ public class ActorDataLoader extends BaseDataLoader {
                         String birthDateStr = parts[2].trim();
                         
                         if (birthDateStr.isEmpty() || birthDateStr.equalsIgnoreCase("n/a")) {
-                            // Generate a reasonable default birth date (30 years ago from now)
-                            birthDate = LocalDate.now().minusYears(30 + (count % 20)); // Vary the year slightly based on count
-                            logger.warn("No birth date specified for {} {} at line {}. Using default: {}", 
+                            // Generate a unique default birth date with more variation
+                            // Use a combination of count, name hash, and line number for more uniqueness
+                            int nameHash = Math.abs((firstName + lastName).hashCode());
+                            int yearVariation = (count + nameHash) % 50; // 0-49 years variation
+                            int monthVariation = (count + nameHash) % 12 + 1; // 1-12 months
+                            int dayVariation = ((count + nameHash) % 28) + 1; // 1-28 days
+                            
+                            birthDate = LocalDate.now()
+                                .minusYears(30 + yearVariation) // 30-79 years old
+                                .minusMonths(monthVariation)
+                                .minusDays(dayVariation);
+                                
+                            logger.warn("No birth date specified for {} {} at line {}. Generated unique default: {}", 
                                 firstName, lastName, lineNumber, birthDate);
                         } else {
                             try {
@@ -116,8 +126,19 @@ public class ActorDataLoader extends BaseDataLoader {
                             logger.warn("Unknown ethnicity '{}' for actor {} {} at line {}", nationality, firstName, lastName, lineNumber);
                         }
 
-                        // Notable works (optional)
-                        String notableWorks = parts.length > 6 ? parts[6].trim() : "";
+                        // Notable works (optional) - check multiple possible positions
+                        String notableWorks = "";
+                        if (parts.length > 6 && !parts[6].trim().isEmpty() && !parts[6].trim().equalsIgnoreCase("N/A")) {
+                            notableWorks = parts[6].trim();
+                        } else if (parts.length > 5 && !parts[5].trim().isEmpty() && !parts[5].trim().equalsIgnoreCase("N/A")) {
+                            // Fallback to previous position if current is empty
+                            notableWorks = parts[5].trim();
+                        }
+                        
+                        // Set default notable works if still empty
+                        if (notableWorks.isEmpty()) {
+                            notableWorks = "Various films and TV shows";
+                        }
 
                         // Create and save the actor
                         try {

@@ -10,6 +10,7 @@ import java.util.stream.Collectors;
  * Represents a movie.
  */
 public class Movie extends Content {
+    public static Object getRating;
     private String boxOffice;
     private List<String> awards;
     private List<Genre> genres = new ArrayList<>(); // Multiple genres support
@@ -64,34 +65,50 @@ public class Movie extends Content {
         return cal.getTime();
     }
 
-    // Constructor for FileDataLoaderService
-    public Movie(String title, Date year, List<Genre> genres,
+    // Private constructor for FileDataLoaderService
+    private Movie(String title, Date year, List<Genre> genres,
                  double imdbRating, String director, List<Actor> actors) {
-        super(title, year != null ? new Date(year.getTime()) : createDateFromYear(Calendar.getInstance().get(Calendar.YEAR)),
-                null, // No default genre
-                director, new HashMap<>(), imdbRating);
+        // Call super first with minimal initialization
+        super(title, 
+              year != null ? new Date(year.getTime()) : createDateFromYear(Calendar.getInstance().get(Calendar.YEAR)),
+              null, // No default genre
+              director, 
+              new HashMap<>(), 
+              imdbRating);
         
-        // Initialize fields directly
-        this.releaseDate = year != null ? new Date(year.getTime()) : createDateFromYear(Calendar.getInstance().get(Calendar.YEAR));
+        // Initialize instance fields after super() call
         this.awards = new ArrayList<>();
+        this.genres = new ArrayList<>();
+        this.releaseDate = year != null ? new Date(year.getTime()) : createDateFromYear(Calendar.getInstance().get(Calendar.YEAR));
         
-        // Initialize genres safely
+        // Set genres safely
         if (genres != null) {
-            this.genres = new ArrayList<>();
+            List<Genre> validGenres = new ArrayList<>();
             for (Genre g : genres) {
                 if (g != null) {
-                    this.genres.add(g);
+                    validGenres.add(g);
                 }
             }
-        } else {
-            this.genres = new ArrayList<>();
+            this.genres = validGenres;
         }
         
-        // Set actors safely after object construction
+
+        // Initialize actors list safely
         if (actors != null) {
-            this.setActors(new ArrayList<>(actors)); // Defensive copy
+            List<Actor> actorsCopy = new ArrayList<>(actors);
+            super.setActors(actorsCopy);
         }
     }
+
+    // Factory method to create a Movie instance safely.
+    // This prevents 'this' escape during construction.
+    public static Movie createMovie(String title, Date year, List<Genre> genres,
+                                  double imdbRating, String director, List<Actor> actors) {
+        Movie movie = new Movie(title, year, genres, imdbRating, director, actors);
+        return movie;
+    }
+
+    // Method removed as it's no longer needed
 
     // Method to add a genre, ensuring thread safety and avoiding duplicates
     public void addGenre(Genre genre) {

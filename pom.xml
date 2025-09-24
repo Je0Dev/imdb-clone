@@ -222,7 +222,6 @@
                         <ruleset>/category/java/bestpractices.xml/UnusedFormalParameter</ruleset>
                     </rulesets>
                     <linkXRef>false</linkXRef>
-                    <sourceEncoding>utf-8</sourceEncoding>
                     <minimumTokens>100</minimumTokens>
                     <targetJdk>${maven.compiler.target}</targetJdk>
                 </configuration>

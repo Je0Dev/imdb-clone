@@ -9,6 +9,7 @@ import com.papel.imdb_clone.service.people.CelebrityService;
 import java.time.LocalDate;
 import java.util.*;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 /**
  * Service class for managing Movie content.
@@ -42,14 +43,19 @@ public class MoviesService extends BaseContentService<Movie> {
             shawshankActors.add(Actor.getInstance("Tim", "Robbins", LocalDate.of(1958, 10, 16), 'M', Ethnicity.CAUCASIAN));
             shawshankActors.add(Actor.getInstance("Morgan", "Freeman", LocalDate.of(1937, 6, 1), 'M', Ethnicity.AFRICAN));
 
+            // Convert genres list to a comma-separated string
+            String shawshankGenreStr = shawshankGenres.stream()
+                .map(Enum::name)
+                .collect(Collectors.joining(", "));
+                
             Movie movie1 = new Movie(
                 "The Shawshank Redemption",
-                new GregorianCalendar(1994, Calendar.JANUARY, 1).getTime(),
-                shawshankGenres,
-                9.3,
+                1994,
+                shawshankGenreStr,
                 "Frank Darabont",
-                shawshankActors
-            );
+                new HashMap<>(),
+                9.3);
+            movie1.setActors(shawshankActors);
             save(movie1);
 
             // Movie 2 - The Godfather
@@ -60,14 +66,19 @@ public class MoviesService extends BaseContentService<Movie> {
             godfatherActors.add(Actor.getInstance("Marlon", "Brando", LocalDate.of(1924, 4, 3), 'M', Ethnicity.CAUCASIAN));
             godfatherActors.add(Actor.getInstance("Al", "Pacino", LocalDate.of(1940, 4, 25), 'M', Ethnicity.CAUCASIAN));
 
+            String godfatherGenreStr = godfatherGenres.stream()
+                .map(Enum::name)
+                .collect(Collectors.joining(", "));
+                
             Movie movie2 = new Movie(
                 "The Godfather",
-                new GregorianCalendar(1972, Calendar.JANUARY, 1).getTime(),
-                godfatherGenres,
-                9.2,
+                1972,
+                godfatherGenreStr,
                 "Francis Ford Coppola",
-                godfatherActors
+                new HashMap<>(),
+                9.2
             );
+            movie2.setActors(godfatherActors);
             save(movie2);
 
             // Movie 3 - The Dark Knight
@@ -79,14 +90,19 @@ public class MoviesService extends BaseContentService<Movie> {
             darkKnightActors.add(Actor.getInstance("Christian", "Bale", LocalDate.of(1974, 1, 30), 'M', Ethnicity.CAUCASIAN));
             darkKnightActors.add(Actor.getInstance("Heath", "Ledger", LocalDate.of(1979, 4, 4), 'M', Ethnicity.CAUCASIAN));
 
+            String darkKnightGenreStr = darkKnightGenres.stream()
+                .map(Enum::name)
+                .collect(Collectors.joining(", "));
+                
             Movie movie3 = new Movie(
                 "The Dark Knight",
-                new GregorianCalendar(2008, Calendar.JANUARY, 1).getTime(),
-                darkKnightGenres,
-                9.0,
+                2008,
+                darkKnightGenreStr,
                 "Christopher Nolan",
-                darkKnightActors
+                new HashMap<>(),
+                9.0
             );
+            movie3.setActors(darkKnightActors);
             save(movie3);
 
             logger.info("Initialized with " + contentList.size() + " sample movies");

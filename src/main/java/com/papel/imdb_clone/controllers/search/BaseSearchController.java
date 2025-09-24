@@ -26,7 +26,7 @@ public abstract class BaseSearchController {
     protected Label statusLabel;
     
     protected BaseSearchController() {
-        this.searchService = ServiceLocator.getService(SearchService.class);
+        this.searchService = ServiceLocator.getInstance().getSearchService();
         this.navigationService = NavigationService.getInstance();
         
         if (this.searchService == null) {

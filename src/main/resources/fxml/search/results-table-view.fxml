@@ -64,6 +64,24 @@
                 -fx-border-color: #444;
             </style>
         </TableColumn>
+        
+        <!-- Seasons Column (Only for Series) -->
+        <TableColumn fx:id="resultSeasonsColumn" prefWidth="100" style="-fx-text-fill: #4CAF50; -fx-font-weight: bold;" text="SEASONS" visible="false">
+            <style>
+                -fx-alignment: CENTER;
+                -fx-background-color: #2A2A2A;
+                -fx-border-color: #444;
+            </style>
+        </TableColumn>
+        
+        <!-- Episodes Column (Only for Series) -->
+        <TableColumn fx:id="resultEpisodesColumn" prefWidth="100" style="-fx-text-fill: #FF9800; -fx-font-weight: bold;" text="EPISODES" visible="false">
+            <style>
+                -fx-alignment: CENTER;
+                -fx-background-color: #2A2A2A;
+                -fx-border-color: #444;
+            </style>
+        </TableColumn>
     </columns>
     
     <columnResizePolicy>

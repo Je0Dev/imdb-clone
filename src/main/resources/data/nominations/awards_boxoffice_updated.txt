@@ -28,4 +28,3 @@ movie,The Menu,2022,"79,000,000","1 Golden Globe nomination, 1 BAFTA nomination"
 series,House of the Dragon,2022,"N/A","1 Golden Globe, 1 Emmy, 2 SAG nominations",8.5,Fantasy
 movie,The Northman,2022,"69,400,000","1 BAFTA nomination, 1 Oscar nomination",7.0,Action
 movie,Nope,2022,"172,300,000","1 BAFTA nomination, 1 Oscar nomination",6.8,Horror
-s
