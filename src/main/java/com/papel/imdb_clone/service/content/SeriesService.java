@@ -85,22 +85,27 @@ public class SeriesService extends BaseContentService<Series> {
                     logger.info("No end year specified for series: " + title);
                 }
 
-                // Parse rating (7th field, index 6)
+                // Parse rating (6th field, index 5)
                 double rating = 0.0;
                 try {
-                    // In the file, the rating is at index 6 (7th field)
-                    rating = Double.parseDouble(parts[6].trim());
-                    logger.info("Set rating for " + title + " to: " + rating);
+                    // In the file, the rating is at index 5 (6th field)
+                    if (!parts[5].trim().isEmpty()) {
+                        rating = Double.parseDouble(parts[5].trim());
+                        logger.info("Set rating for " + title + " to: " + rating);
+                    } else {
+                        logger.warning("No rating found for series: " + title);
+                        rating = 0.0;
+                    }
                 } catch (NumberFormatException e) {
-                    logger.warning("Invalid rating format for series: " + title + ", value: " + 
-                            (parts.length > 6 ? parts[6] : "N/A"));
+                    logger.warning("Invalid rating format for series: " + title + 
+                                ", value: " + parts[5] +
+                                ", using default 0.0");
+                    rating = 0.0;
                 }
                 
                 // Director is at index 7 (8th field)
                 String director = "";
-                if (parts.length > 7) {
-                    director = parts[7].trim();
-                }
+                director = parts[7].trim();
 
                 // Create series with basic info
                 Series series = new Series(title);
@@ -121,15 +126,13 @@ public class SeriesService extends BaseContentService<Series> {
                     title, startYear, (endYear != null ? endYear : "-"), rating, director));
 
                 // Add actors if available
-                if (parts.length > 6) {
-                    String[] actorNames = parts[6].split(";");
-                    for (String actorName : actorNames) {
-                        String[] nameParts = actorName.trim().split("\\s+", 2);
-                        if (nameParts.length == 2) {
-                            Actor actor = Actor.getInstance(nameParts[0], nameParts[1],
-                                    LocalDate.now(), ' ', Ethnicity.UNKNOWN);
-                            series.addActor(actor);
-                        }
+                String[] actorNames = parts[6].split(";");
+                for (String actorName : actorNames) {
+                    String[] nameParts = actorName.trim().split("\\s+", 2);
+                    if (nameParts.length == 2) {
+                        Actor actor = Actor.getInstance(nameParts[0], nameParts[1],
+                                LocalDate.now(), ' ', Ethnicity.UNKNOWN);
+                        series.addActor(actor);
                     }
                 }
 
@@ -143,55 +146,6 @@ public class SeriesService extends BaseContentService<Series> {
         logger.info("Loaded " + contentList.size() + " series from file");
     }
 
-    @Override
-    protected void saveToFile() {
-        String filePath = "src/main/resources/data/content/series_updated.txt";
-        
-        try (java.io.BufferedWriter writer = new java.io.BufferedWriter(new java.io.FileWriter(filePath))) {
-            // Write header
-            writer.write("# Format: Title,GENRE,Seasons,StartYear,EndYear,Rating,Director,Actor1;Actor2;...");
-            writer.newLine();
-            
-            // Write each series as a line in the file
-            for (Series series : contentList) {
-                StringBuilder line = new StringBuilder();
-                
-                // Title, Genre, Seasons, StartYear, EndYear, Rating, Director
-                line.append(escapeCommas(series.getTitle())).append(",");
-                line.append(series.getGenre()).append(",");
-                line.append(series.getSeasons().size()).append(",");
-                line.append(series.getStartYear()).append(",");
-                
-                // Handle end year
-                Integer endYear = series.getEndYear();
-                if (endYear != null && endYear > 0) {
-                    line.append(endYear);
-                } else {
-                    line.append("-");
-                }
-                line.append(",");
-                
-                line.append(series.getImdbRating()).append(",");
-                line.append(escapeCommas(series.getDirector() != null ? series.getDirector() : ""));
-                
-                // Add actors if available
-                if (!series.getActors().isEmpty()) {
-                    line.append(",");
-                    String actors = series.getActors().stream()
-                        .map(actor -> escapeCommas(actor.getFirstName() + " " + actor.getLastName()))
-                        .collect(Collectors.joining(";"));
-                    line.append(actors);
-                }
-                
-                writer.write(line.toString());
-                writer.newLine();
-            }
-            
-            logger.info("Saved " + contentList.size() + " series to file");
-        } catch (java.io.IOException e) {
-            logger.log(Level.SEVERE, "Error saving series to file: " + filePath, e);
-        }
-    }
     
     /**
      * Escapes commas in strings to prevent CSV parsing issues.

@@ -23,7 +23,9 @@ public class ContentDetailsController {
 
     //Logger and date formatter
     private static final Logger logger = LoggerFactory.getLogger(ContentDetailsController.class);
+
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("MMMM d, yyyy");
+
 
     // Data State
     private String contentId;

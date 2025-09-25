@@ -21,7 +21,6 @@ public class Director extends Celebrity {
     
     private final List<String> bestWorks;
     private final Ethnicity ethnicity;
-    private String notableWorks = ""; // Initialize to empty string to avoid NPE
     
     /**
      * Protected constructor to enforce use of factory methods.
@@ -76,34 +75,49 @@ public class Director extends Celebrity {
 
     /**
      * Gets the notable works of the director.
+     * First checks the bestWorks list, then falls back to the parent's notableWorks.
      *
      * @return A list of notable works, or an empty list if not set
      */
+    @Override
     public List<String> getNotableWorks() {
         // First, check if we have any works in bestWorks
-        if ((bestWorks != null && !bestWorks.isEmpty())) {
+        if (bestWorks != null && !bestWorks.isEmpty()) {
             return new ArrayList<>(bestWorks);
         }
         
-        // Then check notableWorks string
-        if (notableWorks != null && !notableWorks.trim().isEmpty()) {
-            // Split by comma and clean up the strings
-            return Arrays.stream(notableWorks.split(","))
-                       .map(String::trim)
-                       .filter(s -> !s.isEmpty())
-                       .collect(Collectors.toList());
-        }
-        
-        // Return empty list if no works found
-        return new ArrayList<>();
+        // Fall back to parent's notableWorks
+        return super.getNotableWorks();
     }
 
-    /**
-     * Sets the notable works from a list of strings
-     * @param works List of works
-     */
+    @Override
+    public void setNotableWorks(String notableWorks) {
+        this.bestWorks.clear();
+        if (notableWorks != null && !notableWorks.trim().isEmpty()) {
+            String[] works = notableWorks.split(",");
+            for (String work : works) {
+                String trimmedWork = work.trim();
+                if (!trimmedWork.isEmpty()) {
+                    this.bestWorks.add(trimmedWork);
+                }
+            }
+        }
+        // Also update the parent's notableWorks for consistency
+        super.setNotableWorks(notableWorks);
+    }
+    
+    @Override
     public void setNotableWorks(List<String> works) {
-        this.notableWorks = works != null ? String.join(", ", works) : "";
+        this.bestWorks.clear();
+        if (works != null) {
+            this.bestWorks.addAll(works.stream()
+                .filter(Objects::nonNull)
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
+                .collect(Collectors.toList()));
+        }
+        // Also update the parent's notableWorks for consistency
+        super.setNotableWorks(works);
     }
 
     /**
@@ -180,20 +194,6 @@ public class Director extends Celebrity {
         this.id = id;
     }
 
-    /**
-     * Sets the notable works of the director.
-     *
-     * @param notableWorks A comma-separated string of notable works
-     */
-    public void setNotableWorks(String notableWorks) {
-        this.bestWorks.clear();
-        if (notableWorks != null && !notableWorks.trim().isEmpty()) {
-            String[] works = notableWorks.split(",");
-            for (String work : works) {
-                addBestWork(work.trim());
-            }
-        }
-    }
 
     //set first and last name
     @Override

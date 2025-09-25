@@ -10,8 +10,12 @@ import org.slf4j.LoggerFactory;
  * and profile management.
  */
 public class UserService {
+
+    // Logger
     private static final Logger logger = LoggerFactory.getLogger(UserService.class);
     private static UserService instance;
+    private final DataManager dataManager;
+
 
     private User currentUser;
     private User user;
@@ -23,7 +27,9 @@ public class UserService {
      * @param dataManager  The data manager instance
      */
     private UserService(DataManager dataManager) {
+        this.dataManager = dataManager;
     }
+
 
     /**
      * @param dataManager The data manager instance

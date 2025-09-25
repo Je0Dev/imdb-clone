@@ -23,7 +23,6 @@ public class Actor extends Celebrity{
     
     private Ethnicity ethnicity;
     private String role; // Actor's role in a specific movie/show
-    private String notableWorks; // Backward-compatible storage of notable works
     private final List<Movie> movies = new ArrayList<>(); // List of movies the actor has appeared in
 
     /**
@@ -169,8 +168,9 @@ public class Actor extends Celebrity{
     }
 
     // setter for notable works
+    @Override
     public void setNotableWorks(String notableWorks) {
-        this.notableWorks = notableWorks;
+        super.setNotableWorks(notableWorks);
     }
 
     //setters for first and lastname
@@ -187,14 +187,9 @@ public class Actor extends Celebrity{
      * Gets the list of notable works.
      * @return List of notable works, never null
      */
+    @Override
     public List<String> getNotableWorks() {
-        if (notableWorks == null || notableWorks.isBlank()) {
-            return new ArrayList<>();
-        }
-        return Arrays.stream(notableWorks.split(","))
-                    .map(String::trim)
-                    .filter(s -> !s.isEmpty())
-                    .collect(Collectors.toList());
+        return super.getNotableWorks();
     }
     
     /**
@@ -203,11 +198,7 @@ public class Actor extends Celebrity{
      */
     public void addNotableWork(String work) {
         if (work != null && !work.trim().isEmpty()) {
-            if (notableWorks == null || notableWorks.isEmpty()) {
-                notableWorks = work.trim();
-            } else {
-                notableWorks += ", " + work.trim();
-            }
+            super.addNotableWork(work);
         }
     }
 

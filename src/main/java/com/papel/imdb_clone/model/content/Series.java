@@ -21,7 +21,7 @@ public class Series extends Content {
     private double rating;
     private List<Genre> genres = new ArrayList<>();
     private static final Logger logger = LoggerFactory.getLogger(Series.class);
-    private Integer endYear; // Nullable for ongoing series
+    // endYear is managed in the parent Content class
     private int seasonsCount;
 
 
@@ -46,8 +46,13 @@ public class Series extends Content {
      * @param title The title of the series
      */
     public Series(String title) {
-        super(title, new java.util.Date(), Genre.DRAMA, "", new java.util.HashMap<>(), 0.0);
+        // Call parent constructor with minimal defaults
+        super(title, null, null, null, null, 0.0);
         this.seasons = new ArrayList<>();
+        // Initialize other fields
+        this.actors = new ArrayList<>();
+        this.awards = new ArrayList<>();
+        this.genres = new ArrayList<>();
         this.actors = new ArrayList<>();
         this.awards = new ArrayList<>();
         // Set the current year as default
@@ -83,7 +88,7 @@ public class Series extends Content {
     public int getTotalSeasons() {
         return seasons != null ? seasons.size() : 0;
     }
-    
+
     public int getTotalEpisodes() {
         logger.debug("Calculating total episodes for series: {}", getTitle());
         if (seasons == null || seasons.isEmpty()) {
@@ -158,39 +163,67 @@ public class Series extends Content {
         // Call parent's setStartYear first
         super.setStartYear(startYear);
         
-        // If end year is before start year, update it
-        if (endYear != null && endYear < startYear) {
+        // Get the current end year using the getter
+        int currentEndYear = getEndYear();
+        
+        // If end year is set (not 0) and is before start year, update it
+        if (currentEndYear != 0 && currentEndYear < startYear) {
             logger.info("Updating end year from {} to {} to match new start year for {}", 
-                endYear, startYear, getTitle());
+                currentEndYear, startYear, getTitle());
             setEndYear(startYear);
         }
     }
-    
-    public Integer getEndYear() {
-        // Get the stack trace to see who's calling this method
-        StackTraceElement[] stackTrace = Thread.currentThread().getStackTrace();
-        String caller = "";
-        if (stackTrace.length > 2) {
-            caller = " from " + stackTrace[2].getClassName() + "." + stackTrace[2].getMethodName() + "()";
-        }
-        logger.info("Getting end year for series {}: {}{}", getTitle(), endYear, caller);
-        return endYear;
+
+    /**
+     * Gets the end year of the series.
+     * @return The end year if the series has ended, null if it's ongoing
+     */
+    @Override
+    public int getEndYear() {
+        return super.getEndYear();
     }
     
-    public void setEndYear(Integer endYear) {
-        // Get the stack trace to see who's calling this method
-        StackTraceElement[] stackTrace = Thread.currentThread().getStackTrace();
-        String caller = "";
-        if (stackTrace.length > 2) {
-            caller = " from " + stackTrace[2].getClassName() + "." + stackTrace[2].getMethodName() + "()";
-        }
-
-        logger.info("Setting end year for series {} from {} to {}{}", getTitle(), this.endYear, endYear, caller);
-        
-        if (endYear != null && endYear < getStartYear()) {
+    @Override
+    public void setEndYear(int endYear) {
+        logger.debug("Setting end year for series '{}' to: {}", getTitle(), endYear);
+        if (endYear != 0 && endYear < getStartYear()) {
+            logger.warn("Attempted to set end year {} before start year {} for series '{}'", 
+                endYear, getStartYear(), getTitle());
             throw new IllegalArgumentException("End year cannot be before start year");
         }
-        this.endYear = endYear;
+        super.setEndYear(endYear);
+        logger.debug("Set end year to {} for series '{}'", endYear, getTitle());
+    }
+    
+    // Keep the Object version for backward compatibility
+    @Override
+    public void setEndYear(Object endYear) {
+        if (endYear == null) {
+            logger.debug("End year is null, setting to 0 (ongoing)");
+            setEndYear(0);
+        } else if (endYear instanceof Integer) {
+            logger.debug("Setting end year from Integer: {}", endYear);
+            setEndYear((Integer) endYear);
+        } else if (endYear instanceof String) {
+            String endYearStr = endYear.toString().trim();
+            if (endYearStr.isEmpty() || endYearStr.equals("-") || endYearStr.equalsIgnoreCase("N/A")) {
+                logger.debug("Empty or invalid end year string '{}', setting to 0 (ongoing)", endYearStr);
+                setEndYear(0);
+            } else {
+                try {
+                    int year = Integer.parseInt(endYearStr);
+                    logger.debug("Parsed end year from string '{}' to: {}", endYearStr, year);
+                    setEndYear(year);
+                } catch (NumberFormatException e) {
+                    logger.warn("Invalid end year format: '{}'", endYearStr);
+                    setEndYear(0);
+                }
+            }
+        } else {
+            logger.warn("Unexpected end year type: {}", 
+                endYear != null ? endYear.getClass().getName() : "null");
+            setEndYear(0);
+        }
     }
 
     /**
@@ -251,7 +284,7 @@ public class Series extends Content {
         Set<Actor> uniqueActors = new LinkedHashSet<>();
         
         // Add main cast first
-        if (this.actors != null) {
+        if (this.actors != null && !this.actors.isEmpty()) {
             uniqueActors.addAll(this.actors);
         }
         
@@ -259,15 +292,17 @@ public class Series extends Content {
         if (seasons != null) {
             for (Season season : seasons) {
                 if (season != null && season.getEpisodes() != null) {
-                    for (Episode episode : season.getEpisodes()) {
-                        if (episode != null && episode.getActors() != null) {
-                            uniqueActors.addAll(episode.getActors());
+                    for (Object episodeObj : season.getEpisodes()) {
+                        if (episodeObj instanceof Episode episode) {
+                            if (episode.getActors() != null) {
+                                uniqueActors.addAll(episode.getActors());
+                            }
                         }
                     }
                 }
             }
         }
-        
+        // Return a new ArrayList to prevent modification of the original set
         return new ArrayList<>(uniqueActors);
     }
 
@@ -287,7 +322,7 @@ public class Series extends Content {
             "%s (%d-%s, %d seasons, %d episodes, %.1f/10)",
             getTitle(),
             getStartYear(),
-            endYear > 0 ? String.valueOf(endYear) : "Present",
+            !isOngoing() ? String.valueOf(getEndYear()) : "Ongoing",
             getTotalSeasons(),
             getTotalEpisodes(),
             getRating()

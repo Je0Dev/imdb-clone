@@ -58,6 +58,7 @@ public class UserDataRegenerator {
                 }
 
 
+                // Try to parse the line into parts
                 try {
                     int id = Integer.parseInt(parts[0].trim());
                     String username = parts[1].trim();
@@ -116,6 +117,11 @@ public class UserDataRegenerator {
             String errorMsg = "[ERROR] Failed to read users_updated.txt: " + e.getMessage();
             System.out.println(errorMsg);
             logger.log(Level.SEVERE, errorMsg, e);
+            throw new RuntimeException(errorMsg, e);
         }
+        // Log the completion message which means the user data regeneration process is complete
+        String completionMsg = String.format("[INFO] User data regeneration complete. Successfully registered %d users.", count);
+        System.out.println(completionMsg);
+        logger.info(completionMsg);
     }
 }

@@ -3,6 +3,10 @@ package com.papel.imdb_clone.model.people;
 import com.papel.imdb_clone.enums.Ethnicity;
 import java.time.LocalDate;
 import java.util.Objects;
+import java.util.List;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.stream.Collectors;
 
 /**
  * Celebrity class is an abstract class that represents a celebrity.
@@ -16,6 +20,7 @@ public abstract class Celebrity {
     protected LocalDate birthDate;
     protected char gender;
     private Ethnicity ethnicity;
+    protected List<String> notableWorks = new ArrayList<>();
 
     /**
      * Celebrity constructor with required fields.
@@ -119,6 +124,51 @@ public abstract class Celebrity {
 
     public Ethnicity getNationality() {
         return ethnicity;
+    }
+    
+    /**
+     * Gets the list of notable works for this celebrity.
+     * @return List of notable works
+     */
+    public List<String> getNotableWorks() {
+        return new ArrayList<>(notableWorks);
+    }
+    
+    /**
+     * Sets the notable works for this celebrity.
+     * @param works List of notable works
+     */
+    public void setNotableWorks(List<String> works) {
+        if (works != null) {
+            this.notableWorks = new ArrayList<>(works);
+        } else {
+            this.notableWorks = new ArrayList<>();
+        }
+    }
+    
+    /**
+     * Sets the notable works from a comma-separated string.
+     * @param worksString Comma-separated string of notable works
+     */
+    public void setNotableWorks(String worksString) {
+        if (worksString != null && !worksString.trim().isEmpty()) {
+            this.notableWorks = Arrays.stream(worksString.split(","))
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
+                .collect(Collectors.toList());
+        } else {
+            this.notableWorks = new ArrayList<>();
+        }
+    }
+    
+    /**
+     * Adds a notable work to the list if it doesn't already exist.
+     * @param work The notable work to add
+     */
+    public void addNotableWork(String work) {
+        if (work != null && !work.trim().isEmpty() && !notableWorks.contains(work.trim())) {
+            notableWorks.add(work.trim());
+        }
     }
     
     /**

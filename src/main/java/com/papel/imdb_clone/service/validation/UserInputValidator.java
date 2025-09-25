@@ -11,9 +11,13 @@ import java.util.regex.Pattern;
  * Service for validating user input with detailed error messages.
  */
 public class UserInputValidator {
+
     // Constants for validation patterns
+    //this means that the user email must be in the format of username@domain.com
     private static final Pattern EMAIL_PATTERN = Pattern.compile("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.\\w+$");
+    //this means that the username must be 3-20 characters long and can only contain letters, numbers, dots and underscores like username123 or username_123
     private static final Pattern USERNAME_PATTERN = Pattern.compile("^[a-zA-Z0-9_.]{3,20}$");
+    //this means that the password must be at least 8 characters long and include uppercase, lowercase, number and special character like Password123! or password123!
     private static final Pattern PASSWORD_PATTERN = Pattern.compile("^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[@#$%^&+=])(?=\\S+$).{8,}$");
     
     /**

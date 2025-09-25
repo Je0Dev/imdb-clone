@@ -29,7 +29,15 @@ import java.util.ResourceBundle;
  */
 
 public class AuthController extends BaseController {
+
+    //logger
     private static final Logger logger = LoggerFactory.getLogger(AuthController.class);
+    //transient means that the variable is not serialized which means it is not saved to the database
+    private final transient UserInputValidator inputValidator;
+    private final transient AuthService authService;
+    private final transient NavigationService navigationService;
+    private transient String sessionToken;
+    private final transient Map<String, Object> data;
 
     /**
      * Constructs a new AuthController with the specified dependencies.
@@ -49,15 +57,6 @@ public class AuthController extends BaseController {
     public StackPane registerContainer;
     public Hyperlink loginLink;
     public Label passwordStrengthLabel;
-
-    // Services
-    private final transient AuthService authService;
-    private final transient NavigationService navigationService;
-    private final transient UserInputValidator inputValidator;
-    
-    // Session management
-    private transient String sessionToken;
-    private final transient Map<String, Object> data;
 
 
     // UI Components - Login

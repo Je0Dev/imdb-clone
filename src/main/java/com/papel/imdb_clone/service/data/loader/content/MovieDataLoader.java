@@ -128,13 +128,19 @@ public class MovieDataLoader extends BaseDataLoader {
                         int year = 0;
                         Date releaseDate = null;
                         try {
-                            year = Integer.parseInt(parts[1].trim());
-                            // Validate year is within reasonable range (1888 is when first movie was made)
-                            int currentYear = Calendar.getInstance().get(Calendar.YEAR);
-                            if (year < 1888 || year > currentYear + 2) {
-                                logger.warn("Year {} is out of range (1888-{}) for movie '{}' at line {}. Using current year as fallback.",
-                                year, currentYear + 2, title, lineNumber);
-                                year = currentYear;
+                            String yearStr = parts[1].trim();
+                            // First validate the year format and range
+                            if (yearStr.matches("^\\d{4}$")) {  // Check if it's exactly 4 digits
+                                year = Integer.parseInt(yearStr);
+                                // Validate year is within reasonable range (1888 is when first movie was made)
+                                int currentYear = Calendar.getInstance().get(Calendar.YEAR);
+                                if (year < 1888 || year > currentYear + 2) {
+                                    logger.warn("Year {} is out of range (1888-{}) for movie '{}' at line {}. Using current year as fallback.",
+                                            year, currentYear + 2, title, lineNumber);
+                                    year = currentYear;
+                                }
+                            } else {
+                                throw new NumberFormatException("Invalid year format: " + yearStr);
                             }
                             // create release date
                             Calendar cal = Calendar.getInstance();
@@ -142,11 +148,12 @@ public class MovieDataLoader extends BaseDataLoader {
                             cal.set(Calendar.MONTH, Calendar.JANUARY);
                             cal.set(Calendar.DAY_OF_MONTH, 1);
                             releaseDate = new Date(cal.getTimeInMillis());
-                        } catch (Exception e) {
-                            logger.warn("Invalid year format '{}' for movie '{}' at line {}. Using current year as fallback. Error: {}",
-                                parts[1], title, lineNumber, e.getMessage());
+                        } catch (NumberFormatException e) {
+                            int currentYear = Calendar.getInstance().get(Calendar.YEAR);
+                            logger.warn("Invalid year format '{}' for movie '{}' at line {}. Using current year ({}). Error: {}",
+                                parts[1].trim(), title, lineNumber, currentYear, e.getMessage());
                             // Set to current year as fallback
-                            year = Calendar.getInstance().get(Calendar.YEAR);
+                            year = currentYear;
                             Calendar cal = Calendar.getInstance();
                             // set release date to first day of current year
                             cal.set(Calendar.YEAR, year);

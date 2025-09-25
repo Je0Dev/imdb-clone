@@ -2,13 +2,12 @@ package com.papel.imdb_clone.service.people;
 
 import com.papel.imdb_clone.exceptions.EntityNotFoundException;
 import com.papel.imdb_clone.model.people.Celebrity;
+import com.papel.imdb_clone.repository.CelebritiesRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.stream.Collectors;
 
@@ -21,14 +20,15 @@ import java.util.stream.Collectors;
 public class CelebrityService<T extends Celebrity> {
     private static final Logger logger = LoggerFactory.getLogger(CelebrityService.class);
 
-    private final List<T> celebrities = new CopyOnWriteArrayList<>();
+    private final CelebritiesRepository celebritiesRepository;
     private final CelebrityManager<T> celebrityManager;
     private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
     private final Class<T> celebrityType;
 
 
-    public CelebrityService(Class<T> celebrityType) {
+    public CelebrityService(Class<T> celebrityType, CelebritiesRepository celebritiesRepository) {
         this.celebrityType = celebrityType;
+        this.celebritiesRepository = celebritiesRepository;
         this.celebrityManager = CelebrityManager.getInstance(celebrityType);
     }
 
@@ -39,19 +39,14 @@ public class CelebrityService<T extends Celebrity> {
      * @param name The name to search for
      * @return List of celebrities matching the name
      */
-    public List<?> findByName(String name) {
+    public List<T> findByName(String name) {
         if (name == null || name.trim().isEmpty()) {
             return List.of();
         }
 
-        // Convert name to lowercase and trim whitespace
-        String searchTerm = name.toLowerCase().trim();
         lock.readLock().lock();
         try {
-            // Search in our local list
-            return celebrities.stream()
-                    .filter(celebrity -> celebrity.getFullName().toLowerCase().contains(searchTerm))
-                    .collect(Collectors.toList());
+            return celebritiesRepository.findByNameContaining(name.trim(), celebrityType);
         } finally {
             lock.readLock().unlock();
         }
@@ -66,22 +61,22 @@ public class CelebrityService<T extends Celebrity> {
     public Optional<T> findById(int id) {
         lock.readLock().lock();
         try {
-            // First try to find in our local list
-            Optional<T> localCelebrity = celebrities.stream()
-                    .filter(celebrity -> celebrity.getId() == id)
-                    .findFirst();
-                    
-            // If not found locally, check with CelebrityManager
-            if (localCelebrity.isEmpty()) {
+            // First try to find in the repository
+            Optional<T> celebrity = celebritiesRepository.findById(id, celebrityType);
+            
+            // If not found in repository, check with CelebrityManager
+            if (celebrity.isEmpty()) {
                 Optional<T> celeb = celebrityManager.getCelebrityById(id);
                 if (celeb.isPresent() && celebrityType.isInstance(celeb.get())) {
-                    return Optional.of(celebrityType.cast(celeb.get()));
+                    T managedCeleb = celebrityType.cast(celeb.get());
+                    // Save the celebrity from manager to repository
+                    celebritiesRepository.save(managedCeleb);
+                    return Optional.of(managedCeleb);
                 }
             }
             
-            return localCelebrity;
+            return celebrity;
         } finally {
-            // Release read lock
             lock.readLock().unlock();
         }
     }
@@ -102,28 +97,16 @@ public class CelebrityService<T extends Celebrity> {
             // Let CelebrityManager handle the ID assignment and duplicate checking
             celebrityManager.addCelebrity(celebrity);
             
-            // Check if this is a new celebrity or an update
-            boolean isNew = true;
-            int index = -1;
+            // Save to repository
+            T savedCelebrity = celebritiesRepository.save(celebrity);
             
-            for (int i = 0; i < celebrities.size(); i++) {
-                if (celebrities.get(i).getId() == celebrity.getId()) {
-                    isNew = false;
-                    index = i;
-                    break;
-                }
-            }
-            
-            if (isNew) {
-                celebrities.add(celebrity);
-                logger.info("Created new {}: {}", celebrityType.getSimpleName(), celebrity.getFullName());
-            } else {
-                // Update existing celebrity
-                celebrities.set(index, celebrity);
+            if (savedCelebrity.getId() == celebrity.getId()) {
                 logger.info("Updated {}: {}", celebrityType.getSimpleName(), celebrity.getFullName());
+            } else {
+                logger.info("Created new {}: {}", celebrityType.getSimpleName(), celebrity.getFullName());
             }
             
-            return celebrity;
+            return savedCelebrity;
         } finally {
             lock.writeLock().unlock();
         }
@@ -142,18 +125,13 @@ public class CelebrityService<T extends Celebrity> {
             return Optional.empty();
         }
 
-        // Convert names to lowercase and trim whitespace
-        String searchFirstName = firstName.trim().toLowerCase();
-        String searchLastName = lastName.trim().toLowerCase();
-
         lock.readLock().lock();
         try {
-            return celebrities.stream()
-                    // Search in our local list to find a match which has the same first and last name
-                    .filter(celebrity ->
-                            celebrity.getFirstName().toLowerCase().equals(searchFirstName) &&
-                                    celebrity.getLastName().toLowerCase().equals(searchLastName))
-                    .findFirst();
+            return celebritiesRepository.findByFullName(
+                firstName.trim(), 
+                lastName.trim(), 
+                celebrityType
+            );
         } finally {
             lock.readLock().unlock();
         }
@@ -168,7 +146,48 @@ public class CelebrityService<T extends Celebrity> {
     public List<T> getAll() {
         lock.readLock().lock();
         try {
-            return new java.util.ArrayList<>(celebrities);
+            return celebritiesRepository.findAll(celebrityType);
+        } finally {
+            lock.readLock().unlock();
+        }
+    }
+    
+    /**
+     * Deletes a celebrity by ID.
+     * @param id The ID of the celebrity to delete
+     * @return true if a celebrity was deleted, false otherwise
+     */
+    public boolean deleteById(int id) {
+        lock.writeLock().lock();
+        try {
+            return celebritiesRepository.deleteById(id);
+        } finally {
+            lock.writeLock().unlock();
+        }
+    }
+    
+    /**
+     * Checks if a celebrity with the given ID exists.
+     * @param id The ID to check
+     * @return true if a celebrity with the ID exists, false otherwise
+     */
+    public boolean existsById(int id) {
+        lock.readLock().lock();
+        try {
+            return celebritiesRepository.existsById(id);
+        } finally {
+            lock.readLock().unlock();
+        }
+    }
+    
+    /**
+     * Returns the total count of celebrities of this service's type.
+     * @return The count of celebrities
+     */
+    public long count() {
+        lock.readLock().lock();
+        try {
+            return celebritiesRepository.count(celebrityType);
         } finally {
             lock.readLock().unlock();
         }

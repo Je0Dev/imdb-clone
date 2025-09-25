@@ -20,7 +20,6 @@ public abstract class BaseContentService<T extends Content> implements ContentSe
 
     protected abstract void loadFromFile();
 
-    protected abstract void saveToFile();
 
     /**
      * Initialize sample data for the service.
@@ -88,8 +87,6 @@ public abstract class BaseContentService<T extends Content> implements ContentSe
                     }
                 }
             }
-            // Save changes to file
-            saveToFile();
             return content;
         } finally {
             lock.writeLock().unlock();

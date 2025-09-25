@@ -7,6 +7,7 @@ import com.papel.imdb_clone.model.people.Director;
 import com.papel.imdb_clone.repository.impl.InMemoryMovieRepository;
 import com.papel.imdb_clone.repository.impl.InMemorySeriesRepository;
 import com.papel.imdb_clone.repository.impl.InMemoryUserRepository;
+import com.papel.imdb_clone.repository.impl.InMemoryCelebritiesRepository;
 import com.papel.imdb_clone.service.content.MoviesService;
 import com.papel.imdb_clone.service.content.SeriesService;
 import com.papel.imdb_clone.service.data.base.FileDataLoaderService;
@@ -26,7 +27,11 @@ import java.util.concurrent.ConcurrentMap;
  * Updated to use the refactored service-oriented architecture.
  */
 public class ServiceLocator {
+
+
     private static final Logger logger = LoggerFactory.getLogger(ServiceLocator.class);
+
+    //volatile means that the value of this variable will be read from the main memory and not from the cache
     private static volatile ServiceLocator instance;
     private static final ConcurrentMap<Object, Object> services = new ConcurrentHashMap<>();
     private static volatile DataManager dataManager;
@@ -119,8 +124,13 @@ public class ServiceLocator {
                 // Initialize content services with proper types
                 MoviesService moviesService = MoviesService.getInstance();
                 SeriesService seriesService = SeriesService.getInstance();
-                CelebrityService<Actor> actorService = new CelebrityService<>(Actor.class);
-                CelebrityService<Director> directorService = new CelebrityService<>(Director.class);
+                
+                // Get the CelebritiesRepository from DataManager
+                InMemoryCelebritiesRepository celebritiesRepository = dataManager.getCelebritiesRepository();
+                
+                // Initialize CelebrityService with the repository
+                CelebrityService<Actor> actorService = new CelebrityService<>(Actor.class, celebritiesRepository);
+                CelebrityService<Director> directorService = new CelebrityService<>(Director.class, celebritiesRepository);
 
                 // Register services with type-safe qualifiers
                 registerService(MoviesService.class, moviesService);
@@ -323,6 +333,7 @@ public class ServiceLocator {
             logger.error("Error shutting down services", e);
         }
 
+        // Clear all services
         services.clear();
         logger.info("Service shutdown complete");
     }

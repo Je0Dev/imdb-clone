@@ -10,15 +10,6 @@
 8,alexjohnson,alex.j@example.com,password123,Alex Johnson,USER
 9,mariagarcia,mgarcia@email.com,password123,Maria Garcia,USER
 10,robertlee,rlee@example.com,password123,Robert Lee,USER
-11,lisachen,lisa.chen@email.com,password123,Lisa Chen,USER
-12,mohammedkhan,mkhan@example.com,password123,Mohammed Khan,USER
-13,oliviamartin,omartin@email.com,password123,Olivia Martin,USER
-14,jameswilson,jwilson@example.com,password123,James Wilson,USER
-15,sophiagarcia,sgarcia@email.com,password123,Sophia Garcia,USER
-16,davidkim,david.k@example.com,password123,David Kim,USER
-17,emmaparker,eparker@email.com,password123,Emma Parker,USER
-18,danielroberts,droberts@example.com,password123,Daniel Roberts,USER
-19,avapeterson,apeterson@email.com,password123,Ava Peterson,USER
-20,noahscott,nscott@example.com,password123,Noah Scott,USER
+
 
 

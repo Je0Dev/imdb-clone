@@ -12,9 +12,13 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class UserStorageService {
+
+
+    // file to store user data that implements Serializable interface which means the object can be serialized which means the object can be written to a file
     private static final String USER_DATA_FILE = "user_data.ser";
     private static UserStorageService instance;
     private final Logger logger;
+
 
     private UserStorageService() {
         // Private constructor to enforce singleton pattern
@@ -111,7 +115,7 @@ public class UserStorageService {
             if (tempFile != null && tempFile.exists() && !tempFile.delete()) {
                 logger.warning("Failed to delete temporary file: " + tempFile.getAbsolutePath());
             }
-            
+            // throw runtime exception because the save operation failed
             throw new RuntimeException(errorMsg, e);
         }
     }

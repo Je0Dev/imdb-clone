@@ -120,7 +120,7 @@ public class SearchService {
                     contentList.size(), movies.size(), series.size());
         }
 
-        // Apply search filters
+        // Apply search filters with predicate which is a boolean function
         List<Predicate<Content>> filters = createSearchFilters(criteria);
         logger.debug("Created {} filters to apply", filters.size());
 

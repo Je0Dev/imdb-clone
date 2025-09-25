@@ -20,7 +20,7 @@ public abstract class Content {
     private Map<Integer, Integer> userRatings; // userId -> rating
     private Double imdbRating; // IMDb rating
     private Date releaseDate; // Release date
-    int startYear; // Start year
+    private int startYear; // Start year
 
 
     private List<Genre> genres = new ArrayList<>();
@@ -30,10 +30,26 @@ public abstract class Content {
     private static final Logger logger = LoggerFactory.getLogger(Content.class);
 
     private Object contentType; // Content type
+    
+    /**
+     * Gets the content type of this content.
+     * @return The content type
+     */
+    public Object getContentType() {
+        return contentType;
+    }
+    
+    /**
+     * Sets the content type of this content.
+     * @param contentType The content type to set
+     */
+    public void setContentType(Object contentType) {
+        this.contentType = contentType;
+    }
 
     private String series;
     private List<String> awards = new ArrayList<>();
-    private Object endYear;
+    private int endYear = 0; // 0 indicates ongoing series
 
 
     /**
@@ -98,6 +114,72 @@ public abstract class Content {
     public String getDirector() {
         return director;
     }
+    
+    /**
+     * Gets the end year of the content.
+     * @return The end year if the content has ended, 0 if it's ongoing
+     */
+    public int getEndYear() {
+        return endYear;
+    }
+    
+    /**
+     * Checks if the content is ongoing.
+     * @return true if the content is ongoing (endYear is 0 or current year + 1), false otherwise
+     */
+    public boolean isOngoing() {
+        if (endYear == 0) {
+            return true;
+        }
+        // Also check if end year is current year + 1 (common placeholder for ongoing series)
+        int currentYear = Calendar.getInstance().get(Calendar.YEAR);
+        return endYear >= currentYear;
+    }
+    
+    /**
+     * Sets the end year of the content.
+     * @param endYear The end year of the content (0 for ongoing content)
+     * @throws IllegalArgumentException if endYear is negative
+     */
+    public void setEndYear(int endYear) {
+        if (endYear < 0) {
+            throw new IllegalArgumentException("End year cannot be negative");
+        }
+        this.endYear = endYear;
+    }
+    
+    /**
+     * Sets the end year from an Object (for backward compatibility)
+     * @param endYear The end year as an Object (will be converted to int)
+     */
+    public void setEndYear(Object endYear) {
+        if (endYear == null) {
+            logger.debug("End year is null, setting to 0 (ongoing)");
+            this.endYear = 0;
+        } else if (endYear instanceof Integer) {
+            logger.debug("Setting end year from Integer: {}", endYear);
+            setEndYear((Integer) endYear);
+        } else if (endYear instanceof String) {
+            String endYearStr = endYear.toString().trim();
+            if (endYearStr.isEmpty() || endYearStr.equals("-") || endYearStr.equalsIgnoreCase("N/A")) {
+                logger.debug("Empty or invalid end year string '{}', setting to 0 (ongoing)", endYearStr);
+                this.endYear = 0;
+            } else {
+                try {
+                    int year = Integer.parseInt(endYearStr);
+                    logger.debug("Parsed end year from string '{}' to: {}", endYearStr, year);
+                    setEndYear(year);
+                } catch (NumberFormatException e) {
+                    logger.warn("Invalid end year format: '{}'", endYearStr);
+                    this.endYear = 0;
+                }
+            }
+        } else {
+            logger.warn("Unexpected end year type: {}", endYear.getClass().getName());
+            this.endYear = 0;
+        }
+    }
+    
 
     public Double getImdbRating() {
         return imdbRating;
@@ -349,38 +431,21 @@ public abstract class Content {
                 cal.set(Calendar.DAY_OF_MONTH, 1);
                 this.releaseDate = cal.getTime();
             } catch (Exception e) {
-                logger.error("Error updating release date for year: {}", startYear, e);
-                this.releaseDate = null;
-                this.startYear = 0;
-                this.year = null;
+                logger.error("Error setting start year: {}", e.getMessage());
             }
         }
     }
 
-    /**
-     * Sets the genres for this content
-     * @param trim the genre to set
-     */
-    public void setGenres(String trim) {
-        this.genres = new ArrayList<>();
-        this.genres.add(Genre.valueOf(trim));
-        this.genre = Genre.valueOf(trim);
+    public double getRating() {
+        return imdbRating != null ? imdbRating : 0.0;
     }
 
-    public Object getContentType() {
-        return contentType;
+    public CharSequence getCast() {
+        return actors != null ? actors.toString() : "";
     }
 
     public String getSeries() {
         return series;
-    }
-
-    public double getRating() {
-        return imdbRating;
-    }
-
-    public CharSequence getCast() {
-        return actors.toString();
     }
 
     public List<String> getAwards() {
@@ -390,12 +455,5 @@ public abstract class Content {
     public void setAwards(List<String> awards) {
         this.awards = awards != null ? awards : new ArrayList<>();
     }
-
-    public Object getEndYear() {
-        return endYear;
-    }
-
-    public void setEndYear(Object endYear) {
-        this.endYear = endYear;
-    }
+    
 }

@@ -6,7 +6,6 @@ import com.papel.imdb_clone.model.content.Movie;
 import com.papel.imdb_clone.model.people.Actor;
 import com.papel.imdb_clone.util.FileUtils;
 
-import java.io.PrintWriter;
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.util.*;
@@ -98,27 +97,20 @@ public class MoviesService extends BaseContentService<Movie> {
         logger.info("Loaded " + contentList.size() + " movies from file");
     }
 
-    @Override
-    protected void saveToFile() {
-        try (PrintWriter writer = new PrintWriter("src/main/resources/data/content/movies_updated.txt")) {
-            for (Movie movie : contentList) {
-                String actors = movie.getActors().stream()
-                        .map(actor -> actor.getFirstName() + " " + actor.getLastName())
-                        .collect(Collectors.joining(";"));
-
-                writer.println(String.format("%s,%d,%s,%d,%s,%.1f,%s",
-                        movie.getTitle(),
-                        movie.getYear(),
-                        movie.getGenre(),
-                        movie.getDuration(),
-                        movie.getDirector(),
-                        movie.getImdbRating(),
-                        actors
-                ));
-            }
-        } catch (Exception e) {
-            logger.log(Level.SEVERE, "Error saving movies to file", e);
+    /**
+     * Escapes commas in strings to prevent CSV parsing issues.
+     * @param input The input string to escape
+     * @return The escaped string
+     */
+    private String escapeCommas(String input) {
+        if (input == null) {
+            return "";
         }
+        // If the input contains a comma, wrap it in quotes
+        if (input.contains(",")) {
+            return "\"" + input.replace("\"", "\"\"") + "\"";
+        }
+        return input;
     }
 
     //initialize sample data

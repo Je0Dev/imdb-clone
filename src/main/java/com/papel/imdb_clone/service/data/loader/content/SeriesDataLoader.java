@@ -77,8 +77,10 @@ public class SeriesDataLoader extends BaseDataLoader {
                 }
 
                 try {
-                    // Parse CSV line
-                    String[] parts = parseCSVLine(line);
+                    // Parse CSV line using a more reliable CSV parsing approach
+                    List<String> partsList = getStrings(line);
+
+                    String[] parts = partsList.toArray(new String[0]);
                     if (parts.length >= 7) {
 
                         String title = parts[0].trim();
@@ -101,15 +103,10 @@ public class SeriesDataLoader extends BaseDataLoader {
                             logger.warn("Invalid seasons count '{}' at line {}. Using default value 1.", parts[2].trim(), lineNumber);
                         }
 
-                        // Initialize the Series object with default values first
-                        // We'll update the actual values as we parse them
-                        this.series = new Series(
-                            title,          // title
-                            Genre.UNKNOWN,  // default genre
-                            0.0,            // default rating
-                            0.0,            // default imdbRating
-                            1               // default seasonsCount
-                        );
+                        // Create the Series with just the title first
+                        // We'll set other values after parsing them
+                        this.series = new Series(title);
+                        this.series.setGenres(new ArrayList<>()); // Initialize empty genres list
                         
                         int startYear = 0;
                         int currentYear = Calendar.getInstance().get(Calendar.YEAR);
@@ -118,7 +115,9 @@ public class SeriesDataLoader extends BaseDataLoader {
                         try {
                             // Parse start year (index 3)
                             String startYearStr = parts[3].trim();
+                            logger.debug("Parsing start year from '{}' for series: {}", startYearStr, title);
                             startYear = Integer.parseInt(startYearStr);
+                            logger.debug("Parsed start year: {}", startYear);
                             
                             // Validate start year
                             if (startYear < 1928 || startYear > currentYear + 1) {
@@ -128,22 +127,30 @@ public class SeriesDataLoader extends BaseDataLoader {
                             this.series.setStartYear(startYear);
                             
                             // Parse end year (index 4) - handle dash or empty string
-                            if (parts.length > 4) {
-                                String endYearStr = parts[4].trim();
-                                if (!endYearStr.isEmpty() && !endYearStr.equals("-")) {
-                                    try {
-                                        int endYear = Integer.parseInt(endYearStr);
-                                        if (endYear >= startYear && endYear <= currentYear + 1) {
-                                            this.series.setEndYear(endYear);
-                                            logger.info("Set end year to {} for series: {}", endYear, title);
-                                        } else {
-                                            logger.warn("Invalid end year {} for series '{}'. Using null (ongoing).", endYear, title);
-                                        }
-                                    } catch (NumberFormatException e) {
-                                        logger.warn("Invalid end year format '{}' for series '{}'. Using null (ongoing).", endYearStr, title);
+                            String endYearStr = parts[4].trim();
+                            logger.debug("Processing end year for '{}': '{}' (raw: '{}')", title, endYearStr, parts[4]);
+
+                            if (endYearStr.isEmpty() || endYearStr.equals("-") || endYearStr.equalsIgnoreCase("N/A")) {
+                                logger.debug("No end year provided for series: {}. Marking as ongoing (0).", title);
+                                this.series.setEndYear(0);
+                            } else {
+                                try {
+                                    int endYear = Integer.parseInt(endYearStr);
+                                    logger.debug("Parsed end year for '{}': {}", title, endYear);
+
+                                    if (endYear >= startYear) {
+                                        logger.debug("Setting end year to {} for series: {}", endYear, title);
+                                        this.series.setEndYear(endYear);
+                                        logger.info("Set end year to {} for series: {}", endYear, title);
+                                    } else {
+                                        logger.warn("End year {} is before start year {} for series '{}'. Marking as ongoing (0).",
+                                            endYear, startYear, title);
+                                        this.series.setEndYear(0);
                                     }
-                                } else {
-                                    logger.debug("No end year provided for series: {}. Marking as ongoing.", title);
+                                } catch (NumberFormatException e) {
+                                    logger.warn("Invalid end year format '{}' for series '{}'. Marking as ongoing (0).",
+                                        endYearStr, title);
+                                    this.series.setEndYear(0);
                                 }
                             }
                         } catch (NumberFormatException | ArrayIndexOutOfBoundsException e) {
@@ -153,21 +160,31 @@ public class SeriesDataLoader extends BaseDataLoader {
                             this.series.setStartYear(startYear);
                         }
 
-                        // Parse rating (now at index 4 since we removed end year)
+                        // Parse rating
                         double rating = 0.0;
+                        int ratingIndex = 5; // Rating is at index 5 (after title, genre, seasons, startYear, endYear)
                         try {
-                            String ratingStr = parts[4].trim();
-                            if (!ratingStr.isEmpty()) {
-                                rating = Double.parseDouble(ratingStr);
-                                // Ensure rating is between 0 and 10
-                                rating = Math.max(0, Math.min(10.0, rating));
-                                rating = Math.round(rating * 10.0) / 10.0;
-                                logger.debug("Rating for series '{}' at line {} is {}", title, lineNumber, rating);
+                            if (parts.length > ratingIndex) {
+                                String ratingStr = parts[ratingIndex].trim();
+                                if (!ratingStr.isEmpty() && !ratingStr.equalsIgnoreCase("N/A")) {
+                                    try {
+                                        rating = Double.parseDouble(ratingStr);
+                                        // Ensure rating is between 0 and 10
+                                        rating = Math.max(0, Math.min(10.0, rating));
+                                        rating = Math.round(rating * 10.0) / 10.0;
+                                        logger.debug("Rating for series '{}' at line {} is {}", title, lineNumber, rating);
+                                    } catch (NumberFormatException e) {
+                                        logger.warn("Invalid rating format '{}' at line {}. Using default value 0.0", 
+                                            ratingStr, lineNumber);
+                                    }
+                                } else {
+                                    logger.warn("Missing rating at line {}. Using default value 0.0", lineNumber);
+                                }
                             } else {
-                                logger.warn("Missing rating at line {}. Using default value 0.0: {}", lineNumber, line);
+                                logger.warn("Rating field missing at line {}. Using default value 0.0", lineNumber);
                             }
-                        } catch (NumberFormatException | ArrayIndexOutOfBoundsException e) {
-                            logger.warn("Invalid rating format at line {}. Using default value 0.0: {}", lineNumber, line);
+                        } catch (Exception e) {
+                            logger.warn("Error parsing rating at line {}: {}", lineNumber, e.getMessage());
                         }
 
                         // Parse director(s) - now at index 6
@@ -202,7 +219,7 @@ public class SeriesDataLoader extends BaseDataLoader {
                         }
 
                         // Parse actors (semicolon separated) - adjust index based on the format
-                        int actorsIndex = 6;
+                        int actorsIndex = 7; // Changed from 6 to 7 to skip the director field and get the actors-main cast column on ui
                         String[] actorNames = new String[0];
                         try {
                             actorNames = parts[actorsIndex].trim().split(";");
@@ -256,24 +273,12 @@ public class SeriesDataLoader extends BaseDataLoader {
 
                         // Add creator as director if not empty
                         if (!creatorName.trim().isEmpty()) {
-                            String[] creatorNameParts = creatorName.trim().split("\\s+", 2);
-                            if (creatorNameParts.length >= 2) {
-                                String creatorFirstName = creatorNameParts[0].trim();
-                                String creatorLastName = creatorNameParts[1].trim();
+                            //get director name from creator name
+                            String directorFullName = getString();
 
-                                // Set director name as a string
-                                String directorFullName = creatorFirstName + (creatorLastName.isEmpty() ? "" : " " + creatorLastName);
-                                series.setDirector(directorFullName);
-                            } else {
-                                // Split the creator name into first and last name
-                                String[] nameParts = creatorName.trim().split("\\s+", 2);
-                                String firstName = nameParts[0];
-                                String lastName = nameParts.length > 1 ? nameParts[1] : "";
-
-                                // Set director name as a string
-                                String directorFullName = firstName + (lastName.isEmpty() ? "" : " " + lastName);
-                                series.setDirector(directorFullName);
-                            }
+                            // Set director name as a string
+                            series.setDirector(directorFullName);
+                            logger.debug("Set director '{}' for series '{}'", directorFullName, title);
                         }
 
                         // Ensure all series has seasons list
@@ -395,9 +400,15 @@ public class SeriesDataLoader extends BaseDataLoader {
                         }
                         // Save the series
                         try {
-                            seriesService.save(series);
-                            count++;
-                            logger.debug("Successfully loaded series: {} ({})", title, startYear);
+                            Series savedSeries = seriesService.save(series);
+                            if (savedSeries != null) {
+                                count++;
+                                logger.debug("Successfully loaded series: {} ({} - {})", 
+                                    title, startYear, series.getEndYear() != 0 ? series.getEndYear() : "Present");
+                            } else {
+                                logger.warn("Failed to save series: {} (duplicate or invalid data)", title);
+                                duplicates++;
+                            }
                         } catch (Exception e) {
                             logger.error("Error saving series '{}' at line {}: {}",
                                     title, lineNumber, e.getMessage(), e);
@@ -423,8 +434,8 @@ public class SeriesDataLoader extends BaseDataLoader {
                     errors, count, duplicates, lineNumber, duration);
                 throw new FileParsingException("Encountered " + errors + " errors while loading series data");
             } else {
-                logger.info("Successfully loaded {} series ({} duplicates, {} total lines) in {} seconds", 
-                    count, duplicates, lineNumber, duration);
+                logger.info("Series data loading completed in {} ms. Successfully loaded {} series ({} duplicates, {} errors, {} lines processed)",
+                    (endTime - startTime), count, duplicates, errors, lineNumber);
             }
 
             // Return the count of successfully loaded series
@@ -435,6 +446,40 @@ public class SeriesDataLoader extends BaseDataLoader {
         } finally {
             logger.debug("Series data loading process completed");
         }}
+
+    private static List<String> getStrings(String line) {
+        List<String> partsList = new ArrayList<>();
+        boolean inQuotes = false;
+        StringBuilder current = new StringBuilder();
+
+        for (int i = 0; i < line.length(); i++) {
+            char c = line.charAt(i);
+            if (c == '"') {
+                inQuotes = !inQuotes;
+            } else if (c == ',' && !inQuotes) {
+                partsList.add(current.toString().trim());
+                current = new StringBuilder();
+            } else {
+                current.append(c);
+            }
+        }
+        partsList.add(current.toString().trim()); // Add the last field
+        return partsList;
+    }
+
+    private String getString() {
+        String[] creatorNameParts = creatorName.trim().split("\\s+", 2);
+        String directorFullName;
+
+        if (creatorNameParts.length >= 2) {
+            String creatorFirstName = creatorNameParts[0].trim();
+            String creatorLastName = creatorNameParts[1].trim();
+            directorFullName = creatorFirstName + (creatorLastName.isEmpty() ? "" : " " + creatorLastName);
+        } else {
+            directorFullName = creatorName.trim();
+        }
+        return directorFullName;
+    }
 
     // Helper method to normalize genre names
     private static String getString(String genreItem) {

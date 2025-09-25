@@ -24,6 +24,7 @@ public class FileUtils {
      */
     public static List<String> readLines(String filePath) {
         try {
+            // Read all lines from the file, skipping comments and empty lines
             return Files.lines(Paths.get(filePath))
                     .filter(line -> !line.trim().isEmpty() && !line.trim().startsWith("#"))
                     .collect(Collectors.toList());
@@ -33,6 +34,7 @@ public class FileUtils {
         }
     }
 
+    // Write a list of Series objects to a file
     public static void writeLines(String filePath, List<Series> contentList) {
         try {
             Files.write(Paths.get(filePath), contentList.stream().map(Series::toString).collect(Collectors.toList()));

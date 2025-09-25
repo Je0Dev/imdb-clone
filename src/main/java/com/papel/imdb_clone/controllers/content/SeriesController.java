@@ -38,6 +38,7 @@ import org.slf4j.LoggerFactory;
 
 import java.net.URL;
 import java.util.*;
+import java.util.Objects;
 import java.util.Optional;
 import javafx.scene.control.Alert;
 import javafx.scene.control.ButtonType;
@@ -406,19 +407,33 @@ public class SeriesController extends BaseController {
             }
         });
 
-        // Set up end year column
+        // Set up end year column to show the end year when available, or "Ongoing" if not
         seriesEndYearColumn.setCellValueFactory(cellData -> {
             Integer endYear = cellData.getValue().getEndYear();
-            return new SimpleStringProperty(endYear != null ? endYear.toString() : "-");
+            // If endYear is null, 0, or less than start year, the series is ongoing
+            int startYear = cellData.getValue().getStartYear();
+            if (endYear == null || endYear <= 0 || endYear < startYear) {
+                return new SimpleStringProperty("Ongoing");
+            } else {
+                return new SimpleStringProperty(String.valueOf(endYear));
+            }
         });
         seriesEndYearColumn.setCellFactory(col -> new TableCell<Series, String>() {
             @Override
             protected void updateItem(String item, boolean empty) {
                 super.updateItem(item, empty);
-                setText(empty || item == null || item.isEmpty() ? "-" : item);
-                setStyle("-fx-alignment: CENTER; -fx-padding: 5;");
+                if (empty || item == null) {
+                    setText("");
+                } else if (item.equals("Ongoing")) {
+                    setText("Ongoing");
+                    setStyle("-fx-alignment: CENTER; -fx-padding: 5; -fx-font-style: italic; -fx-text-fill: #FFD700;");
+                } else {
+                    setText(item);
+                    setStyle("-fx-alignment: CENTER; -fx-padding: 5;");
+                }
             }
         });
+
 
         // Set up genre column
         seriesGenreColumn.setCellValueFactory(cellData -> {
@@ -507,9 +522,17 @@ public class SeriesController extends BaseController {
 
         // Set up cast column
         seriesCastColumn.setCellValueFactory(cellData -> {
-            String actors = cellData.getValue().getActors().stream()
-                    .map(actor -> String.valueOf(actor.getName()))
-                    .collect(Collectors.joining(", "));
+            String actors = "";
+            if (cellData.getValue() != null && cellData.getValue().getActors() != null) {
+                actors = cellData.getValue().getActors().stream()
+                        .filter(Objects::nonNull)
+                        .map(actor -> {
+                            String name = (String) actor.getName();
+                            return name != null ? name : "";
+                        })
+                        .filter(name -> !name.isEmpty())
+                        .collect(Collectors.joining(", "));
+            }
             return new SimpleStringProperty(actors);
         });
         // Set up cast column with enhanced display
@@ -530,6 +553,7 @@ public class SeriesController extends BaseController {
         seriesSearchField.setPromptText("Search series by title");
     }
 
+    // Set up sort handlers that sort the series table based on the sort field which could be title, year, rating etc.
     private void setupSortHandlers() {
         // Add sort options to the ComboBox
         seriesSortBy.getItems().addAll(
@@ -542,7 +566,13 @@ public class SeriesController extends BaseController {
                 "Seasons (Most First)",
                 "Seasons (Fewest First)",
                 "Episodes (Most First)",
-                "Episodes (Fewest First)"
+                "Episodes (Fewest First)",
+                "Creator (A-Z)",
+                "Creator (Z-A)",
+                "Actors (A-Z)",
+                "Actors (Z-A)",
+                "Genres (A-Z)",
+                "Genres (Z-A)"
         );
 
         // Set default sort

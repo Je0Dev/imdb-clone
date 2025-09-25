@@ -1013,74 +1013,72 @@ private void setupTableColumns() {
                 // Apply the search criteria to filter movies
                 Set<String> uniqueKeys = new HashSet<>();
                 List<Movie> filteredMovies = allMovies.stream()
-                    .filter(movie -> {
-                        // Create a unique key for each movie (title + year)
-                        String uniqueKey = movie.getTitle().toLowerCase() + "_" + 
-                            (movie.getReleaseDate() != null ? 
-                                new java.text.SimpleDateFormat("yyyy").format(movie.getReleaseDate()) : "");
-                        
-                        // Skip if we've already seen this movie
-                        if (uniqueKeys.contains(uniqueKey)) {
-                            return false;
-                        }
-                        
-                        boolean matches = true;
-                        
-                        // Filter by title (case-insensitive partial match)
-                        if (searchCriteria.containsKey("title")) {
-                            String searchTitle = ((String) searchCriteria.get("title")).toLowerCase();
-                            matches = movie.getTitle().toLowerCase().contains(searchTitle);
-                            if (!matches) return false;
-                        }
-                        
-                        // Filter by director (case-insensitive partial match)
-                        if (searchCriteria.containsKey("director") && movie.getDirector() != null) {
-                            String searchDirector = ((String) searchCriteria.get("director")).toLowerCase();
-                            matches = movie.getDirector().toLowerCase().contains(searchDirector);
-                            if (!matches) return false;
-                        }
-                        
-                        // Filter by year range
-                        if (searchCriteria.containsKey("yearFrom")) {
-                            int yearFrom = (int) searchCriteria.get("yearFrom");
-                            Calendar cal = Calendar.getInstance();
-                            cal.setTime(movie.getReleaseDate());
-                            matches = cal.get(Calendar.YEAR) >= yearFrom;
-                            if (!matches) return false;
-                        }
-                        
-                        if (searchCriteria.containsKey("yearTo")) {
-                            int yearTo = (int) searchCriteria.get("yearTo");
-                            Calendar cal = Calendar.getInstance();
-                            cal.setTime(movie.getReleaseDate());
-                            matches = cal.get(Calendar.YEAR) <= yearTo;
-                            if (!matches) return false;
-                        }
-                        
-                        // Filter by genres (must match all selected genres)
-                        if (searchCriteria.containsKey("genres")) {
-                            @SuppressWarnings("unchecked")
-                            List<Genre> selectedGenres = (List<Genre>) searchCriteria.get("genres");
-                            matches = new HashSet<>(movie.getGenres()).containsAll(selectedGenres);
-                            if (!matches) return false;
-                        }
+                        .filter(movie -> {
+                            // Create a unique key for each movie (title + year)
+                            String uniqueKey = movie.getTitle().toLowerCase() + "_" +
+                                    (movie.getReleaseDate() != null ?
+                                            new java.text.SimpleDateFormat("yyyy").format(movie.getReleaseDate()) : "");
 
-                        // Filter by actors (case-insensitive partial match)
-                        if (searchCriteria.containsKey("actors")) {
-                            String searchActors = ((String) searchCriteria.get("actors")).toLowerCase();
-                            matches = movie.getActors().stream()
-                                .anyMatch(actor -> actor.toLowerCase().contains(searchActors));
-                            if (!matches) return false;
-                        }
-                        
-                        // If we get here, the movie matches all criteria
-                        uniqueKeys.add(uniqueKey);
-                        return true;
-                    })
-                    .collect(Collectors.toList());
+                            // Skip if we've already seen this movie
+                            if (uniqueKeys.contains(uniqueKey)) {
+                                return false;
+                            }
+
+                            boolean matches = true;
+
+                            // Filter by title (case-insensitive partial match)
+                            if (searchCriteria.containsKey("title")) {
+                                String searchTitle = ((String) searchCriteria.get("title")).toLowerCase();
+                                matches = movie.getTitle().toLowerCase().contains(searchTitle);
+                                if (!matches) return false;
+                            }
+
+                            // Filter by director (case-insensitive partial match)
+                            if (searchCriteria.containsKey("director") && movie.getDirector() != null) {
+                                String searchDirector = ((String) searchCriteria.get("director")).toLowerCase();
+                                matches = movie.getDirector().toLowerCase().contains(searchDirector);
+                                if (!matches) return false;
+                            }
+
+                            // Filter by year range
+                            if (searchCriteria.containsKey("yearFrom")) {
+                                int yearFrom = (int) searchCriteria.get("yearFrom");
+                                Calendar cal = Calendar.getInstance();
+                                cal.setTime(movie.getReleaseDate());
+                                matches = cal.get(Calendar.YEAR) >= yearFrom;
+                                if (!matches) return false;
+                            }
+
+                            if (searchCriteria.containsKey("yearTo")) {
+                                int yearTo = (int) searchCriteria.get("yearTo");
+                                Calendar cal = Calendar.getInstance();
+                                cal.setTime(movie.getReleaseDate());
+                                matches = cal.get(Calendar.YEAR) <= yearTo;
+                                if (!matches) return false;
+                            }
+
+                            // Filter by genres (must match all selected genres)
+                            if (searchCriteria.containsKey("genres")) {
+                                @SuppressWarnings("unchecked")
+                                List<Genre> selectedGenres = (List<Genre>) searchCriteria.get("genres");
+                                matches = new HashSet<>(movie.getGenres()).containsAll(selectedGenres);
+                                if (!matches) return false;
+                            }
+
+                            // Filter by actors (case-insensitive partial match)
+                            if (searchCriteria.containsKey("actors")) {
+                                String searchActors = ((String) searchCriteria.get("actors")).toLowerCase();
+                                matches = movie.getActors().stream()
+                                        .anyMatch(actor -> actor.toLowerCase().contains(searchActors));
+                                if (!matches) return false;
+                            }
+
+                            // If we get here, the movie matches all criteria
+                            uniqueKeys.add(uniqueKey);
+                            return true;
+                        }).sorted(Comparator.comparing(Movie::getTitle, String.CASE_INSENSITIVE_ORDER)).collect(Collectors.toList());
 
                 // Sort the filtered movies
-                filteredMovies.sort(Comparator.comparing(Movie::getTitle, String.CASE_INSENSITIVE_ORDER));
 
                 // Set the filtered movies to the table
                 movieTable.setItems(FXCollections.observableList(filteredMovies));
@@ -1097,16 +1095,19 @@ private void setupTableColumns() {
                             filteredMovies.sort(Comparator.comparing(Movie::getTitle, String.CASE_INSENSITIVE_ORDER).reversed());
                             break;
                         case "Year (Newest)":
-                            filteredMovies.sort(Comparator.comparing(movie -> movie.getRating(), 
-                                Comparator.nullsLast(Comparator.reverseOrder())));
+                            filteredMovies.sort(Comparator.comparing(
+                                Movie::getYear
+                            ));
                             break;
                         case "Rating (High-Low)":
-                            filteredMovies.sort(Comparator.comparing(movie -> movie.getRating(), 
-                                Comparator.nullsLast(Comparator.reverseOrder())));
+                            filteredMovies.sort(Comparator.comparing(
+                                Movie::getRating,
+                                Comparator.nullsLast(Comparator.<Double>reverseOrder())
+                            ));
                             break;
                         case "Rating (Low-High)":
-                            filteredMovies.sort(Comparator.comparing(movie -> movie.getRating(), 
-                                Comparator.nullsLast(Comparator.naturalOrder())));
+                            filteredMovies.sort(Comparator.comparing(Movie::getRating,
+                                Comparator.nullsLast(Comparator.<Double>naturalOrder())));
                             break;
                         default:
                             break;

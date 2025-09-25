@@ -21,9 +21,18 @@ public class PasswordHasher {
     }
     
     // Constants for the hash function
-    private static final int ITERATIONS = 10000;
-    private static final int KEY_LENGTH = 256;
-    private static final String ALGORITHM = "PBKDF2WithHmacSHA256";
+    private static final int ITERATIONS = 10000; // means the number of times to hash the password to make it more secure
+    private static final int KEY_LENGTH = 256; // means the length of the key in bits
+
+    /*
+    * PBKDF2WithHmacSHA256 is a key derivation function that uses the PBKDF2 algorithm with HMAC and SHA-256.
+    * It is a secure way to generate a key from a password.
+    * It works by using a random salt and a number of iterations to generate a key from a password.
+    * The salt is a random value that is used to make the hash unique for each user.
+    * The iterations are the number of times the hash function is applied to the password.
+    * The key length is the length of the key in bits.
+     */
+    private static final String ALGORITHM = "PBKDF2WithHmacSHA256"; // means the algorithm to use.
     private static final SecureRandom RANDOM = new SecureRandom();
 
     /**
@@ -34,9 +43,9 @@ public class PasswordHasher {
      */
     public static String hashPassword(String password) {
         byte[] salt = new byte[16];
-        RANDOM.nextBytes(salt);
+        RANDOM.nextBytes(salt); // means the salt to use.
         // Generate the hash
-        byte[] hash = pbkdf2(password.toCharArray(), salt, ITERATIONS, KEY_LENGTH);
+        byte[] hash = pbkdf2(password.toCharArray(), salt, KEY_LENGTH);
         return String.format("pbkdf2:%s:%s",
                 Base64.getEncoder().encodeToString(salt),
                 Base64.getEncoder().encodeToString(hash));
@@ -63,7 +72,7 @@ public class PasswordHasher {
         // Extract the salt and hash from the stored hash which helps to verify the password
         byte[] salt = Base64.getDecoder().decode(parts[1]);
         byte[] hash = Base64.getDecoder().decode(parts[2]);
-        byte[] testHash = pbkdf2(password.toCharArray(), salt, ITERATIONS, hash.length * 8);
+        byte[] testHash = pbkdf2(password.toCharArray(), salt, hash.length * 8);
         
         // Constant time comparison to prevent timing attacks
         int diff = hash.length ^ testHash.length;
@@ -76,15 +85,16 @@ public class PasswordHasher {
 
     /**
      * Helper method to perform PBKDF2 hashing.
-     * @param password the password to hash
-     * @param salt the salt to use which means random bytes
-     * @param iterations the iterations to use  which means the number of times to hash the password
+     *
+     * @param password  the password to hash
+     * @param salt      the salt to use which means random bytes
      * @param keyLength the key length to use which means the length of the key in bits
      * @return the hash of the password
      */
-    private static byte[] pbkdf2(char[] password, byte[] salt, int iterations, int keyLength) {
+    private static byte[] pbkdf2(char[] password, byte[] salt, int keyLength) {
         try {
-            PBEKeySpec spec = new PBEKeySpec(password, salt, iterations, keyLength);
+            // PBEKeySpec is a key specification for a password-based key
+            PBEKeySpec spec = new PBEKeySpec(password, salt, PasswordHasher.ITERATIONS, keyLength);
             SecretKeyFactory factory = SecretKeyFactory.getInstance(ALGORITHM);
             return factory.generateSecret(spec).getEncoded();
         } catch (NoSuchAlgorithmException | InvalidKeySpecException e) {

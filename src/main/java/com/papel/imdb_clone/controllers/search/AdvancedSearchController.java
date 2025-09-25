@@ -848,26 +848,9 @@ public class AdvancedSearchController extends BaseSearchController {
             // Add buttons
             ButtonBar buttonBar = new ButtonBar();
             buttonBar.setPadding(new Insets(15, 0, 0, 0));
-            
-            Button editButton = new Button("Edit Content");
-            editButton.setStyle("-fx-background-color: #2196F3; -fx-text-fill: white; -fx-font-weight: bold; -fx-padding: 8 16;");
-            editButton.setOnAction(e -> {
-                detailsDialog.setResult(ButtonType.OK);
-                detailsDialog.close();
-                
-                // Navigate to edit view
-                Map<String, Object> data = new HashMap<>();
-                data.put("contentId", content.getId());
-                data.put("contentType", content.getContentType());
-                
-                navigationService.navigateTo(
-                    "/fxml/content/edit-content-view.fxml",
-                    data,
-                    getStage(),
-                    "Edit " + content.getTitle()
-                );
-            });
-            
+
+            Button editButton = getButton(content, detailsDialog);
+
             Button closeButton = new Button("Close");
             closeButton.setStyle("-fx-background-color: #f5f5f5; -fx-text-fill: #333; -fx-padding: 8 16;");
             closeButton.setOnAction(e -> detailsDialog.close());
@@ -892,6 +875,28 @@ public class AdvancedSearchController extends BaseSearchController {
             logger.error("Error showing content details", e);
             showError("Error", "Could not show content details: " + e.getMessage());
         }
+    }
+
+    private Button getButton(Content content, Alert detailsDialog) {
+        Button editButton = new Button("Edit Content");
+        editButton.setStyle("-fx-background-color: #2196F3; -fx-text-fill: white; -fx-font-weight: bold; -fx-padding: 8 16;");
+        editButton.setOnAction(e -> {
+            detailsDialog.setResult(ButtonType.OK);
+            detailsDialog.close();
+
+            // Navigate to edit view
+            Map<String, Object> data = new HashMap<>();
+            data.put("contentId", content.getId());
+            data.put("contentType", content.getContentType());
+
+            navigationService.navigateTo(
+                "/fxml/content/edit-content-view.fxml",
+                data,
+                getStage(),
+                "Edit " + content.getTitle()
+            );
+        });
+        return editButton;
     }
 
     private VBox getVBox(Label castTitle, VBox castBox) {

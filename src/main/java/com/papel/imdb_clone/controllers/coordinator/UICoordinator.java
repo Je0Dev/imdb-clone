@@ -6,6 +6,7 @@ import com.papel.imdb_clone.data.DataManager;
 import com.papel.imdb_clone.model.people.User;
 import com.papel.imdb_clone.service.content.MoviesService;
 import com.papel.imdb_clone.service.content.SeriesService;
+
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Node;
 import javafx.scene.control.Label;
@@ -23,8 +24,12 @@ import java.util.function.Supplier;
  * This class serves as the central coordinator for UI navigation and view management.
  */
 public class UICoordinator {
+
+    // Logger
     private static final Logger logger = LoggerFactory.getLogger(UICoordinator.class);
     private static UICoordinator instance;
+    private final SeriesService seriesService;
+    private final MoviesService moviesService;
 
     private final DataManager dataManager;
     private MoviesService movieService;
@@ -50,8 +55,9 @@ public class UICoordinator {
         }
         return instance;
     }
-    private final MoviesService moviesService;
-    private final SeriesService seriesService;
+
+
+
     private Stage primaryStage;
     private User currentUser;
 

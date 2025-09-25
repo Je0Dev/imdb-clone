@@ -99,6 +99,7 @@ public class DataFileLoader {
         throw new FileNotFoundException("Could not find data file: " + filename + " in any of the searched locations");
     }
 
+    // Determine the file type based on the filename
     private static String determineFileType(String filename) {
         if (filename.contains("user") || filename.contains("actor") || filename.contains("director")) {
             return "people";
@@ -109,7 +110,8 @@ public class DataFileLoader {
         }
         return "default";
     }
-    
+
+    // Get the classpath paths for the given file type
     private static List<String> getClasspathPaths(String fileType) {
         List<String> paths = new ArrayList<>();
         

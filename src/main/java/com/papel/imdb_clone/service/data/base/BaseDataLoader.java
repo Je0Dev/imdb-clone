@@ -12,7 +12,10 @@ import java.util.List;
  * Base class for all data loaders providing common functionality.
  */
 public abstract class BaseDataLoader {
+
+    // Logger for logging messages
     protected final Logger logger = LoggerFactory.getLogger(getClass());
+
     /**
      * Gets an input stream for the specified resource file.
      * Tries multiple class loaders and path variations to find the resource.

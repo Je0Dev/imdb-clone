@@ -17,6 +17,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * Uses unified AuthException for all authentication-related errors.
  */
 public class AuthService {
+
     private static final Logger logger = LoggerFactory.getLogger(AuthService.class);
     private static final String USERS_UPDATED_FILE = "src/main/resources/data/people/users_updated.txt";
     private static AuthService instance;
@@ -32,6 +33,8 @@ public class AuthService {
     public Map<String, User> getUsersByUsername() {
         return usersByUsername;
     }
+
+
     private final Map<String, User> usersByEmail = new HashMap<>();
     private final Map<String, String> userSessions = new ConcurrentHashMap<>();
     private int nextUserId = 1;

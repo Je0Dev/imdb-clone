@@ -8,6 +8,7 @@ import com.papel.imdb_clone.model.people.User;
 import com.papel.imdb_clone.repository.impl.InMemoryMovieRepository;
 import com.papel.imdb_clone.repository.impl.InMemorySeriesRepository;
 import com.papel.imdb_clone.repository.impl.InMemoryUserRepository;
+import com.papel.imdb_clone.repository.impl.InMemoryCelebritiesRepository;
 import com.papel.imdb_clone.service.people.CelebrityService;
 import com.papel.imdb_clone.service.content.MoviesService;
 import com.papel.imdb_clone.service.content.SeriesService;
@@ -39,6 +40,7 @@ public class DataManager {
     private final InMemoryUserRepository userRepository;
     private final InMemoryMovieRepository movieRepository;
     private final InMemorySeriesRepository seriesRepository;
+    private final InMemoryCelebritiesRepository celebritiesRepository;
 
     // Services
     private final MoviesService moviesService;
@@ -57,12 +59,13 @@ public class DataManager {
         this.userRepository = new InMemoryUserRepository();
         this.movieRepository = new InMemoryMovieRepository();
         this.seriesRepository = new InMemorySeriesRepository();
+        this.celebritiesRepository = new InMemoryCelebritiesRepository();
 
         // Initialize services (depend on repositories but not each other)
         this.moviesService = MoviesService.getInstance();
         this.seriesService = SeriesService.getInstance();
-        this.actorService = new CelebrityService<>(Actor.class);
-        this.directorService = new CelebrityService<>(Director.class);
+        this.actorService = new CelebrityService<>(Actor.class, celebritiesRepository);
+        this.directorService = new CelebrityService<>(Director.class, celebritiesRepository);
 
         // Initialize the data loader service last (depends on all repositories and services)
         this.dataLoaderService = new FileDataLoaderService(
@@ -192,6 +195,15 @@ public class DataManager {
      */
     public InMemorySeriesRepository getSeriesRepository() {
         return seriesRepository;
+    }
+
+    /**
+     * Gets the celebrities repository instance.
+     *
+     * @return The CelebritiesRepository instance
+     */
+    public InMemoryCelebritiesRepository getCelebritiesRepository() {
+        return celebritiesRepository;
     }
 
     //get actor service

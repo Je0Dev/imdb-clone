@@ -104,7 +104,6 @@ public class CelebritiesController implements Initializable {
             // Initialize director table
             initializeDirectorTable();
 
-
             // Initialize unified search
             initializeUnifiedSearch();
 
@@ -206,12 +205,13 @@ public class CelebritiesController implements Initializable {
                                         .filter(work -> work != null && !work.trim().isEmpty())
                                         .collect(Collectors.toList());
 
+                                // If there are valid works, format them
                                 if (!validWorks.isEmpty()) {
-                                    // Format the notable works as a comma-separated list, limit to 3 items for display
-                                    int maxWorks = Math.min(3, validWorks.size());
+                                    // Format the notable works as a comma-separated list, limit to 4 items for display
+                                    int maxWorks = Math.min(4, validWorks.size());
                                     String worksText = String.join(", ", validWorks.subList(0, maxWorks));
-                                    if (validWorks.size() > 3) {
-                                        // Add ellipsis if there are more than 3 works
+                                    if (validWorks.size() > 4) {
+                                        // Add ellipsis if there are more than 7 works
                                         worksText += "...";
                                     }
                                     logger.debug("Notable works for {} {}: {}",
@@ -219,9 +219,6 @@ public class CelebritiesController implements Initializable {
                                     return new SimpleStringProperty(worksText);
                                 }
                             }
-                            // If we get here, there are no notable works
-                            logger.debug("No notable works found for {} {}",
-                                    actor.getFirstName(), actor.getLastName());
                             return new SimpleStringProperty("-"); // Use dash for empty works
                         } catch (Exception e) {
                             logger.warn("Error processing notable works for {} {}: {}",
@@ -247,12 +244,21 @@ public class CelebritiesController implements Initializable {
                         } else {
                             setText(item);
 
-                            // Get the full list of notable works for the tooltip
+                            // Get the list of notable works for the tooltip (max 7)
                             Actor actor = getTableView().getItems().get(getIndex());
                             if (actor != null) {
                                 List<String> allWorks = actor.getNotableWorks();
                                 if (allWorks != null && !allWorks.isEmpty()) {
-                                    String tooltipText = String.join("\n• ", allWorks);
+                                    // Limit to first 7 works for the tooltip
+                                    int maxWorks = Math.min(7, allWorks.size());
+                                    List<String> limitedWorks = allWorks.subList(0, maxWorks);
+                                    String tooltipText = String.join("\n• ", limitedWorks);
+                                    
+                                    // Add a note if there are more works than shown
+                                    if (allWorks.size() > 7) {
+                                        tooltipText += "\n• ... and " + (allWorks.size() - 7) + " more";
+                                    }
+                                    
                                     setTooltip(new Tooltip("• " + tooltipText));
                                 } else {
                                     setTooltip(new Tooltip("No notable works available"));
@@ -444,11 +450,11 @@ public class CelebritiesController implements Initializable {
                                     .collect(Collectors.toList());
 
                             if (!validWorks.isEmpty()) {
-                                // Format the notable works as a comma-separated list, limit to 3 items for display
-                                int maxWorks = Math.min(3, validWorks.size());
+                                // Format the notable works as a comma-separated list, limit to 4 items for display
+                                int maxWorks = Math.min(4, validWorks.size());
                                 String worksText = String.join(", ", validWorks.subList(0, maxWorks));
-                                if (validWorks.size() > 3) {
-                                    // Add ellipsis if there are more than 3 works
+                                if (validWorks.size() > 4) {
+                                    // Add ellipsis if there are more than 4 works
                                     worksText += "...";
                                 }
                                 logger.debug("Notable works for director {} {}: {}",
