@@ -62,4 +62,41 @@ public interface SeriesRepository {
      */
     long count();
 
+    /**
+     * Deletes a series by its title.
+     *
+     * @param title The title of the series to delete
+     */
+    void deleteByTitle(String title);
+
+    /**
+     * Deletes all series from the repository.
+     */
+    void deleteAll();
+
+    /**
+     * Updates a series information.
+     *
+     * @param series The series to update
+     * @return The updated series
+     */
+    Series update(Series series);
+
+    /**
+     * Updates a series rating.
+     *
+     * @param title The title of the series to update
+     * @param rating The new rating
+     */
+    void updateRating(String title, double rating);
+
+
+    /**
+     * Updates a series's genre.
+     *
+     * @param title The title of the series to update
+     * @param genre The new genre
+     */
+    void updateGenre(String title, String genre);
+
 }

@@ -9,7 +9,7 @@ import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.Node;
-import javafx.scene.control.Alert;
+import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.VBox;
@@ -56,6 +56,8 @@ public class MainController extends BorderPane {
     @FXML private Label statusLabel;
     @FXML private Label userLabel;
     @FXML private VBox featuredContent;
+    @FXML private Button signInButton;
+    @FXML private Button registerButton;
     
     // Application state
     private Map<String, Object> data;
@@ -67,6 +69,21 @@ public class MainController extends BorderPane {
 
     // ===== Navigation Methods =====
 
+    /**
+     * Handles navigation to the home view.
+     *
+     * @param event The action event that triggered this navigation
+     * @throws IllegalStateException if navigation fails
+     */
+    @FXML
+    private void showHome(ActionEvent event) {
+        // Navigate to the home view or refresh the current view
+        logger.info("Navigating to home view");
+        navigateToView(event, "/fxml/base/home-view.fxml", "Home");
+        updateAuthUI();
+        updateUserLabel();
+    }
+    
     /**
      * Handles navigation to the movies view.
      *
@@ -100,6 +117,43 @@ public class MainController extends BorderPane {
         navigateToView(event, ADVANCED_SEARCH_VIEW, "Advanced Search");
     }
     
+    /**
+     * Updates the UI based on the current authentication state
+     */
+    private void updateAuthUI() {
+        boolean isLoggedIn = currentUser != null;
+        
+        // Update sign in and register buttons visibility
+        if (signInButton != null) {
+            signInButton.setVisible(!isLoggedIn);
+            signInButton.setManaged(!isLoggedIn);
+        }
+        
+        if (registerButton != null) {
+            registerButton.setVisible(!isLoggedIn);
+            registerButton.setManaged(!isLoggedIn);
+        }
+        
+        // Update user label
+        if (userLabel != null) {
+            if (isLoggedIn) {
+                userLabel.setText("Welcome, " + currentUser.getUsername());
+            } else {
+                userLabel.setText("Not logged in");
+            }
+        }
+    }
+    
+    /**
+     * Sets the current user and updates the UI accordingly
+     * @param user The user to set as current, or null to log out
+     */
+    public void setCurrentUser(User user) {
+        this.currentUser = user;
+        updateAuthUI();
+    }
+    
+
     /**
      * Common method to handle view navigation.
      *
@@ -361,70 +415,6 @@ public class MainController extends BorderPane {
         }
     }
 
-    /**
-     * Initializes coordinators and updates the UI.
-     * This method is called when the primary stage is set or during initialization.
-     * 
-     * @deprecated This method is being phased out in favor of the new initialization flow.
-     *             Use {@link #initialize()} and {@link #initializeUI()} instead.
-     */
-    @Deprecated
-    private void initializeCoordinatorsAndUI() {
-        logger.warn("initializeCoordinatorsAndUI() is deprecated and will be removed in a future version");
-        if (primaryStage == null) {
-            logger.warn("Primary stage is not set, skipping coordinator initialization");
-            return;
-        }
-
-        // Delegate to the new initialization flow
-        Platform.runLater(() -> {
-            try {
-                initializeServices();
-                validateServiceDependencies();
-                initializeUI();
-            } catch (Exception e) {
-                logger.error("Failed to initialize coordinators and UI: {}", e.getMessage(), e);
-                showError("Initialization Error", "Failed to initialize application: " + e.getMessage());
-            }
-        });
-    }
-
-    /**
-     * Initializes the UI coordinators and sets up the views.
-     * 
-     * @deprecated This method is being phased out in favor of the new initialization flow.
-     *             Coordinator initialization is now handled in {@link #initializeServices()}.
-     *
-     * @return true if initialization was successful, false otherwise
-     */
-    @Deprecated
-    private boolean initializeCoordinators() {
-        logger.warn("initializeCoordinators() is deprecated and will be removed in a future version");
-        try {
-            if (uiCoordinator == null) {
-                logger.error("UICoordinator is not initialized");
-                return false;
-            }
-
-            // Set the primary stage if not already set
-            if (primaryStage != null) {
-                uiCoordinator.setPrimaryStage(primaryStage);
-            }
-
-            // Set user session if available
-            if (currentUser != null && sessionToken != null) {
-                uiCoordinator.setUserSession(currentUser, sessionToken);
-            }
-
-            logger.info("UICoordinator initialized successfully");
-            return true;
-
-        } catch (Exception e) {
-            logger.error("Failed to initialize coordinators: {}", e.getMessage(), e);
-            return false;
-        }
-    }
-
 
     /**
      * Updates UI elements that depend on the current user/session state and refreshes views.
@@ -432,14 +422,17 @@ public class MainController extends BorderPane {
      */
     private void updateUserInterface() {
         try {
+            // Update UI elements
             updateUserLabel();
             updateSidebarState();
             updateStatusBar();
             logger.debug("UI updated to reflect current application state");
         } catch (Exception e) {
+            // Show error to user
             String errorMsg = String.format("Failed to update user interface: %s", e.getMessage());
             logger.warn(errorMsg, e);
-            // Don't show error to user for non-critical UI updates
+            showError("UI Update Error", "Failed to update user interface");
+            throw new IllegalStateException(errorMsg, e);
         }
     }
     
@@ -603,6 +596,8 @@ public class MainController extends BorderPane {
             logger.debug("Window {}minimized", isNowIconified ? "" : "not ");
         });
     }
+
+    
     // Navigate to celebrities view
     @FXML
     public void showCelebrities(ActionEvent actionEvent) {
@@ -615,6 +610,24 @@ public class MainController extends BorderPane {
         } catch (Exception e) {
             logger.error("Failed to navigate to celebrities view: {}", e.getMessage(), e);
             showError("Navigation Error", "Failed to open celebrities view: " + e.getMessage());
+        }
+    }
+
+    public void showLogin(ActionEvent actionEvent) {
+        try {
+            NavigationService.getInstance().showLogin(primaryStage);
+        } catch (Exception e) {
+            logger.error("Failed to navigate to login view: {}", e.getMessage(), e);
+            showError("Navigation Error", "Failed to open login view: " + e.getMessage());
+        }
+    }
+
+    public void showRegister(ActionEvent actionEvent) {
+        try {
+            NavigationService.getInstance().showRegister(primaryStage);
+        } catch (Exception e) {
+            logger.error("Failed to navigate to register view: {}", e.getMessage(), e);
+            showError("Navigation Error", "Failed to open register view: " + e.getMessage());
         }
     }
 }

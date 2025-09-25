@@ -48,6 +48,19 @@ public interface MovieRepository {
 
     void update(Movie movie);
 
+    void deleteById(int id);
+
+    void deleteByTitle(String title);
+
+    void deleteAll();
+
+    void updateRating(String title, double rating);
+
+    void updateGenre(String title, String genre);
+
+    void updateReleaseYear(String title, int releaseYear);
+
+
     /**
      * Finds a movie by its title and release year.
      * @param title The title of the movie to search for

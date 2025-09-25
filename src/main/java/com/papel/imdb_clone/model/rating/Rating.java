@@ -11,7 +11,10 @@ public class Rating {
     private int contentId;
     private double score;
     private String review;
-    private final LocalDateTime createdAt;
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
+
+
 
     public Rating(int id, double rating) {
         this.createdAt = LocalDateTime.now();
@@ -23,6 +26,8 @@ public class Rating {
         this.contentId = contentId;
         this.score = score;
         this.createdAt = LocalDateTime.now();
+        this.review = "";
+        this.score = score;
     }
 
     public int getId() {
@@ -38,6 +43,9 @@ public class Rating {
         return contentId;
     }
 
+    public void setContentId(int contentId) {
+        this.contentId = contentId;
+    }
 
     public double getScore() {
         return score;
@@ -50,9 +58,54 @@ public class Rating {
         }
     }
 
+    public double getRating() {
+        return score;
+    }
+
     public void setRating(int rating) {
         setScore(rating);
     }
+
+    public String getReview() {
+        return review;
+    }
+
+    public void setReview(String review) {
+        this.review = review;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public LocalDateTime getUpdatedAt() {
+        return updatedAt;
+    }
+
+    public void setUpdatedAt(LocalDateTime updatedAt) {
+        this.updatedAt = updatedAt;
+    }
+
+    public void updateRating(double score) {
+        this.score = score;
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    public void updateReview(String review) {
+        this.review = review;
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    public void updateRatingAndReview(double score, String review) {
+        this.score = score;
+        this.review = review;
+        this.updatedAt = LocalDateTime.now();
+    }
+
 
     @Override
     public String toString() {
@@ -63,6 +116,8 @@ public class Rating {
                 ", score=" + score +
                 ", review='" + review + '\'' +
                 ", createdAt=" + createdAt +
+                ", updatedAt=" + updatedAt +
                 '}';
     }
+
 }

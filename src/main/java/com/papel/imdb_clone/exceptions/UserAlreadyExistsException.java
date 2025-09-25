@@ -1,5 +1,6 @@
 package com.papel.imdb_clone.exceptions;
 
+import java.io.Serial;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -10,6 +11,9 @@ import java.util.Map;
  * This is a specific type of AuthException for user registration conflicts.
  */
 public class UserAlreadyExistsException extends AuthException {
+
+    //serial version uid for object serialization
+    @Serial
     private static final long serialVersionUID = 1L;
     private static final String DEFAULT_FIELD = "email";
 

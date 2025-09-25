@@ -63,4 +63,5 @@ public interface ContentService<T> {
      * @return The content type as a string (e.g., "Movie", "Series")
      */
     String getContentType();
+
 }

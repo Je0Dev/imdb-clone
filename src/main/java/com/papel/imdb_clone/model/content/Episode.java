@@ -10,37 +10,41 @@ import java.util.List;
  * Represents an episode of a TV show.
  */
 public class Episode {
-    private int id;
-    private String director;
-    private final double imdbRating;
-    private List<Actor> actors;
-    private String title;
-    private int episodeNumber;
-    private int number;
-    private Object season;
+    private int id; //id for the episode
+    private String director; //director of the episode
+    private double imdbRating;//imdb rating of the episode
+    private List<Actor> actors; //actors in the episode
+    private String title;//title of the episode
+    private int episodeNumber;//episode number of the episode
+    private int seasonNumber;//season number of the episode
+    private int seriesNumber;//series number of the episode
+    private Date releaseDate;//release date of the episode
 
     /**
      * Default constructor for Episode
      */
     public Episode() {
+        this.id = 0;
         this.director = null;
         this.imdbRating = 0.0;
         this.actors = new ArrayList<>();
         this.title = "";
         this.episodeNumber = 0;
+        this.seasonNumber = 0;
+        this.seriesNumber = 0;
+        this.releaseDate=new Date();
     }
 
-    // Additional constructor for simple episode creation
-    public Episode(String title, int duration) {
-        this();
+    public Episode(int id, String director, double imdbRating, List<Actor> actors, String title, int episodeNumber, int seasonNumber, int seriesNumber, Date releaseDate) {
+        this.id = id;
+        this.director = director;
+        this.imdbRating = imdbRating;
+        this.actors = actors;
         this.title = title;
-    }
-
-    // Constructor for episode with episode number, title, duration, and summary
-    public Episode(int episodeNumber, String title, int duration, String summary) {
-        this();
         this.episodeNumber = episodeNumber;
-        this.title = title;
+        this.seasonNumber = seasonNumber;
+        this.seriesNumber = seriesNumber;
+        this.releaseDate = releaseDate;
     }
 
     public Episode(int episodeNumber, String episodeTitle) {
@@ -48,6 +52,16 @@ public class Episode {
         this.episodeNumber = episodeNumber;
         this.title = episodeTitle;
     }
+
+    public Episode(int episodeNumber, String episodeTitle, String director, double imdbRating, List<Actor> actors) {
+        this();
+        this.episodeNumber = episodeNumber;
+        this.title = episodeTitle;
+        this.director = director;
+        this.imdbRating = imdbRating;
+        this.actors = actors;
+    }
+
 
     //getters setters
     public int getId() {
@@ -66,9 +80,12 @@ public class Episode {
         this.director = director;
     }
 
-
     public List<Actor> getActors() {
         return new ArrayList<>(actors);
+    }
+
+    public void setActors(List<Actor> actors) {
+        this.actors = actors;
     }
 
     public String getTitle() {
@@ -87,6 +104,38 @@ public class Episode {
         this.episodeNumber = episodeNumber;
     }
 
+    public int getSeasonNumber() {
+        return seasonNumber;
+    }
+
+    public void setSeasonNumber(int seasonNumber) {
+        this.seasonNumber = seasonNumber;
+    }
+
+    public int getSeriesNumber() {
+        return seriesNumber;
+    }
+
+    public void setSeriesNumber(int seriesNumber) {
+        this.seriesNumber = seriesNumber;
+    }
+
+    public Date getReleaseDate() {
+        return releaseDate;
+    }
+
+    public void setReleaseDate(Date releaseDate) {
+        this.releaseDate = releaseDate;
+    }
+
+    public double getImdbRating() {
+        return imdbRating;
+    }
+
+    public void setImdbRating(double imdbRating) {
+        this.imdbRating = imdbRating;
+    }
+
 
     @Override
     public String toString() {
@@ -95,18 +144,11 @@ public class Episode {
                 ", director='" + (director != null ? director : "Unknown") + "'" +
                 ", imdbRating=" + imdbRating +
                 ", actors=" + actors.size() +
+                ", title='" + (title != null ? title : "Unknown") + "'" +
+                ", episodeNumber=" + episodeNumber +
+                ", seasonNumber=" + seasonNumber +
+                ", seriesNumber=" + seriesNumber +
+                ", releaseDate=" + releaseDate +
                 '}';
-    }
-
-    public void setSeason(Season newSeason) {
-        this.season = season;
-    }
-
-    public void setReleaseDate(Date date) {
-    }
-
-    //add actors to the list
-    public void setActors(List<Actor> actors) {
-        this.actors = actors != null ? new ArrayList<>(actors) : new ArrayList<>();
     }
 }

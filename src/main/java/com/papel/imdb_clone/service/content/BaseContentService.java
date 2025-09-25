@@ -1,8 +1,6 @@
 package com.papel.imdb_clone.service.content;
 
 import com.papel.imdb_clone.model.content.Content;
-
-import java.time.Year;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -12,15 +10,31 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  * @param <T> The type of content this service manages, must extend Content
  */
 public abstract class BaseContentService<T extends Content> implements ContentService<T> {
+
+    //list of content
     protected final List<T> contentList = new ArrayList<>();
     protected final AtomicInteger nextId = new AtomicInteger(1);
     protected final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
     protected final Class<T> contentType;
 
+
+    protected abstract void loadFromFile();
+
+    protected abstract void saveToFile();
+
+    /**
+     * Initialize sample data for the service.
+     * This method should be implemented by concrete classes to provide their own sample data.
+     */
+    protected abstract void initializeSampleData();
+
+
+    //constructor
     protected BaseContentService(Class<T> contentType) {
         this.contentType = contentType;
     }
-    
+
+
     /**
      * Initialize the service after construction.
      * This should be called by subclasses after they are fully constructed.
@@ -32,6 +46,7 @@ public abstract class BaseContentService<T extends Content> implements ContentSe
     //return all content
     @Override
     public List<T> getAll() {
+        //read lock which means that other threads can read the list but cannot modify it
         lock.readLock().lock();
         try {
             //return copy of content list
@@ -44,6 +59,7 @@ public abstract class BaseContentService<T extends Content> implements ContentSe
     //return content by id
     @Override
     public Optional<T> getById(int id) {
+        //read lock which means that other threads can read the list but cannot modify it
         lock.readLock().lock();
         try {
             //return first content that matches the id
@@ -60,9 +76,20 @@ public abstract class BaseContentService<T extends Content> implements ContentSe
     public T save(T content) {
         lock.writeLock().lock();
         try {
-            //if content has id, update nextId which is used for generating new ids for new content
-            content.setId(nextId.getAndIncrement());
-            contentList.add(content);
+            if (content.getId() == 0) {  // New content
+                content.setId(nextId.getAndIncrement());
+                contentList.add(content);
+            } else {  // Existing content
+                // Find and update existing content
+                for (int i = 0; i < contentList.size(); i++) {
+                    if (contentList.get(i).getId() == content.getId()) {
+                        contentList.set(i, content);
+                        break;
+                    }
+                }
+            }
+            // Save changes to file
+            saveToFile();
             return content;
         } finally {
             lock.writeLock().unlock();
@@ -138,9 +165,5 @@ public abstract class BaseContentService<T extends Content> implements ContentSe
         return contentType.getSimpleName();
     }
 
-    /**
-     * Initialize sample data for the service.
-     * This method should be implemented by concrete classes to provide their own sample data.
-     */
-    protected abstract void initializeSampleData();
+
 }

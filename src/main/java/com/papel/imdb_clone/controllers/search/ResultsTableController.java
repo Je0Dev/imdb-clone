@@ -9,8 +9,9 @@ import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
+import javafx.geometry.Insets;
 import javafx.scene.control.*;
-import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.scene.layout.VBox;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -80,7 +81,8 @@ public class ResultsTableController extends BaseSearchController {
             
             // Configure table properties with the recommended resize policy
             resultsTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
-            // Set a custom resize policy that respects column constraints
+
+            // Set a custom resize policy that respects column constraints which helps to keep the table columns from getting too small or too large
             resultsTable.setColumnResizePolicy(tv -> {
                 double width = resultsTable.getWidth();
                 double totalWeight = resultsTable.getColumns().stream()
@@ -429,8 +431,7 @@ public class ResultsTableController extends BaseSearchController {
                 logger.debug("Setting up episodes column");
                 resultEpisodesColumn.setCellValueFactory(cellData -> {
                     Content content = cellData.getValue();
-                    if (content instanceof com.papel.imdb_clone.model.content.Series) {
-                        com.papel.imdb_clone.model.content.Series series = (com.papel.imdb_clone.model.content.Series) content;
+                    if (content instanceof com.papel.imdb_clone.model.content.Series series) {
                         int episodeCount = series.getSeasons().stream()
                                 .mapToInt(s -> s.getEpisodes().size())
                                 .sum();
@@ -493,18 +494,89 @@ public class ResultsTableController extends BaseSearchController {
             showError("Navigation Error", "Could not open content details: " + e.getMessage());
         }
     }
-    
+
+
     /**
-     * Gets the currently selected content in the table.
+     * Shows a detailed dialog with content information.
      *
-     * @return The selected content, or null if no content is selected
+     * @param content The content to show details for
      */
-    public Content getSelectedContent() {
-        return resultsTable != null ? resultsTable.getSelectionModel().getSelectedItem() : null;
+    private void showContentDetailsDialog(Content content) {
+        try {
+            // Create a dialog
+            Dialog<Void> dialog = new Dialog<>();
+            dialog.setTitle(content.getTitle());
+            dialog.setHeaderText(content.getTitle() + " (" + content.getStartYear() + ")");
+
+            // Create content
+            VBox contentBox = new VBox(10);
+            contentBox.setPadding(new Insets(10));
+            
+            // Add basic info
+            Label typeLabel = new Label("Type: " + (content instanceof Movie ? "Movie" : "Series"));
+            Label yearLabel = new Label("Year: " + content.getStartYear());
+            
+            // Add genres
+            String genres = content.getGenres() != null ? 
+                content.getGenres().stream()
+                    .map(Enum::name)
+                    .map(name -> name.charAt(0) + name.substring(1).toLowerCase())
+                    .collect(Collectors.joining(", ")) : "N/A";
+            Label genresLabel = new Label("Genres: " + genres);
+            
+            // Add rating
+            Label ratingLabel = new Label(String.format("IMDb Rating: %s", 
+                content.getImdbRating() != null && content.getImdbRating() > 0 ? 
+                String.format("%.1f/10", content.getImdbRating()) : "N/A"));
+            
+            // Add director if available
+            String director = content.getDirector() != null ? content.getDirector() : "N/A";
+            Label directorLabel = new Label("Director: " + director);
+            
+            // Create cast label with bold text
+            Label castLabel = new Label();
+            String castText = content.getCast() != null ? content.getCast().toString() : "N/A";
+            castLabel.setText("Cast: " + castText);
+            castLabel.setStyle("-fx-font-weight: bold; -fx-text-fill: #333;");
+            
+            // Add awards (placeholder - you'll need to implement getAwards() in your Content model)
+            Label awardsLabel = new Label("Awards: " + 
+                (content.getAwards() != null ? content.getAwards() : "N/A"));
+            
+            // Add all elements to content box
+            contentBox.getChildren().addAll(
+                typeLabel, 
+                yearLabel, 
+                genresLabel, 
+                ratingLabel, 
+                directorLabel,
+                new Separator(),
+                new Label("Cast:"),
+                castLabel,
+                new Separator(),
+                new Label("Awards:"),
+                awardsLabel
+            );
+            
+            // Add content to dialog
+            DialogPane dialogPane = dialog.getDialogPane();
+            dialogPane.setContent(contentBox);
+            
+            // Add close button
+            ButtonType closeButton = new ButtonType("Close", ButtonBar.ButtonData.CANCEL_CLOSE);
+            dialogPane.getButtonTypes().add(closeButton);
+            
+            // Show dialog
+            dialog.showAndWait();
+            
+        } catch (Exception e) {
+            logger.error("Error showing content details dialog", e);
+            showError("Error", "Could not show content details: " + e.getMessage());
+        }
     }
 
     /**
-     * Sets up the row double-click handler for the results table.
+     * Sets up the row click handlers for the results table.
      */
     private void setupRowDoubleClickHandler() {
         if (resultsTable == null) {
@@ -515,15 +587,21 @@ public class ResultsTableController extends BaseSearchController {
         resultsTable.setRowFactory(tv -> {
             TableRow<Content> row = new TableRow<>();
 
-            // Handle double-click on row
+            // Handle single click for quick details
             row.setOnMouseClicked(event -> {
-                if (event.getClickCount() == 2 && !row.isEmpty()) {
+                if (!row.isEmpty()) {
                     Content content = row.getItem();
-                    showContentDetails(content);
+                    if (event.getClickCount() == 1) {
+                        // Show quick details on single click
+                        showContentDetailsDialog(content);
+                    } else if (event.getClickCount() == 2) {
+                        // Open full details on double click
+                        showContentDetails(content);
+                    }
                 }
             });
 
-            // Add hover effect
+            // Add hover effect that helps with user experience
             row.hoverProperty().addListener((obs, wasHovered, isNowHovered) -> {
                 if (isNowHovered && !row.isEmpty()) {
                     row.setStyle("-fx-background-color: #f0f0f0; -fx-cursor: hand;");

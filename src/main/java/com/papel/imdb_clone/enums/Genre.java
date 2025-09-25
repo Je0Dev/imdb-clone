@@ -23,6 +23,7 @@ public enum Genre {
     FAMILY("Family"),
     SPORT("Sport"),
     HISTORY("History"),
+    MUSIC("Music"),
     UNKNOWN("Unknown");
 
     private final String displayName;
@@ -30,6 +31,12 @@ public enum Genre {
     //Genre constructor with displayName
     Genre(String displayName) {
         this.displayName = displayName;
+    }
+
+    //toString method
+    @Override
+    public String toString() {
+        return displayName;
     }
 
     //get displayName

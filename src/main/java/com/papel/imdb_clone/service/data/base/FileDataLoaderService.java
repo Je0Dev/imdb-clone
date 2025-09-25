@@ -177,7 +177,7 @@ SeriesService seriesService,
                 }
                 successCount++;
                 long taskTime = System.currentTimeMillis() - taskStartTime;
-                logger.info("✓ Successfully loaded {} in {} ms", dataType, taskTime);
+                logger.info(" Successfully loaded {} in {} ms", dataType, taskTime);
 
             } catch (Exception e) {
                 failureCount++;
@@ -340,7 +340,8 @@ SeriesService seriesService,
                 logger.error("Caused by: {}", e.getCause().getMessage());
                 logger.debug("Root cause:", e.getCause());
             }
-            
+
+            //throw exception
             throw new IOException(errorMsg, e);
         }
     }

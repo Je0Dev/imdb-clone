@@ -1,5 +1,6 @@
 package com.papel.imdb_clone.exceptions;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.Collections;
 import java.util.HashMap;
@@ -11,18 +12,20 @@ import java.util.Map;
  * This is a specific type of InvalidEntityException for entity not found scenarios.
  */
 public class EntityNotFoundException extends InvalidEntityException {
+
+    //serial version uid for object serialization
+    @Serial
     private static final long serialVersionUID = 1L;
 
-    // Store class name as String for serialization
-    private final String entityTypeName;
     private final Serializable identifier; // Changed to Serializable
-    private final String entityName;
     private transient Class<?> entityType; // Marked as transient to avoid serialization issues
     private final String serializedEntityType; // Store class name for deserialization
     
     /**
      * Custom serialization method to handle the non-serializable Class object.
+     * This method is called when the object is being serialized and stores the class name in the serializedEntityType field.
      */
+    @Serial
     private void writeObject(java.io.ObjectOutputStream out) throws java.io.IOException {
         // Store the class name in the serializedEntityType field
         String className = entityType != null ? entityType.getName() : null;
@@ -33,13 +36,16 @@ public class EntityNotFoundException extends InvalidEntityException {
         } catch (Exception e) {
             throw new java.io.NotSerializableException("Failed to serialize entity type: " + e.getMessage());
         }
-        
+
+        //default write object
         out.defaultWriteObject();
     }
     
     /**
      * Custom deserialization method to handle the non-serializable Class object.
+     * This method is called when the object is being deserialized and restores the class object from the stored name in serializedEntityType.
      */
+    @Serial
     private void readObject(java.io.ObjectInputStream in) throws java.io.IOException, ClassNotFoundException {
         in.defaultReadObject();
         
@@ -51,13 +57,7 @@ public class EntityNotFoundException extends InvalidEntityException {
                 this.entityType = null;
             }
         }
-        
-        // Ensure identifier is serializable
-        if (this.identifier != null && !(this.identifier instanceof Serializable)) {
-            throw new java.io.InvalidObjectException("Identifier must be serializable");
-        }
     }
-
 
     /**
      * Creates an exception with entity type and identifier
@@ -86,9 +86,10 @@ public class EntityNotFoundException extends InvalidEntityException {
         //set entity type, identifier, and entity name
         this.entityType = entityType;
         this.identifier = (Serializable) identifier;
-        this.entityName = entityName != null ? entityName :
+        String entityName1 = entityName != null ? entityName :
                 (entityType != null ? entityType.getSimpleName() : null);
-        this.entityTypeName = entityType != null ? entityType.getName() : null;
+        // Store class name as String for serialization
+        String entityTypeName = entityType != null ? entityType.getName() : null;
         this.serializedEntityType = entityType != null ? entityType.getName() : null;
     }
 

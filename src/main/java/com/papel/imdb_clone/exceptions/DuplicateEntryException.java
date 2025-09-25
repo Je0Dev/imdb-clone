@@ -3,6 +3,7 @@ package com.papel.imdb_clone.exceptions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.Serial;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -13,6 +14,8 @@ import java.util.Map;
  * Can be used for any type of duplicate entry (username, email, content, etc.).
  */
 public class DuplicateEntryException extends InvalidEntityException {
+    //serial version uid for object serialization
+    @Serial
     private static final long serialVersionUID = 1L;
 
 

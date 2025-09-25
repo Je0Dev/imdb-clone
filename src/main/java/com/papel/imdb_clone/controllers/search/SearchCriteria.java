@@ -10,49 +10,48 @@ import java.util.List;
  * Search criteria such as title, year, rating, genre, content type, and sort order for filtering content.
  */
 public class SearchCriteria {
-    private String query;
-    private String title;
-    private Double minImdbRating;
-    private Double maxImdbRating;
-    private Integer minYear;
-    private List<Genre> genres;
-    private Genre genre;
-    private ContentType contentType;
+    private Integer maxYear;
+    private String query; // search query
+    private String title; // title of the content
+    private Double minImdbRating; // minimum IMDb rating
+    private Double maxImdbRating; // maximum IMDb rating
+    private Integer minYear; // minimum year
+    private List<Genre> genres; // list of genres
+    private Genre genre; // genre
+    private ContentType contentType; // content type of media
     private String sortBy; // "title", "year", "rating", "duration"
-    private boolean sortDescending;
-    private Integer startYear;
-    private Integer endYear;
+    private boolean sortDescending; // sort order
+    private Integer startYear; // start year
+    private Integer endYear; // end year
+    private String actor; // actor of the content
+    private String director; // director of the content
 
-    //search criteria constructor with all parameters
-    public SearchCriteria(String query, Double minImdb, Double maxImdb, List<Genre> selectedGenres, Integer yearFrom) {
+
+
+    //search criteria constructor with query
+    public SearchCriteria(String query) {
         this.query = query;
-        this.minImdbRating = minImdb;
-        this.maxImdbRating = maxImdb;
-        this.genres = selectedGenres != null ? new ArrayList<>(selectedGenres) : new ArrayList<>();
-        this.minYear = yearFrom;
-        this.sortBy = "title";
-        this.sortDescending = false;
+    }
+    //search criteria constructor with all parameters
+    public SearchCriteria(String query, Double minImdbRating, Double maxImdbRating, List<Genre> genres, Integer minYear, Integer maxYear, String sortBy, boolean sortDescending,
+                          Integer startYear, Integer endYear, String actor, String director, ContentType contentType, Genre genre, String title) {
+        this.query = query;
+        this.minImdbRating = minImdbRating;
+        this.maxImdbRating = maxImdbRating;
+        this.genres = genres;
+        this.minYear = minYear;
+        this.maxYear = maxYear;
+        this.sortBy = sortBy;
+        this.sortDescending = sortDescending;
+        this.startYear = startYear;
+        this.endYear = endYear;
+        this.actor = actor;
+        this.director = director;
+        this.contentType = contentType;
+        this.genre = genre;
+        this.title = title;
     }
 
-    //search criteria constructor
-    public SearchCriteria(String query, String keywords, List<String> contentTypes, Integer yearFromValue) {
-        this.query = query != null ? query : "";
-        this.title = keywords;
-        this.minYear = yearFromValue;
-        this.genres = new ArrayList<>();
-        this.sortBy = "title";
-        this.sortDescending = false;
-
-        // Set content type if provided
-        if (contentTypes != null && !contentTypes.isEmpty()) {
-            try {
-                this.contentType = ContentType.valueOf(contentTypes.getFirst().toUpperCase());
-            } catch (IllegalArgumentException e) {
-                // If content type is invalid, leave it as null
-                this.contentType = null;
-            }
-        }
-    }
 
     //search criteria constructor with sort by and sort descending
     public SearchCriteria(String sortBy, boolean sortDescending) {
@@ -60,27 +59,20 @@ public class SearchCriteria {
         this.sortDescending = sortDescending;
     }
 
-    //search criteria constructor with query
-    public SearchCriteria(String query) {
-        this.query = query;
-        this.sortBy = "title";
-        this.sortDescending = false;
-    }
-
-    //search criteria constructor with content type and keywords
-    public SearchCriteria(ContentType contentType, String keywords) {
-        this.contentType = contentType;
-        this.title = keywords;
-        this.sortBy = "title";
-        this.sortDescending = false;
-    }
 
     //search criteria constructor with title and sort by
     public SearchCriteria(String title, String sortBy) {
         this.title = title;
         this.sortBy = sortBy;
-        this.sortDescending = false;
     }
+
+    //search criteria constructor with title, sort by, and sort descending
+    public SearchCriteria(String title, String sortBy, boolean sortDescending) {
+        this.title = title;
+        this.sortBy = sortBy;
+        this.sortDescending = sortDescending;
+    }
+
 
     //set title
     public void setTitle(String title) {
@@ -104,6 +96,11 @@ public class SearchCriteria {
 
     //set sort field
     public void setSortField(String sortBy) {
+        this.sortBy = sortBy;
+    }
+    
+    // Alias for setSortField to match the method used in SearchFormController
+    public void setSortBy(String sortBy) {
         this.sortBy = sortBy;
     }
 
@@ -186,6 +183,9 @@ public class SearchCriteria {
     public Integer getMinYear() {
         return minYear;
     }
+    public Integer getMaxYear() {
+        return endYear;
+    }
 
     public Integer getStartYear() {
         return startYear;
@@ -231,6 +231,13 @@ public class SearchCriteria {
                 ", genres=" + genres +
                 ", sortBy='" + sortBy + '\'' +
                 ", sortDescending=" + sortDescending +
+                ", endYear=" + endYear +
+                ", startYear=" + startYear +
+                ", contentType=" + contentType +
+                ", genre=" + genre +
+                ", query='" + query + '\'' +
+                ", director='" + director + '\'' +
+                ", actor='" + actor + '\'' +
                 '}';
     }
 
@@ -240,5 +247,10 @@ public class SearchCriteria {
 
     public Double getMaxImdbRating() {
         return maxImdbRating;
+    }
+
+
+    public void setMaxRating(double v) {
+        this.maxImdbRating = v;
     }
 }

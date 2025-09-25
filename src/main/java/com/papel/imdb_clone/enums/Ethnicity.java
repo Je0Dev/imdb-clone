@@ -43,7 +43,7 @@ public enum Ethnicity {
 
     private final String label;
 
-    //Ethnicity constructor with label
+    //Ethnicity constructor with label which means the name of the ethnicity
     Ethnicity(String label) {
         this.label = label;
     }
@@ -51,6 +51,11 @@ public enum Ethnicity {
     //get label
     public String getLabel() {
         return label;
+    }
+
+    //get name which means the name of the enum
+    public String getName() {
+        return name();
     }
 
     /**

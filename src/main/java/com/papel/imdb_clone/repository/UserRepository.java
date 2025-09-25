@@ -47,4 +47,32 @@ public interface UserRepository {
      * @return The number of users
      */
     long count();
+
+    /**
+     * Deletes a user by its unique ID.
+     *
+     * @param id The user ID
+     */
+    void deleteById(int id);
+
+    /**
+     * Deletes a user by its username.
+     *
+     * @param username The username of the user to delete
+     */
+    void deleteByUsername(String username);
+
+    /**
+     * Deletes all users from the repository.
+     */
+    void deleteAll();
+
+    /**
+     * Updates a user's information.
+     *
+     * @param user The user to update
+     * @return The updated user
+     */
+    User update(User user);
+
 }

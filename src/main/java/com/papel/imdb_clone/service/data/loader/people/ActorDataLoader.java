@@ -152,7 +152,7 @@ public class ActorDataLoader extends BaseDataLoader {
                             );
                             
                             // Set notable works if provided
-                            if (!notableWorks.isEmpty() && !notableWorks.equalsIgnoreCase("N/A")) {
+                            if (!notableWorks.equalsIgnoreCase("N/A")) {
                                 actor.setNotableWorks(notableWorks);
                             }
 

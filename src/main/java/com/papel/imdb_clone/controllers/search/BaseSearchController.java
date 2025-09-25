@@ -18,13 +18,15 @@ import org.slf4j.LoggerFactory;
  */
 public abstract class BaseSearchController {
     protected static final Logger logger = LoggerFactory.getLogger(BaseSearchController.class);
-    
+
+
     protected final SearchService searchService;
     protected final NavigationService navigationService;
     
     @FXML
     protected Label statusLabel;
-    
+
+    //constructor that initializes the search service and navigation service
     protected BaseSearchController() {
         this.searchService = ServiceLocator.getInstance().getSearchService();
         this.navigationService = NavigationService.getInstance();

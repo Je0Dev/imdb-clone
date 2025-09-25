@@ -2,15 +2,16 @@ package com.papel.imdb_clone.exceptions;
 
 import java.io.Serial;
 import java.io.Serializable;
-import java.io.Serializable;
 import java.util.*;
-import java.util.stream.Collectors;
 
 /**
  * Unified exception for validation errors throughout the application.
  * Supports both simple error messages and field-level validation errors.
  */
 public class ValidationException extends RuntimeException implements Serializable {
+
+    //serial version uid for object serialization
+    @Serial
     private static final long serialVersionUID = 1L;
     // Field errors - using HashMap for serialization
     /**
@@ -27,11 +28,7 @@ public class ValidationException extends RuntimeException implements Serializabl
      * Error code for the exception.
      */
     private final String errorCode = "VALIDATION_ERROR";
-    
-    // Add no-arg constructor for serialization
-    protected ValidationException() {
-        this("Validation failed", "VALIDATION_ERROR", null, null);
-    }
+
 
         /**
      * Creates a new ValidationException with all possible parameters.
@@ -64,24 +61,6 @@ public class ValidationException extends RuntimeException implements Serializabl
                 }
             }
         }
-    }
-    
-    /**
-     * Safely creates a new LinkedHashMap from the input field errors.
-     *
-     * @param fieldErrors input field errors map
-     * @return a new LinkedHashMap containing the field errors
-     */
-    private static Map<String, List<String>> fieldResults(Map<String, List<String>> fieldErrors) {
-        if (fieldErrors == null) {
-            return new LinkedHashMap<>();
-        }
-        // Create a defensive copy with serializable values
-        Map<String, List<String>> result = new LinkedHashMap<>();
-        for (Map.Entry<String, List<String>> entry : fieldErrors.entrySet()) {
-            result.put(entry.getKey(), new ArrayList<>(entry.getValue()));
-        }
-        return result;
     }
 
     /**
@@ -149,6 +128,9 @@ public class ValidationException extends RuntimeException implements Serializabl
      * Builder for creating ValidationException instances.
      */
     public static class Builder implements Serializable {
+
+        //serial version uid for object serialization
+        @Serial
         private static final long serialVersionUID = 2L;
         private String message;
         private String errorCode;
@@ -168,13 +150,11 @@ public class ValidationException extends RuntimeException implements Serializabl
          *
          * @param field the field name
          * @param error the error message
-         * @return this builder instance for method chaining
          */
-        public Builder fieldError(String field, String error) {
+        public void fieldError(String field, String error) {
             if (field != null && error != null) {
                 this.fieldErrors.computeIfAbsent(field, k -> new ArrayList<>()).add(error);
             }
-            return this;
         }
 
 

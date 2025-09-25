@@ -1,5 +1,6 @@
 package com.papel.imdb_clone.exceptions;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.Collections;
 import java.util.List;
@@ -11,20 +12,15 @@ import java.util.Objects;
  * This is a more specific type of ValidationException for entity validation.
  */
 public class InvalidEntityException extends ValidationException {
+
+    //serial version uid for object serialization
+    @Serial
     private static final long serialVersionUID = 2L;
     private static final String DEFAULT_MESSAGE = "Invalid entity data";
     private final String entityName;
     private final Serializable entityId;
 
-    /**
-     * Creates a new InvalidEntityException with the specified entity name.
-     *
-     * @param entityName the name of the invalid entity (must not be null)
-     * @throws NullPointerException if entityName is null
-     */
-    public InvalidEntityException(String entityName) {
-        this(entityName, null, DEFAULT_MESSAGE, null, null);
-    }
+
 
     /**
      * Creates a new InvalidEntityException with entity details.

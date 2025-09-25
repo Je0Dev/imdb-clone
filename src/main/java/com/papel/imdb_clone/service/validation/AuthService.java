@@ -71,7 +71,8 @@ public class AuthService {
                     isFirstLine = false;
                     continue;
                 }
-                
+
+                //split the line into parts
                 String[] parts = line.split(",");
                 if (parts.length >= 5) {
                     try {
@@ -143,6 +144,7 @@ public class AuthService {
      */
     private void createDefaultAdminUser() {
         try {
+            // Create a new admin user
             User admin = new User("Admin", "User", "admin", 'M', "admin@imdbclone.com");
             admin.setPassword(PasswordHasher.hashPassword("admin123"));
             admin.setId(nextUserId++);
@@ -222,7 +224,7 @@ public class AuthService {
                         "Invalid username or password"
                 );
             }
-            
+            // Log the successful password verification
             logger.debug("Password verified successfully for user: {}", username);
         } catch (Exception e) {
             logger.error("Error during password verification for user {}: {}", username, e.getMessage(), e);
@@ -233,7 +235,7 @@ public class AuthService {
         }
 
         try {
-            // Generate session token
+            // Generate session token which means a unique identifier for the user session
             String sessionToken = UUID.randomUUID().toString();
             userSessions.put(sessionToken, user.getUsername());
             logger.info("User logged in successfully: {}", username);
@@ -253,23 +255,15 @@ public class AuthService {
      * Gets the currently logged-in user for a session token.
      *
      * @param sessionToken The session token
-     * @return The User object if the session is valid, null otherwise
      */
-    public User getCurrentUser(String sessionToken) {
+    public void getCurrentUser(String sessionToken) {
         if (sessionToken == null) {
-            return null;
+            return;
         }
         String username = userSessions.get(sessionToken);
-        return username != null ? usersByUsername.get(username) : null;
-    }
-
-    /**
-     * Gets the currently logged-in user.
-     *
-     * @return The User object if the session is valid, null otherwise
-     */
-    public User getCurrentUser() {
-        return getCurrentUser(null);
+        if (username != null) {
+            usersByUsername.get(username);
+        }
     }
 
     /**

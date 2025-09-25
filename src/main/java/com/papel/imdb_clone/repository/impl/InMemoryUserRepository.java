@@ -132,6 +132,25 @@ public class InMemoryUserRepository implements UserRepository {
         }
     }
 
+    @Override
+    public void deleteById(int id) {
+    }
+
+    @Override
+    public void deleteByUsername(String username) {
+
+    }
+
+    @Override
+    public void deleteAll() {
+
+    }
+
+    @Override
+    public User update(User user) {
+        return null;
+    }
+
 
     /**
      * Adds a user directly to the repository (used by data loaders).

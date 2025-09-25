@@ -4,43 +4,56 @@ import com.papel.imdb_clone.enums.Genre;
 import com.papel.imdb_clone.model.people.Actor;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 /**
  * Represents a movie.
  */
 public class Movie extends Content {
-    public static Object getRating;
-    private String boxOffice;
-    private List<String> awards;
+    private String boxOffice; // Box office revenue
+    private List<String> awards; // Awards received
     private List<Genre> genres = new ArrayList<>(); // Multiple genres support
-    private Date releaseDate;
+    private Date releaseDate; // Release date
+    private double imdbRating; // IMDB rating
+    private String director;//Director
+    private List<Actor> actors; //Actors
+    private int startyear;//Start year
+    private int endyear;//End year
+    private double rating; //Rating
 
-    private int startyear;
-    private Integer userRating;
+    private Integer userRating; //User rating
+    public static Object getRating; //static object rating which means it can be accessed without creating an instance of the class
+    private int duration;
 
-    public Date getReleaseDate() {
-        return releaseDate != null ? new Date(releaseDate.getTime()) : null;
-    }
-
-    public void setReleaseDate(Date releaseDate) {
-        this.releaseDate = releaseDate != null ? new Date(releaseDate.getTime()) : null;
-    }
 
     //default constructor
     public Movie() {
-        super("", new Date(), null, "Unknown", new HashMap<>(), 0.0);
+        super("Movie", new Date(2025, Calendar.JANUARY, 1), null, "Unknown", new HashMap<>(), 0.0);
         // Initialize fields directly instead of calling methods that might use 'this'
         this.awards = new ArrayList<>();
         this.genres = new ArrayList<>();
+        this.actors = new ArrayList<>();
+        this.imdbRating = 0.0;
+        this.userRating = null;
+        this.startyear = 0;
+        this.endyear = 0;
+        this.boxOffice = "";
+        this.director = "";
     }
 
     //constructor for simple movie creation
     public Movie(String title, int year, String genre, String director, Map<Integer, Integer> userRatings, double imdbRating) {
         super(title, createDateFromYear(year), null, director, userRatings, imdbRating);
+
         this.releaseDate = createDateFromYear(year);
         this.awards = new ArrayList<>();
         this.genres = new ArrayList<>();
+        this.actors = new ArrayList<>();
+        this.imdbRating = imdbRating;
+        this.userRating = null;
+        this.startyear = year;
+        this.endyear = year;
+        this.boxOffice = "";
+        this.director = director;
         
         // Handle genre after object is fully initialized
         if (genre != null && !genre.trim().isEmpty()) {
@@ -65,49 +78,6 @@ public class Movie extends Content {
         return cal.getTime();
     }
 
-    // Private constructor for FileDataLoaderService
-    private Movie(String title, Date year, List<Genre> genres,
-                 double imdbRating, String director, List<Actor> actors) {
-        // Call super first with minimal initialization
-        super(title, 
-              year != null ? new Date(year.getTime()) : createDateFromYear(Calendar.getInstance().get(Calendar.YEAR)),
-              null, // No default genre
-              director, 
-              new HashMap<>(), 
-              imdbRating);
-        
-        // Initialize instance fields after super() call
-        this.awards = new ArrayList<>();
-        this.genres = new ArrayList<>();
-        this.releaseDate = year != null ? new Date(year.getTime()) : createDateFromYear(Calendar.getInstance().get(Calendar.YEAR));
-        
-        // Set genres safely
-        if (genres != null) {
-            List<Genre> validGenres = new ArrayList<>();
-            for (Genre g : genres) {
-                if (g != null) {
-                    validGenres.add(g);
-                }
-            }
-            this.genres = validGenres;
-        }
-        
-
-        // Initialize actors list safely
-        if (actors != null) {
-            List<Actor> actorsCopy = new ArrayList<>(actors);
-            super.setActors(actorsCopy);
-        }
-    }
-
-    // Factory method to create a Movie instance safely.
-    // This prevents 'this' escape during construction.
-    public static Movie createMovie(String title, Date year, List<Genre> genres,
-                                  double imdbRating, String director, List<Actor> actors) {
-        Movie movie = new Movie(title, year, genres, imdbRating, director, actors);
-        return movie;
-    }
-
     // Method removed as it's no longer needed
 
     // Method to add a genre, ensuring thread safety and avoiding duplicates
@@ -115,26 +85,39 @@ public class Movie extends Content {
         if (genre != null) {
             if (this.genres == null) {
                 this.genres = new ArrayList<>();
+                this.setGenres(this.genres);
             }
             if (!this.genres.contains(genre)) {
                 this.genres.add(genre);
+                this.setGenres(this.genres);
             }
         }
     }
 
+    public Date getReleaseDate() {
+        return releaseDate != null ? new Date(releaseDate.getTime()) : null;
+    }
+    public void setReleaseDate(Date releaseDate) {
+        this.releaseDate = releaseDate != null ? new Date(releaseDate.getTime()) : null;
+    }
 
-    //getters and setters
     @Override
     public List<Actor> getActors() {
         // Return the list from the parent class to ensure we're using a single source of truth
         return super.getActors();
+    }
+    @Override
+    public void setActors(List<Actor> actors) {
+        // Create a new ArrayList with the provided actors (or empty list if null)
+        List<Actor> newActors = actors != null ? new ArrayList<>(actors) : new ArrayList<>();
+        // Use the parent class's setter to update the actors
+        super.setActors(newActors);
     }
 
     @Override
     public String getDirector() {
         return super.getDirector();
     }
-
 
     public String getBoxOffice() {
         return boxOffice;
@@ -147,17 +130,17 @@ public class Movie extends Content {
     public List<String> getAwards() {
         return new ArrayList<>(awards);
     }
-
-
-    public void setGenres(List<Genre> genres) {
-        this.genres = genres != null ? new ArrayList<>(genres) : new ArrayList<>();
+    public void setAwards(List<String> awards) {
+        this.awards = awards != null ? new ArrayList<>(awards) : new ArrayList<>();
     }
 
-   
-    
+
     @Override
     public List<Genre> getGenres() {
         return new ArrayList<>(genres);
+    }
+    public void setGenres(List<Genre> genres) {
+        this.genres = genres != null ? new ArrayList<>(genres) : new ArrayList<>();
     }
 
 
@@ -168,6 +151,10 @@ public class Movie extends Content {
                 ", title='" + getTitle() + '\'' +
                 ", genre=" + getGenre() +
                 ", actors=" + getActors().size() +
+                ", director=" + getDirector() +
+                ", boxOffice=" + getBoxOffice() +
+                ", awards=" + getAwards() +
+                ", imdbRating=" + getImdbRating() +
                 ", genres=" + genres.size() +
                 '}';
     }
@@ -180,25 +167,23 @@ public class Movie extends Content {
         this.setImdbRating(rating);
     }
 
-    public static double getRating(Object o) {
-        return ((Movie) o).getImdbRating();
-    }
-
-    @Override
-    public void setActors(List<Actor> actors) {
-        // Create a new ArrayList with the provided actors (or empty list if null)
-        List<Actor> newActors = actors != null ? new ArrayList<>(actors) : new ArrayList<>();
-        // Use the parent class's setter to update the actors
-        super.setActors(newActors);
-    }
-    
     /**
      * Adds an actor to the movie's cast
      * @param actor The actor to add
      */
     public void addActor(Actor actor) {
-        if (actor != null && !getActors().contains(actor)) {
-            getActors().add(actor);
+        if (actor == null) {
+            return;
+        }
+        
+        // Get current actors and create a mutable copy
+        List<Actor> currentActors = new ArrayList<>(getActors());
+        
+        // Add actor if not already in the list
+        if (!currentActors.contains(actor)) {
+            currentActors.add(actor);
+            // Update the actors list with the new mutable list
+            super.setActors(currentActors);
         }
     }
 
@@ -211,6 +196,18 @@ public class Movie extends Content {
     }
 
     public void setUserRating(int rating) {
-        this.userRating=userRating;
+        this.userRating = rating;
+    }
+
+    public void setDuration(int duration) {
+        this.duration = duration;
+    }
+
+    public Object getDuration() {
+        return duration;
+    }
+
+    public int getRuntime() {
+        return duration;
     }
 }

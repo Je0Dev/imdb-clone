@@ -12,6 +12,7 @@ public class StartApplication {
         // Private constructor to prevent instantiation
     }
 
+
     /**
      * Launches the ImprovedMovieApp application.
      * @param args the command line arguments-

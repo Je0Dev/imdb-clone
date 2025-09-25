@@ -1,5 +1,7 @@
 package com.papel.imdb_clone.model.content;
 
+import com.papel.imdb_clone.enums.Genre;
+
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -14,6 +16,9 @@ public class Season {
     private int seasonNumber;
     private Object title;
     private Date releaseDate;
+    private Series series;
+    private double imdbRating;
+    private List<Genre> genres;
 
     /**
      * Default constructor for Season.
@@ -81,6 +86,7 @@ public class Season {
     }
 
     public void setSeries(Series series) {
+        this.series = series;
     }
 
     //set episodes type E to a list of episodes

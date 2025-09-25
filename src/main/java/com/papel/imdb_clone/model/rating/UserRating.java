@@ -11,7 +11,8 @@ public class UserRating {
     private final int contentId;
     private Integer rating; // 1-10
     private String title;
-    private final LocalDateTime createdAt;
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
 
     /**
      * Constructor for UserRating
@@ -26,17 +27,6 @@ public class UserRating {
         this.createdAt = LocalDateTime.now();
     }
 
-    /**
-     * Constructor for UserRating with title
-     * @param userId The user's ID
-     * @param contentId The content's ID
-     * @param rating The user's rating
-     * @param title The user's review title
-     */
-    public UserRating(int userId, int contentId, int rating, String title) {
-        this(userId, contentId, rating);
-        this.title = title;
-    }
 
     // Getters and Setters
     public int getId() {
@@ -46,7 +36,6 @@ public class UserRating {
     public void setId(int id) {
         this.id = id;
     }
-
 
     public double getRating() {
         return rating;
@@ -69,6 +58,21 @@ public class UserRating {
         this.title = title;
     }
 
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public LocalDateTime getUpdatedAt() {
+        return updatedAt;
+    }
+
+    public void setUpdatedAt(LocalDateTime updatedAt) {
+        this.updatedAt = updatedAt;
+    }
 
     @Override
     public String toString() {
@@ -79,6 +83,7 @@ public class UserRating {
                 ", rating=" + rating +
                 ", title='" + title + '\'' +
                 ", createdAt=" + createdAt +
+                ", updatedAt=" + updatedAt +
                 '}';
     }
 }

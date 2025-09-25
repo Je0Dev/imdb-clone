@@ -32,6 +32,13 @@ public abstract class Celebrity {
         this.gender = gender;
     }
 
+
+    public Celebrity(String actorName) {
+        this(actorName, "", null, 'U');
+        this.id = nextId++;
+        this.firstName = actorName;
+    }
+
     // Getters
     public int getId() {
         return id;

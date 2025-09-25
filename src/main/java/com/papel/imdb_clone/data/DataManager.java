@@ -27,6 +27,7 @@ import java.util.List;
  * while maintaining separation of concerns.
  */
 public class DataManager {
+    //data manager instance being volatile to ensure visibility of changes across threads
     private static volatile DataManager instance;
     private static final Object lock = new Object();
     
@@ -99,9 +100,11 @@ public class DataManager {
     
     /**
      * Initializes and registers services after the object is fully constructed.
-     * This prevents 'this' escape issues.
+     * This prevents 'this' escape issues which means that the object is not fully constructed
+     * when the services are registered.
      */
     private void initializeServices() {
+
         // Register services after object is fully constructed
         registerServices();
     }

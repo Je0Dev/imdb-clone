@@ -90,7 +90,15 @@
                             -fx-border-color: #e0e0e0;
                         </style>
                     </TableColumn>
-                    <TableColumn fx:id="movieYearColumn" minWidth="100" prefWidth="120"  text="Year" style="-fx-alignment: CENTER;">
+                    <TableColumn fx:id="movieYearColumn" minWidth="100" prefWidth="100" text="Year" style="-fx-alignment: CENTER;">
+                        <style>
+                            -fx-background-color: #f5f5f5;
+                            -fx-text-fill: #333333;
+                            -fx-font-weight: bold;
+                            -fx-border-color: #e0e0e0;
+                        </style>
+                    </TableColumn>
+                    <TableColumn fx:id="movieDurationColumn" minWidth="100" prefWidth="100" text="Duration (min)" style="-fx-alignment: CENTER;">
                         <style>
                             -fx-background-color: #f5f5f5;
                             -fx-text-fill: #333333;

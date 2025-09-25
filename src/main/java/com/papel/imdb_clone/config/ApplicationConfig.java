@@ -23,7 +23,7 @@ public class ApplicationConfig {
 
     /**
      * Private constructor to prevent direct instantiation.
-     * Loads the configuration during object creation.
+     * Loads the configuration during object creation
      */
     private ApplicationConfig() {
         this.properties = new Properties();
@@ -36,7 +36,6 @@ public class ApplicationConfig {
     /**
      * Returns the singleton instance of ApplicationConfig.
      * Uses double-checked locking for thread safety.
-     *
      * @return The singleton instance of ApplicationConfig
      */
     public static ApplicationConfig getInstance() {
@@ -92,7 +91,6 @@ public class ApplicationConfig {
 
     /**
      * Gets the application title from configuration.
-     *
      * @return The configured application title or the default title if not specified
      */
     public String getAppTitle() {

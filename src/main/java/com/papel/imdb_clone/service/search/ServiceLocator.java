@@ -2,13 +2,11 @@ package com.papel.imdb_clone.service.search;
 
 import com.papel.imdb_clone.controllers.coordinator.UICoordinator;
 import com.papel.imdb_clone.data.DataManager;
-import com.papel.imdb_clone.model.content.Content;
 import com.papel.imdb_clone.model.people.Actor;
 import com.papel.imdb_clone.model.people.Director;
 import com.papel.imdb_clone.repository.impl.InMemoryMovieRepository;
 import com.papel.imdb_clone.repository.impl.InMemorySeriesRepository;
 import com.papel.imdb_clone.repository.impl.InMemoryUserRepository;
-import com.papel.imdb_clone.service.content.ContentService;
 import com.papel.imdb_clone.service.content.MoviesService;
 import com.papel.imdb_clone.service.content.SeriesService;
 import com.papel.imdb_clone.service.data.base.FileDataLoaderService;
@@ -46,7 +44,7 @@ public class ServiceLocator {
      * Singleton pattern implementation for ServiceLocator.
      * Ensures that only one instance of ServiceLocator is created.
      * Thread-safe implementation using double-checked locking.
-     * Sychronized method to ensure thread safety means that only one thread can access the method at a time.
+     * Synchronized method to ensure thread safety means that only one thread can access the method at a time.
      *
      * @return ServiceLocator instance which means the object that implements the ServiceLocator interface
      */
@@ -194,11 +192,6 @@ public class ServiceLocator {
     }
 
     /**
-     * Get the RefactoredDataManager instance.
-     * If the RefactoredDataManager is not already initialized, it synchronizes on the ServiceLocator class to ensure thread safety.
-     * @return DataManager instance which means the object that implements the DataManager interface
-     */
-    /**
      * Get the SearchService instance.
      *
      * @return The SearchService instance
@@ -229,6 +222,7 @@ public class ServiceLocator {
         return service;
     }
 
+    // Get the DataManager instance
     public DataManager getDataManager() {
         if (dataManager == null) {
             synchronized (lock) {
@@ -270,6 +264,7 @@ public class ServiceLocator {
                 }
             }
         }
+        // Cast the UICoordinator instance to the requested class
         try {
             return coordinatorClass.cast(uiCoordinatorInstance);
         } catch (ClassCastException e) {

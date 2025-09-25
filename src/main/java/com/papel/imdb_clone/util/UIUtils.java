@@ -2,12 +2,9 @@ package com.papel.imdb_clone.util;
 
 import com.papel.imdb_clone.model.content.Content;
 import javafx.application.Platform;
-import javafx.scene.Node;
 import javafx.scene.control.Alert;
-import javafx.scene.layout.StackPane;
 import javafx.stage.Stage;
 
-import java.util.logging.Logger;
 
 /**
  * Unified utility class for all UI operations including dialogs, layouts, and basic validation.

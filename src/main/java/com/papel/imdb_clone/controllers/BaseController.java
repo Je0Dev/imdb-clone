@@ -4,18 +4,11 @@ import com.papel.imdb_clone.data.DataManager;
 import com.papel.imdb_clone.service.search.ServiceLocator;
 import com.papel.imdb_clone.util.UIUtils;
 import javafx.fxml.Initializable;
-import javafx.scene.Node;
-import javafx.scene.Parent;
-import javafx.scene.Scene;
 import javafx.scene.control.*;
-import javafx.stage.Modality;
-import javafx.stage.Stage;
-import javafx.stage.Window;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Optional;
-import java.util.function.Consumer;
 
 /**
  * Base controller class providing common functionality for all controllers in the application.
@@ -39,8 +32,6 @@ public abstract class BaseController implements Initializable {
 
     /**
      * Constructs a new BaseController with the specified DataManager.
-     *
-     * @param dataManager The DataManager instance to be used by this controller
      */
     protected BaseController() {
         this.dataManager = ServiceLocator.getInstance().getDataManager();
@@ -151,39 +142,6 @@ public abstract class BaseController implements Initializable {
         return result.isPresent() && result.get() == ButtonType.YES;
     }
 
-    // ===== View Navigation =====
-
-    /**
-     * Opens a new modal window with the specified content.
-     *
-     * @param title     The window title
-     * @param content   The root node of the content to display
-     * @param owner     The owner window (can be null)
-     * @param onClose   Callback to execute when the window is closed
-     * @return The created Stage instance
-     */
-    protected Stage showModal(String title, Parent content, Window owner, Runnable onClose) {
-        Stage stage = new Stage();
-        stage.setTitle(title);
-        stage.setScene(new Scene(content));
-        stage.initModality(Modality.WINDOW_MODAL);
-        
-        if (owner != null) {
-            stage.initOwner(owner);
-            // Center on parent window
-            stage.setX(owner.getX() + (owner.getWidth() - content.prefWidth(-1)) / 2);
-            stage.setY(owner.getY() + (owner.getHeight() - content.prefHeight(-1)) / 2);
-        }
-        
-        stage.setOnCloseRequest(event -> {
-            if (onClose != null) {
-                onClose.run();
-            }
-        });
-        
-        stage.show();
-        return stage;
-    }
 
     // ===== Helper Methods =====
 
@@ -214,15 +172,5 @@ public abstract class BaseController implements Initializable {
         // Removed non-existent CSS reference
         dialogPane.getStyleClass().add("custom-dialog");
     }
-
-    /**
-     * Gets the current window from a node.
-     *
-     * @param node The node to get the window from
-     * @return The containing window, or null if not in a window
-     */
-    protected Window getWindow(Node node) {
-        return node.getScene() != null ? node.getScene().getWindow() : null;
-    }
-
+    
 }

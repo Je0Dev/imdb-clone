@@ -11,21 +11,29 @@ import java.util.*;
  * Content class is an abstract class that represents a content.
  */
 public abstract class Content {
-    private Date year;
-    private String director;
-    private int id;
-    public String title;
-    protected Genre genre;
+
+    private Date year; // Release year of the content
+    private String director; // Director of the content
+    private int id; // ID of the content
+    public String title; // Title of the content
+    protected Genre genre; // Genre of the content
     private Map<Integer, Integer> userRatings; // userId -> rating
     private Double imdbRating; // IMDb rating
-    private Date releaseDate;
-    int startYear;
-    //Genres and actors
+    private Date releaseDate; // Release date
+    int startYear; // Start year
+
+
     private List<Genre> genres = new ArrayList<>();
     private List<Actor> actors = new ArrayList<>();
+
+
     private static final Logger logger = LoggerFactory.getLogger(Content.class);
-    private Object contentType;
+
+    private Object contentType; // Content type
+
     private String series;
+    private List<String> awards = new ArrayList<>();
+    private Object endYear;
 
 
     /**
@@ -73,6 +81,10 @@ public abstract class Content {
 
     public String getTitle() {
         return title;
+    }
+
+    public void setTitle(String title) {
+        this.title = title;
     }
 
     public Genre getGenre() {
@@ -129,6 +141,37 @@ public abstract class Content {
 
     public List<Actor> getActors() {
         return actors != null ? List.copyOf(actors) : List.of(); // Updated to return an unmodifiable list
+    }
+
+    /**
+     * Adds an actor to this content's cast and updates the bidirectional relationship.
+     * @param actor The actor to add (must not be null)
+     */
+    public void addActor(com.papel.imdb_clone.model.people.Actor actor) {
+        if (actor == null) {
+            return;
+        }
+        
+        // Initialize actors list if needed
+        if (this.actors == null) {
+            this.actors = new ArrayList<>();
+        }
+        
+        // Add actor to this content's cast if not already present
+        if (!this.actors.contains(actor)) {
+            this.actors.add(actor);
+            
+            // Update the actor's movies list if it's not already there
+            try {
+                if (this instanceof Movie && !actor.getMovies().contains(this)) {
+                    actor.addMovie((Movie) this);
+                }
+            } catch (Exception e) {
+                // Log the error but don't fail the entire operation
+                System.err.println("Error updating actor's movie list: " + e.getMessage());
+                logger.error("Error updating actor's movie list: {}", e.getMessage());
+            }
+        }
     }
 
     /**
@@ -192,11 +235,22 @@ public abstract class Content {
      * @param rating The rating value (0-10)
      * @throws IllegalArgumentException if rating is not between 0 and 10
      */
-    public void setUserRating(Integer userId, Integer rating) {
+    public void setUserRating(Integer userId, Integer rating)  throws IllegalArgumentException{
         if (rating < 0 || rating > 10) {
             throw new IllegalArgumentException("Rating must be between 0 and 10");
         }
-        
+
+        try{
+            //Derive user ratings from userRatings
+            this.userRatings.put(userId, rating);
+            //Derive imdbRating from userRatings which means update the average rating
+            this.imdbRating = this.userRatings.values().stream().mapToInt(Integer::intValue).average().orElse(0.0);
+        }catch (Exception e){
+            logger.error("Error setting user rating", e);
+            throw new IllegalArgumentException("Error setting user rating");
+        }
+
+        //Derive user ratings from userRatings
         if (userRatings == null) {
             userRatings = new HashMap<>();
         }
@@ -207,15 +261,7 @@ public abstract class Content {
         // Calculate new average rating
         double sum = userRatings.values().stream().mapToInt(Integer::intValue).sum();
         this.imdbRating = sum / userRatings.size();
-    }
 
-    /**
-     * Sets the title of the content
-     *
-     * @param title the title to set
-     */
-    public void setTitle(String title) {
-        this.title = title;
     }
 
 
@@ -227,9 +273,10 @@ public abstract class Content {
     public void addGenre(Genre genre) {
         if (genre != null && !genres.contains(genre)) {
             genres.add(genre);
-            // If no primary genre is set, set it
+            // If no primary genre is set, set it being the first genre
             if (this.genre == null) {
                 this.genre = genre;
+                this.genres.add(genre);
             }
         }
     }
@@ -244,16 +291,19 @@ public abstract class Content {
         if (!genres.isEmpty()) {
             this.genre = genres.getFirst();
         } else {
+            //Derive genre from genres
             this.genre = null;
+            this.genres = null;
         }
     }
 
     /**
      * Sets the release date of the content and updates the start year accordingly.
-     *
      * @param releaseDate the release date to set
      */
     public void setReleaseDate(Date releaseDate) {
+
+        //Derive release date from start year
         this.releaseDate = releaseDate != null ? new Date(releaseDate.getTime()) : null;
 
         // Update startYear based on the release date
@@ -261,9 +311,12 @@ public abstract class Content {
             //Derive start year from release date
             Calendar cal = Calendar.getInstance();
             cal.setTime(releaseDate);
+            //Derive start year from release date
             this.startYear = cal.get(Calendar.YEAR);
         } else {
+            //Derive release date from start year
             this.startYear = 0;
+            this.year = null;
         }
     }
 
@@ -273,6 +326,7 @@ public abstract class Content {
      * @param actors the list of actors to set
      */
     public void setActors(List<Actor> actors) {
+        //Derive actors from actors
         this.actors = actors != null ? new ArrayList<>(actors) : new ArrayList<>();
     }
 
@@ -288,6 +342,7 @@ public abstract class Content {
         // Update release date if it's not set or has a different year
         if (releaseDate == null || new Calendar.Builder().setInstant(releaseDate).build().get(Calendar.YEAR) != startYear) {
             try {
+                //Derive release date from start year
                 Calendar cal = Calendar.getInstance();
                 cal.set(Calendar.YEAR, startYear);
                 cal.set(Calendar.MONTH, Calendar.JANUARY);
@@ -295,12 +350,21 @@ public abstract class Content {
                 this.releaseDate = cal.getTime();
             } catch (Exception e) {
                 logger.error("Error updating release date for year: {}", startYear, e);
+                this.releaseDate = null;
+                this.startYear = 0;
+                this.year = null;
             }
         }
     }
 
+    /**
+     * Sets the genres for this content
+     * @param trim the genre to set
+     */
     public void setGenres(String trim) {
         this.genres = new ArrayList<>();
+        this.genres.add(Genre.valueOf(trim));
+        this.genre = Genre.valueOf(trim);
     }
 
     public Object getContentType() {
@@ -313,5 +377,25 @@ public abstract class Content {
 
     public double getRating() {
         return imdbRating;
+    }
+
+    public CharSequence getCast() {
+        return actors.toString();
+    }
+
+    public List<String> getAwards() {
+        return awards != null ? awards : new ArrayList<>();
+    }
+    
+    public void setAwards(List<String> awards) {
+        this.awards = awards != null ? awards : new ArrayList<>();
+    }
+
+    public Object getEndYear() {
+        return endYear;
+    }
+
+    public void setEndYear(Object endYear) {
+        this.endYear = endYear;
     }
 }

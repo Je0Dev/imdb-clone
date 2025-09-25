@@ -3,6 +3,7 @@ package com.papel.imdb_clone.exceptions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.Serial;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -13,10 +14,17 @@ import java.util.Map;
  * Provides detailed error information through the AuthErrorType enum.
  */
 public class AuthException extends ValidationException {
+    //serial version uid for object serialization. Serialization is the process of converting an object into a byte stream
+    //so that it can be stored in a file or sent over a network.
+
+    @Serial
     private static final long serialVersionUID = 2L;
+
     private static final Logger logger = LoggerFactory.getLogger(AuthException.class);
     
     private final AuthErrorType errorType;
+
+    //Constructors for AuthException
 
     public AuthException(AuthErrorType errorType, String message) {
         this(errorType, message, null, null);
@@ -66,8 +74,8 @@ public class AuthException extends ValidationException {
     private AuthException(AuthException other) {
         super(other.getMessage(), other.getErrorCode(), other.getFieldErrors(), other.getCause());
         this.errorType = other.errorType;
-        // Copy details
-        other.getDetails().forEach((k, v) -> this.addDetail(k, v));
+        // Copy details which are not final. This helps in preserving the state of the exception.
+        other.getDetails().forEach(this::addDetail);
     }
 
     private String getErrorCode() {
@@ -77,8 +85,6 @@ public class AuthException extends ValidationException {
     public AuthErrorType getErrorType() {
         return errorType;
     }
-
-
 
     /**
      * Builder for AuthException.

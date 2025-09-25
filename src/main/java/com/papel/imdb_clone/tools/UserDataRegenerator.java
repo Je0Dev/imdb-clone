@@ -3,6 +3,7 @@ package com.papel.imdb_clone.tools;
 import com.papel.imdb_clone.exceptions.UserAlreadyExistsException;
 import com.papel.imdb_clone.model.people.User;
 import com.papel.imdb_clone.service.validation.AuthService;
+import com.papel.imdb_clone.util.UIUtils;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
@@ -23,17 +24,21 @@ public class UserDataRegenerator {
      * @param args Command line arguments (not used in this implementation)
      */
     public static void main(String[] args) {
+        UIUtils.showInfo("User Data Regenerator", "Starting user data regeneration process");
         // Get the base path from classpath resources
         String usersFile = Objects.requireNonNull(UserDataRegenerator.class.getClassLoader()
                 .getResource("data/people/users_updated.txt")).getFile();
+
         // Get the default password from the AuthService
         String defaultPassword = "Password123";
         AuthService authService = AuthService.getInstance();
         int count = 0;
 
+        // Log the start of the user data regeneration process
         System.out.println("Loading users from: " + usersFile);
         logger.info("Starting user data regeneration process");
 
+        // Try to read the file
         try (BufferedReader br = new BufferedReader(new FileReader(usersFile))) {
             String line;
             

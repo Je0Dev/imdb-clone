@@ -1,5 +1,6 @@
 package com.papel.imdb_clone.repository.impl;
 
+import com.papel.imdb_clone.enums.Genre;
 import com.papel.imdb_clone.exceptions.DuplicateEntryException;
 import com.papel.imdb_clone.model.content.Movie;
 import com.papel.imdb_clone.repository.MovieRepository;
@@ -20,6 +21,8 @@ import java.util.stream.Collectors;
  * Thread-safe implementation using CopyOnWriteArrayList and ReentrantReadWriteLock.
  */
 public class InMemoryMovieRepository implements MovieRepository {
+
+    //Logger
     private static final Logger logger = LoggerFactory.getLogger(InMemoryMovieRepository.class);
 
     /**
@@ -27,6 +30,7 @@ public class InMemoryMovieRepository implements MovieRepository {
      */
     public InMemoryMovieRepository() {
         // Initialization if needed
+        logger.info("InMemoryMovieRepository initialized");
     }
 
     /**
@@ -202,6 +206,132 @@ public class InMemoryMovieRepository implements MovieRepository {
         logger.info("Updated movie: {} with ID: {}", movie.getTitle(), movie.getId());
     }
 
+    @Override
+    public void deleteById(int id) {
+        lock.writeLock().lock();
+        try {
+            Optional<Movie> movieOptional = findById(id);
+            if (movieOptional.isPresent()) {
+                movies.remove(movieOptional.get());
+                logger.debug("Deleted movie with ID: {}", id);
+            } else {
+                logger.warn("Attempted to delete non-existent movie with ID: {}", id);
+                throw new NoSuchElementException("Movie with ID " + id + " not found");
+            }
+        } finally {
+            lock.writeLock().unlock();
+        }
+    }
+
+    @Override
+    public void deleteByTitle(String title) {
+        if (title == null) {
+            throw new IllegalArgumentException("Title cannot be null");
+        }
+        
+        lock.writeLock().lock();
+        try {
+            boolean removed = movies.removeIf(movie -> title.equalsIgnoreCase(movie.getTitle()));
+            if (removed) {
+                logger.debug("Deleted movie with title: {}", title);
+            } else {
+                logger.warn("No movie found with title: {}", title);
+                throw new NoSuchElementException("Movie with title " + title + " not found");
+            }
+        } finally {
+            lock.writeLock().unlock();
+        }
+    }
+
+    @Override
+    public void deleteAll() {
+        lock.writeLock().lock();
+        try {
+            movies.clear();
+            logger.debug("All movies have been deleted from the repository");
+        } finally {
+            lock.writeLock().unlock();
+        }
+    }
+
+    @Override
+    public void updateRating(String title, double rating) {
+        if (title == null) {
+            throw new IllegalArgumentException("Title cannot be null");
+        }
+        
+        lock.writeLock().lock();
+        try {
+            Optional<Movie> movieOptional = movies.stream()
+                    .filter(m -> title.equalsIgnoreCase(m.getTitle()))
+                    .findFirst();
+                    
+            if (movieOptional.isPresent()) {
+                Movie movie = movieOptional.get();
+                movie.setRating(rating);
+                logger.debug("Updated rating for movie '{}' to {}", title, rating);
+            } else {
+                logger.warn("No movie found with title: {}", title);
+                throw new NoSuchElementException("Movie with title " + title + " not found");
+            }
+        } finally {
+            lock.writeLock().unlock();
+        }
+    }
+
+    @Override
+    public void updateGenre(String title, String genre) {
+        if (title == null || genre == null) {
+            throw new IllegalArgumentException("Title and genre cannot be null");
+        }
+        
+        lock.writeLock().lock();
+        try {
+            Optional<Movie> movieOptional = movies.stream()
+                    .filter(m -> title.equalsIgnoreCase(m.getTitle()))
+                    .findFirst();
+                    
+            if (movieOptional.isPresent()) {
+                Movie movie = movieOptional.get();
+                movie.setGenre(Genre.valueOf(genre));
+                logger.debug("Updated genre for movie '{}' to '{}'", title, genre);
+            } else {
+                logger.warn("No movie found with title: {}", title);
+                throw new NoSuchElementException("Movie with title " + title + " not found");
+            }
+        } finally {
+            lock.writeLock().unlock();
+        }
+    }
+
+    @Override
+    public void updateReleaseYear(String title, int releaseYear) {
+        if (title == null) {
+            throw new IllegalArgumentException("Title cannot be null");
+        }
+        if (releaseYear < 1888) {  // First movie ever made was in 1888
+            throw new IllegalArgumentException("Release year must be 1888 or later");
+        }
+        
+        lock.writeLock().lock();
+        try {
+            Optional<Movie> movieOptional = movies.stream()
+                    .filter(m -> title.equalsIgnoreCase(m.getTitle()))
+                    .findFirst();
+                    
+            if (movieOptional.isPresent()) {
+                Movie movie = movieOptional.get();
+                movie.setStartYear(releaseYear);
+                logger.debug("Updated release year for movie '{}' to {}", title, releaseYear);
+            } else {
+                logger.warn("No movie found with title: {}", title);
+                throw new NoSuchElementException("Movie with title " + title + " not found");
+            }
+        } finally {
+            lock.writeLock().unlock();
+        }
+    }
+
 
     /**
      * Adds a movie directly to the repository (used by data loaders).
@@ -234,14 +364,14 @@ public class InMemoryMovieRepository implements MovieRepository {
     public List<Movie> getAll() {
         return movies;
     }
+    /**
+     * Deletes a movie by its ID.
+     * This method is kept for backward compatibility.
+     * @param id The ID of the movie to delete
+     * @deprecated Use deleteById(int id) instead
+     */
+    @Deprecated
     public void delete(int id) {
-        Optional<Movie> movieOptional = findById(id);
-        if (movieOptional.isPresent()) {
-            movies.remove(movieOptional.get());
-            logger.info("Deleted movie with ID: {}", id);
-        } else {
-            logger.warn("Attempted to delete non-existent movie with ID: {}", id);
-            throw new NoSuchElementException("Movie with ID " + id + " not found");
-        }
+        deleteById(id);
     }
 }

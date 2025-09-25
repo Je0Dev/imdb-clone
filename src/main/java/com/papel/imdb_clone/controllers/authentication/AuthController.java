@@ -1,7 +1,6 @@
 package com.papel.imdb_clone.controllers.authentication;
 
 import com.papel.imdb_clone.controllers.BaseController;
-import com.papel.imdb_clone.data.DataManager;
 import com.papel.imdb_clone.exceptions.AuthException;
 import com.papel.imdb_clone.exceptions.ValidationException;
 import com.papel.imdb_clone.model.people.User;
@@ -34,18 +33,16 @@ public class AuthController extends BaseController {
 
     /**
      * Constructs a new AuthController with the specified dependencies.
-     *
-     * @param dataManager The data manager for accessing application data
-     * @param authService The authentication service for handling login/registration
-     * @param navigationService The navigation service for managing view transitions
-     * @param userInputValidator The validator for user input
      */
     public AuthController() {
         super();
         this.authService = AuthService.getInstance();
         this.navigationService = NavigationService.getInstance();
         this.inputValidator = new UserInputValidator();
+        this.sessionToken = null;
+        this.data = null;
     }
+
 
     // UI Components
     public Hyperlink registerLink;
@@ -60,7 +57,7 @@ public class AuthController extends BaseController {
     
     // Session management
     private transient String sessionToken;
-    private transient Map<String, Object> data;
+    private final transient Map<String, Object> data;
 
 
     // UI Components - Login
@@ -70,8 +67,6 @@ public class AuthController extends BaseController {
     private PasswordField loginPasswordField;
     @FXML
     private Button loginButton;
-    @FXML
-    private Button toggleLoginPassword;
 
     // Error label,which is used to display error messages
     @FXML
@@ -97,10 +92,6 @@ public class AuthController extends BaseController {
     private ToggleGroup genderToggleGroup;
     @FXML
     private Button registerButton;
-    @FXML
-    private Button toggleRegisterPassword;
-    @FXML
-    private Button toggleConfirmPassword;
 
     // Error label,which is used to display error messages
     @FXML
@@ -118,7 +109,7 @@ public class AuthController extends BaseController {
     @FXML
     private TextField confirmPasswordVisibleField;
 
-    //successMessage and sessiontoken
+    //successMessage and session token
     private String successMessage;
 
 
@@ -130,6 +121,7 @@ public class AuthController extends BaseController {
     @Override
     protected void initializeController(int currentUserId) {
         try {
+            //setup login and registration forms
             setupLoginForm(loginPasswordVisibleField);
             setupRegistrationForm(passwordVisibleField, confirmPasswordVisibleField);
         } catch (Exception e) {
@@ -308,6 +300,7 @@ public class AuthController extends BaseController {
                     "IMDb Clone"
                 );
             }
+            //handle unexpected errors
         } catch (AuthException e) {
             logger.warn("Login failed: {}", e.getMessage());
             handleAuthError(e, loginErrorLabel);

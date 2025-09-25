@@ -37,6 +37,7 @@ public class SearchService {
      * @return List of matching content
      */
     public List<Content> search(SearchCriteria criteria) {
+        // Log the search criteria for debugging
         logger.debug("Starting search with criteria: {}", criteria);
 
         if (criteria == null) {
@@ -64,8 +65,24 @@ public class SearchService {
      */
     private List<Content> performSearch(SearchCriteria criteria) {
 
+        // Get search criteria
         String query = criteria.getQuery() != null ? criteria.getQuery().toLowerCase() : "";
+        // Get title
+        String title = criteria.getTitle() != null ? criteria.getTitle().toLowerCase() : "";
+        // Get content type
         ContentType type = criteria.getContentType();
+        // Get min year
+        Integer minYear = criteria.getMinYear();
+        // Get max year
+        Integer maxYear = criteria.getMaxYear();
+        // Get min rating
+        Double minRating = criteria.getMinRating();
+        // Get max rating
+        Double maxRating = (Double) criteria.getMaxRating();
+        // Get genre
+        String genre = String.valueOf(criteria.getGenre());
+        // Get sort order
+        String sortOrder = criteria.getSortOrder();
 
         logger.debug("Performing search with type: {}", type);
 
@@ -188,12 +205,17 @@ public class SearchService {
         }
 
         // Year range filter - handle both min and max years
-        if (criteria.getMinYear() != null && criteria.getMinYear() > 0) {
-            int minYear = criteria.getMinYear();
-            logger.debug("Adding min year filter: {}", minYear);
+        if ((criteria.getMinYear() != null && criteria.getMinYear() > 0) || 
+            (criteria.getEndYear() != null && criteria.getEndYear() > 0)) {
+            
+            Integer minYear = criteria.getMinYear() != null ? criteria.getMinYear() : 0;
+            Integer maxYear = criteria.getEndYear() != null ? criteria.getEndYear() : Integer.MAX_VALUE;
+            
+            logger.debug("Adding year range filter: {} to {}", minYear, maxYear);
+            
             filters.add(content -> {
                 if (content == null) {
-                    logger.trace("Content is null in min year filter");
+                    logger.trace("Content is null in year range filter");
                     return false;
                 }
                 try {
@@ -207,9 +229,9 @@ public class SearchService {
                         contentYear = cal.get(Calendar.YEAR);
                     }
                     
-                    boolean matches = contentYear >= minYear;
-                    logger.debug("Min Year Check - Title: '{}', Content Year: {}, Min Year: {}, Match: {}",
-                            content.getTitle(), contentYear, minYear, matches);
+                    boolean matches = contentYear >= minYear && contentYear <= maxYear;
+                    logger.debug("Year Range Check - Title: '{}', Content Year: {}, Range: {} to {}, Match: {}",
+                            content.getTitle(), contentYear, minYear, maxYear, matches);
                     return matches;
                 } catch (Exception e) {
                     logger.warn("Error processing year for content: {}", content.getTitle(), e);
@@ -237,9 +259,9 @@ public class SearchService {
         }
 
         //Max rating filter
-        if (criteria.getMaxRating() != null && (int)criteria.getMaxRating() > 0) {
-            int maxRating = (int)criteria.getMaxRating();
-            logger.debug("Adding rating filter for max rating: {}", maxRating);
+        if (criteria.getMaxRating() != null && ((Number)criteria.getMaxRating()).doubleValue() > 0) {
+            double maxRating = ((Number)criteria.getMaxRating()).doubleValue();
+            logger.debug("Adding max rating filter: {}", maxRating);
             filters.add(content -> {
                 if (content == null) {
                     logger.trace("Content is null in max rating filter");
@@ -247,8 +269,8 @@ public class SearchService {
                 }
                 //get the rating from the content
                 Double rating = content.getImdbRating();
-                boolean matches = rating != null && rating >= maxRating;
-                logger.trace("Rating filter - Content: '{}', Rating: {}, Max: {}, Match: {}",
+                boolean matches = rating != null && rating <= maxRating;
+                logger.trace("Max Rating Check - Content: '{}', Rating: {}, Max: {}, Match: {}",
                         content.getTitle(), rating, maxRating, matches);
                 return matches;
             });

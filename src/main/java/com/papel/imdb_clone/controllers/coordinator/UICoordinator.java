@@ -30,11 +30,10 @@ public class UICoordinator {
     private MoviesService movieService;
 
     /**
-     * Private constructor to prevent instantiation
+     * Private constructor to prevent instantiation which means it can't be created from outside the class
      */
     private UICoordinator() {
         this.dataManager = DataManager.getInstance();
-
         this.moviesService = MoviesService.getInstance();
         this.seriesService = SeriesService.getInstance();
 
@@ -191,7 +190,6 @@ public class UICoordinator {
         }
     }
 
-
     /**
      * Loads an FXML view from the specified path.
      *
@@ -250,14 +248,6 @@ public class UICoordinator {
         }
     }
 
-    /**
-
-/**
- * Checks if all views are loaded
- */
-public boolean areViewsLoaded() {
-    return homeView != null && movieView != null && seriesView != null && searchView != null;
-}
 
 /**
  * Loads the main content view of the application.
@@ -290,7 +280,7 @@ private void loadContentView() throws IOException {
                 moviesController.initialize(currentUser.getId());
             }
         } catch (Exception e) {
-            logger.error("Failed to load movie view: " + e.getMessage(), e);
+            logger.error("Failed to load movie view: {}", e.getMessage(), e);
             // Continue with other views even if one fails
         }
         
@@ -321,7 +311,11 @@ private void loadContentView() throws IOException {
         try {
             searchView = loadView("/fxml/search/advanced-search-view.fxml");
         } catch (Exception e) {
-            logger.error("Failed to load search view: " + e.getMessage(), e);
+            logger.error("Failed to load search view: {}", e.getMessage(), e);
+            // Create a simple error view as fallback
+            Label errorLabel = new Label("Failed to load search view. Please check the logs for details.");
+            errorLabel.setStyle("-fx-text-fill: red; -fx-padding: 20;");
+            searchView = errorLabel;
             // Continue with other views even if one fails
         }
         
@@ -344,13 +338,15 @@ private void loadContentView() throws IOException {
                 homeView = loadView("/fxml/base/home-view.fxml");
                 logger.info("Successfully loaded home view on demand");
             } catch (Exception e) {
-                logger.error("Critical: Failed to load home view on demand: " + e.getMessage(), e);
+                logger.error("Critical: Failed to load home view on demand: {}", e.getMessage(), e);
                 // Create a simple error view as fallback
                 Label errorLabel = new Label("Failed to load home view. Please check the logs for details.");
                 errorLabel.setStyle("-fx-text-fill: red; -fx-padding: 20;");
                 homeView = errorLabel;
             }
         }
+        // Return the loaded home view
+        logger.info("Home view loaded successfully");
         return homeView;
     }
 

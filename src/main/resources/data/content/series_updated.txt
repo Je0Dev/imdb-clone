@@ -1,48 +1,44 @@
-# Format: Title,GENRE,Seasons,Year,Rating,Director,Actor1;Actor2;...
-
-Breaking Bad,CRIME,5,2008,9.5,Vince Gilligan,Bryan Cranston;Aaron Paul;Anna Gunn
-Better Call Saul,CRIME,6,2015,8.9,Vince Gilligan;Peter Gould,Bob Odenkirk;Rhea Seehorn
-Succession,DRAMA,4,2018,8.8,Jesse Armstrong,Brian Cox;Jeremy Strong;Sarah Snook
-The Wire,CRIME,5,2002,9.3,David Simon,Dominic West;Lance Reddick;Idris Elba
-Chernobyl,DRAMA,1,2019,9.4,Craig Mazin,Jared Harris;Stellan Skarsgård;Emily Watson
-The Sopranos,CRIME,6,1999,9.2,David Chase,James Gandolfini;Lorraine Bracco;Edie Falco
-The Office,COMEDY,9,2005,8.9,Greg Daniels;Ricky Gervais,Steve Carell;John Krasinski;Mindy Kaling
-Fleabag,COMEDY,2,2016,8.7,Phoebe Waller-Bridge,Phoebe Waller-Bridge;Sian Clifford
-Atlanta,COMEDY,4,2016,8.6,Donald Glover,Donald Glover;Brian Tyree Henry;LaKeith Stanfield
-Barry,COMEDY,4,2018,8.4,Alec Berg;Bill Hader,Bill Hader;Henry Winkler;Stephen Root
-The Bear,COMEDY,2,2022,8.4,Christopher Storer,Jeremy Allen White;Ayo Edebiri;Ebon Moss-Bachrach
-Severance,SCI_FI,1,2022,8.7,Dan Erickson,Adam Scott;Britt Lower;Tramell Tillman
-The White Lotus,DRAMA,2,2021,8.0,Mike White,Jennifer Coolidge;Aubrey Plaza;Murray Bartlett
-Beef,COMEDY,1,2023,8.1,Lee Sung Jin,Steven Yeun;Ali Wong;Joseph Lee
-Pachinko,DRAMA,1,2022,8.8,Soo Hugh,Lee Min-ho;Yuh-jung Youn;Minha Kim
-Squid Game,THRILLER,1,2021,8.0,Hwang Dong-hyuk,Lee Jung-jae;Jung Ho-yeon;Wi Ha-joon
-Money Heist,THRILLER,5,2017,8.2,Álex Pina,Úrsula Corberó;Álvaro Morte;Itziar Ituño
-Dark,SCI_FI,3,2017,8.8,Baran bo Odar;Jantje Friese,Louis Hofmann;Lisa Vicari;Oliver Masucci
-The Queen's Gambit,DRAMA,1,2020,8.6,Scott Frank,Anya Taylor-Joy;Thomas Brodie-Sangster;Moses Ingram
-I May Destroy You,DRAMA,1,2020,8.1,Michaela Coel,Michaela Coel;Weruche Opia;Paapa Essiedu
-Mare of Easttown,CRIME,1,2021,8.5,Brad Ingelsby,Kate Winslet;Evan Peters;Julianne Nicholson
-The Last of Us,DRAMA,1,2023,8.7,Craig Mazin;Neil Druckmann,Pedro Pascal;Bella Ramsey;Nick Offerman
-House of the Dragon,FANTASY,1,2022,8.5,Ryan Condal;George R.R. Miller,Matt Smith;Emma D'Arcy;Olivia Cooke
-Andor,SCI_FI,1,2022,8.4,Tony Gilroy,Diego Luna;Genevieve O'Reilly;Stellan Skarsgård
-The Crown,DRAMA,5,2016,8.7,Peter Morgan,Olivia Colman;Claire Foy;Matt Smith
-Game of Thrones,FANTASY,8,2011,9.3,David Benioff;D.B. Weiss,Emilia Clarke;Kit Harington
-Stranger Things,SCI_FI,4,2016,8.7,Matt Duffer;Ross Duffer,Millie Bobby Brown;Finn Wolfhard
-The Crown,DRAMA,5,2016,8.7,Peter Morgan,Olivia Colman;Claire Foy
-The Mandalorian,SCI_FI,3,2019,8.7,Jon Favreau,Pedro Pascal;Gina Carano
-The Witcher,FANTASY,2,2019,8.2,Lauren Schmidt Hissrich,Henry Cavill;Anya Chalotra
-Squid Game,THRILLER,1,2021,8.0,Hwang Dong-hyuk,Lee Jung-jae;Jung Ho-yeon
-Yellowstone,DRAMA,5,2018,8.7,Taylor Sheridan,Kevin Costner;Luke Grimes
-The Bear,COMEDY,2,2022,8.4,Christopher Storer,Jeremy Allen White;Ebon Moss-Bachrach
-Wednesday,COMEDY,1,2022,8.2,Alfred Gough;Miles Millar,Jenna Ortega;Gwendoline Christie
-The Boys,ACTION,4,2019,8.7,Eric Kripke,Karl Urban;Jack Quaid
-Euphoria,DRAMA,2,2019,8.4,Sam Levinson,Zendaya;Hunter Schafer
-Lost,SCI_FI,6,2004,8.3,J.J. Abrams;Damon Lindelof,Matthew Fox;Jorge Garcia
-The Last of Us,DRAMA,1,2023,8.7,Craig Mazin;Neil Druckmann,Pedro Pascal;Bella Ramsey
-House of the Dragon,FANTASY,1,2022,8.5,Ryan Condal;George R.R. Miller,Matt Smith;Emma D'Arcy
-The Bear,COMEDY,2,2022,8.4,Christopher Storer,Jeremy Allen White;Ayo Edebiri
-Beef,COMEDY,1,2023,8.1,Lee Sung Jin,Steven Yeun;Ali Wong
-The White Lotus,DRAMA,2,2021,8.0,Mike White,Jennifer Coolidge;Aubrey Plaza
-Severance,SCI_FI,1,2022,8.7,Dan Erickson,Adam Scott;Britt Lower
-Succession,DRAMA,4,2018,8.8,Jesse Armstrong,Brian Cox;Jeremy Strong
-Better Call Saul,CRIME,6,2015,8.9,Vince Gilligan;Peter Gould,Bob Odenkirk;Rhea Seehorn
-The Queen's Gambit,DRAMA,1,2020,8.6,Scott Frank,Anya Taylor-Joy;Thomas Brodie-Sangster
+# Format: Title,GENRE,Seasons,StartYear,EndYear,Rating,Director,Actor1;Actor2;...
+Breaking Bad,Crime,5,2008,-,0.0,Vince Gilligan,Vince Gilligan
+Better Call Saul,Crime,6,2015,-,0.0,Vince Gilligan,Vince Gilligan
+Succession,Drama,4,2018,-,0.0,Jesse Armstrong,Jesse Armstrong
+The Wire,Crime,5,2002,-,0.0,David Simon,David Simon
+Chernobyl,Drama,1,2019,-,0.0,Johan Renck,Johan Renck
+The Sopranos,Crime,6,1999,-,0.0,David Chase,David Chase
+The Office,Comedy,9,2005,-,0.0,Greg Daniels,Greg Daniels
+Fleabag,Comedy,2,2016,-,0.0,Phoebe Waller-Bridge,Phoebe Waller-Bridge
+The Last of Us,Drama,1,2023,-,0.0,Craig Mazin,Craig Mazin
+House of the Dragon,Fantasy,1,2022,-,0.0,Ryan Condal,Ryan Condal
+The Bear,Comedy,2,2022,-,0.0,Christopher Storer,Christopher Storer
+Severance,Drama,1,2022,-,0.0,Ben Stiller,Ben Stiller
+Yellowjackets,Drama,2,2021,-,0.0,Ashley Lyle,Ashley Lyle
+Squid Game,Thriller,1,2021,-,0.0,Hwang Dong-hyuk,Hwang Dong-hyuk
+The White Lotus,Drama,2,2021,-,0.0,Mike White,Mike White
+Arcane,Animation,1,2021,-,0.0,Christian Linke,Christian Linke
+Ted Lasso,Comedy,3,2020,-,0.0,Jason Sudeikis,Jason Sudeikis
+Bridgerton,Romance,2,2020,-,0.0,Chris Van Dusen,Chris Van Dusen
+Queen's Gambit,Drama,1,2020,-,0.0,Scott Frank,Scott Frank
+I May Destroy You,Drama,1,2020,-,0.0,Michaela Coel,Michaela Coel
+Dark,Drama,3,2017,-,0.0,Baran bo Odar,Baran bo Odar
+Stranger Things,Drama,4,2016,-,0.0,Matt Duffer,Matt Duffer
+The Crown,Drama,5,2016,-,0.0,Peter Morgan,Peter Morgan
+Atlanta,Comedy,4,2016,-,0.0,Donald Glover,Donald Glover
+Mandalorian,Drama,3,2019,-,0.0,Jon Favreau,Jon Favreau
+Barry,Comedy,4,2018,-,0.0,Bill Hader,Bill Hader
+Beef,Comedy,1,2023,-,0.0,Lee Sung Jin,Lee Sung Jin
+Pachinko,Drama,1,2022,-,0.0,Soo Hugh,Soo Hugh
+Money Heist,Thriller,5,2017,-,0.0,Álex Pina,Álex Pina
+Andor,Drama,1,2022,-,0.0,Tony Gilroy,Tony Gilroy
+Game of Thrones,Fantasy,8,2011,-,0.0,David Benioff,David Benioff
+The Witcher,Fantasy,3,2019,-,0.0,Lauren Schmidt Hissrich,Lauren Schmidt Hissrich
+Yellowstone,Drama,5,2018,-,0.0,Taylor Sheridan,Taylor Sheridan
+Wednesday,Comedy,1,2022,-,0.0,Alfred Gough,Alfred Gough
+The Boys,Action,4,2019,-,0.0,Eric Kripke,Eric Kripke
+Euphoria,Drama,2,2019,-,0.0,Sam Levinson,Sam Levinson
+Lost,Drama,6,2004,-,0.0,J.J. Abrams,J.J. Abrams
+Mare of Easttown,Crime,1,2021,-,0.0,Brad Ingelsby,Brad Ingelsby
+Peaky Blinders,Crime,6,2013,-,0.0,Steven Knight,Steven Knight
+Ozark,Thriller,4,2017,-,0.0,Bill Dubuque,Bill Dubuque
+Narcos,Crime,3,2015,-,0.0,Chris Brancato,Chris Brancato
+The Mandalorian,Drama,3,2019,-,0.0,Jon Favreau,Jon Favreau
+Westworld,Drama,4,2016,-,0.0,Lisa Joy,Lisa Joy

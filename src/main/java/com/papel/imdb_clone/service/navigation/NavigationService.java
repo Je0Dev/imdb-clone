@@ -192,4 +192,12 @@ public class NavigationService {
     public void setUserData(String contentType, Object data) {
         userData.put(contentType, data);
     }
+
+    public void showLogin(Stage primaryStage) {
+        navigateTo("/fxml/authentication//auth-view.fxml", null, primaryStage, "Login");
+    }
+
+    public void showRegister(Stage primaryStage) {
+        navigateTo("/fxml/authentication//auth-view.fxml", null, primaryStage, "Register");
+    }
 }

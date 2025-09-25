@@ -19,14 +19,6 @@ Emerald,Fennell,1985-10-01,F,BRITISH,"Promising Young Woman, Saltburn, The Crown
 Lee,Isaac Chung,1978-09-23,M,KOREAN_AMERICAN,"Minari, Twinsters, Abigail Harm, Lucky Life, Munyurangabo, I Have Seen My Last Born, The People's Republic of Desire"
 Marielle,Heller,1979-10-01,F,AMERICAN,"Can You Ever Forgive Me?, A Beautiful Day in the Neighborhood, The Diary of a Teenage Girl, The Queen's Gambit (TV), The Queen's Gambit: The Final Game, The Queen's Gambit: End Game"
 Ari,Aster,1986-07-15,M,AMERICAN,"Hereditary, Midsommar, Beau Is Afraid"
-Lulu,Wang,1983-02-25,F,CHINESE_AMERICAN,"The Farewell, Posthumous, Expats"
 Christopher,Nolan,1970-07-30,M,BRITISH,"Inception, The Dark Knight, Interstellar"
-Greta,Gerwig,1983-08-04,F,AMERICAN,"Lady Bird, Little Women, Barbie"
-Bong,Joon-ho,1969-09-14,M,KOREAN,"Parasite, Snowpiercer, The Host"
-Ava,DuVernay,1972-08-24,F,AMERICAN,"Selma, 13th, When They See Us"
 Denis,Villeneuve,1967-10-03,M,CANADIAN,"Blade Runner 2049, Dune, Arrival"
-Chloé,Zhao,1982-03-31,F,CHINESE,"Nomadland, Eternals, The Rider"
-Jordan,Peele,1979-02-21,M,AMERICAN,"Get Out, Us, Nope"
 Taika,Waititi,1975-08-16,M,NEW_ZEALAND,"Jojo Rabbit, Thor: Ragnarök, What We Do in the Shadows"
-
-

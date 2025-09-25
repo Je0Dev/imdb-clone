@@ -1,6 +1,7 @@
 package com.papel.imdb_clone.model.people;
 
 import com.papel.imdb_clone.enums.Ethnicity;
+import com.papel.imdb_clone.model.content.Movie;
 import com.papel.imdb_clone.service.people.CelebrityManager;
 
 import java.time.LocalDate;
@@ -15,13 +16,15 @@ import java.util.stream.Collectors;
  * Represents an actor in the system.
  * Extends Celebrity with actor-specific fields and functionality.
  */
-public class Actor extends Celebrity {
+public class Actor extends Celebrity{
+
     @SuppressWarnings("unchecked")
     private static final CelebrityManager<Actor> celebrityManager = CelebrityManager.getInstance(Actor.class);
     
     private Ethnicity ethnicity;
     private String role; // Actor's role in a specific movie/show
     private String notableWorks; // Backward-compatible storage of notable works
+    private final List<Movie> movies = new ArrayList<>(); // List of movies the actor has appeared in
 
     /**
      * Protected constructor to enforce use of factory methods.
@@ -29,6 +32,10 @@ public class Actor extends Celebrity {
     public Actor(String firstName, String lastName, LocalDate birthDate, char gender, Ethnicity ethnicity) {
         super(firstName, lastName, birthDate, gender);
         this.ethnicity = ethnicity;
+    }
+
+    public Actor(String actorName) {
+        super(actorName);
     }
 
     /**
@@ -40,7 +47,7 @@ public class Actor extends Celebrity {
      * @return Existing or new Actor instance
      */
     public static Actor getInstance(String firstName, String lastName, LocalDate birthDate, char gender) {
-        return getInstance(firstName, lastName, birthDate, gender);
+        return getInstance(firstName, lastName, birthDate, gender, Ethnicity.UNKNOWN);
     }
     
     /**
@@ -83,6 +90,24 @@ public class Actor extends Celebrity {
     // getter for ethnicity
     public Ethnicity getEthnicity() {
         return ethnicity;
+    }
+    
+    /**
+     * Gets the list of movies this actor has appeared in
+     * @return List of movies
+     */
+    public List<com.papel.imdb_clone.model.content.Movie> getMovies() {
+        return new ArrayList<>(movies);
+    }
+    
+    /**
+     * Adds a movie to this actor's filmography
+     * @param movie The movie to add
+     */
+    public void addMovie(com.papel.imdb_clone.model.content.Movie movie) {
+        if (movie != null && !movies.contains(movie)) {
+            movies.add(movie);
+        }
     }
 
     // setter for ethnicity
@@ -143,11 +168,6 @@ public class Actor extends Celebrity {
         return sb.toString();
     }
 
-    // setter for id
-    public void setId(int id) {
-        this.id = id;
-    }
-
     // setter for notable works
     public void setNotableWorks(String notableWorks) {
         this.notableWorks = notableWorks;
@@ -193,5 +213,9 @@ public class Actor extends Celebrity {
 
     public Object getName() {
         return getFullName();
+    }
+
+    public String toLowerCase() {
+        return getFullName().toLowerCase();
     }
 }

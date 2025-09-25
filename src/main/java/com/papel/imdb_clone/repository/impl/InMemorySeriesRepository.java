@@ -1,5 +1,6 @@
 package com.papel.imdb_clone.repository.impl;
 
+import com.papel.imdb_clone.enums.Genre;
 import com.papel.imdb_clone.exceptions.DuplicateEntryException;
 import com.papel.imdb_clone.model.content.Series;
 import com.papel.imdb_clone.repository.SeriesRepository;
@@ -8,6 +9,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -186,6 +188,116 @@ public class InMemorySeriesRepository implements SeriesRepository {
     @Override
     public long count() {
         return seriesList.size();
+    }
+
+    @Override
+    public void deleteByTitle(String title) {
+        if (title == null) {
+            throw new IllegalArgumentException("Title cannot be null");
+        }
+        
+        lock.writeLock().lock();
+        try {
+            boolean removed = seriesList.removeIf(series -> title.equalsIgnoreCase(series.getTitle()));
+            if (removed) {
+                logger.debug("Deleted series with title: {}", title);
+            } else {
+                logger.warn("No series found with title: {}", title);
+                throw new NoSuchElementException("Series with title " + title + " not found");
+            }
+        } finally {
+            lock.writeLock().unlock();
+        }
+    }
+
+    @Override
+    public void deleteAll() {
+        lock.writeLock().lock();
+        try {
+            seriesList.clear();
+            logger.debug("All series have been deleted from the repository");
+        } finally {
+            lock.writeLock().unlock();
+        }
+    }
+
+    @Override
+    public Series update(Series series) {
+        if (series == null) {
+            throw new IllegalArgumentException("Series cannot be null");
+        }
+        
+        lock.writeLock().lock();
+        try {
+            // Check if series exists
+            Optional<Series> existing = findById(series.getId());
+            if (existing.isPresent()) {
+                // Check if title is being changed to an existing one
+                if (!existing.get().getTitle().equals(series.getTitle()) && 
+                    existsByTitle(series.getTitle())) {
+                    throw new DuplicateEntryException("Series", series.getId(), "title", series.getTitle());
+                }
+                // Remove the existing series and add the updated one
+                seriesList.remove(existing.get());
+                seriesList.add(series);
+                logger.debug("Updated series: {} with ID: {}", series.getTitle(), series.getId());
+                return series;
+            } else {
+                throw new NoSuchElementException("Series with ID " + series.getId() + " not found");
+            }
+        } finally {
+            lock.writeLock().unlock();
+        }
+    }
+
+    @Override
+    public void updateRating(String title, double rating) {
+        if (title == null) {
+            throw new IllegalArgumentException("Title cannot be null");
+        }
+        
+        lock.writeLock().lock();
+        try {
+            Optional<Series> seriesOptional = seriesList.stream()
+                    .filter(s -> title.equalsIgnoreCase(s.getTitle()))
+                    .findFirst();
+                    
+            if (seriesOptional.isPresent()) {
+                Series series = seriesOptional.get();
+                series.setRating(rating);
+                logger.debug("Updated rating for series '{}' to {}", title, rating);
+            } else {
+                logger.warn("No series found with title: {}", title);
+                throw new NoSuchElementException("Series with title " + title + " not found");
+            }
+        } finally {
+            lock.writeLock().unlock();
+        }
+    }
+
+    @Override
+    public void updateGenre(String title, String genre) {
+        if (title == null || genre == null) {
+            throw new IllegalArgumentException("Title and genre cannot be null");
+        }
+        
+        lock.writeLock().lock();
+        try {
+            Optional<Series> seriesOptional = seriesList.stream()
+                    .filter(s -> title.equalsIgnoreCase(s.getTitle()))
+                    .findFirst();
+                    
+            if (seriesOptional.isPresent()) {
+                Series series = seriesOptional.get();
+                series.setGenre(Genre.valueOf(genre));
+                logger.debug("Updated genre for series '{}' to '{}'", title, genre);
+            } else {
+                logger.warn("No series found with title: {}", title);
+                throw new NoSuchElementException("Series with title " + title + " not found");
+            }
+        } finally {
+            lock.writeLock().unlock();
+        }
     }
 
 }

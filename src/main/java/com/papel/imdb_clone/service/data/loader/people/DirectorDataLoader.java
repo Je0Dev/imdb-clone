@@ -90,7 +90,7 @@ public class DirectorDataLoader extends BaseDataLoader {
                             try {
                                 birthDate = parseDate(birthDateStr);
                                 
-                                // Validate birth date is reasonable (not in the future and not too old)
+                                // Validate birthdate is reasonable (not in the future and not too old)
                                 LocalDate now = LocalDate.now();
                                 LocalDate minBirthDate = now.minusYears(120); // Max age 120 years
                                 LocalDate maxBirthDate = now.plusYears(1); // Allow for timezone issues
@@ -104,7 +104,7 @@ public class DirectorDataLoader extends BaseDataLoader {
                             } catch (Exception e) {
                                 logger.warn("Invalid birth date format '{}' for director {} {} at line {}. Using default. Error: {}", 
                                     birthDateStr, firstName, lastName, lineNumber, e.getMessage());
-                                // Set default birth date with some variation
+                                // Set default birthdate with some variation
                                 birthDate = LocalDate.now().minusYears(35 + (count % 20));
                             }
                         }
@@ -128,21 +128,7 @@ public class DirectorDataLoader extends BaseDataLoader {
                         }
 
                         // Notable works (optional) - check both possible positions
-                        String notableWorks = "";
-                        if (parts.length > 6 && !parts[5].trim().isEmpty() && !parts[5].trim().equalsIgnoreCase("N/A")) {
-                            notableWorks = parts[5].trim();
-                        } else if (parts.length > 5 && !parts[4].trim().isEmpty() && !parts[4].trim().equalsIgnoreCase("N/A")) {
-                            // Fallback to previous position if current is empty
-                            notableWorks = parts[4].trim();
-                        }
-
-                        // Active years (optional)
-                        String activeYears = parts.length > 6 ? parts[6].trim() : "";
-                        
-                        // Set default notable works if still empty
-                        if (notableWorks.isEmpty()) {
-                            notableWorks = "Various films and TV shows";
-                        }
+                        String notableWorks = getString(parts);
 
                         // Create and save the director
                         try {
@@ -156,7 +142,7 @@ public class DirectorDataLoader extends BaseDataLoader {
                             );
                             
                             // Set notable works if provided
-                            if (!notableWorks.isEmpty() && !notableWorks.equalsIgnoreCase("N/A")) {
+                            if (!notableWorks.equalsIgnoreCase("N/A")) {
                                 director.setNotableWorks(notableWorks);
                             }
                             
@@ -202,6 +188,25 @@ public class DirectorDataLoader extends BaseDataLoader {
         } finally {
             logger.debug("Director data loading process completed");
         }
+    }
+
+    private static String getString(String[] parts) {
+        String notableWorks = "";
+        if (parts.length > 6 && !parts[5].trim().isEmpty() && !parts[5].trim().equalsIgnoreCase("N/A")) {
+            notableWorks = parts[5].trim();
+        } else if (parts.length > 5 && !parts[4].trim().isEmpty() && !parts[4].trim().equalsIgnoreCase("N/A")) {
+            // Fallback to previous position if current is empty
+            notableWorks = parts[4].trim();
+        }
+
+        // Active years (optional)
+        String activeYears = parts.length > 6 ? parts[6].trim() : "";
+
+        // Set default notable works if still empty
+        if (notableWorks.isEmpty()) {
+            notableWorks = "Various films and TV shows";
+        }
+        return notableWorks;
     }
 
     /**

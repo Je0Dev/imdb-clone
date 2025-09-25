@@ -7,9 +7,11 @@ import javafx.application.Platform;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.geometry.Insets;
+import javafx.scene.Node;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
-import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import javafx.fxml.FXML;
 import javafx.collections.ObservableList;
@@ -17,14 +19,13 @@ import javafx.concurrent.Task;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.text.SimpleDateFormat;
 import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.Optional;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
-import java.time.Year;
-import java.util.*;
+
 
 /**
  * Main controller for the advanced search functionality.
@@ -33,7 +34,10 @@ import java.util.*;
  */
 public class AdvancedSearchController extends BaseSearchController {
     private static final Logger logger = LoggerFactory.getLogger(AdvancedSearchController.class);
-    
+
+
+    public VBox searchForm;
+
     @FXML
     private TableView<Content> resultsTable;
     
@@ -49,10 +53,8 @@ public class AdvancedSearchController extends BaseSearchController {
     @FXML
     private TableColumn<Content, String> resultGenreColumn;
 
-    @FXML
-    private BorderPane mainContainer;
-    @FXML
-    private VBox searchFormContainer;
+
+
     @FXML
     private SearchFormController searchFormController;
     @FXML
@@ -63,8 +65,6 @@ public class AdvancedSearchController extends BaseSearchController {
     private Label resultsCountLabel;
 
     private Task<ObservableList<Content>> currentSearchTask;
-    private static final long DEFAULT_CACHE_EXPIRATION = 30;
-    private static final TimeUnit CACHE_TIME_UNIT = TimeUnit.MINUTES;
     private Map<String, Object> data;
 
     /**
@@ -104,11 +104,6 @@ public class AdvancedSearchController extends BaseSearchController {
      * Table column for displaying total number of episodes (Series only).
      */
     private TableColumn<Content, Integer> episodesColumn;
-    
-    /**
-     * Table column for displaying IMDb ratings.
-     */
-    private TableColumn<Content, Double> ratingColumn;
 
     private void initializeTableColumns() {
         try {
@@ -178,30 +173,12 @@ public class AdvancedSearchController extends BaseSearchController {
                 resultGenreColumn.setStyle("-fx-text-fill: #FF8A65; -fx-font-weight: bold;");
             }
             
-            // Initialize additional columns that might be used
-            // Rating Column
-            ratingColumn = new TableColumn<>("RATING");
-            ratingColumn.setCellValueFactory(cellData -> {
-                Content content = cellData.getValue();
-                double rating = content.getRating();
-                return new javafx.beans.property.SimpleDoubleProperty(
-                    rating > 0 ? rating : 0.0
-                ).asObject();
-            });
-            ratingColumn.setCellFactory(column -> new TableCell<Content, Double>() {
-                @Override
-                protected void updateItem(Double rating, boolean empty) {
-                    super.updateItem(rating, empty);
-                    if (empty || rating == null || rating <= 0) {
-                        setText("N/A");
-                    } else {
-                        setText(String.format("%.1f", rating));
-                    }
-                    setStyle("-fx-text-fill: #FFD740; -fx-font-weight: bold; -fx-alignment: CENTER;");
-                }
-            });
-            ratingColumn.setPrefWidth(70);
-            
+
+            /*
+             * Table column for displaying IMDb ratings.
+             */
+            TableColumn<Content, Double> ratingColumn = getContentDoubleTableColumn();
+
             // Seasons Column (initially hidden)
             seasonsColumn = new TableColumn<>("SEASONS");
             seasonsColumn.setCellValueFactory(cellData -> {
@@ -300,7 +277,32 @@ public class AdvancedSearchController extends BaseSearchController {
             logger.error("Error initializing table columns", e);
         }
     }
-    
+
+    private static TableColumn<Content, Double> getContentDoubleTableColumn() {
+        TableColumn<Content, Double> ratingColumn = new TableColumn<>("RATING");
+        ratingColumn.setCellValueFactory(cellData -> {
+            Content content = cellData.getValue();
+            double rating = content.getRating();
+            return new javafx.beans.property.SimpleDoubleProperty(
+                rating > 0 ? rating : 0.0
+            ).asObject();
+        });
+        ratingColumn.setCellFactory(column -> new TableCell<Content, Double>() {
+            @Override
+            protected void updateItem(Double rating, boolean empty) {
+                super.updateItem(rating, empty);
+                if (empty || rating == null || rating <= 0) {
+                    setText("N/A");
+                } else {
+                    setText(String.format("%.1f", rating));
+                }
+                setStyle("-fx-text-fill: #FFD740; -fx-font-weight: bold; -fx-alignment: CENTER;");
+            }
+        });
+        ratingColumn.setPrefWidth(70);
+        return ratingColumn;
+    }
+
     @FXML
     public void initialize() {
         try {
@@ -426,7 +428,7 @@ public class AdvancedSearchController extends BaseSearchController {
                         resultsTable.getSelectionModel().selectedItemProperty().addListener((obs, oldSelection, newSelection) -> {
                             if (newSelection != null) {
                                 // Enable the manage details button when an item is selected
-                                // This is handled by the FXML binding, but we keep this for any additional logic
+                                manageDetailsButton.setDisable(false);
                             }
                         });
                     }
@@ -539,6 +541,10 @@ public class AdvancedSearchController extends BaseSearchController {
         
         // Set up the table's selection model if not already done
         resultsTable.getSelectionModel().setSelectionMode(SelectionMode.SINGLE);
+
+        // Disable the manage details button by default
+        manageDetailsButton.setDisable(true);
+
         
         // Log table state before search
         logger.info("Table state before search - Items: {}, Columns: {}", 
@@ -622,7 +628,8 @@ public class AdvancedSearchController extends BaseSearchController {
                     }
                     return;
                 }
-                
+
+                // Update the results table controller
                 if (resultsTableController != null) {
                     resultsTableController.setResults(results);
                     
@@ -696,7 +703,7 @@ public class AdvancedSearchController extends BaseSearchController {
 
     /**
      * Navigates to the content details view for the specified content.
-     * Shows a detailed dialog with content information when double-clicked.
+     * Shows a detailed dialog with comprehensive content information when double-clicked.
      *
      * @param content The content to view details for
      */
@@ -710,57 +717,145 @@ public class AdvancedSearchController extends BaseSearchController {
             // Create a dialog to show the content details
             Alert detailsDialog = new Alert(Alert.AlertType.INFORMATION);
             detailsDialog.setTitle("Content Details");
+            detailsDialog.setHeaderText(null);
+            detailsDialog.getDialogPane().setMinWidth(700);
+            detailsDialog.getDialogPane().setMinHeight(500);
+
+            // Set the owner stage for the dialog
+            detailsDialog.initOwner(getStage());
             
+            // Create a scroll pane to handle overflow
+            ScrollPane scrollPane = new ScrollPane();
+            scrollPane.setFitToWidth(true);
+            scrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+            scrollPane.setStyle("-fx-background: #f4f4f4; -fx-border-color: #e0e0e0;");
+
+            // Main content container
+            VBox contentBox = new VBox(15);
+            contentBox.setPadding(new Insets(20));
+            contentBox.setStyle("-fx-background-color: #ffffff;");
+
             // Create a styled header with title and year
-            String headerText = String.format("%s (%d)", content.getTitle(), content.getYear());
-            Label headerLabel = new Label(headerText);
-            headerLabel.setStyle("-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #00BCD4;");
+            SimpleDateFormat yearFormat = new SimpleDateFormat("yyyy");
+            String yearString = content.getYear() != null ? yearFormat.format(content.getYear()) : "N/A";
             
-            // Create a VBox to hold the content
-            VBox contentBox = new VBox(10);
-            contentBox.setPadding(new Insets(10));
+            // Header section
+            VBox headerBox = new VBox(5);
+            headerBox.setStyle("-fx-background-color: #f5f5f5; -fx-padding: 15; -fx-border-color: #e0e0e0; -fx-border-width: 0 0 1 0;");
             
-            // Add type
-            Label typeLabel = new Label("Type: " + (content instanceof Movie ? "Movie" : "Series"));
+            Label titleLabel = new Label(content.getTitle());
+            titleLabel.setStyle("-fx-font-size: 24px; -fx-font-weight: bold; -fx-text-fill: #000000;");
             
-            // Add genres with better spacing
-            Label genresLabel = new Label();
+            HBox metaBox = new HBox(15);
+            Label yearLabel = new Label(yearString);
+            yearLabel.setStyle("-fx-text-fill: #666; -fx-font-size: 14px;");
+            
+            Label typeLabel = new Label(content instanceof Movie ? "Movie" : "TV Series");
+            typeLabel.setStyle("-fx-text-fill: #666; -fx-font-size: 14px; -fx-font-weight: bold;");
+            
+            Label ratingLabel = new Label(String.format("★ %.1f/10", content.getRating()));
+            ratingLabel.setStyle("-fx-text-fill: #f5c518; -fx-font-weight: bold; -fx-font-size: 14px;");
+            
+            metaBox.getChildren().addAll(yearLabel, typeLabel, ratingLabel);
+            headerBox.getChildren().addAll(titleLabel, metaBox);
+            
+            // Main content sections
+            VBox detailsBox = new VBox(20);
+            detailsBox.setPadding(new Insets(20, 0, 0, 0));
+            
+            // Genres section
             if (content.getGenres() != null && !content.getGenres().isEmpty()) {
                 String genres = content.getGenres().stream()
                     .map(Enum::name)
-                    .map(genre -> " " + genre + " ")  // Add spaces around each genre
-                    .collect(Collectors.joining(" • "));  // Add bullet separator
-                genresLabel.setText("Genres: " + genres);
-            }
-            genresLabel.setStyle("-fx-padding: 0 0 10 0;");
-            
-            // Add series-specific details if it's a series
-            if (!(content instanceof Movie)) {
-                //add  any series details here
-                Label seriesLabel = new Label("Series: " + content.getSeries());
-                seriesLabel.setStyle("-fx-padding: 0 0 10 0;");
-                contentBox.getChildren().add(seriesLabel);
+                    .map(genre -> genre.charAt(0) + genre.substring(1).toLowerCase())
+                    .collect(Collectors.joining(" • "));
+                
+                Label genresLabel = new Label("Genres: " + genres);
+                genresLabel.setStyle("-fx-text-fill: #333; -fx-font-size: 14px; -fx-wrap-text: true;");
+                genresLabel.setMaxWidth(Double.MAX_VALUE);
+                detailsBox.getChildren().add(createSection("Genres", genresLabel));
             }
             
-            // Add instructions for editing
-            Label editNote = new Label("To edit this content, select it and click the 'MANAGE DETAILS' button.");
-            editNote.setStyle("-fx-font-style: italic; -fx-text-fill: #888; -fx-padding: 10 0 0 0;");
+
+            // Cast section (placeholder - would be populated from content.getCast() in a real implementation)
+            VBox castBox = new VBox(5);
+            Label castTitle = new Label("Top Cast");
+            castTitle.setStyle("-fx-font-weight: bold; -fx-font-size: 16px; -fx-text-fill: #111; -fx-padding: 0 0 5 0;");
             
-            // Add all elements to the content box
-            contentBox.getChildren().addAll(headerLabel, typeLabel, genresLabel, editNote);
+            // Sample cast members - in a real app, this would come from content.getCast()
+            String[] sampleCast = {"Actor 1 as Character 1", "Actor 2 as Character 2", "Actor 3 as Character 3"};
+            for (String castMember : sampleCast) {
+                Label castMemberLabel = new Label("• " + castMember);
+                castMemberLabel.setStyle("-fx-text-fill: #333; -fx-font-size: 14px;");
+                castBox.getChildren().add(castMemberLabel);
+            }
             
-            // Set the dialog content
-            detailsDialog.getDialogPane().setContent(contentBox);
+            // Add "See full cast" link
+            VBox castSection = getVBox(castTitle, castBox);
+            detailsBox.getChildren().add(castSection);
             
+            // Details section
+            VBox infoBox = new VBox(8);
+            infoBox.setStyle("-fx-background-color: #f9f9f9; -fx-padding: 15; -fx-border-color: #e0e0e0; -fx-border-width: 1; -fx-border-radius: 4;");
+            
+            // Director
+            if (content.getDirector() != null && !content.getDirector().isEmpty()) {
+                infoBox.getChildren().add(createInfoRow("Director", content.getDirector()));
+            }
+            
+
+            
+            // Release date
+            if (content.getReleaseDate() != null) {
+                SimpleDateFormat dateFormat = new SimpleDateFormat("MMMM d, yyyy");
+                infoBox.getChildren().add(createInfoRow("Release Date", dateFormat.format(content.getReleaseDate())));
+            }
+            
+            // Runtime (for movies)
+            if (content instanceof Movie && ((Movie) content).getRuntime() > 0) {
+                int runtime = ((Movie) content).getRuntime();
+                String runtimeStr = String.format("%d min", runtime);
+                infoBox.getChildren().add(createInfoRow("Runtime", runtimeStr));
+            }
+            
+            // Number of seasons and episodes (for series)
+            if (content instanceof Series) {
+                Series series = (Series) content;
+                if (series.getSeasons() != null && !series.getSeasons().isEmpty()) {
+                    infoBox.getChildren().add(createInfoRow("Seasons", String.valueOf(series.getSeasons().size())));
+                    infoBox.getChildren().add(createInfoRow("Episodes", String.valueOf(series.getTotalEpisodes())));
+                }
+            }
+            
+            // Awards (if available)
+            if (content.getAwards() != null && !content.getAwards().isEmpty()) {
+                infoBox.getChildren().add(createInfoRow("Awards", String.valueOf(content.getAwards())));
+            } else {
+                infoBox.getChildren().add(createInfoRow("Awards", "N/A"));
+            }
+            
+            // Box office (for movies)
+            if (content instanceof Movie && ((Movie) content).getBoxOffice() != null && !((Movie) content).getBoxOffice().isEmpty()) {
+                infoBox.getChildren().add(createInfoRow("Box Office", ((Movie) content).getBoxOffice()));
+            }
+            
+            detailsBox.getChildren().add(createSection("Details", infoBox));
+            
+            // Assemble all sections
+            contentBox.getChildren().addAll(headerBox, detailsBox);
+
+
             // Add buttons
-            ButtonType editButton = new ButtonType("Edit Content", ButtonBar.ButtonData.OTHER);
-            ButtonType closeButton = new ButtonType("Close", ButtonBar.ButtonData.CANCEL_CLOSE);
-            detailsDialog.getButtonTypes().setAll(editButton, closeButton);
+            ButtonBar buttonBar = new ButtonBar();
+            buttonBar.setPadding(new Insets(15, 0, 0, 0));
             
-            // Show the dialog and handle the user's choice
-            Optional<ButtonType> result = detailsDialog.showAndWait();
-            if (result.isPresent() && result.get() == editButton) {
-                // User clicked Edit Content, navigate to edit view
+            Button editButton = new Button("Edit Content");
+            editButton.setStyle("-fx-background-color: #2196F3; -fx-text-fill: white; -fx-font-weight: bold; -fx-padding: 8 16;");
+            editButton.setOnAction(e -> {
+                detailsDialog.setResult(ButtonType.OK);
+                detailsDialog.close();
+                
+                // Navigate to edit view
                 Map<String, Object> data = new HashMap<>();
                 data.put("contentId", content.getId());
                 data.put("contentType", content.getContentType());
@@ -771,11 +866,76 @@ public class AdvancedSearchController extends BaseSearchController {
                     getStage(),
                     "Edit " + content.getTitle()
                 );
-            }
+            });
+            
+            Button closeButton = new Button("Close");
+            closeButton.setStyle("-fx-background-color: #f5f5f5; -fx-text-fill: #333; -fx-padding: 8 16;");
+            closeButton.setOnAction(e -> detailsDialog.close());
+            
+            buttonBar.getButtons().addAll(editButton, closeButton);
+            ButtonBar.setButtonData(editButton, ButtonBar.ButtonData.OTHER);
+            ButtonBar.setButtonData(closeButton, ButtonBar.ButtonData.CANCEL_CLOSE);
+            
+            VBox.setVgrow(detailsBox, Priority.ALWAYS);
+            contentBox.getChildren().add(buttonBar);
+            
+            scrollPane.setContent(contentBox);
+            detailsDialog.getDialogPane().setContent(scrollPane);
+            
+            // Set the dialog size
+            detailsDialog.getDialogPane().setPrefSize(700, 600);
+            
+            // Show the dialog
+            detailsDialog.showAndWait();
+            
         } catch (Exception e) {
             logger.error("Error showing content details", e);
             showError("Error", "Could not show content details: " + e.getMessage());
         }
+    }
+
+    private VBox getVBox(Label castTitle, VBox castBox) {
+        Hyperlink fullCastLink = new Hyperlink("See full cast & crew");
+        fullCastLink.setStyle("-fx-text-fill: #0073e6; -fx-font-size: 13px; -fx-padding: 5 0 0 0;");
+        fullCastLink.setOnAction(e -> {
+            // Would navigate to full cast view in a real implementation
+            showInfo("Full Cast", "This would show the full cast and crew in a real implementation.");
+        });
+
+        VBox castSection = new VBox(10, castTitle, castBox, fullCastLink);
+        return castSection;
+    }
+
+    /**
+     * Creates a styled section with a title and content.
+     */
+    private VBox createSection(String title, Node content) {
+        VBox section = new VBox(5);
+        
+        Label titleLabel = new Label(title);
+        titleLabel.setStyle("-fx-font-weight: bold; -fx-font-size: 16px; -fx-text-fill: #111;");
+        
+        section.getChildren().addAll(titleLabel, content);
+        return section;
+    }
+    
+    /**
+     * Creates a row for the info box with a label and value.
+     */
+    private HBox createInfoRow(String label, String value) {
+        HBox row = new HBox(10);
+        
+        Label labelNode = new Label(label + ":");
+        labelNode.setStyle("-fx-font-weight: bold; -fx-min-width: 100; -fx-text-fill: #555;");
+        
+        Label valueNode = new Label(value);
+        valueNode.setStyle("-fx-text-fill: #333; -fx-wrap-text: true;");
+        valueNode.setMaxWidth(Double.MAX_VALUE);
+        
+        HBox.setHgrow(valueNode, Priority.ALWAYS);
+        row.getChildren().addAll(labelNode, valueNode);
+        
+        return row;
     }
 
     /**
@@ -820,7 +980,6 @@ public class AdvancedSearchController extends BaseSearchController {
             showError("Error", "Failed to open edit view. Please try again.");
         }
     }
-
     
     /**
      * Handles the table click event.

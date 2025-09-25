@@ -38,7 +38,7 @@ public class CelebritiesController implements Initializable {
     public CelebritiesController() {
         // No initialization needed
     }
-    
+
     private static final Logger logger = LoggerFactory.getLogger(CelebritiesController.class);
 
     // Actor UI Components
@@ -128,8 +128,8 @@ public class CelebritiesController implements Initializable {
                         String firstName = actor.getFirstName() != null ? actor.getFirstName() : "";
                         String lastName = actor.getLastName() != null ? actor.getLastName() : "";
                         logger.debug("Actor name for actor {} {}: {}",
-                            actor.getFirstName(), actor.getLastName(),
-                            String.format("%s %s", firstName, lastName).trim());
+                                actor.getFirstName(), actor.getLastName(),
+                                String.format("%s %s", firstName, lastName).trim());
                         return new SimpleStringProperty(String.format("%s %s", firstName, lastName).trim());
                     }
                 } catch (Exception e) {
@@ -145,8 +145,8 @@ public class CelebritiesController implements Initializable {
                         // Format the date as yyyy-MM-dd for consistency
                         String birthDate = cellData.getValue().getBirthDate().toString();
                         logger.debug("Birth date for actor {} {}: {}",
-                            cellData.getValue().getFirstName(), cellData.getValue().getLastName(),
-                            cellData.getValue().getBirthDate().toString());
+                                cellData.getValue().getFirstName(), cellData.getValue().getLastName(),
+                                cellData.getValue().getBirthDate().toString());
                         return new SimpleStringProperty(cellData.getValue().getBirthDate().toString());
                     }
                 } catch (Exception e) {
@@ -203,9 +203,9 @@ public class CelebritiesController implements Initializable {
                             if (notableWorks != null && !notableWorks.isEmpty()) {
                                 // Filter out any null or empty strings from notable works
                                 List<String> validWorks = notableWorks.stream()
-                                    .filter(work -> work != null && !work.trim().isEmpty())
-                                    .collect(Collectors.toList());
-                                
+                                        .filter(work -> work != null && !work.trim().isEmpty())
+                                        .collect(Collectors.toList());
+
                                 if (!validWorks.isEmpty()) {
                                     // Format the notable works as a comma-separated list, limit to 3 items for display
                                     int maxWorks = Math.min(3, validWorks.size());
@@ -214,18 +214,18 @@ public class CelebritiesController implements Initializable {
                                         // Add ellipsis if there are more than 3 works
                                         worksText += "...";
                                     }
-                                    logger.debug("Notable works for {} {}: {}", 
-                                        actor.getFirstName(), actor.getLastName(), worksText);
+                                    logger.debug("Notable works for {} {}: {}",
+                                            actor.getFirstName(), actor.getLastName(), worksText);
                                     return new SimpleStringProperty(worksText);
                                 }
                             }
                             // If we get here, there are no notable works
                             logger.debug("No notable works found for {} {}",
-                                actor.getFirstName(), actor.getLastName());
+                                    actor.getFirstName(), actor.getLastName());
                             return new SimpleStringProperty("-"); // Use dash for empty works
                         } catch (Exception e) {
-                            logger.warn("Error processing notable works for {} {}: {}", 
-                                actor.getFirstName(), actor.getLastName(), e.getMessage());
+                            logger.warn("Error processing notable works for {} {}: {}",
+                                    actor.getFirstName(), actor.getLastName(), e.getMessage());
                             return new SimpleStringProperty("Error loading works");
                         }
                     }
@@ -234,7 +234,7 @@ public class CelebritiesController implements Initializable {
                 }
                 return new SimpleStringProperty("-"); // Default fallback
             });
-            
+
             // Set a tooltip to show all notable works on hover
             actorNotableWorksColumn.setCellFactory(column -> {
                 return new TableCell<Actor, String>() {
@@ -246,7 +246,7 @@ public class CelebritiesController implements Initializable {
                             setTooltip(null);
                         } else {
                             setText(item);
-                            
+
                             // Get the full list of notable works for the tooltip
                             Actor actor = getTableView().getItems().get(getIndex());
                             if (actor != null) {
@@ -265,14 +265,14 @@ public class CelebritiesController implements Initializable {
 
             // Set the items to the table
             actorsTable.setItems(filteredActors);
-            
+
             // Enable sorting on all columns
             actorNameColumn.setSortable(true);
             actorBirthDateColumn.setSortable(true);
             actorGenderColumn.setSortable(true);
             actorNationalityColumn.setSortable(true);
             actorNotableWorksColumn.setSortable(true);
-            
+
         } catch (Exception e) {
             logger.error("Error initializing actor table: {}", e.getMessage(), e);
             showError("Initialization Error", "Failed to initialize actor table: " + e.getMessage());
@@ -283,13 +283,13 @@ public class CelebritiesController implements Initializable {
     private void handleGoToHome() {
         try {
             NavigationService.getInstance().navigateTo("/fxml/base/home-view.fxml",
-                    data, (Stage) actorsTable.getScene().getWindow(),"IMDb Clone - Home");
+                    data, (Stage) actorsTable.getScene().getWindow(), "IMDb Clone - Home");
         } catch (Exception e) {
             logger.error("Error navigating to home: {}", e.getMessage(), e);
             showError("Navigation Error", "Failed to navigate to home: " + e.getMessage());
         }
     }
-    
+
     /**
      * Handles the refresh button action to reload all celebrities.
      * This method clears all search fields and reloads both actors and directors.
@@ -298,13 +298,12 @@ public class CelebritiesController implements Initializable {
     private void handleRefresh() {
         try {
             logger.info("Starting refresh of all celebrity data...");
-            
+
             // Clear search fields
             Platform.runLater(() -> {
                 if (actorSearchField != null) {
                     actorSearchField.clear();
-                }
-                else if (directorSearchField != null) {
+                } else if (directorSearchField != null) {
                     directorSearchField.clear();
                 }
                 //both for actor and director search
@@ -312,51 +311,50 @@ public class CelebritiesController implements Initializable {
                     unifiedSearchField.clear();
                 }
             });
-            
+
             // Clear current data
             actors.clear();
             directors.clear();
-            
+
             // Reload all celebrities
             loadCelebrities();
-            
+
             // Update UI with refreshed data
             Platform.runLater(() -> {
                 if (actorsTable != null) {
                     actorsTable.refresh();
-                }
-                else if (directorsTable != null) {
+                } else if (directorsTable != null) {
                     directorsTable.refresh();
                 }
             });
-            
+
             // Show success message
             if (statusLabel != null) {
-                String successMessage = String.format("Successfully refreshed %d actors and %d directors", 
-                    actors.size(), directors.size());
+                String successMessage = String.format("Successfully refreshed %d actors and %d directors",
+                        actors.size(), directors.size());
                 statusLabel.setText(successMessage);
                 logger.info(successMessage);
-                
+
                 // Clear the status message after 3 seconds
                 new java.util.Timer().schedule(
-                    new java.util.TimerTask() {
-                        @Override
-                        public void run() {
-                            Platform.runLater(() -> {
-                                if (statusLabel != null) {
-                                    statusLabel.setText("");
-                                    logger.info("Refresh completed");
-                                }
-                            });
-                        }
-                    },
-                    3000
+                        new java.util.TimerTask() {
+                            @Override
+                            public void run() {
+                                Platform.runLater(() -> {
+                                    if (statusLabel != null) {
+                                        statusLabel.setText("");
+                                        logger.info("Refresh completed");
+                                    }
+                                });
+                            }
+                        },
+                        3000
                 );
             }
         } catch (Exception e) {
             String errorMsg = "Failed to refresh celebrities: " + e.getMessage();
             logger.error(errorMsg, e);
-            
+
             // Show error in UI on the JavaFX Application Thread
             Platform.runLater(() -> {
                 showError("Refresh Error", errorMsg);
@@ -398,23 +396,18 @@ public class CelebritiesController implements Initializable {
         // Set up cell value factory for gender with consistent handling
         directorGenderColumn.setCellValueFactory(cellData -> {
             try {
-                Director director = cellData.getValue();
-                if (director != null) {
-                    try {
-                        char gender = director.getGender();
-                        if (gender == 'M' || gender == 'm') {
-                            return new SimpleStringProperty("Male");
-                        } else if (gender == 'F' || gender == 'f') {
-                            return new SimpleStringProperty("Female");
-                        } else {
-                            return new SimpleStringProperty("Other");
-                        }
-                    } catch (Exception e) {
-                        logger.debug("Error getting director gender: {}", e.getMessage());
+                if (cellData.getValue() != null) {
+                    char gender = cellData.getValue().getGender();
+                    if (gender == 'M' || gender == 'm') {
+                        return new SimpleStringProperty("Male");
+                    } else if (gender == 'F' || gender == 'f') {
+                        return new SimpleStringProperty("Female");
+                    } else {
+                        return new SimpleStringProperty("Other");
                     }
                 }
             } catch (Exception e) {
-                logger.error("Unexpected error getting director gender: {}", e.getMessage(), e);
+                logger.error("Error getting director gender: {}", e.getMessage());
             }
             return new SimpleStringProperty("N/A");
         });
@@ -424,31 +417,114 @@ public class CelebritiesController implements Initializable {
             try {
                 Director director = cellData.getValue();
                 if (director != null) {
-                    // Get the director's ethnicity
                     Ethnicity ethnicity = director.getEthnicity();
                     if (ethnicity != null) {
-                        String label = ethnicity.getLabel();
-                        if (label != null && !label.trim().isEmpty()) {
-                            return new SimpleStringProperty(label);
-                        }
+                        return new SimpleStringProperty(ethnicity.getLabel());
+                    } else if (director.getNationality() != null) {
+                        return new SimpleStringProperty(director.getNationality().getLabel());
                     }
-
-                    // Try to get nationality from other fields if ethnicity is not set
-                    Ethnicity nationality = director.getNationality();
-                    if (nationality != null) {
-                        String label = nationality.getLabel();
-                        if (label != null && !label.trim().isEmpty()) {
-                            return new SimpleStringProperty(label);
-                        }
-                    }
-
                 }
-                return new SimpleStringProperty("N/A");
             } catch (Exception e) {
-                logger.debug("Error getting director nationality: {}", e.getMessage());
-                return new SimpleStringProperty("N/A");
+                logger.error("Error getting director nationality: {}", e.getMessage());
             }
+            return new SimpleStringProperty("N/A");
         });
+
+        // Set up cell value factory for notable works with proper formatting
+        directorNotableWorksColumn.setCellValueFactory(cellData -> {
+            try {
+                Director director = cellData.getValue();
+                if (director != null) {
+                    try {
+                        List<String> notableWorks = director.getNotableWorks();
+                        if (notableWorks != null && !notableWorks.isEmpty()) {
+                            // Filter out any null or empty strings from notable works
+                            List<String> validWorks = notableWorks.stream()
+                                    .filter(work -> work != null && !work.trim().isEmpty())
+                                    .collect(Collectors.toList());
+
+                            if (!validWorks.isEmpty()) {
+                                // Format the notable works as a comma-separated list, limit to 3 items for display
+                                int maxWorks = Math.min(3, validWorks.size());
+                                String worksText = String.join(", ", validWorks.subList(0, maxWorks));
+                                if (validWorks.size() > 3) {
+                                    // Add ellipsis if there are more than 3 works
+                                    worksText += "...";
+                                }
+                                logger.debug("Notable works for director {} {}: {}",
+                                        director.getFirstName(), director.getLastName(), worksText);
+                                return new SimpleStringProperty(worksText);
+                            }
+                        }
+                        // If we get here, there are no notable works
+                        logger.debug("No notable works found for director {} {}",
+                                director.getFirstName(), director.getLastName());
+                        return new SimpleStringProperty("-"); // Use dash for empty works
+                    } catch (Exception e) {
+                        logger.warn("Error processing notable works for director {} {}: {}",
+                                director.getFirstName(), director.getLastName(), e.getMessage());
+                        return new SimpleStringProperty("Error loading works");
+                    }
+                }
+            } catch (Exception e) {
+                logger.error("Unexpected error getting director notable works: {}", e.getMessage(), e);
+            }
+            return new SimpleStringProperty("-"); // Default fallback
+        });
+
+        // Set a tooltip to show all notable works on hover
+        directorNotableWorksColumn.setCellFactory(column -> {
+            return new TableCell<Director, String>() {
+                @Override
+                protected void updateItem(String item, boolean empty) {
+                    super.updateItem(item, empty);
+                    if (item == null || empty) {
+                        setText(null);
+                        setTooltip(null);
+                    } else {
+                        setText(item);
+
+                        // Get the full list of notable works for the tooltip
+                        Director director = getTableView().getItems().get(getIndex());
+                        if (director != null) {
+                            List<String> allWorks = director.getNotableWorks();
+                            if (allWorks != null && !allWorks.isEmpty()) {
+                                String tooltipText = String.join("\n• ", allWorks);
+                                setTooltip(new Tooltip("• " + tooltipText));
+                            } else {
+                                setTooltip(new Tooltip("No notable works available"));
+                            }
+                        }
+                    }
+                }
+            };
+        });
+
+        // Set the items to the table
+        directorsTable.setItems(filteredDirectors);
+
+        // Enable sorting on all columns
+        directorNameColumn.setSortable(true);
+        directorBirthDateColumn.setSortable(true);
+        directorGenderColumn.setSortable(true);
+        directorNationalityColumn.setSortable(true);
+        directorNotableWorksColumn.setSortable(true);
+
+        // Set up search functionality for director search field
+        if (directorSearchField != null) {
+            directorSearchField.textProperty().addListener((observable, oldValue, newValue) -> {
+                filterDirectors(newValue);
+            });
+        }
+
+        // Set up unified search
+        if (unifiedSearchField != null) {
+            unifiedSearchField.textProperty().addListener((observable, oldValue, newValue) -> {
+                filterActors(newValue);
+                filterDirectors(newValue);
+            });
+
+            }
 
         // Set up cell value factory for notable works with improved formatting and null safety
         directorNotableWorksColumn.setCellValueFactory(cellData -> {
@@ -456,6 +532,7 @@ public class CelebritiesController implements Initializable {
                 Director director = cellData.getValue();
                 if (director != null) {
                     try {
+                        // Get the director's notable works
                         List<String> notableWorks = director.getNotableWorks();
                         if (notableWorks != null && !notableWorks.isEmpty()) {
                             // Filter out any null or empty strings from notable works
@@ -1012,5 +1089,6 @@ public class CelebritiesController implements Initializable {
                 showError("Error", "Failed to add director: " + e.getMessage());
             }
         });
+        logger.info("Director added successfully");
     }
 }

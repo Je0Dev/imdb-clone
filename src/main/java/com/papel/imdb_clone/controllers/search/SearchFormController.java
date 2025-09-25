@@ -1,19 +1,15 @@
 package com.papel.imdb_clone.controllers.search;
 
+import com.papel.imdb_clone.enums.ContentType;
 import com.papel.imdb_clone.enums.Genre;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
-import javafx.scene.control.cell.CheckBoxListCell;
-import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.VBox;
-import javafx.scene.layout.HBox;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -82,12 +78,7 @@ public class SearchFormController extends BaseSearchController {
     private static final int MAX_YEAR = java.time.Year.now().getValue();
     private static final String YEAR_VALIDATION_REGEX = "^\\d{0,4}$";
 
-    /**
-     * Toggles the visibility of the genre dropdown menu.
-     *
-     * @param actionEvent The action event that triggered this method
-     * @throws NullPointerException if actionEvent is null
-     */
+
     @FXML
     private void toggleGenreDropdown(ActionEvent actionEvent) {
         if (actionEvent == null) {
@@ -129,6 +120,8 @@ public class SearchFormController extends BaseSearchController {
         updateDropdownButtonText(false);
     }
 
+    //search button handler
+    @FXML
     public void handleSearch(ActionEvent actionEvent) {
         try {
             SearchCriteria criteria = buildSearchCriteria();
@@ -389,7 +382,6 @@ public class SearchFormController extends BaseSearchController {
     public void initialize() {
         try {
             // Initialize UI components
-            setupGenreDropdown();
             setupRatingSlider();
             setupSortOptions();
             setupYearFields();
@@ -406,27 +398,20 @@ public class SearchFormController extends BaseSearchController {
         }
     }
 
+    //sets up the sort options combo box
     private void setupSortOptions() {
         sortByCombo.valueProperty().addListener((obs, oldVal, newVal) -> {
             notifySearchCriteriaChanged();
         });
     }
 
+    //sets up the rating slider
     private void setupRatingSlider() {
         ratingSlider.valueProperty().addListener((obs, oldVal, newVal) -> {
             updateRatingLabel(newVal.doubleValue());
         });
     }
 
-    /**
-     * Sets up the genre dropdown button and its behavior.
-     *
-     * @throws IllegalStateException if required UI components are not initialized
-     */
-    private void setupGenreDropdown() {
-        // No longer needed as we're using a standard ComboBox
-        // This method is kept for backward compatibility
-    }
 
     /**
      * Configures the year input fields with validation and formatting.
@@ -446,6 +431,7 @@ public class SearchFormController extends BaseSearchController {
                     return;
                 }
 
+                // Validate year range which helps to prevent invalid year valuess
                 if (!newVal.isEmpty()) {
                     try {
                         int year = Integer.parseInt(newVal);
@@ -454,7 +440,7 @@ public class SearchFormController extends BaseSearchController {
                             showWarning("Invalid Year", "Year must be between " + MIN_YEAR + " and " + MAX_YEAR);
                         }
                     } catch (NumberFormatException e) {
-                        logger.warn("Invalid year format: " + newVal, e);
+                        logger.warn("Invalid year format: {}", newVal, e);
                         yearFrom.setText(oldVal);
                     }
                 }
@@ -470,6 +456,7 @@ public class SearchFormController extends BaseSearchController {
                     return;
                 }
 
+                // Validate year range which helps to prevent invalid year valuess
                 if (!newVal.isEmpty()) {
                     try {
                         int year = Integer.parseInt(newVal);
@@ -488,6 +475,7 @@ public class SearchFormController extends BaseSearchController {
             });
 
             // Add focus listeners to validate year ranges when focus is lost
+
             yearFrom.focusedProperty().addListener((obs, wasFocused, isNowFocused) -> {
                 if (!isNowFocused) {
                     validateYearRange();
@@ -564,20 +552,95 @@ public class SearchFormController extends BaseSearchController {
      * Builds search criteria based on the current form values.
      * @return SearchCriteria object containing the search parameters
      */
+    /**
+     * Builds search criteria based on the current form values.
+     * @return SearchCriteria object containing all search parameters
+     */
     private SearchCriteria buildSearchCriteria() {
-        String sortBy = sortByCombo != null ? sortByCombo.getValue() : "";
-        SearchCriteria criteria = new SearchCriteria("title", sortBy.contains("(A-Z)"));
-        
-        if (sortBy.startsWith("Year")) {
-            criteria = new SearchCriteria("year", sortBy.contains("Newest") ? "desc" : "asc");
-        } else if (sortBy.startsWith("Rating")) {
-            criteria = new SearchCriteria("rating", sortBy.contains("Highest") ? "desc" : "asc");
+        try {
+            // Initialize search criteria with default sort
+            String sortBy = sortByCombo != null ? sortByCombo.getValue() : "";
+            SearchCriteria criteria = new SearchCriteria("title", !sortBy.contains("(Z-A)"));
+            
+            // Set content type filter
+            if (movieCheckBox != null && seriesCheckBox != null) {
+                if (movieCheckBox.isSelected() && !seriesCheckBox.isSelected()) {
+                    criteria.setContentType(ContentType.MOVIE);
+                } else if (!movieCheckBox.isSelected() && seriesCheckBox.isSelected()) {
+                    criteria.setContentType(ContentType.SERIES);
+                }
+                // If both are selected or none are selected, don't filter by content type
+            }
+            
+            // Set title filter
+            if (titleField != null && !titleField.getText().trim().isEmpty()) {
+                criteria.setTitle(titleField.getText().trim());
+            }
+            
+            // Set keywords filter
+            if (keywordsField != null && !keywordsField.getText().trim().isEmpty()) {
+                criteria.setQuery(keywordsField.getText().trim());
+            }
+            
+            // Set year range filter
+            try {
+                if (yearFrom != null && !yearFrom.getText().trim().isEmpty()) {
+                    int minYear = Integer.parseInt(yearFrom.getText().trim());
+                    criteria.setMinYear(minYear);
+                }
+                if (yearTo != null && !yearTo.getText().trim().isEmpty()) {
+                    int maxYear = Integer.parseInt(yearTo.getText().trim());
+                    criteria.setMaxYear(maxYear);
+                }
+            } catch (NumberFormatException e) {
+                logger.warn("Invalid year format", e);
+            }
+            
+            // Set rating filter
+            if (ratingSlider != null && ratingSlider.getValue() > 0) {
+                double minRating = ratingSlider.getValue();
+                criteria.setMinRating(minRating);
+                criteria.setMaxRating(10.0); // Set max rating to 10.0
+            }
+            
+            // Set genre filter
+            if (selectedGenres != null && !selectedGenres.isEmpty()) {
+                List<Genre> genres = selectedGenres.stream()
+                    .map(Genre::valueOf)
+                    .collect(Collectors.toList());
+                criteria.setGenres(genres);
+            }
+            
+            // Set sort order
+            if (sortBy.startsWith("Year")) {
+                criteria.setSortBy("year");
+                criteria.setSortOrder(sortBy.contains("Newest") ? "desc" : "asc");
+            } else if (sortBy.startsWith("Rating")) {
+                criteria.setSortBy("rating");
+                criteria.setSortOrder(sortBy.contains("Highest") ? "desc" : "asc");
+            } else if (sortBy.startsWith("Title")) {
+                criteria.setSortBy("title");
+                criteria.setSortOrder(sortBy.contains("(Z-A)") ? "desc" : "asc");
+            } else {
+                // Default sort by relevance (title)
+                criteria.setSortBy("title");
+                criteria.setSortOrder("asc");
+            }
+
+            logger.debug("Built search criteria: {}", criteria);
+            return criteria;
+            
+        } catch (Exception e) {
+            logger.error("Error building search criteria", e);
+            // Return default criteria in case of error
+            return new SearchCriteria("title", true);
         }
-        
-        // Add other search criteria here as needed
-        return criteria;
     }
 
+    /**
+     * Resets the search form to its default state.
+     * This method clears all input fields and resets the form to its initial state.
+     */
     private void resetSearchForm() {
         // Clear input fields
         if (titleField != null) titleField.clear();
@@ -592,6 +655,8 @@ public class SearchFormController extends BaseSearchController {
         // Reset rating slider
         if (ratingSlider != null) {
             ratingSlider.setValue(0);
+            ratingSlider.setMin(0);
+
         }
 
         // Reset sort options

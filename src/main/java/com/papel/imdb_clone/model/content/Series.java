@@ -21,15 +21,11 @@ public class Series extends Content {
     private double rating;
     private List<Genre> genres = new ArrayList<>();
     private static final Logger logger = LoggerFactory.getLogger(Series.class);
-    private int endYear;
-    
-    /**
-     * Sets the end year of the series.
-     * @param endYear The year the series ended
-     */
-    public void setEndYear(int endYear) {
-        this.endYear = endYear;
-    }
+    private Integer endYear; // Nullable for ongoing series
+    private int seasonsCount;
+
+
+    // Removed duplicate setEndYear method
 
     @Override
     public String getDirector() {
@@ -57,7 +53,7 @@ public class Series extends Content {
         // Set the current year as default
         Calendar cal = Calendar.getInstance();
         cal.setTime(new java.util.Date());
-        this.startYear = cal.get(Calendar.YEAR);
+        setStartYear(cal.get(Calendar.YEAR));
     }
 
     /**
@@ -74,9 +70,7 @@ public class Series extends Content {
         this.actors = new ArrayList<>();
         this.awards = new ArrayList<>();
         this.rating = userRating;
-        this.startYear = startYear;
-        
-        // startYear is already set in the constructor parameter
+        setStartYear(startYear);
     }
 
     public List<Season> getSeasons() {
@@ -161,23 +155,64 @@ public class Series extends Content {
 
     @Override
     public void setStartYear(int startYear) {
-        // Delegate to parent class implementation
+        // Call parent's setStartYear first
         super.setStartYear(startYear);
+        
+        // If end year is before start year, update it
+        if (endYear != null && endYear < startYear) {
+            logger.info("Updating end year from {} to {} to match new start year for {}", 
+                endYear, startYear, getTitle());
+            setEndYear(startYear);
+        }
+    }
+    
+    public Integer getEndYear() {
+        // Get the stack trace to see who's calling this method
+        StackTraceElement[] stackTrace = Thread.currentThread().getStackTrace();
+        String caller = "";
+        if (stackTrace.length > 2) {
+            caller = " from " + stackTrace[2].getClassName() + "." + stackTrace[2].getMethodName() + "()";
+        }
+        logger.info("Getting end year for series {}: {}{}", getTitle(), endYear, caller);
+        return endYear;
+    }
+    
+    public void setEndYear(Integer endYear) {
+        // Get the stack trace to see who's calling this method
+        StackTraceElement[] stackTrace = Thread.currentThread().getStackTrace();
+        String caller = "";
+        if (stackTrace.length > 2) {
+            caller = " from " + stackTrace[2].getClassName() + "." + stackTrace[2].getMethodName() + "()";
+        }
+
+        logger.info("Setting end year for series {} from {} to {}{}", getTitle(), this.endYear, endYear, caller);
+        
+        if (endYear != null && endYear < getStartYear()) {
+            throw new IllegalArgumentException("End year cannot be before start year");
+        }
+        this.endYear = endYear;
     }
 
-    //set seasons to list of seasons
-    public void setSeasons(List<Season> seasons) {
+    /**
+     * Sets the number of seasons for this series.
+     * Initializes empty seasons up to the specified count.
+     * @param seasonsCount The number of seasons to create
+     */
+    public void setSeasons(int seasonsCount) {
         this.seasons = new ArrayList<>();
-        if (seasons != null) {
-            for (Season season : seasons) {
-                this.addSeason(season);
-            }
+        for (int i = 0; i < seasonsCount; i++) {
+            this.addSeason(new Season(i + 1, this));  // Pass 'this' (the Series) to the Season constructor
         }
     }
 
 
+    //awards
     public List<String> getAwards() {
         return new ArrayList<>(awards);
+    }
+
+    public void setAwards(List<String> awards) {
+        this.awards = new ArrayList<>(awards);
     }
 
     /**
@@ -192,6 +227,19 @@ public class Series extends Content {
         if (!this.genres.isEmpty()) {
             setGenre(this.genres.getFirst());
         }
+    }
+
+    public void setSeasons(List<Season> seasons) {
+        this.seasons = new ArrayList<>(seasons);
+    }
+
+    //genre
+    public Genre getGenre() {
+        return genre;
+    }
+
+    public void setGenre(Genre genre) {
+        this.genre = genre;
     }
 
     /**
@@ -293,8 +341,15 @@ public class Series extends Content {
         this.director = creator;
     }
 
-    public int getEndYear() {
-        return endYear;
+
+    public void setSeasonsCount(int seasonsCount) {
+        this.seasonsCount = seasonsCount;
     }
 
+    public void setActors(String[] actorNames) {
+        this.actors = new ArrayList<>();
+        for (String actorName : actorNames) {
+            this.actors.add(new Actor(actorName));
+        }
+    }
 }
