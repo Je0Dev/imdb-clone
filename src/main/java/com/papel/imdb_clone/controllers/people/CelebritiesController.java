@@ -199,7 +199,7 @@ public class CelebritiesController implements Initializable {
                     if (actor != null) {
                         try {
                             List<String> notableWorks = actor.getNotableWorks();
-                            if (notableWorks != null && !notableWorks.isEmpty()) {
+                            if (notableWorks != null && !notableWorks.isEmpty()) {git
                                 // Filter out any null or empty strings from notable works
                                 List<String> validWorks = notableWorks.stream()
                                         .filter(work -> work != null && !work.trim().isEmpty())
