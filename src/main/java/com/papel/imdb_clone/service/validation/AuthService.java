@@ -60,16 +60,43 @@ public class AuthService {
      * @return true if a user is currently authenticated, false otherwise
      */
     public boolean isAuthenticated() {
-        return sessionToken != null && !sessionToken.isEmpty() && 
-               userSessions.containsValue(sessionToken);
+        boolean isAuthenticated = sessionToken != null && !sessionToken.isEmpty() && 
+               userSessions.containsKey(sessionToken);
+        
+        if (isAuthenticated) {
+            String username = userSessions.get(sessionToken);
+            logger.debug("Session check - User '{}' is authenticated with token: {}...", 
+                username, sessionToken.substring(0, Math.min(8, sessionToken.length())));
+        } else {
+            logger.debug("Session check - No active session found");
+        }
+        
+        return isAuthenticated;
     }
 
     public User getUserFromSession(String sessionToken) {
-        String username = userSessions.get(sessionToken);
-        if (username == null) {
+        if (sessionToken == null || sessionToken.isEmpty()) {
+            logger.debug("getUserFromSession: No session token provided");
             return null;
         }
-        return usersByUsername.get(username.toLowerCase());
+        
+        String username = userSessions.get(sessionToken);
+        if (username == null) {
+            logger.warn("getUserFromSession: No user found for session token: {}...", 
+                sessionToken.substring(0, Math.min(8, sessionToken.length())));
+            return null;
+        }
+        
+        User user = usersByUsername.get(username.toLowerCase());
+        if (user != null) {
+            logger.debug("getUserFromSession: Found user '{}' for session token: {}...", 
+                username, sessionToken.substring(0, Math.min(8, sessionToken.length())));
+        } else {
+            logger.error("getUserFromSession: User '{}' not found in users map for session token: {}...", 
+                username, sessionToken.substring(0, Math.min(8, sessionToken.length())));
+        }
+        
+        return user;
     }
 
     /**
@@ -294,7 +321,16 @@ public class AuthService {
             String username = userSessions.remove(token);
             if (username != null) {
                 logger.info("User logged out: {}", username);
+                if (token.equals(this.sessionToken)) {
+                    logger.debug("Clearing session token for user: {}", username);
+                    this.sessionToken = null;
+                }
+            } else {
+                logger.warn("Logout attempt with invalid or expired token: {}...", 
+                    token.substring(0, Math.min(8, token.length())));
             }
+        } else {
+            logger.warn("Logout called with null token");
         }
     }
 
@@ -499,7 +535,10 @@ public class AuthService {
             // Generate session token which means a unique identifier for the user session
             String sessionToken = UUID.randomUUID().toString();
             userSessions.put(sessionToken, user.getUsername());
-            logger.info("User logged in successfully: {}", username);
+            
+            // Set the session token in the AuthService instance
+            this.sessionToken = sessionToken;
+            logger.info("User logged in successfully: {} with session token: {}", username, sessionToken);
             return sessionToken;
         } catch (Exception e) {
             // Log the error and throw an AuthException
@@ -521,15 +560,33 @@ public class AuthService {
     //TODO: use getCurrentUser method
     public User getCurrentUser(String sessionToken) {
         if (sessionToken == null || sessionToken.trim().isEmpty()) {
+            logger.debug("getCurrentUser: No session token provided");
             return null;
         }
 
         String username = userSessions.get(sessionToken);
         if (username == null) {
+            logger.warn("getCurrentUser: No user found for session token: {}...", 
+                sessionToken.substring(0, Math.min(8, sessionToken.length())));
             return null;
         }
 
-        return usersByUsername.get(username.toLowerCase());
+        User user = usersByUsername.get(username.toLowerCase());
+        if (user != null) {
+            logger.debug("getCurrentUser: Found user '{}' with ID {} for session token: {}...", 
+                username, user.getId(), sessionToken.substring(0, Math.min(8, sessionToken.length())));
+            
+            // Log admin status if applicable
+            if (user.isAdmin()) {
+                logger.info("ADMIN ACCESS: User '{}' (ID: {}) is an administrator", 
+                    username, user.getId());
+            }
+        } else {
+            logger.error("getCurrentUser: User '{}' not found in users map for session token: {}...", 
+                username, sessionToken.substring(0, Math.min(8, sessionToken.length())));
+        }
+
+        return user;
     }
     
     /**

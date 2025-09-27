@@ -19,6 +19,7 @@ import java.io.IOException;
  * Improved IMDB Clone Application using FXML and modern JavaFX practices with authentication
  */
 public class MovieAppGui extends Application {
+
     private static final Logger logger = LoggerFactory.getLogger(MovieAppGui.class);
 
     private static final String LOGIN_VIEW = "/fxml/auth/login-view.fxml";

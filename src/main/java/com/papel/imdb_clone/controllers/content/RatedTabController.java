@@ -8,6 +8,8 @@ import com.papel.imdb_clone.model.rating.UserRating;
 import com.papel.imdb_clone.service.validation.AuthService;
 import com.papel.imdb_clone.service.content.MoviesService;
 import com.papel.imdb_clone.service.rating.RatingService;
+import com.papel.imdb_clone.service.search.ServiceLocator;
+import javafx.application.Platform;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -28,6 +30,7 @@ import java.net.URL;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.ResourceBundle;
 
@@ -39,6 +42,8 @@ public class RatedTabController extends BaseController {
     //Logger
     private static final Logger logger = LoggerFactory.getLogger(RatedTabController.class);
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("MMM d, yyyy");
+    
+    private String sessionToken;
 
     @FXML private TableView<UserRating> ratingsTable;
     @FXML private TableColumn<UserRating, String> titleColumn;
@@ -49,30 +54,69 @@ public class RatedTabController extends BaseController {
     @FXML private Label titleLabel;
     @FXML private Label ratingLabel;
     @FXML private Label dateRatedLabel;
+    
+    /**
+     * Sets the navigation data including session token for this controller.
+     * @param data Map containing navigation data including session token
+     */
+    public void setNavigationData(Map<String, Object> data) {
+        if (data != null && data.containsKey("sessionToken")) {
+            this.sessionToken = (String) data.get("sessionToken");
+            logger.debug("Received session token in RatedTabController");
+            if (this.sessionToken != null) {
+                // Load ratings now that we have the session token
+                Platform.runLater(this::loadUserRatings);
+            }
+        } else {
+            logger.warn("No session token provided to RatedTabController");
+        }
+    }
 
-    private final RatingService ratingService;
-    private final MoviesService moviesService;
-    private final ObservableList<UserRating> ratingsList;
-    private final AuthController authController;
-
-    public RatedTabController(AuthController authController) {
-        this.ratingService = RatingService.getInstance();
-        this.moviesService = MoviesService.getInstance();
-        this.ratingsList = FXCollections.observableArrayList();
-        this.authController = authController;
+    private RatingService ratingService;
+    private MoviesService moviesService;
+    private ObservableList<UserRating> ratingsList;
+    private AuthController authController;
+    private ServiceLocator serviceLocator;
+    
+    /**
+     * Default constructor required by FXML
+     */
+    public RatedTabController() {
+        this.serviceLocator = ServiceLocator.getInstance();
     }
 
     @Override
-    protected void initializeController(int currentUserId) throws Exception {
-
+    protected void initializeController(int currentUserId) {
+        // This method is called by the base class
+        // We handle initialization in the initialize() method instead
     }
 
     @FXML
     public void initialize() {
-        logger.debug("Initializing RatedTabController");
-        setupTable();
-        loadUserRatings();
-        setupTableSelection();
+        try {
+            logger.debug("Initializing RatedTabController");
+            
+            // Initialize services
+            this.ratingService = RatingService.getInstance();
+            this.moviesService = MoviesService.getInstance();
+            this.ratingsList = FXCollections.observableArrayList();
+            
+            // Get AuthController from ServiceLocator
+            this.authController = serviceLocator.getService(AuthController.class);
+            if (this.authController == null) {
+                logger.error("Failed to get AuthController from ServiceLocator");
+                return;
+            }
+            
+            // Setup UI components
+            setupTable();
+            setupTableSelection();
+            
+            // We'll load ratings when setNavigationData is called with the session token
+        } catch (Exception e) {
+            logger.error("Error initializing RatedTabController: {}", e.getMessage(), e);
+            throw new RuntimeException("Failed to initialize RatedTabController", e);
+        }
     }
 
     private void setupTable() {

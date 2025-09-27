@@ -5,8 +5,7 @@
 <?import javafx.scene.layout.*?>
 <?import javafx.scene.text.Font?>
 
-<VBox xmlns:fx="http://javafx.com/fxml/1" 
-      fx:controller="com.papel.imdb_clone.controllers.content.RatedTabController"
+<VBox fx:controller="com.papel.imdb_clone.controllers.content.RatedTabController"
       spacing="10" 
       style="-fx-background-color: #1e1e1e; -fx-padding: 20;"
       xmlns="http://javafx.com/javafx/21"
@@ -15,8 +14,15 @@
         <Insets top="20" right="20" bottom="20" left="20"/>
     </padding>
     
-    <Label text="Your Rated Content" 
-           style="-fx-text-fill: white; -fx-font-size: 24px; -fx-font-weight: bold;"/>
+    <HBox alignment="CENTER_LEFT" spacing="10">
+        <Label text="Your Rated Content" 
+               style="-fx-text-fill: white; -fx-font-size: 24px; -fx-font-weight: bold;"
+               HBox.hgrow="ALWAYS"/>
+        
+        <Button text="Home" 
+                onAction="#handleHomeButton" 
+                style="-fx-background-color: #f5c518; -fx-text-fill: black; -fx-font-weight: bold; -fx-padding: 5 15 5 15; -fx-background-radius: 5;"/>
+    </HBox>
     
     <Separator style="-fx-background-color: #333; -fx-pref-height: 2;"/>
     

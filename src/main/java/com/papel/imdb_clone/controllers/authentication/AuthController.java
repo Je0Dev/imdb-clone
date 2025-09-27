@@ -1018,6 +1018,9 @@ public class AuthController extends BaseController implements Initializable {
         try {
             // Get the current session token
             String sessionToken = authService.getCurrentSessionToken();
+            logger.info("Navigating to main view with user: {} and session token: {}", 
+                user != null ? user.getUsername() : "null", 
+                sessionToken != null ? "[HIDDEN]" : "null");
             
             // Load the main view
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/base/home-view.fxml"));
@@ -1026,16 +1029,32 @@ public class AuthController extends BaseController implements Initializable {
             // Get the MainController and set the user and session token
             MainController mainController = loader.getController();
             
-            // Set the session token first before setting the user
-            if (sessionToken != null) {
-                mainController.setSessionToken(sessionToken);
-            }
-            
-            // Set the user and update UI states
-            mainController.setUser(user);
-            mainController.setGuest(false);
-            mainController.updateUIForLoggedInUser(user);
-            mainController.updateUIForAuthState(true);
+            // Set the session token and user in a thread-safe way
+            Platform.runLater(() -> {
+                try {
+                    // Set the session token first
+                    if (sessionToken != null) {
+                        mainController.setSessionToken(sessionToken);
+                        logger.debug("Session token set in MainController");
+                    }
+                    
+                    // Set the user and update UI states
+                    mainController.setUser(user);
+                    mainController.setGuest(false);
+                    
+                    // Update the UI on the JavaFX Application Thread
+                    Platform.runLater(() -> {
+                        mainController.updateUIForLoggedInUser(user);
+                        mainController.updateUIForAuthState(true);
+                        mainController.updateUserInterface();
+                        logger.debug("UI updated for logged-in user: {}", user != null ? user.getUsername() : "null");
+                    });
+                    
+                } catch (Exception e) {
+                    logger.error("Error updating UI after login: {}", e.getMessage(), e);
+                    showError("Navigation Error", "Failed to update UI after login: " + e.getMessage());
+                }
+            });
 
             // Get the current stage
             Stage stage = (Stage) (loginButton != null ? loginButton.getScene().getWindow() :
@@ -1046,7 +1065,9 @@ public class AuthController extends BaseController implements Initializable {
                 // Set the new scene
                 Scene scene = new Scene(root);
                 stage.setScene(scene);
+                stage.setTitle("IMDb Clone - Home");
                 stage.show();
+                logger.info("Successfully navigated to main view");
                 
                 // Force a refresh of the UI
                 Platform.runLater(() -> {

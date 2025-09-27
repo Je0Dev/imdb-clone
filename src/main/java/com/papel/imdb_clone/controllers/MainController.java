@@ -27,6 +27,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 
@@ -42,6 +43,7 @@ public class MainController extends BorderPane {
     private static final Logger logger = LoggerFactory.getLogger(MainController.class);
     private static final String MOVIES_VIEW = "/fxml/content/movie-view.fxml";
     private static final String SERIES_VIEW = "/fxml/content/series-view.fxml";
+    private static final String CELEBRITIES_VIEW = "/fxml/content/celebrities-view.fxml";
     private static final String ADVANCED_SEARCH_VIEW = "/fxml/search/advanced-search-view.fxml";
     private static final String RATED_VIEW = "/fxml/content/rated-tab.fxml";
 
@@ -65,6 +67,9 @@ public class MainController extends BorderPane {
     @FXML private Button advancedSearchButton;
     @FXML private Label guestMessage;
     
+    // UI Components
+    private VBox homeContent;
+    
     // Application state
     private Map<String, Object> data;
     private Stage primaryStage;
@@ -80,7 +85,8 @@ public class MainController extends BorderPane {
      * @param sessionToken The session token to set
      */
     public void setSessionToken(String sessionToken) {
-        logger.info("Setting session token: {}", sessionToken != null ? "[HIDDEN]" : "null");
+        logger.info("Setting session token: {}", sessionToken != null ? 
+            sessionToken.substring(0, Math.min(8, sessionToken.length())) + "..." : "null");
         this.sessionToken = sessionToken;
         
         // Update authentication state when session token is set
@@ -126,65 +132,112 @@ public class MainController extends BorderPane {
         try {
             logger.info("Navigating to home view");
             
-            // Create a simple home content panel
-            VBox homeContent = new VBox(20);
-            homeContent.setPadding(new Insets(40));
-            homeContent.setAlignment(Pos.CENTER);
-            homeContent.setStyle("-fx-background-color: #0f0f0f;");
-            
-            // Add welcome message
-            Label welcomeLabel = new Label("Welcome to IMDb Clone");
-            welcomeLabel.setStyle("-fx-text-fill: #f5c518; -fx-font-size: 36px; -fx-font-weight: bold;");
-            
-            Label subLabel = new Label("Discover and explore your favorite movies and TV shows.");
-            subLabel.setStyle("-fx-text-fill: #cccccc; -fx-font-size: 18px;");
-            subLabel.setWrapText(true);
-            
-            // Add navigation buttons
-            HBox buttonRow1 = new HBox(20);
-            buttonRow1.setAlignment(Pos.CENTER);
-            
-            Button moviesButton = new Button("Movies");
-            moviesButton.setStyle("-fx-background-color: #f5c518; -fx-text-fill: #000000; -fx-font-size: 16px; -fx-pref-width: 150; -fx-cursor: hand;");
-            moviesButton.setOnAction(e -> {
-                try {
-                    showMovies(e);
-                } catch (Exception ex) {
-                    logger.error("Error in movies navigation: ", ex);
-                    showError("Navigation Error", "Failed to navigate to Movies: " + ex.getMessage());
+            // Get the current user from the session token first
+            User currentUserFromSession = null;
+            if (sessionToken != null) {
+                currentUserFromSession = authService.getUserFromSession(sessionToken);
+                if (currentUserFromSession == null) {
+                    // If we have a session token but no user, clear the invalid session
+                    logger.warn("Invalid session token found, clearing session");
+                    sessionToken = null;
+                } else {
+                    logger.debug("Found user in session: {}", currentUserFromSession.getUsername());
                 }
-            });
+            }
             
-            Button tvShowsButton = new Button("TV Shows");
-            tvShowsButton.setStyle("-fx-background-color: #f5c518; -fx-text-fill: #000000; -fx-font-size: 16px; -fx-pref-width: 150; -fx-cursor: hand;");
-            tvShowsButton.setOnAction(e -> {
-                try {
-                    showTVShows(e);
-                } catch (Exception ex) {
-                    logger.error("Error in TV shows navigation: ", ex);
-                    showError("Navigation Error", "Failed to navigate to TV Shows: " + ex.getMessage());
+            // Update the current user and guest status
+            this.currentUser = currentUserFromSession;
+            this.isGuest = (this.currentUser == null);
+            
+            logger.debug("Current user in showHome: {}", this.currentUser != null ? this.currentUser.getUsername() : "null");
+            logger.debug("Session token in showHome: {}", sessionToken != null ? "[exists]" : "null");
+
+            // Clear any existing center content
+            Node source = (Node) event.getSource();
+            Scene scene = source.getScene();
+            if (scene != null && scene.getRoot() instanceof BorderPane) {
+                BorderPane rootPane = (BorderPane) scene.getRoot();
+
+                // Create a new home content panel
+                homeContent = new VBox(20);
+                homeContent.setPadding(new Insets(40));
+                homeContent.setAlignment(Pos.CENTER);
+                homeContent.setStyle("-fx-background-color: #0f0f0f;");
+
+                // Add welcome message with user's name if logged in
+                String welcomeMessage = !isGuest
+                    ? String.format("Welcome back, %s!", this.currentUser.getUsername())
+                    : "Welcome to IMDb Clone";
+
+                Label welcomeLabel = new Label(welcomeMessage);
+                welcomeLabel.setStyle("-fx-text-fill: #f5c518; -fx-font-size: 36px; -fx-font-weight: bold;");
+
+                String subMessage = !isGuest
+                    ? "Continue exploring your favorite movies and TV shows."
+                    : "Discover and explore your favorite movies and TV shows.";
+
+                Label subLabel = new Label(subMessage);
+                subLabel.setStyle("-fx-text-fill: #cccccc; -fx-font-size: 18px;");
+                subLabel.setWrapText(true);
+
+                // Add buttons
+                HBox buttonRow = new HBox(20);
+                buttonRow.setAlignment(Pos.CENTER);
+
+                Button moviesButton = new Button("Movies");
+                moviesButton.setStyle("-fx-background-color: #f5c518; -fx-text-fill: #000000; -fx-font-size: 16px; -fx-font-weight: bold; -fx-pref-width: 150; -fx-pref-height: 60; -fx-cursor: hand; -fx-background-radius: 5;");
+                moviesButton.setOnAction(this::showMovies);
+
+                Button tvShowsButton = new Button("TV Shows");
+                tvShowsButton.setStyle("-fx-background-color: #f5c518; -fx-text-fill: #000000; -fx-font-size: 16px; -fx-font-weight: bold; -fx-pref-width: 150; -fx-pref-height: 60; -fx-cursor: hand; -fx-background-radius: 5;");
+                tvShowsButton.setOnAction(this::showTVShows);
+
+                buttonRow.getChildren().addAll(moviesButton, tvShowsButton);
+
+                // Add content to the home panel
+                homeContent.getChildren().addAll(welcomeLabel, subLabel, buttonRow);
+
+                // Clear and set the new content
+                rootPane.setCenter(homeContent);
+                
+                // Update the UI based on authentication state
+                updateUIForAuthState(!isGuest);
+                
+                // Update the user label and other UI elements
+                updateUserLabel();
+                
+                if (currentUser != null) {
+                    updateUIForLoggedInUser(currentUser);
                 }
-            });
-            
-            buttonRow1.getChildren().addAll(moviesButton, tvShowsButton);
-            
-            // Add everything to the content
-            homeContent.getChildren().addAll(welcomeLabel, subLabel, buttonRow1);
-            
+                
+                // Update the UI on the JavaFX Application Thread
+                Platform.runLater(() -> {
+                    updateUIForAuthState(!isGuest);
+                    updateUserLabel();
+                    if (currentUser != null) {
+                        updateUIForLoggedInUser(currentUser);
+                    }
+                });
+            }
+
+            // Update window title
+            Stage window = (Stage) ((Node) event.getSource()).getScene().getWindow();
+            window.setTitle("IMDb Clone - Home");
+
             // Update the UI on the JavaFX Application Thread
             Platform.runLater(() -> {
                 try {
-                    // Get the current user
+                    // Get the current user from the service to ensure we have the latest data
                     User user = sessionToken != null ? authService.getCurrentUser(sessionToken) : null;
                     // Get the current scene and root
                     Scene currentScene = this.getScene();
                     BorderPane rootPane = null;
-                    
+
                     // If we have a scene and the root is a BorderPane, use it
                     if (currentScene != null && currentScene.getRoot() instanceof BorderPane) {
                         rootPane = (BorderPane) currentScene.getRoot();
                     }
-                    
+
                     // If no valid root pane, create a new one
                     if (rootPane == null) {
                         rootPane = new BorderPane();
@@ -197,26 +250,26 @@ public class MainController extends BorderPane {
                             currentScene.setRoot(rootPane);
                         }
                     }
-                    
+
                     // Set the home content
                     rootPane.setCenter(homeContent);
-                    
+
                     // Ensure the window is visible
                     if (currentScene.getWindow() != null) {
                         currentScene.getWindow().sizeToScene();
                     }
-                    
+
                     // Request focus on the content
                     homeContent.requestFocus();
-                    
+
                     logger.info("Home view loaded successfully");
-                    
+
                 } catch (Exception e) {
                     logger.error("Error updating home view: ", e);
                     showError("Navigation Error", "Failed to update home view: " + e.getMessage());
                 }
             });
-            
+
         } catch (Exception e) {
             logger.error("Failed to load home view: {}", e.getMessage(), e);
             showError("Navigation Error", "Failed to load home view: " + e.getMessage());
@@ -232,8 +285,7 @@ public class MainController extends BorderPane {
      */
     @FXML
     private void showMovies(ActionEvent event) {
-        if (!authService.isAuthenticated()) {
-            showError("Authentication Required", "Please sign in to access this feature.");
+        if (!checkAuthentication("movies view")) {
             return;
         }
         navigateToView(event, MOVIES_VIEW, "Movies");
@@ -247,13 +299,29 @@ public class MainController extends BorderPane {
      */
     @FXML
     private void showTVShows(ActionEvent event) {
-        if (!authService.isAuthenticated()) {
-            showError("Authentication Required", "Please sign in to access this feature.");
+        if (!checkAuthentication("TV shows view")) {
             return;
         }
         navigateToView(event, SERIES_VIEW, "TV Shows");
     }
+    
 
+    /**
+     * Checks if the user is authenticated before allowing access to a feature.
+     * @param featureName The name of the feature being accessed
+     * @return true if authenticated, false otherwise
+     */
+    private boolean checkAuthentication(String featureName) {
+        logger.debug("Checking authentication for {} view. Session token: {}", 
+            featureName, sessionToken != null ? sessionToken.substring(0, Math.min(8, sessionToken.length())) + "..." : "null");
+        if (sessionToken == null || authService.getUserFromSession(sessionToken) == null) {
+            logger.warn("Access denied to {} - User not authenticated", featureName);
+            showError("Authentication Required", "Please sign in to access this feature.");
+            return false;
+        }
+        return true;
+    }
+    
     /**
      * Handles navigation to the advanced search view.
      *
@@ -262,39 +330,41 @@ public class MainController extends BorderPane {
      */
     @FXML
     private void showAdvancedSearch(ActionEvent event) {
-        if (!authService.isAuthenticated()) {
-            showError("Authentication Required", "Please sign in to access this feature.");
+        if (!checkAuthentication("advanced search")) {
             return;
         }
         navigateToView(event, ADVANCED_SEARCH_VIEW, "Advanced Search");
     }
-    
+
     @FXML
     private void showRated(ActionEvent event) {
-        if (!authService.isAuthenticated()) {
+        logger.debug("Checking authentication for rated content. Session token: {}",
+            sessionToken != null ? sessionToken.substring(0, Math.min(8, sessionToken.length())) + "..." : "null");
+        if (sessionToken == null || authService.getUserFromSession(sessionToken) == null) {
+            logger.warn("Access denied to rated content - User not authenticated");
             showError("Authentication Required", "Please sign in to access this feature.");
             return;
         }
         navigateToView(event, RATED_VIEW, "Your Rated Content");
     }
-    
+
     /**
      * Updates the UI based on the current authentication state
      */
     private void updateAuthUI() {
         boolean isLoggedIn = currentUser != null;
-        
+
         // Update sign in and register buttons visibility
         if (signInButton != null) {
             signInButton.setVisible(!isLoggedIn);
             signInButton.setManaged(!isLoggedIn);
         }
-        
+
         if (registerButton != null) {
             registerButton.setVisible(!isLoggedIn);
             registerButton.setManaged(!isLoggedIn);
         }
-        
+
         // Update user label
         if (userLabel != null) {
             if (isLoggedIn) {
@@ -305,7 +375,7 @@ public class MainController extends BorderPane {
         }
     }
 
-    
+
 
     /**
      * Common method to handle view navigation.
@@ -318,28 +388,67 @@ public class MainController extends BorderPane {
     private void navigateToView(ActionEvent event, String viewPath, String title) {
         Objects.requireNonNull(event, "ActionEvent cannot be null");
         Objects.requireNonNull(viewPath, "View path cannot be null");
-        
+
         try {
             // Special handling for home view to prevent sidebar recreation
             if (viewPath.endsWith("home-view.fxml")) {
                 showHome(event);
                 return;
             }
+
+            // Ensure we have the latest user from the session
+            User currentUserFromSession = sessionToken != null ? authService.getUserFromSession(sessionToken) : null;
+            this.currentUser = currentUserFromSession;
+            this.isGuest = (this.currentUser == null);
             
+            logger.debug("Navigating to {} view with user: {}", 
+                title, currentUserFromSession != null ? currentUserFromSession.getUsername() : "null");
+
             Node source = (Node) event.getSource();
             Window window = source.getScene().getWindow();
             if (!(window instanceof Stage)) {
                 throw new IllegalStateException("Could not determine the current stage");
             }
-            
+
+            // Create data map with session token and user info
+            Map<String, Object> navigationData = new HashMap<>();
+            if (data != null) {
+                navigationData.putAll(data); // Copy existing data
+            }
+
+            // Ensure we have a valid session token
+            if (sessionToken == null && currentUser != null) {
+                try {
+                    sessionToken = authService.getCurrentSessionToken();
+                } catch (Exception e) {
+                    logger.error("Error getting session token: {}", e.getMessage(), e);
+                }
+            }
+
+            // Add session token and user info if available
+            if (sessionToken != null) {
+                navigationData.put("sessionToken", sessionToken);
+                if (currentUser != null) {
+                    navigationData.put("currentUser", currentUser);
+                }
+            }
+
+            // Update UI state before navigation
+            Platform.runLater(() -> {
+                updateUIForAuthState(!isGuest);
+                updateUserLabel();
+                if (currentUser != null) {
+                    updateUIForLoggedInUser(currentUser);
+                }
+            });
 
             // Navigate to the new view
             NavigationService navigationService = NavigationService.getInstance();
-            navigationService.navigateTo(viewPath, data, (Stage) window, title);
-            
-            
-            logger.debug("Navigated to {} view", title);
-            
+            navigationService.navigateTo(viewPath, navigationData, (Stage) window, title);
+
+            logger.debug("Navigated to {} view with session token: {}",
+                title, sessionToken != null ? "present" : "not present");
+
         } catch (Exception e) {
             String errorMsg = String.format("Failed to navigate to %s view: %s", title, e.getMessage());
             logger.error(errorMsg, e);
@@ -369,20 +478,20 @@ public class MainController extends BorderPane {
         // Initialize fields directly first
         this.currentUser = user;
         this.sessionToken = Objects.requireNonNull(sessionToken, "Session token cannot be null");
-        
+
         try {
             // Initialize services without using 'this' in a way that could escape
             this.uiCoordinator = ServiceLocator.getUICoordinator(UICoordinator.class);
-            
+
             // Set up the UI coordinator if available
             if (this.uiCoordinator != null) {
                 this.uiCoordinator.setUserSession(user, sessionToken);
             }
-            
+
             // Log initialization
-            logger.info("MainController initialized for user: {}", 
+            logger.info("MainController initialized for user: {}",
                 user != null ? user.getUsername() : "<guest>");
-                
+
         } catch (Exception e) {
             String errorMsg = String.format("Failed to initialize MainController: %s", e.getMessage());
             logger.error(errorMsg, e);
@@ -391,28 +500,7 @@ public class MainController extends BorderPane {
     }
 
 
-    /**
-     * Initializes the service layer components required by the controller.
-     * This includes setting up the data manager and UI coordinator.
-     *
-     * @throws IllegalStateException if required services cannot be initialized
-     */
-    private void initializeServices() {
-        // Prevent re-entrancy and redundant initialization
-        if (isInitialized) {
-            logger.debug("Services already initialized, skipping...");
-        }
-    }
 
-    /**
-     * Checks the current authentication state and updates the UI accordingly.
-            }
-        } catch (Exception e) {
-            logger.error("Error checking authentication: {}", e.getMessage(), e);
-            this.isGuest = true;
-            updateUIForGuestMode();
-        }
-    }
 
     /**
      * Sets the current user and updates the UI accordingly
@@ -421,7 +509,7 @@ public class MainController extends BorderPane {
     public void setCurrentUser(User user) {
         this.currentUser = user;
         this.isGuest = (user == null);
-        
+
         if (user != null) {
             // If we have a user, ensure we have a valid session
             if (sessionToken == null || authService.getUserFromSession(sessionToken) == null) {
@@ -439,35 +527,61 @@ public class MainController extends BorderPane {
             sessionToken = null;
             updateUIForAuthState(false);
         }
-        
+
         updateUserInterface();
     }
-    
+
     /**
      * Shows the login screen
      * @param event The action event that triggered this method
      */
     @FXML
     private void showLogin(ActionEvent event) {
-        if (getScene() != null && getScene().getWindow() != null) {
-            Object userData = getScene().getWindow().getUserData();
-            if (userData instanceof MovieAppGui) {
-                ((MovieAppGui) userData).showLoginScreen();
-            }
+        try {
+            // Get the current stage
+            Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
+
+            // Load the login view
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/auth/login-view.fxml"));
+            Parent root = loader.load();
+
+            // Set the scene
+            Scene scene = new Scene(root);
+            stage.setScene(scene);
+            stage.setTitle("Sign In");
+            stage.show();
+
+            logger.info("Navigated to login screen");
+        } catch (IOException e) {
+            logger.error("Failed to load login view: {}", e.getMessage(), e);
+            showError("Navigation Error", "Failed to load login screen: " + e.getMessage());
         }
     }
-    
+
     /**
      * Shows the registration screen
      * @param event The action event that triggered this method
      */
     @FXML
     private void showRegister(ActionEvent event) {
-        if (getScene() != null && getScene().getWindow() != null) {
-            Object userData = getScene().getWindow().getUserData();
-            if (userData instanceof MovieAppGui) {
-                ((MovieAppGui) userData).showRegisterScreen();
-            }
+        try {
+            // Get the current stage
+            Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
+
+            // Load the register view
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/auth/register-view.fxml"));
+            Parent root = loader.load();
+
+            // Set the scene
+            Scene scene = new Scene(root);
+            stage.setScene(scene);
+            stage.setTitle("Register");
+            stage.show();
+
+            logger.info("Navigated to register screen");
+        } catch (IOException e) {
+            logger.error("Failed to load register view: {}", e.getMessage(), e);
+            showError("Navigation Error", "Failed to load registration screen: " + e.getMessage());
         }
     }
 
@@ -483,13 +597,13 @@ public class MainController extends BorderPane {
                 authService.logout(sessionToken);
                 sessionToken = null;
             }
-            
+
             // Update UI for guest mode
             updateUIForAuthState(false);
-            
+
             // Clear any user-specific data
             setCurrentUser(null);
-            
+
             // Show login screen
             if (getScene() != null && getScene().getWindow() != null) {
                 Object userData = getScene().getWindow().getUserData();
@@ -497,7 +611,7 @@ public class MainController extends BorderPane {
                     ((MovieAppGui) userData).showLoginScreen();
                 }
             }
-            
+
         } catch (Exception e) {
             logger.error("Error during logout: {}", e.getMessage(), e);
             showError("Logout Error", "Failed to log out. Please try again.");
@@ -530,7 +644,7 @@ public class MainController extends BorderPane {
             updateUIForAuthState(false);
         }
     }
-    
+
     /**
      * Updates the UI for guest users.
      */
@@ -552,10 +666,10 @@ public class MainController extends BorderPane {
 
             // Initialize UI state based on authentication
             updateUIForAuthState(authService.isAuthenticated());
-            
+
             // Set up button actions
             setupButtonActions();
-            
+
             // Check if we have a logged-in user
             checkAuthentication();
 
@@ -566,7 +680,7 @@ public class MainController extends BorderPane {
             showError("Initialization Error", "Failed to initialize the application.");
         }
     }
-    
+
     /**
      * Sets up button actions for navigation
      */
@@ -596,13 +710,18 @@ public class MainController extends BorderPane {
             logoutButton.setOnAction(this::handleLogout);
         }
     }
-    
+
     /**
      * Updates the UI based on authentication state
      * @param isAuthenticated whether the user is authenticated
      */
     public void updateUIForAuthState(boolean isAuthenticated) {
         Platform.runLater(() -> {
+            logger.debug("Updating UI for authentication state: {}", isAuthenticated ? "AUTHENTICATED" : "GUEST");
+            
+            // Update authentication state
+            this.isGuest = !isAuthenticated;
+            
             // Update UI elements based on authentication state
             if (logoutButton != null) {
                 logoutButton.setVisible(isAuthenticated);
@@ -618,13 +737,28 @@ public class MainController extends BorderPane {
             }
             if (guestMessage != null) {
                 guestMessage.setVisible(!isAuthenticated);
+                guestMessage.setManaged(!isAuthenticated);
             }
-
+            if (userLabel != null) {
+                userLabel.setVisible(isAuthenticated);
+                userLabel.setManaged(isAuthenticated);
+                if (!isAuthenticated) {
+                    userLabel.setText("");
+                }
+            }
+            
+            // Update user label and welcome message
+            updateUserLabel();
+            
             // Enable/disable feature buttons based on authentication
             setFeatureButtonsEnabled(isAuthenticated);
-
-            // Update user label
-            updateUserLabel();
+            
+            // Log the current state for debugging
+            logger.debug("UI Update - Logout Button: {}, Sign In Button: {}, Register Button: {}, Guest Message: {}",
+                (logoutButton != null && logoutButton.isVisible()),
+                (signInButton != null && signInButton.isVisible()),
+                (registerButton != null && registerButton.isVisible()),
+                (guestMessage != null && guestMessage.isVisible()));
         });
     }
     
