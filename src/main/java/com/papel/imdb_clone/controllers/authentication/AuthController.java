@@ -74,6 +74,13 @@ public class AuthController extends BaseController implements Initializable {
 
     @FXML
     private Button loginButton;
+
+    
+    // Login form fields
+    @FXML
+    private TextField usernameField;  // Matches FXML fx:id="usernameField" in login-view.fxml
+    @FXML
+    private PasswordField passwordField;  // Matches FXML fx:id="passwordField" in login-view.fxml
     @FXML
     private Label loginErrorLabel;
 
@@ -82,8 +89,9 @@ public class AuthController extends BaseController implements Initializable {
     private TextField firstNameField;
     @FXML
     private TextField lastNameField;
+    // Register form fields
     @FXML
-    private TextField registerUsernameField;
+    private TextField registerUsernameField;  // This one is correct
     @FXML
     private ToggleGroup genderToggleGroup;
     @FXML
@@ -93,11 +101,14 @@ public class AuthController extends BaseController implements Initializable {
     @FXML
     private StackPane loginContainer;
     @FXML
-    public TextField loginPasswordVisibleField;
+    private StackPane registerContainer;
     @FXML
-    private TextField passwordVisibleField;
+    public TextField registerPasswordVisibleField;  // For password visibility toggle in register form
     @FXML
-    private TextField confirmPasswordVisibleField;
+    private TextField passwordVisibleField;  // For password visibility toggle in login form
+    @FXML
+    private TextField confirmPasswordVisibleField;  // This one is correct
+    private TextField loginPasswordVisibleField;
 
 
     /**
@@ -126,41 +137,43 @@ public class AuthController extends BaseController implements Initializable {
         try {
             logger.debug("Initializing AuthController...");
 
-            // Explicitly initialize the login view if we're in the login view
+            // Initialize all UI components first
             if (loginContainer != null) {
-                logger.debug("Initializing login view");
+                logger.info("Login container found, initializing login view...");
                 initializeLoginView();
-            }
-            // If we're in the register view
-            else if (registerContainer != null) {
-                logger.debug("Initializing register view");
+            } else if (registerContainer != null) {
+                logger.info("Register container found, initializing register view...");
                 initializeRegisterView();
-            }
-            // Fallback to the old detection logic
-            else {
-                boolean isLoginView = loginUsernameField != null || loginButton != null;
-                boolean isRegisterView = registerUsernameField != null || registerButton != null;
+            } else {
+                // If no container is found, try to initialize based on available components
+                logger.info("No container found, initializing based on available components...");
 
-                logger.debug("Detected view type - Login: {}, Register: {}", isLoginView, isRegisterView);
+                boolean hasLoginComponents = loginUsernameField != null && loginPasswordField != null && loginButton != null;
+                boolean hasRegisterComponents = registerUsernameField != null && registerPasswordField != null &&
+                                              confirmPasswordField != null && registerButton != null;
 
-                if (isLoginView) {
-                    logger.debug("Initializing login view");
+                if (hasLoginComponents && hasRegisterComponents) {
+                    logger.info("Both login and register components found, initializing combined view...");
+                    initializeCombinedView();
+                } else if (hasLoginComponents) {
+                    logger.info("Login components found, initializing login form...");
                     setupLoginForm(loginPasswordVisibleField);
-                } else if (isRegisterView) {
-                    logger.debug("Initializing register view");
-                    setupRegistrationForm(passwordVisibleField, confirmPasswordVisibleField);
+                } else if (hasRegisterComponents) {
+                    logger.info("Register components found, initializing registration form...");
+                    setupRegistrationForm(registerPasswordVisibleField, confirmPasswordVisibleField);
                 } else {
-                    logger.warn("Could not determine view type - no known UI components found");
+                    logger.error("No valid UI components found for authentication");
+                    throw new IllegalStateException("No valid authentication components found in the view");
                 }
             }
 
-            logger.debug("AuthController initialization complete");
+            logger.debug("AuthController initialization completed successfully");
 
         } catch (Exception e) {
             String errorMsg = "Error initializing AuthController: " + e.getMessage();
             logger.error(errorMsg, e);
             Platform.runLater(() ->
-                showError("Initialization Error", "Failed to initialize the form: " + e.getMessage())
+                showError("Initialization Error", "Failed to initialize the authentication form: " + e.getMessage())
             );
         }
     }
@@ -170,25 +183,25 @@ public class AuthController extends BaseController implements Initializable {
      */
     private void initializeLoginView() {
         try {
-            if (loginButton != null && loginUsernameField != null && loginPasswordField != null) {
+            if (loginButton != null && usernameField != null && passwordField != null) {
                 // Unbind first to prevent memory leaks
                 loginButton.disableProperty().unbind();
 
                 // Set up login button binding
                 loginButton.disableProperty().bind(
-                    loginUsernameField.textProperty().isEmpty()
-                        .or(loginPasswordField.textProperty().isEmpty())
+                    usernameField.textProperty().isEmpty()
+                        .or(passwordField.textProperty().isEmpty())
                 );
 
                 // Set up password visibility toggle if available
-                if (loginPasswordVisibleField != null) {
-                    loginPasswordVisibleField.visibleProperty().bind(loginPasswordField.visibleProperty().not());
-                    loginPasswordField.visibleProperty().bind(loginPasswordVisibleField.visibleProperty().not());
-                    loginPasswordVisibleField.textProperty().bindBidirectional(loginPasswordField.textProperty());
+                if (passwordVisibleField != null) {
+                    passwordVisibleField.visibleProperty().bind(passwordField.visibleProperty().not());
+                    passwordField.visibleProperty().bind(passwordVisibleField.visibleProperty().not());
+                    passwordVisibleField.textProperty().bindBidirectional(passwordField.textProperty());
                 }
 
                 // Handle Enter key press on password field
-                loginPasswordField.setOnKeyPressed(event -> {
+                passwordField.setOnKeyPressed(event -> {
                     if (event.getCode() == KeyCode.ENTER) {
                         handleLogin(new ActionEvent(loginButton, null));
                     }
@@ -198,8 +211,8 @@ public class AuthController extends BaseController implements Initializable {
             } else {
                 logger.warn("Missing required login view components");
                 if (loginButton == null) logger.warn("loginButton is null");
-                if (loginUsernameField == null) logger.warn("loginUsernameField is null");
-                if (loginPasswordField == null) logger.warn("loginPasswordField is null");
+                if (usernameField == null) logger.warn("usernameField is null");
+                if (passwordField == null) logger.warn("passwordField is null");
             }
         } catch (Exception e) {
             logger.error("Error initializing login view: {}", e.getMessage(), e);
@@ -287,43 +300,43 @@ public class AuthController extends BaseController implements Initializable {
             }
 
             // Set up login form components
-            if (loginButton != null && loginUsernameField != null && loginPasswordField != null) {
+            if (loginButton != null && usernameField != null && passwordField != null) {
                 // Unbind first to prevent memory leaks
                 loginButton.disableProperty().unbind();
 
                 // Set up login button binding
                 loginButton.disableProperty().bind(
-                    loginUsernameField.textProperty().isEmpty()
-                        .or(loginPasswordField.textProperty().isEmpty())
+                    usernameField.textProperty().isEmpty()
+                        .or(passwordField.textProperty().isEmpty())
                 );
 
                 // Set up password visibility toggle if available
-                if (loginPasswordVisibleField != null) {
-                    loginPasswordVisibleField.visibleProperty().bind(loginPasswordField.visibleProperty().not());
-                    loginPasswordField.visibleProperty().bind(loginPasswordVisibleField.visibleProperty().not());
-                    loginPasswordVisibleField.textProperty().bindBidirectional(loginPasswordField.textProperty());
+                if (passwordVisibleField != null) {
+                    passwordVisibleField.visibleProperty().bind(passwordField.visibleProperty().not());
+                    passwordField.visibleProperty().bind(passwordVisibleField.visibleProperty().not());
+                    passwordVisibleField.textProperty().bindBidirectional(passwordField.textProperty());
                 }
 
                 logger.debug("Login form components initialized");
             } else {
                 logger.warn("Missing required login form components");
                 if (loginButton == null) logger.warn("loginButton is null");
-                if (loginUsernameField == null) logger.warn("loginUsernameField is null");
-                if (loginPasswordField == null) logger.warn("loginPasswordField is null");
+                if (usernameField == null) logger.warn("usernameField is null");
+                if (passwordField == null) logger.warn("passwordField is null");
             }
 
             // Set up registration form
             if (registerButton != null && registerUsernameField != null &&
-                passwordField != null && confirmPasswordField != null) {
+                registerPasswordField != null && confirmPasswordField != null) {
 
                 // Unbind first to prevent memory leaks
                 registerButton.disableProperty().unbind();
 
                 // Set up password visibility toggle if available
-                if (passwordVisibleField != null && confirmPasswordVisibleField != null) {
-                    passwordVisibleField.visibleProperty().bind(passwordField.visibleProperty().not());
-                    passwordField.visibleProperty().bind(passwordVisibleField.visibleProperty().not());
-                    passwordVisibleField.textProperty().bindBidirectional(passwordField.textProperty());
+                if (registerPasswordVisibleField != null && confirmPasswordVisibleField != null) {
+                    registerPasswordVisibleField.visibleProperty().bind(registerPasswordField.visibleProperty().not());
+                    registerPasswordField.visibleProperty().bind(registerPasswordVisibleField.visibleProperty().not());
+                    registerPasswordVisibleField.textProperty().bindBidirectional(registerPasswordField.textProperty());
 
                     confirmPasswordVisibleField.visibleProperty().bind(confirmPasswordField.visibleProperty().not());
                     confirmPasswordField.visibleProperty().bind(confirmPasswordVisibleField.visibleProperty().not());
@@ -355,7 +368,7 @@ public class AuthController extends BaseController implements Initializable {
                 if (registerButton == null) logger.warn("registerButton is null");
                 if (registerUsernameField == null) logger.warn("registerUsernameField is null");
                 if (emailField == null) logger.warn("emailField is null");
-                if (passwordField == null) logger.warn("passwordField is null");
+                if (registerPasswordField == null) logger.warn("registerPasswordField is null");
                 if (confirmPasswordField == null) logger.warn("confirmPasswordField is null");
             }
 
@@ -467,7 +480,6 @@ public class AuthController extends BaseController implements Initializable {
 
     // UI Components
     public Hyperlink registerLink;
-    public StackPane registerContainer;
     public Hyperlink loginLink;
     public Label passwordStrengthLabel;
 
@@ -476,15 +488,14 @@ public class AuthController extends BaseController implements Initializable {
     @FXML
     private TextField loginUsernameField; // For login form
     @FXML
-    private TextField usernameField; // For registration form
+    private TextField emailField;  // This one is correct
     @FXML
-    private TextField emailField;
+    private PasswordField loginPasswordField;  // For login form
     @FXML
-    private PasswordField loginPasswordField; // For login form
+    private PasswordField registerPasswordField;  // For registration form
+ // For registration form
     @FXML
-    private PasswordField passwordField; // For registration form
-    @FXML
-    private PasswordField confirmPasswordField;
+    private PasswordField confirmPasswordField;  // This one is correct
     @FXML
     private Label errorLabel;
 
@@ -639,15 +650,15 @@ public class AuthController extends BaseController implements Initializable {
                                     .or(Bindings.createBooleanBinding(() ->
                                                     !inputValidator.isValidEmail(emailField.getText()),
                                             emailField.textProperty())))
-                            .or(passwordField.textProperty().isEmpty()
+                            .or(registerPasswordField.textProperty().isEmpty()
                                     .or(Bindings.createBooleanBinding(
-                                            () -> !passwordField.getText().equals(confirmPasswordField.getText()),
-                                            passwordField.textProperty(),
+                                            () -> !registerPasswordField.getText().equals(confirmPasswordField.getText()),
+                                            registerPasswordField.textProperty(),
                                             confirmPasswordField.textProperty())))
             );
 
             // Handle Enter key press in password fields
-            passwordField.setOnKeyPressed(this::handleRegisterKeyPress);
+            registerPasswordField.setOnKeyPressed(this::handleRegisterKeyPress);
             confirmPasswordField.setOnKeyPressed(this::handleRegisterKeyPress);
         } catch (Exception e) {
             throw new RuntimeException(e);
@@ -909,7 +920,7 @@ public class AuthController extends BaseController implements Initializable {
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/auth/login-view.fxml"));
             Parent root = loader.load();
-            
+
             // Get the current stage
             Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
             if (stage == null) {
@@ -940,14 +951,14 @@ public class AuthController extends BaseController implements Initializable {
     @FXML
     private void handleLogin(ActionEvent event) {
         try {
-            if (loginUsernameField == null || loginPasswordField == null) {
+            if (usernameField == null || passwordField == null) {
                 logger.error("Login form not properly initialized");
-                showError("Login Error", "Login form is not properly initialized. Please restart the application.");
+                showError("Login Error", "Login form is not properly initialized. Please try again.");
                 return;
             }
 
-            String usernameOrEmail = loginUsernameField.getText().trim();
-            String password = loginPasswordField.getText();
+            String usernameOrEmail = usernameField.getText().trim();
+            String password = passwordField.getText();
 
             if (usernameOrEmail.isEmpty() || password.isEmpty()) {
                 if (loginErrorLabel != null) {
@@ -1005,19 +1016,42 @@ public class AuthController extends BaseController implements Initializable {
 
     private void navigateToMainView(User user) {
         try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/main-view.fxml"));
+            // Get the current session token
+            String sessionToken = authService.getCurrentSessionToken();
+            
+            // Load the main view
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/base/home-view.fxml"));
             Parent root = loader.load();
 
+            // Get the MainController and set the user and session token
             MainController mainController = loader.getController();
+            
+            // Set the session token first before setting the user
+            if (sessionToken != null) {
+                mainController.setSessionToken(sessionToken);
+            }
+            
+            // Set the user and update UI states
             mainController.setUser(user);
+            mainController.setGuest(false);
+            mainController.updateUIForLoggedInUser(user);
+            mainController.updateUIForAuthState(true);
 
+            // Get the current stage
             Stage stage = (Stage) (loginButton != null ? loginButton.getScene().getWindow() :
-                    registerButton != null ? registerButton.getScene().getWindow() : null);
+                    registerButton != null ? registerButton.getScene().getWindow() : 
+                    usernameField != null ? usernameField.getScene().getWindow() : null);
 
             if (stage != null) {
+                // Set the new scene
                 Scene scene = new Scene(root);
                 stage.setScene(scene);
                 stage.show();
+                
+                // Force a refresh of the UI
+                Platform.runLater(() -> {
+                    mainController.updateUIForAuthState(true);
+                });
             } else {
                 throw new IllegalStateException("Could not determine current stage");
             }

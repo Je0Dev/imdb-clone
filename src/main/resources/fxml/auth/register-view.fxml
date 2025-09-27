@@ -10,7 +10,10 @@
             xmlns:fx="http://javafx.com/fxml/1">
     
     <center>
-        <VBox alignment="CENTER" spacing="20" style="-fx-padding: 40;">
+        <StackPane>
+            <!-- Register Container (initially hidden) -->
+            <StackPane fx:id="registerContainer" alignment="CENTER" style="-fx-padding: 40;" visible="false">
+                <VBox alignment="CENTER" spacing="20"
             <!-- Logo -->
             <Label text="IMDb Clone" style="-fx-text-fill: #f5c518; -fx-font-size: 36px; -fx-font-weight: bold; -fx-padding: 0 0 20 0;" />
             
@@ -46,8 +49,8 @@
                 </HBox>
                 
                 <Label fx:id="errorLabel" style="-fx-text-fill: #ff4444; -fx-padding: 10 0 0 0;" visible="false" />
-            </VBox>
-        </VBox>
+                </VBox>
+            </StackPane>
+        </StackPane>
     </center>
-    
 </BorderPane>

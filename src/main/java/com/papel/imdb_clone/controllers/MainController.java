@@ -47,13 +47,11 @@ public class MainController extends BorderPane {
 
     // Service dependencies
     private final ServiceLocator serviceLocator = ServiceLocator.getInstance();
-    private final com.papel.imdb_clone.service.validation.AuthService authService = 
-        com.papel.imdb_clone.service.validation.AuthService.getInstance();
+    private final AuthService authService = 
+        AuthService.getInstance();
     private UICoordinator uiCoordinator;
 
     // UI Components
-    @FXML private VBox sidebar;
-    private static final Logger sidebarLogger = LoggerFactory.getLogger("SidebarDebug");
     @FXML private Label statusLabel;
     @FXML private Label userLabel;
     @FXML private VBox featuredContent;
@@ -76,6 +74,44 @@ public class MainController extends BorderPane {
     private boolean isInitializing = false;
     private boolean isAdmin;
     private boolean isGuest = true; // Default to guest mode
+    
+    /**
+     * Sets the session token for the current user session.
+     * @param sessionToken The session token to set
+     */
+    public void setSessionToken(String sessionToken) {
+        logger.info("Setting session token: {}", sessionToken != null ? "[HIDDEN]" : "null");
+        this.sessionToken = sessionToken;
+        
+        // Update authentication state when session token is set
+        if (sessionToken != null) {
+            try {
+                this.currentUser = authService.getUserFromSession(sessionToken);
+                this.isGuest = (this.currentUser == null);
+                logger.info("Session token set for user: {}", 
+                    this.currentUser != null ? this.currentUser.getUsername() : "null");
+                
+                // Update UI on the JavaFX Application Thread
+                Platform.runLater(() -> {
+                    updateUIForAuthState(!isGuest);
+                    updateUserInterface();
+                    if (currentUser != null) {
+                        updateUIForLoggedInUser(currentUser);
+                    }
+                });
+            } catch (Exception e) {
+                logger.error("Error setting session token: {}", e.getMessage(), e);
+                this.isGuest = true;
+                this.currentUser = null;
+                Platform.runLater(() -> updateUIForAuthState(false));
+            }
+        } else {
+            this.isGuest = true;
+            this.currentUser = null;
+            logger.info("Session token cleared, switching to guest mode");
+            Platform.runLater(() -> updateUIForAuthState(false));
+        }
+    }
 
     // ===== Navigation Methods =====
 
@@ -89,16 +125,6 @@ public class MainController extends BorderPane {
     private void showHome(ActionEvent event) {
         try {
             logger.info("Navigating to home view");
-            
-            // Store a reference to the current sidebar or create a new one if needed
-            VBox currentSidebar = this.sidebar != null ? this.sidebar : loadSidebar();
-            
-            // Ensure sidebar is properly configured
-            if (currentSidebar != null) {
-                currentSidebar.setDisable(false);
-                currentSidebar.setVisible(true);
-                currentSidebar.setManaged(true);
-            }
             
             // Create a simple home content panel
             VBox homeContent = new VBox(20);
@@ -172,13 +198,8 @@ public class MainController extends BorderPane {
                         }
                     }
                     
-                    // Always update the center content and sidebar
+                    // Set the home content
                     rootPane.setCenter(homeContent);
-                    
-                    if (currentSidebar != null) {
-                        rootPane.setLeft(currentSidebar);
-                        this.sidebar = currentSidebar; // Update the reference
-                    }
                     
                     // Ensure the window is visible
                     if (currentScene.getWindow() != null) {
@@ -188,7 +209,7 @@ public class MainController extends BorderPane {
                     // Request focus on the content
                     homeContent.requestFocus();
                     
-                    logger.info("Home view loaded successfully with preserved sidebar");
+                    logger.info("Home view loaded successfully");
                     
                 } catch (Exception e) {
                     logger.error("Error updating home view: ", e);
@@ -202,18 +223,6 @@ public class MainController extends BorderPane {
         }
     }
 
-    //load sidebar
-    private VBox loadSidebar() {
-        try {
-            // Load the sidebar FXML
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("sidebar-view.fxml"));
-            return loader.load();
-        } catch (IOException e) {
-            logger.error("Failed to load sidebar: {}", e.getMessage(), e);
-            showError("Navigation Error", "Failed to load sidebar: " + e.getMessage());
-            return null;
-        }
-    }
 
     /**
      * Handles navigation to the movies view.
@@ -323,18 +332,11 @@ public class MainController extends BorderPane {
                 throw new IllegalStateException("Could not determine the current stage");
             }
             
-            // Store the current sidebar state
-            VBox currentSidebar = this.sidebar;
-            
+
             // Navigate to the new view
             NavigationService navigationService = NavigationService.getInstance();
             navigationService.navigateTo(viewPath, data, (Stage) window, title);
             
-            // If we have a sidebar reference, ensure it's restored
-            if (currentSidebar != null && this.sidebar == null) {
-                this.setLeft(currentSidebar);
-                this.sidebar = currentSidebar;
-            }
             
             logger.debug("Navigated to {} view", title);
             
@@ -420,11 +422,25 @@ public class MainController extends BorderPane {
         this.currentUser = user;
         this.isGuest = (user == null);
         
-        if (isGuest) {
-            updateUIForGuestMode();
+        if (user != null) {
+            // If we have a user, ensure we have a valid session
+            if (sessionToken == null || authService.getUserFromSession(sessionToken) == null) {
+                // Try to get a valid session token
+                try {
+                    sessionToken = authService.getCurrentSessionToken();
+                } catch (Exception e) {
+                    logger.error("Error getting session token: {}", e.getMessage(), e);
+                    sessionToken = null;
+                }
+            }
+            updateUIForAuthState(true);
         } else {
-            updateUserInterface();
+            // Logging out
+            sessionToken = null;
+            updateUIForAuthState(false);
         }
+        
+        updateUserInterface();
     }
     
     /**
@@ -603,10 +619,10 @@ public class MainController extends BorderPane {
             if (guestMessage != null) {
                 guestMessage.setVisible(!isAuthenticated);
             }
-            
+
             // Enable/disable feature buttons based on authentication
             setFeatureButtonsEnabled(isAuthenticated);
-            
+
             // Update user label
             updateUserLabel();
         });
@@ -671,8 +687,8 @@ public class MainController extends BorderPane {
 
     public void updateUserInterface() {
         updateUserLabel();
-        updateSidebarState();
         updateStatusBar();
+        updateUIForAuthState(currentUser != null);
     }
 
     /**
@@ -689,70 +705,6 @@ public class MainController extends BorderPane {
     }
 
 
-    /**
-     * Updates the sidebar state based on the current user's permissions.
-     */
-    public void updateSidebarState() {
-        if (sidebar == null) {
-            logger.warn("Sidebar component is not initialized");
-            return;
-        }
-        
-        // Force enable the sidebar and make it visible
-        sidebar.setDisable(false);
-        sidebar.setVisible(true);
-        sidebar.setManaged(true);
-        
-        boolean isLoggedIn = currentUser != null;
-        isAdmin = isLoggedIn && currentUser.isAdmin();
-        
-        // Log state changes
-        sidebarLogger.info("Updating sidebar state - Logged In: {}, Admin: {}", isLoggedIn, isAdmin);
-        
-        // Set opacity based on login state
-        double targetOpacity = isLoggedIn ? 1.0 : 0.5;
-        sidebar.setOpacity(targetOpacity);
-        
-        // Process all buttons in the sidebar
-        Platform.runLater(() -> {
-            for (Node node : sidebar.getChildren()) {
-                if (node instanceof Button button) {
-                    String buttonText = button.getText();
-                    if (isLoggedIn) {
-                        // For logged-in users, enable all buttons
-                        button.setDisable(false);
-                        button.setOpacity(1.0);
-                        button.setVisible(true);
-                        button.setManaged(true);
-                        sidebarLogger.info("Enabled button: {}", buttonText);
-                    } else {
-                        // For guests, only enable Sign In and Register buttons
-                        boolean shouldEnable = buttonText != null && 
-                            (buttonText.equals("Sign In") || buttonText.equals("Register"));
-                        button.setDisable(!shouldEnable);
-                        button.setOpacity(shouldEnable ? 1.0 : 0.5);
-                        button.setVisible(true);
-                        button.setManaged(true);
-                        sidebarLogger.info("Button '{}' set to: {}", buttonText, shouldEnable ? "enabled" : "disabled");
-                    }
-                }
-            }
-        });
-        
-        // Add a listener to prevent disabling
-        sidebar.disableProperty().addListener((obs, oldVal, newVal) -> {
-            if (newVal) {
-                sidebarLogger.warn("Preventing sidebar from being disabled");
-                Platform.runLater(() -> {
-                    sidebar.setDisable(false);
-                    sidebar.setVisible(true);
-                    sidebar.setManaged(true);
-                });
-            }
-        });
-        
-        logger.debug("Sidebar state updated - Logged In: {}, Admin: {}", isLoggedIn, isAdmin);
-    }
     
     /**
      * Updates the status bar with the current application state.
@@ -916,13 +868,38 @@ public class MainController extends BorderPane {
         }
     }
 
+    /**
+     * Sets the current user and updates the UI accordingly.
+     * @param user The user to set as current, or null to log out
+     */
     public void setUser(User user) {
         this.currentUser = user;
+        this.isGuest = (user == null);
         updateUserInterface();
+        updateAuthUI();
     }
 
+    /**
+     * Updates the UI to reflect the logged-in user's state
+     * @param stage The logged-in user
+     */
     public void setStage(Stage stage) {
         this.primaryStage = stage;
+        // Initialize UI components that depend on the stage
+        if (stage != null) {
+            Platform.runLater(this::initializeUI);
+        }
+    }
 
+    public void setGuest(boolean b) {
+        this.isGuest = b;
+        updateAuthUI();
+    }
+
+    public void updateUIForLoggedInUser(User user) {
+        this.currentUser = user;
+        this.isGuest = false;
+        updateAuthUI();
+        updateUserInterface();
     }
 }
