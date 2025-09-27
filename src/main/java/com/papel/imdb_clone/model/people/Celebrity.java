@@ -152,10 +152,31 @@ public abstract class Celebrity {
      */
     public void setNotableWorks(String worksString) {
         if (worksString != null && !worksString.trim().isEmpty()) {
-            this.notableWorks = Arrays.stream(worksString.split(","))
+            // First, clean up the string by removing any surrounding quotes and extra spaces
+            String cleaned = worksString.trim()
+                .replaceAll("^[\"']|[\"']$", "")  // Remove surrounding quotes
+                .replace("\"", "")  // Remove any remaining quotes
+                .replace("  ", " ")   // Replace double spaces with single space
+                .trim();
+            
+            // Handle different delimiters (comma, semicolon, or newline)
+            this.notableWorks = Arrays.stream(cleaned.split("[,;\n]"))
                 .map(String::trim)
                 .filter(s -> !s.isEmpty())
                 .collect(Collectors.toList());
+            
+            // If still no works found, try splitting by spaces as a last resort
+            if (this.notableWorks.isEmpty() && cleaned.contains(" ")) {
+                this.notableWorks = Arrays.stream(cleaned.split("\\s+"))
+                    .map(String::trim)
+                    .filter(s -> !s.isEmpty())
+                    .collect(Collectors.toList());
+            }
+            
+            // Log the parsed works for debugging
+            if (!this.notableWorks.isEmpty()) {
+                System.out.println("Parsed notable works for " + getFullName() + ": " + String.join(", ", this.notableWorks));
+            }
         } else {
             this.notableWorks = new ArrayList<>();
         }

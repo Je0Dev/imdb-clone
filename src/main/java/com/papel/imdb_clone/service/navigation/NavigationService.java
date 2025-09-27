@@ -10,9 +10,12 @@ import com.papel.imdb_clone.service.content.MoviesService;
 import com.papel.imdb_clone.service.content.SeriesService;
 import com.papel.imdb_clone.service.search.SearchService;
 import com.papel.imdb_clone.service.search.ServiceLocator;
+import com.papel.imdb_clone.service.validation.AuthService;
 import javafx.fxml.FXMLLoader;
+import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
+import javafx.scene.layout.BorderPane;
 import javafx.stage.Stage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,16 +30,18 @@ import java.util.Stack;
  * Service for handling navigation between views.
  */
 public class NavigationService {
+
     private static final Logger logger = LoggerFactory.getLogger(NavigationService.class);
     private static NavigationService instance;
     private final Stack<Scene> sceneStack = new Stack<>();
     private final Map<String, Object> userData = new HashMap<>();
+    private Node newContent;
 
     /**
      * Private constructor to enforce singleton pattern and module encapsulation.
      */
     private NavigationService() {
-        // Private constructor to prevent direct instantiation
+        // Private constructor to prevent direct instantiation\
     }
     private Object currentController;
 
@@ -62,7 +67,7 @@ public class NavigationService {
                 throw new IllegalArgumentException("FXML path cannot be null or empty");
             }
 
-            // Try to get the primary stage if currentStage is null
+            // Get the current stage if not provided
             if (currentStage == null) {
                 currentStage = ServiceLocator.getPrimaryStage();
                 if (currentStage == null) {
@@ -70,66 +75,116 @@ public class NavigationService {
                 }
             }
 
-            // Load the FXML
-            FXMLLoader loader = new FXMLLoader(getClass().getResource(fxmlPath));
-            if (loader.getLocation() == null) {
-                throw new IOException("FXML file not found: " + fxmlPath);
+            // Get the current scene and root
+            Scene currentScene = currentStage.getScene();
+            if (currentScene == null) {
+                // First time loading, just load the full scene
+                loadFullScene(fxmlPath, currentStage, title);
+                return;
             }
-            
-            Parent root = loader.load();
-            
-            // Initialize controllers with required services 
-            Object controller = loader.getController();
-            if (controller != null) {
-                switch (controller) {
-                    case MainController mainController -> mainController.setPrimaryStage(currentStage);
-                    case MoviesController moviesController -> {
-                        MoviesService moviesService = MoviesService.getInstance();
-                        moviesController.setContentService(moviesService);
-                        moviesController.initializeController(0); // Replace with actual user ID
-                    }
-                    case SeriesController seriesController -> {
-                        SeriesService seriesService = SeriesService.getInstance();
-                        seriesController.setContentService(seriesService);
-                        seriesController.initializeController(0); // Replace with actual user ID
-                    }
-                    case AdvancedSearchController advancedSearchController -> {
-                        // The controller initializes itself, no additional setup needed
-                        logger.debug("AdvancedSearchController initialized");
-                    }
-                    case EditContentController editContentController -> {
-                        // The controller initializes itself, no additional setup needed
-                        logger.debug("EditContentController initialized");
-                    }
-                    case CelebritiesController celebritiesController -> {
-                        // The controller initializes itself, no additional setup needed
-                        logger.debug("CelebritiesController initialized");
-                    }
-                    default -> {
-                        logger.warn("Controller not found for FXML path: {}", fxmlPath);
-                        throw new IllegalArgumentException("Controller not found for FXML path: " + fxmlPath);
-                    }
+
+            // Check if we have a BorderPane as root
+            if (currentScene.getRoot() instanceof BorderPane) {
+                BorderPane rootPane = (BorderPane) currentScene.getRoot();
+                Node sidebar = rootPane.getLeft();
+                
+                // Load the new content
+                FXMLLoader loader = new FXMLLoader(getClass().getResource(fxmlPath));
+                if (loader.getLocation() == null) {
+                    throw new IOException("FXML file not found: " + fxmlPath);
                 }
+                
+                Node newContent = loader.load();
+                
+                // Initialize the controller
+                Object controller = loader.getController();
+                if (controller != null) {
+                    initializeController(controller);
+                }
+                
+                // Update only the center content
+                rootPane.setCenter(newContent);
+                
+                // Ensure sidebar is preserved
+                if (rootPane.getLeft() == null && sidebar != null) {
+                    rootPane.setLeft(sidebar);
+                }
+                
+                // Update title and store controller
+                currentStage.setTitle(title);
+                this.currentController = controller;
+                
+                logger.debug("Updated center content for: " + title);
+            } else {
+                // Not a BorderPane, load full scene
+                loadFullScene(fxmlPath, currentStage, title);
             }
-
-            // Set up the scene and show the stage
-            Scene scene = new Scene(root);
-            currentStage.setScene(scene);
-            currentStage.setTitle(title);
-            currentStage.show();
-            currentStage.centerOnScreen();
             
-            // Store the current scene in the stack for back navigation
-            sceneStack.push(scene);
-
-        } catch (IOException e) {
-            String errorMsg = String.format("Failed to load FXML: %s. Error: %s", fxmlPath, e.getMessage());
-            logger.error(errorMsg, e);
-            throw new RuntimeException(errorMsg, e);
         } catch (Exception e) {
-            String errorMsg = String.format("Unexpected error navigating to %s: %s", fxmlPath, e.getMessage());
+            String errorMsg = String.format("Failed to navigate to %s: %s", title, e.getMessage());
             logger.error(errorMsg, e);
             throw new RuntimeException(errorMsg, e);
+        }
+    }
+    
+    private void loadFullScene(String fxmlPath, Stage stage, String title) throws Exception {
+        FXMLLoader loader = new FXMLLoader(getClass().getResource(fxmlPath));
+        Parent root = loader.load();
+        
+        // Initialize controller if it exists
+        Object controller = loader.getController();
+        if (controller != null) {
+            initializeController(controller);
+        }
+        
+        Scene scene = new Scene(root);
+        stage.setScene(scene);
+        stage.setTitle(title);
+        stage.show();
+        
+        this.currentController = controller;
+    }
+    
+    private void initializeController(Object controller) throws Exception {
+        // Get the current session token from user data
+        String sessionToken = (String) getUserData("sessionToken");
+        int currentUserId = -1;
+        
+        if (sessionToken != null && !sessionToken.isEmpty()) {
+            // Get the current user ID from AuthService
+            AuthService authService = AuthService.getInstance();
+            currentUserId = authService.getCurrentUserId(sessionToken);
+            logger.debug("Current user ID: {}", currentUserId);
+        } else {
+            logger.debug("No session token found, using default user ID (-1)");
+        }
+
+        if (controller instanceof MainController) {
+            ((MainController) controller).setPrimaryStage(ServiceLocator.getPrimaryStage());
+        } else if (controller instanceof MoviesController) {
+            MoviesService moviesService = MoviesService.getInstance();
+            ((MoviesController) controller).setContentService(moviesService);
+            ((MoviesController) controller).initializeController(currentUserId);
+        } else if (controller instanceof SeriesController) {
+            SeriesService seriesService = SeriesService.getInstance();
+            ((SeriesController) controller).setContentService(seriesService);
+            ((SeriesController) controller).initializeController(currentUserId);
+        } else if (controller instanceof AdvancedSearchController) {
+            logger.debug("AdvancedSearchController initialized");
+        } else if (controller instanceof EditContentController) {
+            logger.debug("EditContentController initialized");
+            // Get content type from user data and ensure it's set
+            String contentType = (String) getUserData("contentType");
+            if (contentType == null || contentType.trim().isEmpty()) {
+                logger.warn("No content type specified for EditContentController. Defaulting to 'movie'.");
+                contentType = "movie";
+                setUserData("contentType", contentType);
+            }
+            logger.info("Initializing EditContentController with content type: {}", contentType);
+        } else if (controller instanceof CelebritiesController) {
+            logger.debug("CelebritiesController initialized");
+        } else {
+            logger.warn("Unknown controller type: {}", controller.getClass().getName());
         }
     }
 
@@ -162,10 +217,6 @@ public class NavigationService {
         }
     }
 
-    //show home when click on home button-imdb clone app text
-    public void showHome() {
-        navigateTo("/fxml/base/home-view.fxml", null, ServiceLocator.getPrimaryStage(), "Imdb Clone");
-    }
     
     /**
      * Gets the current controller instance.
@@ -194,10 +245,10 @@ public class NavigationService {
     }
 
     public void showLogin(Stage primaryStage) {
-        navigateTo("/fxml/authentication//auth-view.fxml", null, primaryStage, "Login");
+        navigateTo("/fxml/authentication/auth-view.fxml", null, primaryStage, "Login");
     }
 
     public void showRegister(Stage primaryStage) {
-        navigateTo("/fxml/authentication//auth-view.fxml", null, primaryStage, "Register");
+        navigateTo("/fxml/authentication/auth-view.fxml", null, primaryStage, "Register");
     }
 }

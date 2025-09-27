@@ -57,7 +57,7 @@ public class UICoordinator {
     }
 
 
-
+    //Primary stage and current user
     private Stage primaryStage;
     private User currentUser;
 
@@ -301,7 +301,7 @@ private void loadContentView() throws IOException {
                 seriesController.initialize(currentUser.getId());
             }
         } catch (Exception e) {
-            logger.error("Failed to load series view: " + e.getMessage(), e);
+            logger.error("Failed to load series view: {}", e.getMessage(), e);
             // Continue with other views even if one fails
         }
         
@@ -309,7 +309,7 @@ private void loadContentView() throws IOException {
         try {
             homeView = loadView("/fxml/base/home-view.fxml");
         } catch (Exception e) {
-            logger.error("Failed to load home view: " + e.getMessage(), e);
+            logger.error("Failed to load home view: {}", e.getMessage(), e);
             // Continue with other views even if one fails
         }
         

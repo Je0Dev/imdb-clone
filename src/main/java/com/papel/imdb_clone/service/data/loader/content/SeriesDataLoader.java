@@ -27,6 +27,7 @@ import java.util.Calendar;
  * Loads series data from files.
  */
 public class SeriesDataLoader extends BaseDataLoader {
+
     private static final Logger logger = LoggerFactory.getLogger(SeriesDataLoader.class);
     private final SeriesService seriesService;
     private final CelebrityService<Actor> actorService;

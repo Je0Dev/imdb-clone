@@ -52,8 +52,6 @@ Nightmare Alley,2021,THRILLER,150,Guillermo del Toro,7.1,Bradley Cooper;Cate Bla
 House of Gucci,2021,DRAMA,158,Ridley Scott,6.6,Lady Gaga;Adam Driver;Jared Leto
 The Matrix Resurrections,2021,SCI_FI,148,Lana Wachowski,5.7,Keanu Reeves;Carrie-Anne Moss;Yahya Abdul-Mateen II
 Spider-Man: Far From Home,2019,ACTION,129,Jon Watts,7.5,Tom Holland;Samuel L. Jackson;Jake Gyllen
-
-# Additional Movies
 Parasite,2019,THRILLER,132,Bong Joon Ho,8.6,Song Kang-ho;Lee Sun-kyun;Cho Yeo-jeong
 Whiplash,2014,DRAMA,106,Damien Chazelle,8.5,Miles Teller;J.K. Simmons;Melissa Benoist
 The Grand Budapest Hotel,2014,COMEDY,99,Wes Anderson,8.1,Ralph Fiennes;F. Murray Abraham;Mathieu Amalric

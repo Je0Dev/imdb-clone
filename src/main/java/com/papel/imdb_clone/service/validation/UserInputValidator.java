@@ -32,6 +32,7 @@ public class UserInputValidator {
     /**
      * Validates user registration input.
      */
+    //TODO: use validateRegistration method
     public void validateRegistration(String firstName, String lastName, String username,
                                      String email, String password, String confirmPassword) {
         Map<String, String> errors = new HashMap<>();

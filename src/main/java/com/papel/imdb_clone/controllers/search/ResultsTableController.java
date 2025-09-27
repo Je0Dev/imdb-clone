@@ -27,6 +27,13 @@ import java.util.stream.Collectors;
 public class ResultsTableController extends BaseSearchController {
     private static final Logger logger = LoggerFactory.getLogger(ResultsTableController.class);
 
+    /**
+     * Constructs a new ResultsTableController.
+     */
+    public ResultsTableController() {
+        super();
+    }
+
     @FXML
     private TableView<Content> resultsTable;
     @FXML

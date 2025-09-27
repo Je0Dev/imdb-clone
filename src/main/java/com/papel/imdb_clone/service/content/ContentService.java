@@ -8,7 +8,7 @@ import java.util.Optional;
  * @param <T> The type of content this service manages
  */
 public interface ContentService<T> {
-    
+
     /**
      * Get all content items
      * @return List of all content items

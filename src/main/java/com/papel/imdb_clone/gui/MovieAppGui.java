@@ -21,15 +21,19 @@ import java.io.IOException;
 public class MovieAppGui extends Application {
     private static final Logger logger = LoggerFactory.getLogger(MovieAppGui.class);
 
+    private static final String LOGIN_VIEW = "/fxml/auth/login-view.fxml";
+    private static final String REGISTER_VIEW = "/fxml/auth/register-view.fxml";
+    private Stage authStage; // Reference to the authentication stage
 
-    private static final String HOME_FXML = "/fxml/base/home-view.fxml";
-    private static final String AUTH_VIEW = "/fxml/authentication/auth-view.fxml";
+    /**
+     * Constructs a new MovieAppGui instance.
+     */
+    public MovieAppGui() {
+        // Explicit constructor to prevent exposure of default constructor in exported package
+    }
 
-
-    private String currentSessionToken;
-    private ApplicationConfig config;
-    private ServiceLocator serviceLocator;
-
+    private ApplicationConfig config; // Application configuration
+    private ServiceLocator serviceLocator; // Service locator
 
     /**
      * Initializes the application
@@ -64,7 +68,7 @@ public class MovieAppGui extends Application {
 
             // Show login screen first
             System.out.println("[Startup] About to show login screen...");
-            showLoginScreen();
+            showAuthScreen(LOGIN_VIEW, "Login");
             System.out.println("[Startup] Login screen shown");
 
         } catch (Exception e) {
@@ -94,52 +98,66 @@ public class MovieAppGui extends Application {
         logger.info("Application initialization complete");
     }
 
-    private void showLoginScreen() {
+    /**
+     * Shows the authentication screen (login or register)
+     * @param fxmlPath Path to the FXML file to load
+     * @param title Title for the authentication window
+     */
+    private void showAuthScreen(String fxmlPath, String title) {
         try {
-            //show login screen
-            System.out.println("[Login] Creating login screen...");
-            FXMLLoader loader = new FXMLLoader(getClass().getResource(AUTH_VIEW));
-            Parent authRoot = loader.load();
-            AuthController authController = loader.getController();
-
-            // Get the auth controller
-            Stage authStage = getStage(loader, authRoot);
-
-            //Show the login screen
-            System.out.println("[Login] Showing login screen...");
-            authStage.show();
-
+            System.out.println("[" + title + "] Creating " + title.toLowerCase() + " screen...");
+            FXMLLoader loader = new FXMLLoader(getClass().getResource(fxmlPath));
+            Parent root = loader.load();
+            
+            if (authStage == null) {
+                authStage = new Stage();
+                authStage.setTitle(title + " - " + config.getAppTitle());
+                authStage.setMinWidth(1000);
+                authStage.setMinHeight(700);
+                authStage.setResizable(true);
+                authStage.centerOnScreen();
+            } else {
+                authStage.getScene().setRoot(root);
+            }
+            
+            // Set the stage in the controller if it's an AuthController
+            Object controller = loader.getController();
+            if (controller instanceof AuthController) {
+                ((AuthController) controller).setStage(authStage);
+            }
+            
+            // Set up the scene if it's the first time
+            if (authStage.getScene() == null) {
+                Scene scene = new Scene(root, 1200, 800);
+                authStage.setScene(scene);
+            }
+            
+            System.out.println("[" + title + "] Showing " + title.toLowerCase() + " screen...");
+            if (!authStage.isShowing()) {
+                authStage.show();
+            }
+            
         } catch (Exception e) {
-            System.err.println("[Login][ERROR] Failed to show login screen: " + e);
+            System.err.println("[" + title + "][ERROR] Failed to show " + title.toLowerCase() + " screen: " + e);
             showErrorAndExit(e);
             Platform.exit();
         }
     }
-
+    
     /**
-     * Gets the stage for the login screen
-     * @param loader loader for the login screen
-     * @param authRoot authRoot that contains the login screen
-     * @return stage for the login screen
+     * Shows the login screen
      */
-    private Stage getStage(FXMLLoader loader, Parent authRoot) {
-        AuthController authController = loader.getController();
-
-        // Create auth stage
-        Stage authStage = new Stage();
-        authStage.setTitle("Login - " + config.getAppTitle());
-        Scene scene = new Scene(authRoot, 1200, 800);
-        authStage.setScene(scene);
-        authStage.setMinWidth(1000);
-        authStage.setMinHeight(700);
-        authStage.setResizable(true);
-        authStage.centerOnScreen();
-        System.out.println("[Login] Login stage created");
-
-        //Set the auth controller
-        authController.setStage(authStage);
-        return authStage;
+    public void showLoginScreen() {
+        showAuthScreen(LOGIN_VIEW, "Login");
     }
+    
+    /**
+     * Shows the registration screen
+     */
+    public void showRegisterScreen() {
+        showAuthScreen(REGISTER_VIEW, "Register");
+    }
+
 
 
     /**

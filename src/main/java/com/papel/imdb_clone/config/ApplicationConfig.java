@@ -8,19 +8,17 @@ import java.util.logging.Logger;
 
 /**
  * Application configuration management class.
- *
  */
 public class ApplicationConfig {
-    private static final Logger LOGGER = Logger.getLogger(ApplicationConfig.class.getName());
-    private static volatile ApplicationConfig instance;
-    private final Properties properties;
+
+    private static final Logger LOGGER = Logger.getLogger(ApplicationConfig.class.getName()); // Logger for logging
+    private static volatile ApplicationConfig instance; // Singleton instance
+    private final Properties properties; // Properties for configuration
 
     // Default configuration values
     private static final String DEFAULT_APP_TITLE = "IMDb Clone JavaFX";
     private static final String APP_PROPERTIES_FILE = "/application.properties";
     private static final String DEFAULT_APP_VERSION = "1.0";
-    private static final String DEFAULT_APP_DESCRIPTION = "IMDb Clone JavaFX";
-
     /**
      * Private constructor to prevent direct instantiation.
      * Loads the configuration during object creation
@@ -29,7 +27,6 @@ public class ApplicationConfig {
         this.properties = new Properties();
         this.properties.put("app.title", DEFAULT_APP_TITLE);
         this.properties.put("app.version", DEFAULT_APP_VERSION);
-        this.properties.put("app.description", DEFAULT_APP_DESCRIPTION);
         loadConfiguration();
     }
 
@@ -41,6 +38,7 @@ public class ApplicationConfig {
     public static ApplicationConfig getInstance() {
         ApplicationConfig result = instance;
         if (result == null) {
+            // double-checked locking
             synchronized (ApplicationConfig.class) {
                 result = instance;
                 if (result == null) {
@@ -97,45 +95,4 @@ public class ApplicationConfig {
         return properties.getProperty("app.title", DEFAULT_APP_TITLE);
     }
 
-    /**
-     * Gets a configuration property as a String.
-     *
-     * @param key The property key
-     * @param defaultValue The default value to return if the key is not found
-     * @return The property value or the default value if the key is not found
-     */
-    public String getProperty(String key, String defaultValue) {
-        return properties.getProperty(key, defaultValue);
-    }
-
-    /**
-     * Gets a configuration property as an integer.
-     *
-     * @param key The property key
-     * @param defaultValue The default value to return if the key is not found or not a valid integer
-     * @return The property value as an integer or the default value if the key is not found or invalid
-     */
-    public int getIntProperty(String key, int defaultValue) {
-        try {
-            return Integer.parseInt(properties.getProperty(key, String.valueOf(defaultValue)));
-        } catch (NumberFormatException e) {
-            LOGGER.log(Level.WARNING, "Invalid integer value for property: {0}", key);
-            return defaultValue;
-        }
-    }
-
-    /**
-     * Gets a configuration property as a boolean.
-     *
-     * @param key The property key
-     * @param defaultValue The default value to return if the key is not found
-     * @return The property value as a boolean or the default value if the key is not found
-     */
-    public boolean getBooleanProperty(String key, boolean defaultValue) {
-        String value = properties.getProperty(key);
-        if (value == null) {
-            return defaultValue;
-        }
-        return Boolean.parseBoolean(value);
-    }
 }

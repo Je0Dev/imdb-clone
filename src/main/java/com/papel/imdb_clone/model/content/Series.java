@@ -48,14 +48,13 @@ public class Series extends Content {
     public Series(String title) {
         // Call parent constructor with minimal defaults
         super(title, null, null, null, null, 0.0);
+        // Initialize fields directly to avoid "this" escape
         this.seasons = new ArrayList<>();
-        // Initialize other fields
         this.actors = new ArrayList<>();
         this.awards = new ArrayList<>();
         this.genres = new ArrayList<>();
-        this.actors = new ArrayList<>();
-        this.awards = new ArrayList<>();
-        // Set the current year as default
+        
+        // Set the current year using the parent class's setter method
         Calendar cal = Calendar.getInstance();
         cal.setTime(new java.util.Date());
         setStartYear(cal.get(Calendar.YEAR));
@@ -75,6 +74,7 @@ public class Series extends Content {
         this.actors = new ArrayList<>();
         this.awards = new ArrayList<>();
         this.rating = userRating;
+        // Set start year using the parent class's setter method
         setStartYear(startYear);
     }
 
@@ -191,7 +191,7 @@ public class Series extends Content {
                 endYear, getStartYear(), getTitle());
             throw new IllegalArgumentException("End year cannot be before start year");
         }
-        super.setEndYear(endYear);
+        super.setEndYear(endYear);  // Call parent's setEndYear directly to avoid recursion
         logger.debug("Set end year to {} for series '{}'", endYear, getTitle());
     }
     
@@ -200,29 +200,29 @@ public class Series extends Content {
     public void setEndYear(Object endYear) {
         if (endYear == null) {
             logger.debug("End year is null, setting to 0 (ongoing)");
-            setEndYear(0);
+            super.setEndYear(0);  // Call parent's method directly
         } else if (endYear instanceof Integer) {
             logger.debug("Setting end year from Integer: {}", endYear);
-            setEndYear((Integer) endYear);
+            this.setEndYear((Integer) endYear);  // Call the int version of setEndYear
         } else if (endYear instanceof String) {
             String endYearStr = endYear.toString().trim();
             if (endYearStr.isEmpty() || endYearStr.equals("-") || endYearStr.equalsIgnoreCase("N/A")) {
                 logger.debug("Empty or invalid end year string '{}', setting to 0 (ongoing)", endYearStr);
-                setEndYear(0);
+                super.setEndYear(0);  // Call parent's method directly
             } else {
                 try {
                     int year = Integer.parseInt(endYearStr);
                     logger.debug("Parsed end year from string '{}' to: {}", endYearStr, year);
-                    setEndYear(year);
+                    this.setEndYear(year);  // Call the int version of setEndYear
                 } catch (NumberFormatException e) {
                     logger.warn("Invalid end year format: '{}'", endYearStr);
-                    setEndYear(0);
+                    super.setEndYear(0);  // Call parent's method directly
                 }
             }
         } else {
             logger.warn("Unexpected end year type: {}", 
                 endYear != null ? endYear.getClass().getName() : "null");
-            setEndYear(0);
+            super.setEndYear(0);  // Call parent's method directly
         }
     }
 

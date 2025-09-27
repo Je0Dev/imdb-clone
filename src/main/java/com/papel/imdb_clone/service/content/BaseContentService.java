@@ -12,7 +12,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 public abstract class BaseContentService<T extends Content> implements ContentService<T> {
 
     //list of content
-    protected final List<T> contentList = new ArrayList<>();
+    protected final List<T> contentList = new ArrayList<>(); //content list
     protected final AtomicInteger nextId = new AtomicInteger(1);
     protected final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
     protected final Class<T> contentType;

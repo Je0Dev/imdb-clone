@@ -97,5 +97,8 @@ public class Season {
     public int getTotalEpisodes() {
         return episodes.size();
     }
-    
+
+    public int getEpisodesCount() {
+        return episodes.size();
+    }
 }

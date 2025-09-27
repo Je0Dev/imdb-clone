@@ -7,27 +7,15 @@
 
 <BorderPane style="-fx-background-color: #0f0f0f;" xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.papel.imdb_clone.controllers.MainController">
     
-    <left>
-        <VBox fx:id="sidebar" style="-fx-background-color: #1a1a1a; -fx-pref-width: 200; -fx-spacing: 10; -fx-padding: 20 10 10 10;">
-            <Label text="Menu" style="-fx-text-fill: #f5c518; -fx-font-weight: bold; -fx-font-size: 16; -fx-padding: 0 0 10 10;" />
-            <Button text="Home" onAction="#showHome" style="-fx-background-color: transparent; -fx-text-fill: #ffffff; -fx-font-size: 14; -fx-alignment: center-left; -fx-padding: 10 15; -fx-cursor: hand;" />
-            <Button text="Movies" onAction="#showMovies" style="-fx-background-color: transparent; -fx-text-fill: #ffffff; -fx-font-size: 14; -fx-alignment: center-left; -fx-padding: 10 15; -fx-cursor: hand;" />
-            <Button text="TV Shows" onAction="#showTVShows" style="-fx-background-color: transparent; -fx-text-fill: #ffffff; -fx-font-size: 14; -fx-alignment: center-left; -fx-padding: 10 15; -fx-cursor: hand;" />
-            <Button text="Celebrities" onAction="#showCelebrities" style="-fx-background-color: transparent; -fx-text-fill: #ffffff; -fx-font-size: 14; -fx-alignment: center-left; -fx-padding: 10 15; -fx-cursor: hand;" />
-            <Button text="Advanced Search" onAction="#showAdvancedSearch" style="-fx-background-color: transparent; -fx-text-fill: #ffffff; -fx-font-size: 14; -fx-alignment: center-left; -fx-padding: 10 15; -fx-cursor: hand;" />
-            <VBox style="-fx-pref-height: 20;" />
-            <Button fx:id="signInButton" text="Sign In" onAction="#showLogin" style="-fx-background-color: transparent; -fx-text-fill: #f5c518; -fx-font-size: 14; -fx-alignment: center-left; -fx-padding: 10 15; -fx-cursor: hand;" />
-            <Button fx:id="registerButton" text="Register" onAction="#showRegister" style="-fx-background-color: transparent; -fx-text-fill: #f5c518; -fx-font-size: 14; -fx-alignment: center-left; -fx-padding: 10 15; -fx-cursor: hand;" />
-        </VBox>
-    </left>
-    
     <top>
-        <HBox style="-fx-background-color: #1a1a1a; -fx-padding: 10; -fx-alignment: center-right;">
-            <Label fx:id="userLabel" style="-fx-text-fill: #f5c518; -fx-font-size: 14px;" text="Available">
+        <HBox style="-fx-background-color: #1a1a1a; -fx-padding: 10; -fx-alignment: center-right; -fx-spacing: 10;">
+            <Label fx:id="userLabel" style="-fx-text-fill: #f5c518; -fx-font-size: 14px;" text="Guest">
                 <padding>
                     <Insets right="20" />
                 </padding>
             </Label>
+            <Button fx:id="logoutButton" onAction="#handleLogout" text="Logout" visible="false"
+                    style="-fx-background-color: #d32f2f; -fx-text-fill: white; -fx-font-weight: bold; -fx-padding: 5 15; -fx-cursor: hand; -fx-background-radius: 5;" />
         </HBox>
     </top>
     
@@ -51,8 +39,21 @@
                 <HBox style="-fx-spacing: 20; -fx-alignment: center;">
                     <Button onAction="#showCelebrities" style="-fx-background-color: #f5c518; -fx-text-fill: #000000; -fx-font-size: 16px; -fx-font-weight: bold; -fx-pref-width: 150; -fx-pref-height: 60; -fx-cursor: hand; -fx-background-radius: 5;" text="Celebrities" />
                     
+                    <Button onAction="#showRated" style="-fx-background-color: #9C27B0; -fx-text-fill: #ffffff; -fx-font-size: 16px; -fx-font-weight: bold; -fx-pref-width: 150; -fx-pref-height: 60; -fx-cursor: hand; -fx-background-radius: 5;" text="Rated" />
+                    
                     <Button onAction="#showAdvancedSearch" style="-fx-background-color: #333333; -fx-text-fill: #ffffff; -fx-font-size: 16px; -fx-font-weight: bold; -fx-pref-width: 150; -fx-pref-height: 60; -fx-cursor: hand; -fx-background-radius: 5;" text="Advanced Search" />
                 </HBox>
+                
+                <!-- User Actions -->
+                <HBox style="-fx-spacing: 20; -fx-alignment: center; -fx-padding: 20 0 0 0;">
+                    <Button fx:id="signInButton" onAction="#showLogin" style="-fx-background-color: #2196F3; -fx-text-fill: #ffffff; -fx-font-size: 14px; -fx-font-weight: bold; -fx-padding: 10 20; -fx-cursor: hand; -fx-background-radius: 20;" text="Sign In" />
+                    <Button fx:id="registerButton" onAction="#showRegister" style="-fx-background-color: #4CAF50; -fx-text-fill: #ffffff; -fx-font-size: 14px; -fx-font-weight: bold; -fx-padding: 10 20; -fx-cursor: hand; -fx-background-radius: 20;" text="Register" />
+                </HBox>
+                
+                <!-- Guest Message -->
+                <Label fx:id="guestMessage" text="Please sign in or register to access all features" 
+                       style="-fx-text-fill: #f5c518; -fx-font-size: 14px; -fx-padding: 10 0 0 0;" 
+                       visible="false" />
             </VBox>
         </VBox>
     </center>

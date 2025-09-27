@@ -165,6 +165,7 @@ public class SearchFormController extends BaseSearchController {
          */
         default void onSearchCriteriaChanged(SearchCriteria criteria) {
             // Default empty implementation
+            logger.info("Search criteria changed: {}", criteria);
         }
 
         /**

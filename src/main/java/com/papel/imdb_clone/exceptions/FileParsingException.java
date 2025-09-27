@@ -18,4 +18,5 @@ public class FileParsingException extends RuntimeException {
         logger.error("File parsing error: {}", message);
     }
 
+
 }

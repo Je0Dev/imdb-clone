@@ -76,28 +76,48 @@ public class EditContentController<T extends Content> {
     public void initialize() {
         try {
             setupValidation();
+            
             // Get the content service based on the content type
             String contentType = (String) navigationService.getUserData("contentType");
-            logger.info("Content type: {}", contentType);
-            logger.info("Content service: {}", this.contentService);
-            logger.info("Content service class: {}", this.contentService.getClass().getName());
-            if (contentType != null) {
-                if (contentType.equalsIgnoreCase("movie")) {
-                    @SuppressWarnings("unchecked")
-                    ContentService<T> movieService = (ContentService<T>) ServiceLocator.getInstance().getService(MoviesService.class);
-                    logger.info("Content service initialized for movie");
-                    this.contentService = movieService;
-                } else if (contentType.equalsIgnoreCase("series")) {
-                    @SuppressWarnings("unchecked")
-                    ContentService<T> seriesService = (ContentService<T>) ServiceLocator.getInstance().getService(SeriesService.class);
-                    logger.info("Content service initialized for series");
-                    this.contentService = seriesService;
+            logger.info("Initializing EditContentController for content type: {}", contentType);
+            
+            if (contentType != null && !contentType.trim().isEmpty()) {
+                try {
+                    if (contentType.equalsIgnoreCase("movie")) {
+                        MoviesService movieService = ServiceLocator.getInstance().getService(MoviesService.class);
+                        if (movieService != null) {
+                            @SuppressWarnings("unchecked") // Safe cast as we know the type matches
+                            ContentService<T> service = (ContentService<T>) movieService;
+                            this.contentService = service;
+                            logger.info("Successfully initialized MovieService");
+                        } else {
+                            logger.error("Failed to get MovieService from ServiceLocator");
+                        }
+                    } else if (contentType.equalsIgnoreCase("series")) {
+                        SeriesService seriesService = ServiceLocator.getInstance().getService(SeriesService.class);
+                        if (seriesService != null) {
+                            @SuppressWarnings("unchecked") // Safe cast as we know the type matches
+                            ContentService<T> service = (ContentService<T>) seriesService;
+                            this.contentService = service;
+                            logger.info("Successfully initialized SeriesService");
+                        } else {
+                            logger.error("Failed to get SeriesService from ServiceLocator");
+                        }
+                    } else {
+                        logger.warn("Unknown content type: {}", contentType);
+                    }
+                } catch (Exception e) {
+                    logger.error("Error initializing content service: {}", e.getMessage(), e);
                 }
+            } else {
+                logger.warn("No content type specified for EditContentController");
             }
 
             if (this.contentService == null) {
-                logger.error("Failed to initialize content service for type: {}", contentType);
-                showError("Error", "Failed to initialize content service");
+                String errorMsg = String.format("Failed to initialize content service for type: %s. " +
+                    "Service is null. Check service registration in ServiceLocator.", contentType);
+                logger.error(errorMsg);
+                showError("Initialization Error", "Failed to initialize content service. Please try again later.");
                 navigationService.goBack();
                 return;
             }
@@ -109,8 +129,7 @@ public class EditContentController<T extends Content> {
                 logger.info("Loading content with ID: {}", contentId);
 
                 // Load the content by ID
-                @SuppressWarnings("unchecked")
-                Optional<T> contentOpt = (Optional<T>) contentService.getById(contentId);
+                Optional<T> contentOpt = contentService.getById(contentId);
                 if (contentOpt.isPresent()) {
                     // Set the content by ID
                     this.content = contentOpt.get();

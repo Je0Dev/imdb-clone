@@ -21,6 +21,7 @@ import java.util.Map;
  * Factory class for creating and managing data loaders.
  */
 public class DataLoaderFactory {
+    
     private final Map<Class<?>, Object> loaders = new HashMap<>();
     private final InMemoryUserRepository userRepository;
     private final InMemoryMovieRepository movieRepository;

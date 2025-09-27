@@ -1,7 +1,7 @@
 package com.papel.imdb_clone.exceptions;
 
-import java.io.Serial;
-import java.io.Serializable;
+import java.io.*;
+import java.lang.reflect.Field;
 import java.util.*;
 
 /**
@@ -27,10 +27,9 @@ public class ValidationException extends RuntimeException implements Serializabl
     /**
      * Error code for the exception.
      */
-    private final String errorCode = "VALIDATION_ERROR";
+    private final String errorCode;
 
-
-        /**
+    /**
      * Creates a new ValidationException with all possible parameters.
      *
      * @param message the detail message
@@ -41,19 +40,9 @@ public class ValidationException extends RuntimeException implements Serializabl
     public ValidationException(String message, String errorCode,
                              Map<String, List<String>> fieldErrors,
                              Throwable cause) {
-        super(message, cause);
-        if (errorCode != null) {
-            try {
-                // Use reflection to set the final field
-                java.lang.reflect.Field field = getClass().getDeclaredField("errorCode");
-                field.setAccessible(true);
-                field.set(this, errorCode);
-            } catch (Exception e) {
-                // Fallback to default error code
-                System.err.println("Failed to set error code: " + e.getMessage());
-            }
-        }
+        this(message, errorCode, fieldErrors, cause, true);
         
+        // Initialize field errors in the public constructor
         if (fieldErrors != null) {
             for (Map.Entry<String, List<String>> entry : fieldErrors.entrySet()) {
                 if (entry.getKey() != null && entry.getValue() != null) {
@@ -61,6 +50,34 @@ public class ValidationException extends RuntimeException implements Serializabl
                 }
             }
         }
+    }
+
+    /**
+     * Private constructor that takes an additional dummy parameter to avoid "this" escape.
+     * This should only be called from the factory method.
+     */
+    private ValidationException(String message, String errorCode,
+                             Map<String, List<String>> fieldErrors,
+                             Throwable cause, boolean dummy) {
+        super(message, cause);
+        // Initialize error code safely
+        String safeErrorCode = errorCode != null ? errorCode : "VALIDATION_ERROR";
+        try {
+            Field field = getClass().getDeclaredField("errorCode");
+            field.setAccessible(true);
+            field.set(this, safeErrorCode);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to initialize error code", e);
+        }
+        // Set field errors
+        if (fieldErrors != null) {
+            for (Map.Entry<String, List<String>> entry : fieldErrors.entrySet()) {
+                if (entry.getKey() != null && entry.getValue() != null) {
+                    this.fieldErrors.put(entry.getKey(), new ArrayList<>(entry.getValue()));
+                }
+            }
+        }
+        this.errorCode = "";
     }
 
     /**
@@ -97,7 +114,7 @@ public class ValidationException extends RuntimeException implements Serializabl
      * Custom serialization method to ensure proper serialization of the exception
      */
     @Serial
-    private void writeObject(java.io.ObjectOutputStream out) throws java.io.IOException {
+    private void writeObject(ObjectOutputStream out) throws IOException {
         out.defaultWriteObject();
     }
     
@@ -105,7 +122,7 @@ public class ValidationException extends RuntimeException implements Serializabl
      * Custom deserialization method to ensure proper deserialization of the exception
      */
     @Serial
-    private void readObject(java.io.ObjectInputStream in) throws java.io.IOException, ClassNotFoundException {
+    private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {
         in.defaultReadObject();
     }
 
@@ -131,11 +148,11 @@ public class ValidationException extends RuntimeException implements Serializabl
 
         //serial version uid for object serialization
         @Serial
-        private static final long serialVersionUID = 2L;
-        private String message;
-        private String errorCode;
-        private final Map<String, List<String>> fieldErrors = new LinkedHashMap<>();
-        private Throwable cause;
+        private static final long serialVersionUID = 2L; //required for serialization support
+        private String message; //message that describes the error
+        private String errorCode;//error code that describes the error
+        private final Map<String, List<String>> fieldErrors = new LinkedHashMap<>();//map of field names to their associated error messages
+        private Throwable cause;//cause of the exception
         
         /**
          * Constructor for Builder.
@@ -143,6 +160,7 @@ public class ValidationException extends RuntimeException implements Serializabl
          */
         public Builder() {
             // Initialize fields if needed
+            this.errorCode = "VALIDATION_ERROR";
         }
 
         /**
@@ -153,16 +171,17 @@ public class ValidationException extends RuntimeException implements Serializabl
          */
         public void fieldError(String field, String error) {
             if (field != null && error != null) {
+                //add the error to the fieldErrors map
                 this.fieldErrors.computeIfAbsent(field, k -> new ArrayList<>()).add(error);
             }
         }
 
-
+        // builds the ValidationException instance
         public ValidationException build() {
             return new ValidationException(message, errorCode, fieldErrors, cause);
         }
 
-/**
+        /**
          * Sets the error message.
          *
          * @param message the error message
@@ -170,28 +189,6 @@ public class ValidationException extends RuntimeException implements Serializabl
          */
         public Builder message(String message) {
             this.message = message;
-            return this;
-        }
-
-        /**
-         * Sets the error code.
-         *
-         * @param errorCode the error code
-         * @return this builder instance for method chaining
-         */
-        public Builder errorCode(String errorCode) {
-            this.errorCode = errorCode;
-            return this;
-        }
-
-        /**
-         * Sets the cause of the exception.
-         *
-         * @param cause the cause
-         * @return this builder instance for method chaining
-         */
-        public Builder cause(Throwable cause) {
-            this.cause = cause;
             return this;
         }
     }

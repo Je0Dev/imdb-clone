@@ -2,35 +2,64 @@ package com.papel.imdb_clone.service.content;
 
 import com.papel.imdb_clone.enums.Ethnicity;
 import com.papel.imdb_clone.enums.Genre;
+import com.papel.imdb_clone.exceptions.AuthErrorType;
+import com.papel.imdb_clone.exceptions.DataPersistenceException;
+import com.papel.imdb_clone.exceptions.InvalidInputException;
 import com.papel.imdb_clone.model.content.Movie;
 import com.papel.imdb_clone.model.people.Actor;
 import com.papel.imdb_clone.util.FileUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.util.*;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.stream.Collectors;
 
+
 /**
- * Service class for managing Movie content.
+ * Service class for managing movies in the system.
+ * Provides CRUD operations and query capabilities for movie data.
+ * Implements thread-safe operations with proper exception handling.
  */
 public class MoviesService extends BaseContentService<Movie> {
-    private static final Logger logger = Logger.getLogger(MoviesService.class.getName());
-    private static MoviesService instance;
+    private static final Logger logger = LoggerFactory.getLogger(MoviesService.class);
+    private static volatile MoviesService instance;
+    private static final Object instanceLock = new Object();
+    
+    // Default values for validation
+    private static final int MIN_TITLE_LENGTH = 1;
+    private static final int MAX_TITLE_LENGTH = 255;
+    private static final int MIN_YEAR = 1888; // First motion picture
+    private static final int MAX_YEAR = LocalDate.now().getYear() + 5; // Allow some future years
+    private static final int MIN_DURATION = 1; // minutes
+    private static final int MAX_DURATION = 1440; // 24 hours in minutes
+    private static final double MIN_RATING = 0.0;
+    private static final double MAX_RATING = 10.0;
 
     //constructor
     private MoviesService() {
         super(Movie.class);
     }
 
-    //get instance of MoviesService
-    public static synchronized MoviesService getInstance() {
-        if (instance == null) {
-            instance = new MoviesService();
+    /**
+     * Gets the singleton instance of MoviesService with double-checked locking.
+     *
+     * @return the singleton instance
+     */
+    public static MoviesService getInstance() {
+        MoviesService result = instance;
+        if (result == null) {
+            synchronized (instanceLock) {
+                result = instance;
+                if (result == null) {
+                    instance = result = new MoviesService();
+                }
+            }
         }
-        return instance;
+        return result;
     }
 
     /**
@@ -41,78 +70,157 @@ public class MoviesService extends BaseContentService<Movie> {
     @Override
     protected void loadFromFile() {
         String filePath = "src/main/resources/data/content/movies_updated.txt";
-        List<String> lines = FileUtils.readLines(filePath);
-
-        if (lines.isEmpty()) {
-            logger.warning("No movies found in file: " + filePath);
-            return;
+        logger.debug("Loading movies from file: {}", filePath);
+        
+        List<String> lines;
+        try {
+            lines = FileUtils.readLines(filePath);
+        } catch (Exception e) {
+            String errorMsg = String.format("Failed to read movies file: %s", filePath);
+            logger.error(errorMsg, e);
+            throw new DataPersistenceException(errorMsg, AuthErrorType.INTERNAL_ERROR, e);
         }
 
-        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy");
+        if (lines.isEmpty()) {
+            logger.warn("No movies found in file: {}", filePath);
+            return;
+        }
+        
+        int successCount = 0;
+        int errorCount = 0;
 
+        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy");
+        
         for (String line : lines) {
             try {
                 String[] parts = line.split(",");
                 if (parts.length < 6) {
-                    logger.warning("Skipping invalid movie line: " + line);
+                    logger.warn("Skipping invalid movie line (insufficient fields): {}", line);
+                    errorCount++;
                     continue;
                 }
 
+                // Parse and validate fields
                 String title = parts[0].trim();
-                int year = Integer.parseInt(parts[1].trim());
-                Genre genre = Genre.valueOf(parts[2].trim());
-                int duration = Integer.parseInt(parts[3].trim());
-                String director = parts[4].trim();
-                double rating = Double.parseDouble(parts[5].trim());
-
-                // Create movie with basic info
-                Movie movie = new Movie();
-                movie.setTitle(title);
-                movie.setYear(dateFormat.parse(String.valueOf(year)));
-                movie.setGenre(genre);
-                movie.setDuration(duration);
-                movie.setDirector(director);
-                movie.setImdbRating(rating);
-
-                // Add actors if available
-                if (parts.length > 6) {
-                    String[] actorNames = parts[6].split(";");
-                    for (String actorName : actorNames) {
-                        String[] nameParts = actorName.trim().split("\\s+", 2);
-                        if (nameParts.length == 2) {
-                            Actor actor = Actor.getInstance(nameParts[0], nameParts[1],
-                                    LocalDate.now(), ' ', Ethnicity.UNKNOWN);
-                            movie.addActor(actor);
-                        }
+                if (title.isEmpty()) {
+                    logger.warn("Skipping movie with empty title: {}", line);
+                    errorCount++;
+                    continue;
+                }
+                
+                int year;
+                try {
+                    year = Integer.parseInt(parts[1].trim());
+                    if (year < MIN_YEAR || year > MAX_YEAR) {
+                        logger.warn("Skipping movie '{}' with invalid year: {}", title, year);
+                        errorCount++;
+                        continue;
                     }
+                } catch (NumberFormatException e) {
+                    logger.warn("Skipping movie '{}' with invalid year format: {}", title, parts[1].trim());
+                    errorCount++;
+                    continue;
+                }
+                
+                Genre genre;
+                try {
+                    genre = Genre.valueOf(parts[2].trim().toUpperCase());
+                } catch (IllegalArgumentException e) {
+                    logger.warn("Skipping movie '{}' with invalid genre: {}", title, parts[2].trim());
+                    errorCount++;
+                    continue;
+                }
+                
+                int duration;
+                try {
+                    duration = Integer.parseInt(parts[3].trim());
+                    if (duration < MIN_DURATION || duration > MAX_DURATION) {
+                        logger.warn("Skipping movie '{}' with invalid duration: {} minutes", title, duration);
+                        errorCount++;
+                        continue;
+                    }
+                } catch (NumberFormatException e) {
+                    logger.warn("Skipping movie '{}' with invalid duration format: {}", title, parts[3].trim());
+                    errorCount++;
+                    continue;
+                }
+                
+                String director = parts[4].trim();
+                if (director.isEmpty()) {
+                    director = "Unknown";
+                }
+                
+                double rating;
+                try {
+                    rating = Double.parseDouble(parts[5].trim());
+                    if (rating < MIN_RATING || rating > MAX_RATING) {
+                        logger.warn("Movie '{}' has rating out of bounds ({}), will be capped", title, rating);
+                        rating = Math.max(MIN_RATING, Math.min(rating, MAX_RATING));
+                    }
+                } catch (NumberFormatException e) {
+                    logger.warn("Movie '{}' has invalid rating format: {}, using default", title, parts[5].trim());
+                    rating = 0.0;
                 }
 
-                save(movie);
+                // Create and save movie
+                Movie movie = new Movie();
+                try {
+                    movie.setTitle(title);
+                    movie.setYear(dateFormat.parse(String.valueOf(year)));
+                    movie.setGenre(genre);
+                    movie.setDuration(duration);
+                    movie.setDirector(director);
+                    movie.setImdbRating(rating);
 
+                    // Add actors if available
+                    if (parts.length > 6) {
+                        String[] actorNames = parts[6].split(";");
+                        for (String actorName : actorNames) {
+                            String trimmedName = actorName.trim();
+                            if (!trimmedName.isEmpty()) {
+                                String[] nameParts = trimmedName.split("\\s+", 2);
+                                if (nameParts.length == 2) {
+                                    Actor actor = Actor.getInstance(nameParts[0], nameParts[1],
+                                            LocalDate.now(), ' ', Ethnicity.UNKNOWN);
+                                    movie.addActor(actor);
+                                } else {
+                                    // Handle single name
+                                    Actor actor = Actor.getInstance("", trimmedName,
+                                            LocalDate.now(), ' ', Ethnicity.UNKNOWN);
+                                    movie.addActor(actor);
+                                }
+                            }
+                        }
+                    }
+
+                    save(movie);
+                    successCount++;
+                    
+                } catch (ParseException e) {
+                    logger.error("Failed to parse date for movie '{}': {}", title, e.getMessage());
+                    errorCount++;
+                } catch (Exception e) {
+                    String errorMsg = String.format("Failed to save movie '%s'", title);
+                    logger.error("{}: {}", errorMsg, e.getMessage(), e);
+                    errorCount++;
+                }
             } catch (Exception e) {
-                logger.log(Level.WARNING, "Error processing movie line: " + line, e);
+                logger.error("Unexpected error processing movie line: {}", line, e);
+                errorCount++;
             }
         }
 
-        logger.info("Loaded " + contentList.size() + " movies from file");
+        logger.info("Completed loading movies. Success: {}, Failed: {}, Total: {}", 
+                   successCount, errorCount, lines.size());
+        
+        if (errorCount > 0) {
+            logger.warn("Encountered {} errors while loading movies. Check logs for details.", errorCount);
+        }
     }
-
     /**
-     * Escapes commas in strings to prevent CSV parsing issues.
-     * @param input The input string to escape
-     * @return The escaped string
+     * Initializes sample data by loading from the default file.
+     * This is called automatically during service initialization.
      */
-    private String escapeCommas(String input) {
-        if (input == null) {
-            return "";
-        }
-        // If the input contains a comma, wrap it in quotes
-        if (input.contains(",")) {
-            return "\"" + input.replace("\"", "\"\"") + "\"";
-        }
-        return input;
-    }
-
     //initialize sample data
     @Override
     protected void initializeSampleData() {
@@ -126,7 +234,7 @@ public class MoviesService extends BaseContentService<Movie> {
 
             // If no movies were loaded from file, fall back to sample data
             if (contentList.isEmpty()) {
-                logger.warning("No movies loaded from file, using sample data");
+                logger.warn("No movies loaded from file, using sample data");
 
                 // Sample data as fallback
                 List<Genre> shawshankGenres = new ArrayList<>();

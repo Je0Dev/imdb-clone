@@ -502,6 +502,7 @@ public class AdvancedSearchController extends BaseSearchController {
         }
     }
 
+   
     /**
      * Performs a search with the given criteria.
      *
@@ -511,6 +512,14 @@ public class AdvancedSearchController extends BaseSearchController {
         if (criteria == null) {
             logger.warn("Search criteria is null");
             showInfo("Search", "No search criteria provided");
+            // Clear existing results
+            if (resultsTable != null) {
+                resultsTable.getItems().clear();
+                resultsTable.refresh();
+            }
+            if (resultsCountLabel != null) {
+                resultsCountLabel.setText("No search criteria provided");
+            }
             return;
         }
 
@@ -523,6 +532,13 @@ public class AdvancedSearchController extends BaseSearchController {
             currentSearchTask.cancel();
         }
 
+        // Validate search service
+        if (searchService == null) {
+            logger.error("Search service is not available");
+            showError("Error", "Search functionality is not available");
+            return;
+        }
+
         // Make sure the results table is available
         if (resultsTable == null) {
             logger.error("Results table is not available");
@@ -530,29 +546,32 @@ public class AdvancedSearchController extends BaseSearchController {
             return;
         }
 
-        // Clear previous results
+        // Clear previous results and reset UI state
         resultsTable.getItems().clear();
+        if (resultsCountLabel != null) {
+            resultsCountLabel.setText("");
+        }
         
         // Update status
         updateStatus("Searching...");
+        
         // Make sure the table is visible and managed
         resultsTable.setVisible(true);
         resultsTable.setManaged(true);
         
         // Set up the table's selection model if not already done
         resultsTable.getSelectionModel().setSelectionMode(SelectionMode.SINGLE);
+        resultsTable.getSelectionModel().clearSelection();
 
         // Disable the manage details button by default
-        manageDetailsButton.setDisable(true);
-
+        if (manageDetailsButton != null) {
+            manageDetailsButton.setDisable(true);
+        }
         
         // Log table state before search
-        logger.info("Table state before search - Items: {}, Columns: {}", 
+        logger.debug("Table state before search - Items: {}, Columns: {}", 
             resultsTable.getItems().size(), 
             resultsTable.getColumns().size());
-
-        // Update status
-        updateStatus("Searching...");
 
         // Create a new search task
         currentSearchTask = new Task<ObservableList<Content>>() {
@@ -563,51 +582,67 @@ public class AdvancedSearchController extends BaseSearchController {
                     List<Content> results = searchService.search(criteria);
                     logger.info("Found {} results for search criteria: {}", results.size(), criteria);
                     
+                    // Convert to observable list for JavaFX
+                    ObservableList<Content> observableResults = FXCollections.observableArrayList(results);
+                    
                     // Update the UI on the JavaFX Application Thread
                     Platform.runLater(() -> {
                         try {
                             // Update the table with search results
-                            ObservableList<Content> observableResults = FXCollections.observableArrayList(results);
-                            resultsTable.setItems(observableResults);
-                            
-                            // Update the results count label
-                            if (resultsCountLabel != null) {
-                                resultsCountLabel.setText(String.format("Results: %d", results.size()));
+                            if (resultsTable != null) {
+                                resultsTable.getItems().clear();
+                                resultsTable.setItems(observableResults);
+                                
+                                // Update the results count label
+                                if (resultsCountLabel != null) {
+                                    String countText = results.isEmpty() ? "No results found" : 
+                                        String.format("Found %d result%s", results.size(), results.size() != 1 ? "s" : "");
+                                    resultsCountLabel.setText(countText);
+                                }
+                                
+                                // Log the update
+                                logger.info("Updated table with {} items", results.size());
+                                
+                                // Force refresh the table to show the new data
+                                resultsTable.refresh();
+                                
+                                // Update the results table controller if available
+                                if (resultsTableController != null) {
+                                    resultsTableController.updateResults(observableResults);
+                                }
                             }
                             
                             // Update status
                             updateStatus(String.format("Found %d results", results.size()));
                             
-                            // Log the update
-                            logger.info("Updated table with {} items", results.size());
-                            
-                            // Force a refresh of the table
-                            resultsTable.refresh();
-                            
                         } catch (Exception e) {
                             logger.error("Error updating table with search results", e);
                             showError("Error", "Failed to display search results: " + e.getMessage());
+                            updateStatus("Error displaying results");
                         }
                     });
 
-                    //Return the results
-                    return FXCollections.observableArrayList(results);
+                    return observableResults;
+                    
                 } catch (Exception e) {
                     logger.error("Error during search: {}", e.getMessage(), e);
                     Platform.runLater(() -> {
-                        showError("Search Error", "Failed to perform search: " + e.getMessage());
+                        showError("Search Error", "Failed to perform search: " + 
+                            (e.getMessage() != null ? e.getMessage() : "Unknown error"));
                         updateStatus("Search failed");
                         
-                        // Clear the results table on error
+                        // Clear the results table and count label on error
+                        if (resultsTable != null) {
+                            resultsTable.getItems().clear();
+                        }
+                        
                         if (resultsTableController != null) {
                             resultsTableController.clearResults();
                         }
                         
-                        // Clear the results count label
                         if (resultsCountLabel != null) {
-                            resultsCountLabel.setText("");
+                            resultsCountLabel.setText("Search failed");
                         }
-                        updateStatus("Search failed");
                     });
                     throw e;
                 }

@@ -12,19 +12,6 @@ import java.util.Optional;
 
 /**
  * Base controller class providing common functionality for all controllers in the application.
- * This abstract class implements the JavaFX {@link Initializable} interface and serves as a foundation
- * for all view controllers, offering common UI utilities, error handling, and lifecycle management.
- *
- * <p>Key features include:
- * <ul>
- *     <li>Standardized controller initialization</li>
- *     <li>Common dialog utilities (alerts, confirmations, errors)</li>
- *     <li>View navigation helpers</li>
- *     <li>Error handling and logging</li>
- *     <li>Data management access</li>
- * </ul>
- *
- * <p>Subclasses must implement {@link #initializeController(int)} for their specific initialization logic.
  */
 public abstract class BaseController implements Initializable {
     protected final Logger logger = LoggerFactory.getLogger(getClass());
@@ -171,6 +158,8 @@ public abstract class BaseController implements Initializable {
         DialogPane dialogPane = alert.getDialogPane();
         // Removed non-existent CSS reference
         dialogPane.getStyleClass().add("custom-dialog");
+        dialogPane.getButtonTypes().add(ButtonType.CLOSE);
+        alert.showAndWait();
     }
     
 }

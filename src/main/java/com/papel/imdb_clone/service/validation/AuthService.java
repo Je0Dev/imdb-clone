@@ -1,6 +1,8 @@
 package com.papel.imdb_clone.service.validation;
 
 import com.papel.imdb_clone.exceptions.AuthException;
+import com.papel.imdb_clone.exceptions.InvalidInputException;
+import com.papel.imdb_clone.exceptions.RateLimitExceededException;
 import com.papel.imdb_clone.model.people.User;
 import com.papel.imdb_clone.service.people.UserStorageService;
 import com.papel.imdb_clone.util.PasswordHasher;
@@ -8,8 +10,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
+import java.util.regex.Pattern;
+
 
 /**
  * Service responsible for user authentication and session management.
@@ -17,42 +24,315 @@ import java.util.concurrent.ConcurrentHashMap;
  * Uses unified AuthException for all authentication-related errors.
  */
 public class AuthService {
-
+    // Logger
     private static final Logger logger = LoggerFactory.getLogger(AuthService.class);
+
+    // Configuration constants
     private static final String USERS_UPDATED_FILE = "src/main/resources/data/people/users_updated.txt";
-    private static AuthService instance;
-    private User admin;
+    private static final int MAX_LOGIN_ATTEMPTS = 5;
+    private static final long LOGIN_ATTEMPT_WINDOW_MINUTES = 15;
+    private static final long SESSION_TIMEOUT_MINUTES = 30;
+    private static final int MIN_PASSWORD_LENGTH = 8;
+    private static final Pattern EMAIL_PATTERN = Pattern.compile(
+            "^[A-Za-z0-9+_.-]+@(.+)$");
+    private static final Pattern USERNAME_PATTERN = Pattern.compile(
+            "^[a-zA-Z0-9_-]{3,20}$");
+
+    // Singleton instance
+    private static volatile AuthService instance;
 
     // User storage
     private final Map<String, User> usersByUsername = new HashMap<>();
-    
-    /**
-     * Gets the map of usernames to User objects.
-     * @return A map of usernames to User objects
-     */
-    public Map<String, User> getUsersByUsername() {
-        return usersByUsername;
-    }
-
-
     private final Map<String, User> usersByEmail = new HashMap<>();
     private final Map<String, String> userSessions = new ConcurrentHashMap<>();
-    private int nextUserId = 1;
-
-    // Dependencies
+    private final Map<String, LoginAttempt> loginAttempts = new ConcurrentHashMap<>();
     private final UserStorageService userStorageService;
-    
+
+    private int nextUserId = 1;
+    private String sessionToken;
+
+    public String getCurrentSessionToken() {
+        return sessionToken;
+    }
+
+    /**
+     * Checks if there is an active authenticated session.
+     * @return true if a user is currently authenticated, false otherwise
+     */
+    public boolean isAuthenticated() {
+        return sessionToken != null && !sessionToken.isEmpty() && 
+               userSessions.containsValue(sessionToken);
+    }
+
+    public User getUserFromSession(String sessionToken) {
+        String username = userSessions.get(sessionToken);
+        if (username == null) {
+            return null;
+        }
+        return usersByUsername.get(username.toLowerCase());
+    }
+
+    /**
+     * Tracks login attempts for rate limiting.
+     */
+    private static class LoginAttempt {
+        private final Instant timestamp;
+        private int attempts;
+
+        public LoginAttempt() {
+            this.timestamp = Instant.now();
+            this.attempts = 1;
+        }
+
+        public synchronized void incrementAttempts() {
+            this.attempts++;
+        }
+
+        public synchronized boolean isLocked() {
+            return attempts >= MAX_LOGIN_ATTEMPTS &&
+                    Duration.between(timestamp, Instant.now()).toMinutes() < LOGIN_ATTEMPT_WINDOW_MINUTES;
+        }
+
+        public synchronized long getRemainingLockTime() {
+            if (!isLocked()) return 0;
+            long elapsedMinutes = Duration.between(timestamp, Instant.now()).toMinutes();
+            return LOGIN_ATTEMPT_WINDOW_MINUTES - elapsedMinutes;
+        }
+
+        public synchronized int getAttempts() {
+            return attempts;
+        }
+    }
+
+    /**
+     * Gets the map of usernames to User objects.
+     *
+     * @return An unmodifiable map of usernames to User objects
+     */
+    public Map<String, User> getUsersByUsername() {
+        return Collections.unmodifiableMap(usersByUsername);
+    }
+
     private AuthService() {
         this.userStorageService = UserStorageService.getInstance();
         logger.info("Initializing AuthService...");
-        loadUsers();
+        try {
+            loadUsers();
+            startSessionCleanupTask();
+        } catch (Exception e) {
+            logger.error("Failed to initialize AuthService: {}", e.getMessage(), e);
+            throw new RuntimeException("Failed to initialize AuthService", e);
+        }
     }
 
-    public static synchronized AuthService getInstance() {
-        if (instance == null) {
-            instance = new AuthService();
+    /**
+     * Starts a background task to clean up expired sessions.
+     */
+    private void startSessionCleanupTask() {
+        Timer timer = new Timer("SessionCleanupTimer", true);
+        timer.scheduleAtFixedRate(new TimerTask() {
+            @Override
+            public void run() {
+                cleanupExpiredSessions();
+            }
+        }, TimeUnit.MINUTES.toMillis(5), TimeUnit.MINUTES.toMillis(5));
+    }
+
+    /**
+     * Cleans up expired user sessions.
+     */
+    private synchronized void cleanupExpiredSessions() {
+        try {
+            int initialSize = userSessions.size();
+            Instant now = Instant.now();
+
+            userSessions.entrySet().removeIf(entry -> {
+                User user = usersByUsername.get(entry.getValue());
+                return user != null && user.getLastActivity() != null &&
+                        Duration.between(user.getLastActivity(), now).toMinutes() > SESSION_TIMEOUT_MINUTES;
+            });
+
+            int removed = initialSize - userSessions.size();
+            if (removed > 0) {
+                logger.info("Cleaned up {} expired sessions", removed);
+            }
+        } catch (Exception e) {
+            logger.error("Error during session cleanup: {}", e.getMessage(), e);
         }
-        return instance;
+    }
+
+    /**
+     * Loads users from the configured storage sources with proper error handling.
+     * Attempts to load from text file first, then falls back to serialized storage.
+     * Ensures at least the default admin user exists in the system.
+     */
+    private void loadUsers() {
+        // Clear existing users to prevent duplicates
+        usersByUsername.clear();
+        usersByEmail.clear();
+
+        try {
+            logger.debug("Starting user loading process");
+
+            // First, try to load users from the text file
+            loadUsersFromTextFile();
+            logger.info("Loaded {} users from text file", usersByUsername.size());
+
+            // If no users were loaded from the text file, try loading from storage
+            if (usersByUsername.isEmpty()) {
+                logger.debug("No users loaded from text file, trying storage");
+                userStorageService.loadUsers(usersByUsername, usersByEmail);
+                logger.info("Loaded {} users from storage", usersByUsername.size());
+            } else {
+                // Save the loaded users to the serialized storage for next time
+                saveUsers();
+            }
+
+            // Ensure we have at least the default admin user
+            createDefaultAdminUser();
+
+        } catch (Exception e) {
+            String errorMsg = String.format("Failed to load users: %s", e.getMessage());
+            logger.error(errorMsg, e);
+
+            // Even if loading fails, ensure we have the default admin user
+            try {
+                createDefaultAdminUser();
+            } catch (Exception ex) {
+                logger.error("Critical: Failed to create default admin user", ex);
+                throw new RuntimeException("Critical: Failed to initialize authentication service", ex);
+            }
+
+            throw new RuntimeException(errorMsg, e);
+        } finally {
+            logger.info("User loading process completed. Total users: {}", usersByUsername.size());
+        }
+    }
+
+    /**
+     * Validates user credentials before authentication.
+     *
+     * @param username The username to validate
+     * @param password The password to validate
+     * @throws InvalidInputException if validation fails
+     */
+    private void validateCredentials(String username, String password) throws InvalidInputException {
+        if (username == null || username.trim().isEmpty()) {
+            throw new InvalidInputException("Username cannot be empty");
+        }
+
+        if (password == null || password.isEmpty()) {
+            throw new InvalidInputException("Password cannot be empty");
+        }
+
+        if (!USERNAME_PATTERN.matcher(username).matches()) {
+            throw new InvalidInputException("Invalid username format. Use 3-20 alphanumeric characters, '-', or '_'");
+        }
+
+        if (password.length() < MIN_PASSWORD_LENGTH) {
+            throw new InvalidInputException("Password must be at least " + MIN_PASSWORD_LENGTH + " characters long");
+        }
+    }
+
+    /**
+     * Validates user registration information.
+     *
+     * @param user The user to validate
+     * @throws InvalidInputException if validation fails
+     */
+    private void validateUserRegistration(User user) throws InvalidInputException {
+        if (user == null) {
+            throw new InvalidInputException("User cannot be null");
+        }
+
+        validateCredentials(user.getUsername(), user.getPassword());
+
+        if (user.getEmail() == null || user.getEmail().trim().isEmpty()) {
+            throw new InvalidInputException("Email cannot be empty");
+        }
+
+        if (!EMAIL_PATTERN.matcher(user.getEmail()).matches()) {
+            throw new InvalidInputException("Invalid email format");
+        }
+
+        if (usersByUsername.containsKey(user.getUsername())) {
+            throw new InvalidInputException("Username already exists");
+        }
+
+        if (usersByEmail.containsKey(user.getEmail())) {
+            throw new InvalidInputException("Email already registered");
+        }
+    }
+
+
+    /**
+     * Returns the singleton instance of AuthService.
+     * Uses double-checked locking for thread safety.
+     *
+     * @return The singleton instance of AuthService
+     */
+    public static AuthService getInstance() {
+        AuthService result = instance;
+        if (result == null) {
+            synchronized (AuthService.class) {
+                result = instance;
+                if (result == null) {
+                    instance = result = new AuthService();
+                }
+            }
+        }
+        return result;
+    }
+
+    /**
+     * Logs out a user by removing their session.
+     *
+     * @param token The session token to invalidate
+     */
+    public void logout(String token) {
+        if (token != null) {
+            String username = userSessions.remove(token);
+            if (username != null) {
+                logger.info("User logged out: {}", username);
+            }
+        }
+    }
+
+    /**
+     * Registers a new user with the system.
+     *
+     * @param user The user to register
+     * @return The registered user with updated ID
+     * @throws InvalidInputException if the user data is invalid
+     */
+    public User registerUser(User user) throws InvalidInputException {
+        logger.debug("Registration attempt for user: {}", user.getUsername());
+
+        try {
+            // Validate user data
+            validateUserRegistration(user);
+
+            // Set user ID and hash password
+            user.setId(nextUserId++);
+            user.setPassword(PasswordHasher.hashPassword(user.getPassword()));
+
+            // Add to user maps
+            usersByUsername.put(user.getUsername(), user);
+            usersByEmail.put(user.getEmail(), user);
+
+            // Save the updated user list
+            saveUsers();
+
+            logger.info("New user registered: {} (ID: {})", user.getUsername(), user.getId());
+            return user;
+
+        } catch (InvalidInputException e) {
+            logger.warn("User registration failed - {}", e.getMessage());
+            throw e;
+        } catch (Exception e) {
+            logger.error("Error during user registration: {}", e.getMessage(), e);
+            throw new RuntimeException("Registration failed due to an unexpected error", e);
+        }
     }
 
     /**
@@ -62,13 +342,13 @@ public class AuthService {
         try (BufferedReader reader = new BufferedReader(new FileReader(USERS_UPDATED_FILE))) {
             String line;
             boolean isFirstLine = true;
-            
+
             while ((line = reader.readLine()) != null) {
                 // Skip empty lines and comments
                 if (line.trim().isEmpty() || line.trim().startsWith("#")) {
                     continue;
                 }
-                
+
                 // Skip header line
                 if (isFirstLine && line.contains("id,username,email,password,fullName")) {
                     isFirstLine = false;
@@ -86,75 +366,54 @@ public class AuthService {
                         String[] nameParts = parts[4].trim().split("\\s+", 2);
                         String firstName = nameParts.length > 0 ? nameParts[0] : "";
                         String lastName = nameParts.length > 1 ? nameParts[1] : "";
-                        
+
                         // Create and add user
                         User user = new User(firstName, lastName, username, ' ', email);
                         user.setId(id);
                         // Hash the password when loading from text file
                         user.setPassword(PasswordHasher.hashPassword(password));
-                        
+
                         usersByUsername.put(username, user);
                         usersByEmail.put(email, user);
-                        
+
                         // Update nextUserId if needed
                         if (id >= nextUserId) {
                             nextUserId = id + 1;
                         }
-                        
+
                         logger.info("Loaded user: {} (ID: {})", username, id);
                     } catch (Exception e) {
                         logger.warn("Error parsing user line: {}", line, e);
                     }
                 }
             }
-            
+
             logger.info("Loaded {} users from text file", usersByUsername.size());
-            
+
             // Save the loaded users to the serialized file for next time
             if (!usersByUsername.isEmpty()) {
                 saveUsers();
             }
-            
+
         } catch (IOException e) {
             logger.error("Error loading users from text file", e);
         }
     }
-    
+
     /**
      * Loads users from the users_updated.txt file.
      */
-    private void loadUsers() {
-        // Clear existing users
-        usersByUsername.clear();
-        usersByEmail.clear();
-        nextUserId = 1;
-        
-        // Always load from text file to ensure we have the latest data
-        logger.info("Loading users from text file...");
-        loadUsersFromTextFile();
-        
-        // If no users were loaded, create a default admin user
-        if (usersByUsername.isEmpty()) {
-            logger.info("No users found in text file, creating default admin user");
-            createDefaultAdminUser();
-        }
-        
-        logger.info("Successfully loaded {} users", usersByUsername.size());
-    }
-    
-    /**
-     * Creates a default admin user if no users exist.
-     */
+
     private void createDefaultAdminUser() {
         try {
             // Create a new admin user
             User admin = new User("Admin", "User", "admin", 'M', "admin@imdbclone.com");
             admin.setPassword(PasswordHasher.hashPassword("admin123"));
             admin.setId(nextUserId++);
-            
+
             usersByUsername.put(admin.getUsername(), admin);
             usersByEmail.put(admin.getEmail(), admin);
-            
+
             // Save the new admin user
             saveUsers();
             logger.info("Created default admin user: {}", admin.getUsername());
@@ -175,7 +434,6 @@ public class AuthService {
             logger.error("Failed to save users: {}", e.getMessage(), e);
         }
     }
-
     /**
      * Authenticates a user and creates a new session with detailed logging.
      *
@@ -186,20 +444,20 @@ public class AuthService {
      */
     public String login(String username, String password) throws AuthException {
         logger.debug("Attempting login for user: {}", username);
-        
+
         // Input validation
         if (username == null || username.trim().isEmpty()) {
             logger.warn("Login failed: Username is empty");
             throw new AuthException(
-                    AuthException.AuthErrorType.INVALID_CREDENTIALS,
+                    com.papel.imdb_clone.exceptions.AuthErrorType.INVALID_CREDENTIALS,
                     "Username is required"
             );
         }
-        
+
         if (password == null || password.trim().isEmpty()) {
             logger.warn("Login failed: Password is empty for user: {}", username);
             throw new AuthException(
-                    AuthException.AuthErrorType.INVALID_CREDENTIALS,
+                    com.papel.imdb_clone.exceptions.AuthErrorType.INVALID_CREDENTIALS,
                     "Password is required"
             );
         }
@@ -208,22 +466,22 @@ public class AuthService {
         if (user == null) {
             logger.warn("Login failed: User not found - {}", username);
             throw new AuthException(
-                    AuthException.AuthErrorType.INVALID_CREDENTIALS,
+                    com.papel.imdb_clone.exceptions.AuthErrorType.INVALID_CREDENTIALS,
                     "Invalid username or password"
             );
         }
-        
+
         logger.debug("User found, verifying password for: {}", username);
-        
+
         // Verify password using secure hashing
         try {
             String storedPassword = user.getPassword();
             boolean passwordMatches = com.papel.imdb_clone.util.PasswordHasher.verifyPassword(password, storedPassword);
-            
+
             if (!passwordMatches) {
                 logger.warn("Login failed: Incorrect password for user - {}", username);
                 throw new AuthException(
-                        AuthException.AuthErrorType.INVALID_CREDENTIALS,
+                        com.papel.imdb_clone.exceptions.AuthErrorType.INVALID_CREDENTIALS,
                         "Invalid username or password"
                 );
             }
@@ -232,7 +490,7 @@ public class AuthService {
         } catch (Exception e) {
             logger.error("Error during password verification for user {}: {}", username, e.getMessage(), e);
             throw new AuthException(
-                    AuthException.AuthErrorType.INTERNAL_ERROR,
+                    com.papel.imdb_clone.exceptions.AuthErrorType.INTERNAL_ERROR,
                     "An error occurred during authentication"
             );
         }
@@ -247,7 +505,7 @@ public class AuthService {
             // Log the error and throw an AuthException
             logger.error("Error during login for user {}: {}", username, e.getMessage(), e);
             throw new AuthException(
-                    AuthException.AuthErrorType.INTERNAL_ERROR,
+                    com.papel.imdb_clone.exceptions.AuthErrorType.INTERNAL_ERROR,
                     "An error occurred during login",
                     e
             );
@@ -258,127 +516,138 @@ public class AuthService {
      * Gets the currently logged-in user for a session token.
      *
      * @param sessionToken The session token
+     * @return The User object if found, null otherwise
      */
-    public void getCurrentUser(String sessionToken) {
-        if (sessionToken == null) {
-            return;
+    //TODO: use getCurrentUser method
+    public User getCurrentUser(String sessionToken) {
+        if (sessionToken == null || sessionToken.trim().isEmpty()) {
+            return null;
         }
+
         String username = userSessions.get(sessionToken);
-        if (username != null) {
-            usersByUsername.get(username);
+        if (username == null) {
+            return null;
         }
+
+        return usersByUsername.get(username.toLowerCase());
+    }
+    
+    /**
+     * Gets the ID of the currently authenticated user.
+     * 
+     * @param sessionToken The session token of the current user
+     * @return The user ID if authenticated, or -1 if not authenticated
+     */
+    public int getCurrentUserId(String sessionToken) {
+        User user = getCurrentUser(sessionToken);
+        return user != null ? user.getId() : -1;
     }
 
     /**
      * Registers a new user with comprehensive validation and logging.
      *
-     * @param user The user to register
-     * @param password The plaintext password
+     * @param user            The user to register
+     * @param password        The plaintext password
      * @param confirmPassword The password confirmation
-     * @throws AuthException if registration fails
+     * @return The registered user
+     * @throws AuthException         if registration fails
+     * @throws InvalidInputException if input validation fails
      */
-    public void register(User user, String password, String confirmPassword) throws AuthException {
-        logger.info("Starting registration for new user: {}", user != null ? user.getUsername() : "null");
-        
+    public User register(User user, String password, String confirmPassword) throws AuthException, InvalidInputException {
+        final String methodName = "register";
+        final String username = user != null ? user.getUsername() : "[unknown]";
+
+        logger.info("Starting registration for new user: {}", username);
+
         // Input validation
         if (user == null) {
-            logger.error("Registration failed: User object is null");
-            throw new AuthException(
-                    AuthException.AuthErrorType.INVALID_INPUT,
-                    "User information is required"
-            );
-        }
-        
-        if (password == null || password.trim().isEmpty()) {
-            logger.warn("Registration failed: Password is empty for user: {}", user.getUsername());
-            throw new AuthException(
-                    AuthException.AuthErrorType.INVALID_INPUT,
-                    "Password is required"
-            );
+            throw new InvalidInputException("User cannot be null");
         }
 
-        // Password confirmation check
+        if (password == null || password.isEmpty()) {
+            throw new InvalidInputException("Password is required");
+        }
+
         if (!password.equals(confirmPassword)) {
-            logger.warn("Registration failed: Password confirmation does not match for user: {}", user.getUsername());
-            throw new AuthException(
-                    AuthException.AuthErrorType.PASSWORD_MISMATCH,
-                    "Passwords do not match"
-            );
+            String errorMsg = "Passwords do not match";
+            logger.warn("{}: {} for user: {}", methodName, errorMsg, username);
+            throw new InvalidInputException(errorMsg);
         }
-        
-        // Password strength validation
-        if (password.length() < 8) {
-            logger.warn("Registration failed: Password too short for user: {}", user.getUsername());
+
+        // Validate user data
+        validateUserRegistration(user);
+
+        // Check for existing user
+        String usernameLower = user.getUsername().toLowerCase();
+        String emailLower = user.getEmail().toLowerCase();
+
+        if (usersByUsername.containsKey(usernameLower)) {
+            String errorMsg = String.format("Username '%s' is already taken", user.getUsername());
+            logger.warn("{}: {}", methodName, errorMsg);
             throw new AuthException(
-                    AuthException.AuthErrorType.INVALID_PASSWORD,
-                    "Password must be at least 8 characters long"
+                    com.papel.imdb_clone.exceptions.AuthErrorType.ACCOUNT_ALREADY_EXISTS,
+                    errorMsg,
+                    Map.of("username", Collections.singletonList("This username is already taken")),
+                    null
             );
         }
 
-        // Check if username already exists
-        String username = user.getUsername();
-        if (username == null || username.trim().isEmpty()) {
-            logger.warn("Registration failed: Username is empty");
+        if (usersByEmail.containsKey(emailLower)) {
+            String errorMsg = String.format("Email '%s' is already registered", user.getEmail());
+            logger.warn("{}: {}", methodName, errorMsg);
             throw new AuthException(
-                    AuthException.AuthErrorType.INVALID_INPUT,
-                    "Username is required"
-            );
-        }
-        
-        if (usersByUsername.containsKey(username)) {
-            logger.warn("Registration failed: Username already exists - {}", username);
-            throw new AuthException(
-                    AuthException.AuthErrorType.USERNAME_EXISTS,
-                    "Username already exists"
+                    com.papel.imdb_clone.exceptions.AuthErrorType.ACCOUNT_ALREADY_EXISTS,
+                    errorMsg,
+                    Map.of("email", Collections.singletonList("This email is already registered")),
+                    null
             );
         }
 
-        // Check if email is valid and not already registered
-        String email = user.getEmail();
-        if (email == null || email.trim().isEmpty() || !email.matches("^[A-Za-z0-9+_.-]+@(.+)$")) {
-            logger.warn("Registration failed: Invalid email format - {}", email);
-            throw new AuthException(
-                    AuthException.AuthErrorType.INVALID_EMAIL,
-                    "Please provide a valid email address"
-            );
+        // Validate password strength
+        if (password.length() < MIN_PASSWORD_LENGTH) {
+            String errorMsg = String.format("Password must be at least %d characters long", MIN_PASSWORD_LENGTH);
+            logger.warn("{}: {}", methodName, errorMsg);
+            throw new InvalidInputException(errorMsg);
         }
-        
-        if (usersByEmail.containsKey(email)) {
-            logger.warn("Registration failed: Email already registered - {}", email);
-            throw new AuthException(
-                    AuthException.AuthErrorType.EMAIL_EXISTS,
-                    "Email already registered"
-            );
-        }
+
+        // Set user properties
+        user.setId(nextUserId);
+        user.setPassword(PasswordHasher.hashPassword(password));
+        user.setActive(true);
+        user.setLocked(false);
+        user.setCreatedAt(Instant.now());
+        user.setUpdatedAt(Instant.now());
 
         try {
-            logger.debug("All validations passed, creating user account for: {}", username);
-            
-            // Hash the password before storing
-            String hashedPassword = PasswordHasher.hashPassword(password);
-            user.setPassword(hashedPassword);
-            user.setId(nextUserId);
-            
-            // Add user to in-memory maps
-            usersByUsername.put(username, user);
-            usersByEmail.put(email, user);
-            
-            // Save to persistent storage
+            // Add to in-memory collections
+            usersByUsername.put(usernameLower, user);
+            usersByEmail.put(emailLower, user);
+
+            // Persist the new user
             saveUsers();
-            
-            // Increment ID only after successful save
-            nextUserId++;
-            
-            logger.info("User registered successfully - ID: {}, Username: {}, Email: {}", 
-                user.getId(), username, email);
+            logger.info("{}: Successfully registered user: {} (ID: {})", methodName, username, user.getId());
+            return user;
+
         } catch (Exception e) {
-            // Log the error and throw an AuthException
-            logger.error("Registration failed for user {}: {}", user.getUsername(), e.getMessage(), e);
-            throw new AuthException(
-                    AuthException.AuthErrorType.REGISTRATION_FAILED,
-                    "Failed to register user: " + e.getMessage(),
-                    e
-            );
+            // Rollback in-memory changes if persistence fails
+            usersByUsername.remove(usernameLower);
+            usersByEmail.remove(emailLower);
+
+            if (e instanceof AuthException) {
+                logger.debug("{}: Registration failed for user {}: {}", methodName, username, e.getMessage());
+                throw e;
+            } else {
+                String errorMsg = String.format("Unexpected error during registration for user: %s", username);
+                logger.error("{}: {} - {}", methodName, errorMsg, e.getMessage(), e);
+                throw new AuthException(
+                        com.papel.imdb_clone.exceptions.AuthErrorType.INTERNAL_ERROR,
+                        "An unexpected error occurred during registration. Please try again later.",
+                        e
+                );
+            }
+        } finally {
+            logger.debug("{}: Completed registration attempt for user: {}", methodName, username);
         }
     }
 }
+

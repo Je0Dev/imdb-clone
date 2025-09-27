@@ -14,8 +14,8 @@ public class UserAlreadyExistsException extends AuthException {
 
     //serial version uid for object serialization
     @Serial
-    private static final long serialVersionUID = 1L;
-    private static final String DEFAULT_FIELD = "email";
+    private static final long serialVersionUID = 1L; //required for serialization support
+    private static final String DEFAULT_FIELD = "email"; //default field name
 
 
     /**
@@ -28,7 +28,7 @@ public class UserAlreadyExistsException extends AuthException {
      */
     public UserAlreadyExistsException(String message, String field, Object value, Throwable cause) {
         super(
-                AuthErrorType.USER_ALREADY_EXISTS,
+                AuthErrorType.ACCOUNT_ALREADY_EXISTS,
                 message != null ? message : createDefaultMessage(field, value),
                 createFieldErrors(field, value),
                 cause

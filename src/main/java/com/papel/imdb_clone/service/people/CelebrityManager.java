@@ -172,4 +172,12 @@ public class CelebrityManager<T extends Celebrity> {
     public Optional<T> findCelebrity(T celebrity) {
         return Optional.ofNullable(celebritiesByKey.get(generateKey(celebrity)));
     }
+
+    public void removeCelebrityById(int id) {
+        celebritiesById.remove(id);
+        // Remove the celebrity from the key map
+        celebritiesByKey.remove(generateKey(celebritiesById.get(id)));
+        // Reset the ID counter
+        nextId.set(1);
+    }
 }

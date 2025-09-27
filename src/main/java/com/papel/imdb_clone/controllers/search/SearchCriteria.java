@@ -27,11 +27,12 @@ public class SearchCriteria {
     private String director; // director of the content
 
 
-
+//TODO: add more search criteria
     //search criteria constructor with query
     public SearchCriteria(String query) {
         this.query = query;
     }
+
     //search criteria constructor with all parameters
     public SearchCriteria(String query, Double minImdbRating, Double maxImdbRating, List<Genre> genres, Integer minYear, Integer maxYear, String sortBy, boolean sortDescending,
                           Integer startYear, Integer endYear, String actor, String director, ContentType contentType, Genre genre, String title) {

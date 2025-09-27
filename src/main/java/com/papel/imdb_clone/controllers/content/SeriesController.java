@@ -46,16 +46,6 @@ import java.util.stream.Collectors;
 
 /**
  * Controller for managing TV series in the IMDB Clone application.
- * 
- * <p>This controller handles all series-related operations including:
- * <ul>
- *   <li>Displaying and filtering series in a table view</li>
- *   <li>Adding, editing, and deleting series</li>
- *   <li>Managing seasons and episodes</li>
- *   <li>Handling user ratings and reviews</li>
- *   <li>Advanced search functionality</li>
- * </ul>
- *
  */
 public class SeriesController extends BaseController {
     /**
@@ -702,37 +692,73 @@ public class SeriesController extends BaseController {
     }
 
     private void sortSeriesTable(String sortOption) {
-        if (sortOption == null) {
-            return;
+        if (sortOption == null) return;
+        
+        switch (sortOption) {
+            case "Title (A-Z)":
+                allSeries.sort(Comparator.comparing(Series::getTitle, String.CASE_INSENSITIVE_ORDER));
+                break;
+            case "Title (Z-A)":
+                allSeries.sort(Comparator.comparing(Series::getTitle, String.CASE_INSENSITIVE_ORDER).reversed());
+                break;
+            case "Year (Newest First)":
+                allSeries.sort(Comparator.comparingInt(Series::getStartYear).reversed());
+                break;
+            case "Year (Oldest First)":
+                allSeries.sort(Comparator.comparingInt(Series::getStartYear));
+                break;
+            case "Rating (Highest First)":
+                allSeries.sort(Comparator.comparingDouble(Series::getRating).reversed());
+                break;
+            case "Rating (Lowest First)":
+                allSeries.sort(Comparator.comparingDouble(Series::getRating));
+                break;
+            case "Seasons (Most First)":
+                allSeries.sort(Comparator.comparingInt(Series::getTotalSeasons).reversed());
+                break;
+            case "Seasons (Fewest First)":
+                allSeries.sort(Comparator.comparingInt(Series::getTotalSeasons));
+                break;
+            case "Episodes (Most First)":
+                allSeries.sort((s1, s2) -> 
+                    Integer.compare(
+                        s2.getSeasons().stream().mapToInt(Season::getEpisodesCount).sum(),
+                        s1.getSeasons().stream().mapToInt(Season::getEpisodesCount).sum()
+                    )
+                );
+                break;
+            case "Episodes (Fewest First)":
+                allSeries.sort(Comparator.comparingInt(s -> 
+                    s.getSeasons().stream().mapToInt(Season::getEpisodesCount).sum()
+                ));
+                break;
+            case "Creator (A-Z)":
+                allSeries.sort(Comparator.comparing(Series::getCreator, String.CASE_INSENSITIVE_ORDER));
+                break;
+            case "Creator (Z-A)":
+                allSeries.sort(Comparator.comparing(Series::getCreator, String.CASE_INSENSITIVE_ORDER).reversed());
+                break;
+            case "Genres (A-Z)":
+                allSeries.sort((s1, s2) -> {
+                    String g1 = s1.getGenres().isEmpty() ? "" : s1.getGenres().get(0).name();
+                    String g2 = s2.getGenres().isEmpty() ? "" : s2.getGenres().get(0).name();
+                    return g1.compareToIgnoreCase(g2);
+                });
+                break;
+            case "Genres (Z-A)":
+                allSeries.sort((s1, s2) -> {
+                    String g1 = s1.getGenres().isEmpty() ? "" : s1.getGenres().get(0).name();
+                    String g2 = s2.getGenres().isEmpty() ? "" : s2.getGenres().get(0).name();
+                    return g2.compareToIgnoreCase(g1);
+                });
+                break;
+            default:
+                logger.warn("Unknown sort option: {}", sortOption);
+                return;
         }
-
-        Comparator<Series> comparator = switch (sortOption) {
-            case "Title (A-Z)" -> Comparator.comparing(Series::getTitle, String.CASE_INSENSITIVE_ORDER);
-            case "Title (Z-A)" -> Comparator.comparing(Series::getTitle, String.CASE_INSENSITIVE_ORDER).reversed();
-            case "Year (Newest First)" -> Comparator.comparingInt(Series::getStartYear).reversed();
-            case "Year (Oldest First)" -> Comparator.comparingInt(Series::getStartYear);
-            case "Rating (Highest First)" -> Comparator.comparingDouble(Series::getRating).reversed();
-            case "Rating (Lowest First)" -> Comparator.comparingDouble(Series::getRating);
-            case "Seasons (Most First)" -> Comparator.comparingInt(Series::getTotalSeasons).reversed();
-            case "Seasons (Fewest First)" -> Comparator.comparingInt(Series::getTotalSeasons);
-            case "Episodes (Most First)", "Episodes (Fewest First)" -> (s1, s2) -> Integer.compare(
-                    s1.getSeasons().stream().mapToInt(season -> season.getEpisodes().size()).sum(),
-                    s2.getSeasons().stream().mapToInt(season -> season.getEpisodes().size()).sum()
-            );
-            default -> null;
-
-            // Determine the appropriate comparator based on the selected sort option
-        };
-
-        if (comparator != null) {
-            // Create a sorted list and update the table
-            FXCollections.sort(filteredSeries, comparator);
-
-            // If the table has a sort order, clear it to prevent interference with our custom sort
-            if (!seriesTable.getSortOrder().isEmpty()) {
-                seriesTable.getSortOrder().clear();
-            }
-        }
+        
+        // Refresh the filtered list to apply sorting
+        filterSeries();
     }
 
     /**
@@ -1259,6 +1285,7 @@ public class SeriesController extends BaseController {
      *
      * @param series The series to be rated
      */
+    //TODO: implement rating dialog
     @FXML
     private void showRatingDialog(Series series) {
         try {

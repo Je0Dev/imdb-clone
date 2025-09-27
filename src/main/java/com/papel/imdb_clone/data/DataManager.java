@@ -28,6 +28,8 @@ import java.util.List;
  * while maintaining separation of concerns.
  */
 public class DataManager {
+
+
     //data manager instance being volatile to ensure visibility of changes across threads
     private static volatile DataManager instance;
     private static final Object lock = new Object();

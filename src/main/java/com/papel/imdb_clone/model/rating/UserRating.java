@@ -9,7 +9,7 @@ public class UserRating {
     private int id;
     private final int userId;
     private final int contentId;
-    private Integer rating; // 1-10
+    private double rating; // 1.0-10.0
     private String title;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
@@ -20,10 +20,10 @@ public class UserRating {
      * @param contentId The content's ID
      * @param rating The user's rating
      */
-    public UserRating(int userId, int contentId, int rating) {
+    public UserRating(int userId, int contentId, double rating) {
         this.userId = userId;
         this.contentId = contentId;
-        this.rating = rating;
+        setRating(rating);
         this.createdAt = LocalDateTime.now();
     }
 
@@ -41,10 +41,10 @@ public class UserRating {
         return rating;
     }
 
-    //if rating is between 1 and 10, set it to that value-int, else throw exception
-    public void setRating(int rating) {
-        if (rating >= 1 && rating <= 10) {
-            this.rating = rating;
+    //if rating is between 1.0 and 10.0, set it to that value, else throw exception
+    public void setRating(double rating) {
+        if (rating >= 1.0 && rating <= 10.0) {
+            this.rating = Math.round(rating * 10) / 10.0; // Round to 1 decimal place
         } else {
             throw new IllegalArgumentException("Rating must be between 1.0 and 10.0");
         }
@@ -85,5 +85,17 @@ public class UserRating {
                 ", createdAt=" + createdAt +
                 ", updatedAt=" + updatedAt +
                 '}';
+    }
+
+    public Integer getUserId() {
+        return userId;
+    }
+
+    public Integer getContentId() {
+        return contentId;
+    }
+
+    public double getScore() {
+        return rating;
     }
 }

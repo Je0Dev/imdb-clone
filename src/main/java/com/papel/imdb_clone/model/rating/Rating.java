@@ -15,8 +15,10 @@ public class Rating {
     private LocalDateTime updatedAt;
 
 
-
     public Rating(int id, double rating) {
+        this.id = id;
+        this.score = rating;
+        this.review = "";
         this.createdAt = LocalDateTime.now();
     }
 
@@ -27,7 +29,6 @@ public class Rating {
         this.score = score;
         this.createdAt = LocalDateTime.now();
         this.review = "";
-        this.score = score;
     }
 
     public int getId() {
@@ -37,7 +38,6 @@ public class Rating {
     public void setId(int id) {
         this.id = id;
     }
-
 
     public int getContentId() {
         return contentId;

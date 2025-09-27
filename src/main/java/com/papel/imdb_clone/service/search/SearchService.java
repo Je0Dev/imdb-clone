@@ -15,10 +15,10 @@ import java.util.stream.Collectors;
  * Service for searching content with filtering capabilities.
  */
 public class SearchService {
+    //Logger
     private static final Logger logger = LoggerFactory.getLogger(SearchService.class);
-    private static SearchService instance;
+    //Data manager
     private final DataManager dataManager;
-    private int maxYear;
 
     /**
      * Creates a new SearchService.

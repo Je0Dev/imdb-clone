@@ -18,6 +18,7 @@ import java.time.format.DateTimeFormatter;
  * Loads user data from files.
  */
 public class UserDataLoader extends BaseDataLoader {
+
     private static final Logger logger = LoggerFactory.getLogger(UserDataLoader.class);
     private final InMemoryUserRepository userRepository;
     //format of the date in the file

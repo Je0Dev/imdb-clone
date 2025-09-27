@@ -15,6 +15,7 @@ import org.slf4j.LoggerFactory;
  * This class cannot be instantiated.
  */
 public class DataFileLoader {
+    //Logger
     private static final Logger logger = LoggerFactory.getLogger(DataFileLoader.class);
     
     /**

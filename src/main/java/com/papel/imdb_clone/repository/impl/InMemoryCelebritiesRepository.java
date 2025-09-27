@@ -16,10 +16,20 @@ import java.util.stream.Collectors;
  * In-memory implementation of the CelebritiesRepository interface.
  * This implementation is thread-safe and uses a ConcurrentHashMap for storage.
  */
+/**
+ * Creates a new instance of InMemoryCelebritiesRepository.
+ */
 public class InMemoryCelebritiesRepository implements CelebritiesRepository {
     private final Map<Integer, Celebrity> celebrities = new ConcurrentHashMap<>();
     private final AtomicInteger idGenerator = new AtomicInteger(1);
     private final Object lock = new Object();
+
+    /**
+     * Constructs a new InMemoryCelebritiesRepository.
+     */
+    public InMemoryCelebritiesRepository() {
+        // Initialize the repository
+    }
 
     @Override
     @SuppressWarnings("unchecked")

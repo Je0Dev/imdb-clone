@@ -2,22 +2,31 @@ package com.papel.imdb_clone.controllers;
 
 import com.papel.imdb_clone.controllers.coordinator.UICoordinator;
 import com.papel.imdb_clone.data.DataManager;
+import com.papel.imdb_clone.gui.MovieAppGui;
 import com.papel.imdb_clone.model.people.User;
 import com.papel.imdb_clone.service.navigation.NavigationService;
 import com.papel.imdb_clone.service.search.ServiceLocator;
+import com.papel.imdb_clone.service.validation.AuthService;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
 import javafx.scene.Node;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import javafx.stage.Window;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.util.Map;
 import java.util.Objects;
 
@@ -27,18 +36,6 @@ import static com.papel.imdb_clone.util.UIUtils.showError;
  * MainController serves as the primary controller for the application's main window.
  * It manages the overall application state, handles navigation between views, and coordinates
  * between different UI components and services.
- *
- * <p>Key responsibilities include:
- * <ul>
- *     <li>Managing the main application window and its layout</li>
- *     <li>Handling user session state and authentication</li>
- *     <li>Coordinating between different UI components</li>
- *     <li>Providing navigation between different application views</li>
- *     <li>Managing application lifecycle and resource cleanup</li>
- * </ul>
- *
- * <p>This controller is tightly coupled with the main application window's FXML layout
- * and serves as the central hub for application-wide functionality.
  */
 
 public class MainController extends BorderPane {
@@ -46,18 +43,29 @@ public class MainController extends BorderPane {
     private static final String MOVIES_VIEW = "/fxml/content/movie-view.fxml";
     private static final String SERIES_VIEW = "/fxml/content/series-view.fxml";
     private static final String ADVANCED_SEARCH_VIEW = "/fxml/search/advanced-search-view.fxml";
+    private static final String RATED_VIEW = "/fxml/content/rated-tab.fxml";
 
     // Service dependencies
     private final ServiceLocator serviceLocator = ServiceLocator.getInstance();
+    private final com.papel.imdb_clone.service.validation.AuthService authService = 
+        com.papel.imdb_clone.service.validation.AuthService.getInstance();
     private UICoordinator uiCoordinator;
 
     // UI Components
     @FXML private VBox sidebar;
+    private static final Logger sidebarLogger = LoggerFactory.getLogger("SidebarDebug");
     @FXML private Label statusLabel;
     @FXML private Label userLabel;
     @FXML private VBox featuredContent;
     @FXML private Button signInButton;
     @FXML private Button registerButton;
+    @FXML private Button logoutButton;
+    @FXML private Button moviesButton;
+    @FXML private Button tvShowsButton;
+    @FXML private Button celebritiesButton;
+    @FXML private Button ratedButton;
+    @FXML private Button advancedSearchButton;
+    @FXML private Label guestMessage;
     
     // Application state
     private Map<String, Object> data;
@@ -66,6 +74,8 @@ public class MainController extends BorderPane {
     private String sessionToken;
     private boolean isInitialized = false;
     private boolean isInitializing = false;
+    private boolean isAdmin;
+    private boolean isGuest = true; // Default to guest mode
 
     // ===== Navigation Methods =====
 
@@ -77,13 +87,134 @@ public class MainController extends BorderPane {
      */
     @FXML
     private void showHome(ActionEvent event) {
-        // Navigate to the home view or refresh the current view
-        logger.info("Navigating to home view");
-        navigateToView(event, "/fxml/base/home-view.fxml", "Home");
-        updateAuthUI();
-        updateUserLabel();
+        try {
+            logger.info("Navigating to home view");
+            
+            // Store a reference to the current sidebar or create a new one if needed
+            VBox currentSidebar = this.sidebar != null ? this.sidebar : loadSidebar();
+            
+            // Ensure sidebar is properly configured
+            if (currentSidebar != null) {
+                currentSidebar.setDisable(false);
+                currentSidebar.setVisible(true);
+                currentSidebar.setManaged(true);
+            }
+            
+            // Create a simple home content panel
+            VBox homeContent = new VBox(20);
+            homeContent.setPadding(new Insets(40));
+            homeContent.setAlignment(Pos.CENTER);
+            homeContent.setStyle("-fx-background-color: #0f0f0f;");
+            
+            // Add welcome message
+            Label welcomeLabel = new Label("Welcome to IMDb Clone");
+            welcomeLabel.setStyle("-fx-text-fill: #f5c518; -fx-font-size: 36px; -fx-font-weight: bold;");
+            
+            Label subLabel = new Label("Discover and explore your favorite movies and TV shows.");
+            subLabel.setStyle("-fx-text-fill: #cccccc; -fx-font-size: 18px;");
+            subLabel.setWrapText(true);
+            
+            // Add navigation buttons
+            HBox buttonRow1 = new HBox(20);
+            buttonRow1.setAlignment(Pos.CENTER);
+            
+            Button moviesButton = new Button("Movies");
+            moviesButton.setStyle("-fx-background-color: #f5c518; -fx-text-fill: #000000; -fx-font-size: 16px; -fx-pref-width: 150; -fx-cursor: hand;");
+            moviesButton.setOnAction(e -> {
+                try {
+                    showMovies(e);
+                } catch (Exception ex) {
+                    logger.error("Error in movies navigation: ", ex);
+                    showError("Navigation Error", "Failed to navigate to Movies: " + ex.getMessage());
+                }
+            });
+            
+            Button tvShowsButton = new Button("TV Shows");
+            tvShowsButton.setStyle("-fx-background-color: #f5c518; -fx-text-fill: #000000; -fx-font-size: 16px; -fx-pref-width: 150; -fx-cursor: hand;");
+            tvShowsButton.setOnAction(e -> {
+                try {
+                    showTVShows(e);
+                } catch (Exception ex) {
+                    logger.error("Error in TV shows navigation: ", ex);
+                    showError("Navigation Error", "Failed to navigate to TV Shows: " + ex.getMessage());
+                }
+            });
+            
+            buttonRow1.getChildren().addAll(moviesButton, tvShowsButton);
+            
+            // Add everything to the content
+            homeContent.getChildren().addAll(welcomeLabel, subLabel, buttonRow1);
+            
+            // Update the UI on the JavaFX Application Thread
+            Platform.runLater(() -> {
+                try {
+                    // Get the current user
+                    User user = sessionToken != null ? authService.getCurrentUser(sessionToken) : null;
+                    // Get the current scene and root
+                    Scene currentScene = this.getScene();
+                    BorderPane rootPane = null;
+                    
+                    // If we have a scene and the root is a BorderPane, use it
+                    if (currentScene != null && currentScene.getRoot() instanceof BorderPane) {
+                        rootPane = (BorderPane) currentScene.getRoot();
+                    }
+                    
+                    // If no valid root pane, create a new one
+                    if (rootPane == null) {
+                        rootPane = new BorderPane();
+                        if (currentScene == null) {
+                            Stage stage = primaryStage != null ? primaryStage : new Stage();
+                            currentScene = new Scene(rootPane);
+                            stage.setScene(currentScene);
+                            stage.show();
+                        } else {
+                            currentScene.setRoot(rootPane);
+                        }
+                    }
+                    
+                    // Always update the center content and sidebar
+                    rootPane.setCenter(homeContent);
+                    
+                    if (currentSidebar != null) {
+                        rootPane.setLeft(currentSidebar);
+                        this.sidebar = currentSidebar; // Update the reference
+                    }
+                    
+                    // Ensure the window is visible
+                    if (currentScene.getWindow() != null) {
+                        currentScene.getWindow().sizeToScene();
+                    }
+                    
+                    // Request focus on the content
+                    homeContent.requestFocus();
+                    
+                    logger.info("Home view loaded successfully with preserved sidebar");
+                    
+                } catch (Exception e) {
+                    logger.error("Error updating home view: ", e);
+                    showError("Navigation Error", "Failed to update home view: " + e.getMessage());
+                }
+            });
+            
+        } catch (Exception e) {
+            logger.error("Failed to load home view: {}", e.getMessage(), e);
+            showError("Navigation Error", "Failed to load home view: " + e.getMessage());
+        }
     }
-    
+
+    //load sidebar
+    private VBox loadSidebar() {
+        try {
+            // Load the sidebar FXML
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("sidebar-view.fxml"));
+            return loader.load();
+        } catch (IOException e) {
+            logger.error("Failed to load sidebar: {}", e.getMessage(), e);
+            showError("Navigation Error", "Failed to load sidebar: " + e.getMessage());
+            return null;
+        }
+    }
+
     /**
      * Handles navigation to the movies view.
      *
@@ -92,6 +223,10 @@ public class MainController extends BorderPane {
      */
     @FXML
     private void showMovies(ActionEvent event) {
+        if (!authService.isAuthenticated()) {
+            showError("Authentication Required", "Please sign in to access this feature.");
+            return;
+        }
         navigateToView(event, MOVIES_VIEW, "Movies");
     }
 
@@ -103,6 +238,10 @@ public class MainController extends BorderPane {
      */
     @FXML
     private void showTVShows(ActionEvent event) {
+        if (!authService.isAuthenticated()) {
+            showError("Authentication Required", "Please sign in to access this feature.");
+            return;
+        }
         navigateToView(event, SERIES_VIEW, "TV Shows");
     }
 
@@ -114,7 +253,20 @@ public class MainController extends BorderPane {
      */
     @FXML
     private void showAdvancedSearch(ActionEvent event) {
+        if (!authService.isAuthenticated()) {
+            showError("Authentication Required", "Please sign in to access this feature.");
+            return;
+        }
         navigateToView(event, ADVANCED_SEARCH_VIEW, "Advanced Search");
+    }
+    
+    @FXML
+    private void showRated(ActionEvent event) {
+        if (!authService.isAuthenticated()) {
+            showError("Authentication Required", "Please sign in to access this feature.");
+            return;
+        }
+        navigateToView(event, RATED_VIEW, "Your Rated Content");
     }
     
     /**
@@ -143,15 +295,7 @@ public class MainController extends BorderPane {
             }
         }
     }
-    
-    /**
-     * Sets the current user and updates the UI accordingly
-     * @param user The user to set as current, or null to log out
-     */
-    public void setCurrentUser(User user) {
-        this.currentUser = user;
-        updateAuthUI();
-    }
+
     
 
     /**
@@ -167,14 +311,31 @@ public class MainController extends BorderPane {
         Objects.requireNonNull(viewPath, "View path cannot be null");
         
         try {
+            // Special handling for home view to prevent sidebar recreation
+            if (viewPath.endsWith("home-view.fxml")) {
+                showHome(event);
+                return;
+            }
+            
             Node source = (Node) event.getSource();
             Window window = source.getScene().getWindow();
             if (!(window instanceof Stage)) {
                 throw new IllegalStateException("Could not determine the current stage");
             }
             
+            // Store the current sidebar state
+            VBox currentSidebar = this.sidebar;
+            
+            // Navigate to the new view
             NavigationService navigationService = NavigationService.getInstance();
             navigationService.navigateTo(viewPath, data, (Stage) window, title);
+            
+            // If we have a sidebar reference, ensure it's restored
+            if (currentSidebar != null && this.sidebar == null) {
+                this.setLeft(currentSidebar);
+                this.sidebar = currentSidebar;
+            }
+            
             logger.debug("Navigated to {} view", title);
             
         } catch (Exception e) {
@@ -238,140 +399,246 @@ public class MainController extends BorderPane {
         // Prevent re-entrancy and redundant initialization
         if (isInitialized) {
             logger.debug("Services already initialized, skipping...");
-            return;
         }
-        if (isInitializing) {
-            logger.warn("Service initialization already in progress");
-            return;
-        }
+    }
 
-        isInitializing = true;
-        try {
-            logger.info("Initializing services...");
-
-            // Initialize core services
-            DataManager dataManager = initializeDataManager();
-            initializeUICoordinator();
-            
-            // Load initial data if needed
-            loadInitialData(dataManager);
-
-            logger.info("All services initialized successfully");
-            isInitialized = true;
-            
+    /**
+     * Checks the current authentication state and updates the UI accordingly.
+            }
         } catch (Exception e) {
-            String errorMsg = String.format("Failed to initialize services: %s", e.getMessage());
-            logger.error(errorMsg, e);
-            throw new IllegalStateException(errorMsg, e);
-        } finally {
-            isInitializing = false;
-        }
-    }
-    
-    /**
-     * Initializes the DataManager service.
-     *
-     * @return The initialized DataManager instance
-     * @throws IllegalStateException if DataManager cannot be initialized
-     */
-    private DataManager initializeDataManager() {
-        DataManager dataManager = serviceLocator.getDataManager();
-        if (dataManager == null) {
-            throw new IllegalStateException("Failed to get DataManager from ServiceLocator");
-        }
-        logger.info("DataManager initialized successfully");
-        return dataManager;
-    }
-    
-    /**
-     * Initializes the UICoordinator service and sets up the user session.
-     *
-     * @throws IllegalStateException if UICoordinator cannot be initialized
-     */
-    private void initializeUICoordinator() {
-        this.uiCoordinator = ServiceLocator.getUICoordinator(UICoordinator.class);
-        if (this.uiCoordinator == null) {
-            throw new IllegalStateException("Failed to get UICoordinator from ServiceLocator");
-        }
-        
-        // Set user session if available
-        if (this.currentUser != null && this.sessionToken != null) {
-            this.uiCoordinator.setUserSession(this.currentUser, this.sessionToken);
-        }
-        logger.info("UICoordinator initialized successfully");
-    }
-    
-    /**
-     * Loads initial application data if it hasn't been loaded yet.
-     *
-     * @param dataManager The DataManager instance to use for loading data
-     * @throws IllegalStateException if data loading fails
-     */
-    private void loadInitialData(DataManager dataManager) {
-        if (dataManager == null || dataManager.isDataLoaded()) {
-            return;
-        }
-        
-        try {
-            logger.info("Loading initial application data...");
-            dataManager.loadAllData();
-            logger.info("Initial data loaded successfully");
-        } catch (Exception e) {
-            String errorMsg = String.format("Failed to load initial data: %s", e.getMessage());
-            logger.error(errorMsg, e);
-            throw new IllegalStateException(errorMsg, e);
+            logger.error("Error checking authentication: {}", e.getMessage(), e);
+            this.isGuest = true;
+            updateUIForGuestMode();
         }
     }
 
     /**
-     * Initializes the controller after its root element has been completely processed.
-     * This method is automatically called by JavaFX after the FXML file has been loaded.
-     * It sets up the UI components, initializes services, and loads initial data.
-     * 
-     * <p>This method performs the following operations:
-     * <ol>
-     *   <li>Initializes required services</li>
-     *   <li>Loads and initializes all views</li>
-     *   <li>Sets up the initial view (home view)</li>
-     *   <li>Updates the UI state</li>
-     * </ol>
-     * 
-     * @throws IllegalStateException if any critical initialization step fails
+     * Sets the current user and updates the UI accordingly
+     * @param user The user to set as current, or null to log out
+     */
+    public void setCurrentUser(User user) {
+        this.currentUser = user;
+        this.isGuest = (user == null);
+        
+        if (isGuest) {
+            updateUIForGuestMode();
+        } else {
+            updateUserInterface();
+        }
+    }
+    
+    /**
+     * Shows the login screen
+     * @param event The action event that triggered this method
      */
     @FXML
-    public void initialize() {
-        logger.info("Initializing MainController...");
-
-        try {
-            // 1. Initialize required services
-            initializeServices();
-            validateServiceDependencies();
-
-            // 2. Load and initialize views asynchronously
-            Platform.runLater(this::initializeUI);
-
-        } catch (Exception e) {
-            String errorMsg = String.format("Failed to initialize MainController: %s", e.getMessage());
-            logger.error(errorMsg, e);
-            showError("Initialization Error", "Failed to initialize the application: " + e.getMessage());
-            throw new IllegalStateException(errorMsg, e);
+    private void showLogin(ActionEvent event) {
+        if (getScene() != null && getScene().getWindow() != null) {
+            Object userData = getScene().getWindow().getUserData();
+            if (userData instanceof MovieAppGui) {
+                ((MovieAppGui) userData).showLoginScreen();
+            }
         }
     }
     
     /**
-     * Validates that all required service dependencies are properly initialized.
-     * 
-     * @throws IllegalStateException if any required service is not available
+     * Shows the registration screen
+     * @param event The action event that triggered this method
      */
-    private void validateServiceDependencies() {
-        if (uiCoordinator == null) {
-            throw new IllegalStateException("UICoordinator not initialized");
+    @FXML
+    private void showRegister(ActionEvent event) {
+        if (getScene() != null && getScene().getWindow() != null) {
+            Object userData = getScene().getWindow().getUserData();
+            if (userData instanceof MovieAppGui) {
+                ((MovieAppGui) userData).showRegisterScreen();
+            }
         }
-        if (serviceLocator == null) {
-            throw new IllegalStateException("ServiceLocator not available");
+    }
+
+    /**
+     * Handles the logout action.
+     * @param event The action event that triggered this method
+     */
+    @FXML
+    private void handleLogout(ActionEvent event) {
+        try {
+            // Clear authentication state
+            if (sessionToken != null) {
+                authService.logout(sessionToken);
+                sessionToken = null;
+            }
+            
+            // Update UI for guest mode
+            updateUIForAuthState(false);
+            
+            // Clear any user-specific data
+            setCurrentUser(null);
+            
+            // Show login screen
+            if (getScene() != null && getScene().getWindow() != null) {
+                Object userData = getScene().getWindow().getUserData();
+                if (userData instanceof MovieAppGui) {
+                    ((MovieAppGui) userData).showLoginScreen();
+                }
+            }
+            
+        } catch (Exception e) {
+            logger.error("Error during logout: {}", e.getMessage(), e);
+            showError("Logout Error", "Failed to log out. Please try again.");
+        }
+    }
+
+    /**
+     * Checks the current authentication state and updates the UI accordingly.
+     * This method verifies if the current session token is still valid.
+     */
+    private void checkAuthentication() {
+        try {
+            if (sessionToken != null) {
+                // Try to get the current user with the session token
+                User user = authService.getCurrentUser(sessionToken);
+                if (user != null) {
+                    // User is authenticated
+                    setCurrentUser(user);
+                    updateUIForAuthState(true);
+                    return;
+                }
+            }
+            // If we get here, user is not authenticated
+            setCurrentUser(null);
+            updateUIForAuthState(false);
+        } catch (Exception e) {
+            logger.error("Error checking authentication: {}", e.getMessage(), e);
+            // In case of error, assume not authenticated
+            setCurrentUser(null);
+            updateUIForAuthState(false);
         }
     }
     
+    /**
+     * Updates the UI for guest users.
+     */
+    private void updateUIForGuestMode() {
+        updateUIForAuthState(false);
+        if (userLabel != null) userLabel.setText("Guest");
+        if (signInButton != null) signInButton.setVisible(true);
+        if (registerButton != null) registerButton.setVisible(true);
+        if (logoutButton != null) logoutButton.setVisible(false);
+    }
+
+    @FXML
+    public void initialize() {
+        try {
+            logger.info("Initializing MainController");
+
+            // Initialize UI coordinator
+            this.uiCoordinator = UICoordinator.getInstance();
+
+            // Initialize UI state based on authentication
+            updateUIForAuthState(authService.isAuthenticated());
+            
+            // Set up button actions
+            setupButtonActions();
+            
+            // Check if we have a logged-in user
+            checkAuthentication();
+
+            logger.info("MainController initialized successfully");
+            isInitialized = true;
+        } catch (Exception e) {
+            logger.error("Error initializing MainController: {}", e.getMessage(), e);
+            showError("Initialization Error", "Failed to initialize the application.");
+        }
+    }
+    
+    /**
+     * Sets up button actions for navigation
+     */
+    private void setupButtonActions() {
+        if (moviesButton != null) {
+            moviesButton.setOnAction(this::showMovies);
+        }
+        if (tvShowsButton != null) {
+            tvShowsButton.setOnAction(this::showTVShows);
+        }
+        if (celebritiesButton != null) {
+            celebritiesButton.setOnAction(this::showCelebrities);
+        }
+        if (ratedButton != null) {
+            ratedButton.setOnAction(this::showRated);
+        }
+        if (advancedSearchButton != null) {
+            advancedSearchButton.setOnAction(this::showAdvancedSearch);
+        }
+        if (signInButton != null) {
+            signInButton.setOnAction(this::showLogin);
+        }
+        if (registerButton != null) {
+            registerButton.setOnAction(this::showRegister);
+        }
+        if (logoutButton != null) {
+            logoutButton.setOnAction(this::handleLogout);
+        }
+    }
+    
+    /**
+     * Updates the UI based on authentication state
+     * @param isAuthenticated whether the user is authenticated
+     */
+    public void updateUIForAuthState(boolean isAuthenticated) {
+        Platform.runLater(() -> {
+            // Update UI elements based on authentication state
+            if (logoutButton != null) {
+                logoutButton.setVisible(isAuthenticated);
+                logoutButton.setManaged(isAuthenticated);
+            }
+            if (signInButton != null) {
+                signInButton.setVisible(!isAuthenticated);
+                signInButton.setManaged(!isAuthenticated);
+            }
+            if (registerButton != null) {
+                registerButton.setVisible(!isAuthenticated);
+                registerButton.setManaged(!isAuthenticated);
+            }
+            if (guestMessage != null) {
+                guestMessage.setVisible(!isAuthenticated);
+            }
+            
+            // Enable/disable feature buttons based on authentication
+            setFeatureButtonsEnabled(isAuthenticated);
+            
+            // Update user label
+            updateUserLabel();
+        });
+    }
+    
+    /**
+     * Enables or disables feature buttons based on authentication
+     * @param enabled whether to enable the buttons
+     */
+    private void setFeatureButtonsEnabled(boolean enabled) {
+        if (moviesButton != null) {
+            moviesButton.setDisable(!enabled);
+            moviesButton.setOpacity(enabled ? 1.0 : 0.5);
+        }
+        if (tvShowsButton != null) {
+            tvShowsButton.setDisable(!enabled);
+            tvShowsButton.setOpacity(enabled ? 1.0 : 0.5);
+        }
+        if (celebritiesButton != null) {
+            celebritiesButton.setDisable(!enabled);
+            celebritiesButton.setOpacity(enabled ? 1.0 : 0.5);
+        }
+        if (ratedButton != null) {
+            ratedButton.setDisable(!enabled);
+            ratedButton.setOpacity(enabled ? 1.0 : 0.5);
+        }
+        if (advancedSearchButton != null) {
+            advancedSearchButton.setDisable(!enabled);
+            advancedSearchButton.setOpacity(enabled ? 1.0 : 0.5);
+        }
+    }
+
     /**
      * Initializes the UI components asynchronously.
      * This method is called on the JavaFX Application Thread.
@@ -401,7 +668,13 @@ public class MainController extends BorderPane {
             throw new IllegalStateException(errorMsg, e);
         }
     }
-    
+
+    public void updateUserInterface() {
+        updateUserLabel();
+        updateSidebarState();
+        updateStatusBar();
+    }
+
     /**
      * Sets up the initial view (home view) in the center of the main window.
      */
@@ -417,38 +690,68 @@ public class MainController extends BorderPane {
 
 
     /**
-     * Updates UI elements that depend on the current user/session state and refreshes views.
-     * This method is called whenever the UI needs to be refreshed to reflect the current state.
-     */
-    private void updateUserInterface() {
-        try {
-            // Update UI elements
-            updateUserLabel();
-            updateSidebarState();
-            updateStatusBar();
-            logger.debug("UI updated to reflect current application state");
-        } catch (Exception e) {
-            // Show error to user
-            String errorMsg = String.format("Failed to update user interface: %s", e.getMessage());
-            logger.warn(errorMsg, e);
-            showError("UI Update Error", "Failed to update user interface");
-            throw new IllegalStateException(errorMsg, e);
-        }
-    }
-    
-    /**
      * Updates the sidebar state based on the current user's permissions.
      */
-    private void updateSidebarState() {
+    public void updateSidebarState() {
         if (sidebar == null) {
             logger.warn("Sidebar component is not initialized");
             return;
         }
         
-        // Enable/disable sidebar items based on user permissions
-        // Example: Disable admin features for non-admin users
-        boolean isAdmin = currentUser != null && currentUser.isAdmin();
-        sidebar.setDisable(!isAdmin);
+        // Force enable the sidebar and make it visible
+        sidebar.setDisable(false);
+        sidebar.setVisible(true);
+        sidebar.setManaged(true);
+        
+        boolean isLoggedIn = currentUser != null;
+        isAdmin = isLoggedIn && currentUser.isAdmin();
+        
+        // Log state changes
+        sidebarLogger.info("Updating sidebar state - Logged In: {}, Admin: {}", isLoggedIn, isAdmin);
+        
+        // Set opacity based on login state
+        double targetOpacity = isLoggedIn ? 1.0 : 0.5;
+        sidebar.setOpacity(targetOpacity);
+        
+        // Process all buttons in the sidebar
+        Platform.runLater(() -> {
+            for (Node node : sidebar.getChildren()) {
+                if (node instanceof Button button) {
+                    String buttonText = button.getText();
+                    if (isLoggedIn) {
+                        // For logged-in users, enable all buttons
+                        button.setDisable(false);
+                        button.setOpacity(1.0);
+                        button.setVisible(true);
+                        button.setManaged(true);
+                        sidebarLogger.info("Enabled button: {}", buttonText);
+                    } else {
+                        // For guests, only enable Sign In and Register buttons
+                        boolean shouldEnable = buttonText != null && 
+                            (buttonText.equals("Sign In") || buttonText.equals("Register"));
+                        button.setDisable(!shouldEnable);
+                        button.setOpacity(shouldEnable ? 1.0 : 0.5);
+                        button.setVisible(true);
+                        button.setManaged(true);
+                        sidebarLogger.info("Button '{}' set to: {}", buttonText, shouldEnable ? "enabled" : "disabled");
+                    }
+                }
+            }
+        });
+        
+        // Add a listener to prevent disabling
+        sidebar.disableProperty().addListener((obs, oldVal, newVal) -> {
+            if (newVal) {
+                sidebarLogger.warn("Preventing sidebar from being disabled");
+                Platform.runLater(() -> {
+                    sidebar.setDisable(false);
+                    sidebar.setVisible(true);
+                    sidebar.setManaged(true);
+                });
+            }
+        });
+        
+        logger.debug("Sidebar state updated - Logged In: {}, Admin: {}", isLoggedIn, isAdmin);
     }
     
     /**
@@ -477,7 +780,7 @@ public class MainController extends BorderPane {
      *   <li>userLabel is not initialized: Logs a warning</li>
      * </ul>
      */
-    private void updateUserLabel() {
+    public void updateUserLabel() {
         if (userLabel == null) {
             logger.warn("userLabel is not initialized in FXML. Cannot update user display.");
             return;
@@ -518,13 +821,13 @@ public class MainController extends BorderPane {
         if (user != null && sessionToken == null) {
             throw new IllegalArgumentException("Session token cannot be null when user is not null");
         }
-        
+
         // Update state
         this.currentUser = user;
         this.sessionToken = sessionToken;
-        
+
         // Log the session change (without exposing sensitive information)
-        logger.info("User session updated - User: {}", 
+        logger.info("User session updated - User: {}",
             user != null ? user.getUsername() : "<none>");
 
         // Update UI coordinator on the JavaFX Application Thread
@@ -534,7 +837,7 @@ public class MainController extends BorderPane {
                 if (uiCoordinator != null) {
                     uiCoordinator.setUserSession(user, sessionToken);
                 }
-                
+
                 // Update the UI to reflect the current user
                 updateUserInterface();
                 
@@ -613,21 +916,13 @@ public class MainController extends BorderPane {
         }
     }
 
-    public void showLogin(ActionEvent actionEvent) {
-        try {
-            NavigationService.getInstance().showLogin(primaryStage);
-        } catch (Exception e) {
-            logger.error("Failed to navigate to login view: {}", e.getMessage(), e);
-            showError("Navigation Error", "Failed to open login view: " + e.getMessage());
-        }
+    public void setUser(User user) {
+        this.currentUser = user;
+        updateUserInterface();
     }
 
-    public void showRegister(ActionEvent actionEvent) {
-        try {
-            NavigationService.getInstance().showRegister(primaryStage);
-        } catch (Exception e) {
-            logger.error("Failed to navigate to register view: {}", e.getMessage(), e);
-            showError("Navigation Error", "Failed to open register view: " + e.getMessage());
-        }
+    public void setStage(Stage stage) {
+        this.primaryStage = stage;
+
     }
 }

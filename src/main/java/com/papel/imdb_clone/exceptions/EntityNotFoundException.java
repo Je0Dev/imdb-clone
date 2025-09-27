@@ -60,13 +60,6 @@ public class EntityNotFoundException extends InvalidEntityException {
     }
 
     /**
-     * Creates an exception with entity type and identifier
-     */
-    public EntityNotFoundException(Class<?> entityType, Object identifier) {
-        this(entityType, identifier, (String) null);
-    }
-
-    /**
      * Creates an exception with entity type, identifier, and custom message
      */
     public EntityNotFoundException(Class<?> entityType, Object identifier, String message) {
@@ -91,16 +84,6 @@ public class EntityNotFoundException extends InvalidEntityException {
         // Store class name as String for serialization
         String entityTypeName = entityType != null ? entityType.getName() : null;
         this.serializedEntityType = entityType != null ? entityType.getName() : null;
-    }
-
-
-    //create exception with entity type, identifier, message, and cause
-    public EntityNotFoundException(Class<?> entityType, Object identifier, String message, Throwable cause) {
-        this(entityType,
-                entityType != null ? entityType.getSimpleName() : null,
-                identifier,
-                message,
-                cause);
     }
 
     /**

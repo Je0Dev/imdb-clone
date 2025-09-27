@@ -27,7 +27,12 @@ public class Movie extends Content {
 
     //default constructor
     public Movie() {
-        super("Movie", new Date(2025, Calendar.JANUARY, 1), null, "Unknown", new HashMap<>(), 0.0);
+        super("Movie",
+                new Date(124, Calendar.JANUARY, 1), // 2024 - 1900 = 124 (years since 1900)
+                null,
+                "Unknown",
+                new HashMap<>(),
+                0.0);
         // Initialize fields directly instead of calling methods that might use 'this'
         this.awards = new ArrayList<>();
         this.genres = new ArrayList<>();
@@ -209,5 +214,14 @@ public class Movie extends Content {
 
     public int getRuntime() {
         return duration;
+    }
+    
+    /**
+     * Gets the rating given by a specific user
+     * @param userId The ID of the user
+     * @return The user's rating or null if not rated
+     */
+    public Integer getUserRating(int userId) {
+        return getUserRatings() != null ? getUserRatings().get(userId) : null;
     }
 }

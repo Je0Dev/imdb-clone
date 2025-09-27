@@ -29,6 +29,8 @@ import java.util.Optional;
  * Loads movie data from files.
  */
 public class MovieDataLoader extends BaseDataLoader {
+
+
     private static final Logger logger = LoggerFactory.getLogger(MovieDataLoader.class);
     private final MoviesService movieService;
     private final CelebrityService<Actor> actorService;

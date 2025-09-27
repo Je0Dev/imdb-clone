@@ -2,9 +2,10 @@
 
 A simple imdb clone app using javaFX that allows users to be able to browse movies,series and celebrities and their corresponding information from their respective txt files
 
-## ✨ Features
+## 📚 Overview
 
-### 🎥 Content Management
+
+## 🎥 Content Management
 - **Movies & TV Shows**: Browse, search, and filter movies and TV series with detailed information
 - **Celebrity Profiles**: View actor and director profiles with filmography
 - **User Authentication**: Secure registration and login system with session management
@@ -20,10 +21,6 @@ A simple imdb clone app using javaFX that allows users to be able to browse movi
 - **Build Tool**: Maven
 - **Dependency Injection**: Custom Service Locator pattern
 - **Logging**: SLF4J with Simple Binding
-
-## 🦉 Details
-
-
 
 ## 🚀 Getting Started
 

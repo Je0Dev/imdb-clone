@@ -20,6 +20,7 @@ import java.time.format.DateTimeParseException;
  * Loads actor data from files.
  */
 public class ActorDataLoader extends BaseDataLoader {
+    //transient means that the variable is not serialized which means it is not saved to the database
     private static final Logger logger = LoggerFactory.getLogger(ActorDataLoader.class);
     private final CelebrityService<Actor> actorService;
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd");
@@ -60,130 +61,140 @@ public class ActorDataLoader extends BaseDataLoader {
 
                 try {
                     String[] parts = parseCSVLine(line);
-                    if (parts.length >= 5) {
-                        // Expected format: FirstName,LastName,BirthDate,Gender,Nationality,Biography,NotableWorks
-                        String firstName = parts[0].trim();
-                        String lastName = parts[1].trim();
+                    if (parts.length < 5) {
+                        logger.warn("Incomplete data at line {}: {}", lineNumber, line);
+                        errors++;
+                        continue;
+                    }
+                    
+                    // Expected format: FirstName,LastName,BirthDate,Gender,Nationality,NotableWorks
+                    String firstName = parts[0].trim();
+                    String lastName = parts[1].trim();
 
-                        // Parse birth date with better error handling and fallback
-                        LocalDate birthDate = null;
-                        String birthDateStr = parts[2].trim();
+                    // Parse birth date with better error handling and fallback
+                    LocalDate birthDate = null;
+                    String birthDateStr = parts[2].trim();
+                    
+                    if (birthDateStr.isEmpty() || birthDateStr.equalsIgnoreCase("n/a")) {
+                        // Generate a unique default birth date with more variation
+                        int nameHash = Math.abs((firstName + lastName).hashCode());
+                        int yearVariation = (count + nameHash) % 50; // 0-49 years variation
+                        int monthVariation = (count + nameHash) % 12 + 1; // 1-12 months
+                        int dayVariation = ((count + nameHash) % 28) + 1; // 1-28 days
                         
-                        if (birthDateStr.isEmpty() || birthDateStr.equalsIgnoreCase("n/a")) {
-                            // Generate a unique default birth date with more variation
-                            // Use a combination of count, name hash, and line number for more uniqueness
-                            int nameHash = Math.abs((firstName + lastName).hashCode());
-                            int yearVariation = (count + nameHash) % 50; // 0-49 years variation
-                            int monthVariation = (count + nameHash) % 12 + 1; // 1-12 months
-                            int dayVariation = ((count + nameHash) % 28) + 1; // 1-28 days
+                        birthDate = LocalDate.now()
+                            .minusYears(30 + yearVariation) // 30-79 years old
+                            .minusMonths(monthVariation)
+                            .minusDays(dayVariation);
                             
-                            birthDate = LocalDate.now()
-                                .minusYears(30 + yearVariation) // 30-79 years old
-                                .minusMonths(monthVariation)
-                                .minusDays(dayVariation);
-                                
-                            logger.warn("No birth date specified for {} {} at line {}. Generated unique default: {}", 
-                                firstName, lastName, lineNumber, birthDate);
-                        } else {
-                            try {
-                                birthDate = parseDate(birthDateStr);
-                                
-                                // Validate birth date is reasonable (not in the future and not too old)
-                                LocalDate now = LocalDate.now();
-                                LocalDate minBirthDate = now.minusYears(120); // Max age 120 years
-                                LocalDate maxBirthDate = now.plusYears(1); // Allow for timezone issues
-                                
-                                if (birthDate.isBefore(minBirthDate) || birthDate.isAfter(maxBirthDate)) {
-                                    logger.warn("Birth date {} for {} {} is out of reasonable range. Adjusting.", 
-                                        birthDate, firstName, lastName);
-                                    // Set to 30 years ago with some variation
-                                    birthDate = now.minusYears(30 + (count % 20));
-                                }
-                            } catch (Exception e) {
-                                logger.warn("Invalid birth date format '{}' for {} {} at line {}. Using default. Error: {}", 
-                                    birthDateStr, firstName, lastName, lineNumber, e.getMessage());
-                                // Set default birth date with some variation
-                                birthDate = LocalDate.now().minusYears(30 + (count % 20));
-                            }
-                        }
-
-                        // Parse gender (first character, uppercase)
-                        char gender = 'U'; // Default to Unknown
-                        if (!parts[3].trim().isEmpty()) {
-                            String genderStr = parts[3].trim().toUpperCase();
-                            gender = genderStr.charAt(0);
-                        }
-
-                        // Nationality
-                        String nationality = parts[4].trim();
-                        Ethnicity ethnicity = null;
+                        logger.debug("No birth date specified for {} {} at line {}. Generated default: {}", 
+                            firstName, lastName, lineNumber, birthDate);
+                    } else {
                         try {
-                            // Set ethnicity if nationality is not empty and not N/A
-                            if (!nationality.isEmpty() && !nationality.equalsIgnoreCase("N/A")) {
-                                ethnicity = Ethnicity.fromLabel(nationality);
-                            }
-                        } catch (IllegalArgumentException e) {
-                            logger.warn("Unknown ethnicity '{}' for actor {} {} at line {}", nationality, firstName, lastName, lineNumber);
-                        }
-
-                        // Notable works (optional) - check multiple possible positions
-                        String notableWorks = "";
-                        // Try different columns that might contain notable works
-                        for (int i = 5; i < parts.length && i < 8; i++) {
-                            if (!parts[i].trim().isEmpty() && !parts[i].trim().equalsIgnoreCase("N/A")) {
-                                String potentialWorks = parts[i].trim();
-                                // Check if this looks like a list of works (contains commas or semicolons)
-                                if (potentialWorks.matches(".*[,;].*")) {
-                                    notableWorks = potentialWorks;
-                                    break;
-                                } else if (notableWorks.isEmpty()) {
-                                    // If no works found yet, use this as a single work
-                                    notableWorks = potentialWorks;
-                                }
-                            }
-                        }
-                        
-                        // Set default notable works if still empty
-                        if (notableWorks.isEmpty()) {
-                            // Generate some default works based on actor's name
-                            String defaultWork1 = String.format("Lead role in \"The %s Story\"", lastName);
-                            String defaultWork2 = String.format("Supporting role in \"%s's Journey\"", lastName);
-                            notableWorks = defaultWork1 + ", " + defaultWork2;
-                            logger.debug("Using default notable works for {} {}: {}", firstName, lastName, notableWorks);
-                        }
-
-                        // Create and save the actor
-                        try {
-                            // Use factory method to get or create actor instance
-                            Actor actor = Actor.getInstance(
-                                firstName,
-                                lastName,
-                                birthDate,
-                                gender,
-                                ethnicity != null ? ethnicity : Ethnicity.UNKNOWN
-                            );
+                            birthDate = parseDate(birthDateStr);
                             
-                            // Set notable works if provided
-                            if (!notableWorks.equalsIgnoreCase("N/A")) {
-                                actor.setNotableWorks(notableWorks);
-                            }
-
-                            // Check if actor already exists
-                            if (actorService.findByFullName(firstName, lastName).isPresent()) {
-                                logger.debug("Skipping duplicate actor: {} {}", firstName, lastName);
-                                duplicates++;
-                                logger.trace("Actor already exists in database: {} {}", firstName, lastName);
-                            } else {
-                                actorService.save(actor);
-                                count++;
+                            // Validate birth date is reasonable (not in the future and not too old)
+                            LocalDate now = LocalDate.now();
+                            LocalDate minBirthDate = now.minusYears(120); // Max age 120 years
+                            LocalDate maxBirthDate = now.plusYears(1); // Allow for timezone issues
+                            
+                            if (birthDate.isBefore(minBirthDate) || birthDate.isAfter(maxBirthDate)) {
+                                logger.warn("Birth date {} for {} {} is out of reasonable range. Adjusting.", 
+                                    birthDate, firstName, lastName);
+                                // Set to 30 years ago with some variation
+                                birthDate = now.minusYears(30 + (count % 20));
                             }
                         } catch (Exception e) {
-                            logger.error("Error creating actor '{} {}' at line {}: {}", 
-                                firstName, lastName, lineNumber, e.getMessage(), e);
-                            errors++;
+                            logger.error("Error parsing birth date '{}' for {} {} at line {}: {}", 
+                                birthDateStr, firstName, lastName, lineNumber, e.getMessage());
+                            // Use a default date with some variation
+                            birthDate = LocalDate.now().minusYears(30 + (count % 20));
                         }
+                    }
+
+                    // Parse gender (M/F/Other)
+                    char gender = 'U'; // Default to Unknown
+                    if (parts.length > 3 && !parts[3].trim().isEmpty()) {
+                        String genderStr = parts[3].trim().toUpperCase();
+                        if (genderStr.startsWith("M") || genderStr.startsWith("F")) {
+                            gender = genderStr.charAt(0);
+                        } else if (genderStr.startsWith("MALE")) {
+                            gender = 'M';
+                        } else if (genderStr.startsWith("FEMALE")) {
+                            gender = 'F';
+                        }
+                    }
+
+                    // Parse nationality/ethnicity
+                    Ethnicity ethnicity = Ethnicity.UNKNOWN;
+                    if (parts.length > 4 && !parts[4].trim().isEmpty()) {
+                        String nationality = parts[4].trim().toUpperCase();
+                        try {
+                            // Try to match nationality with Ethnicity enum
+                            ethnicity = Ethnicity.valueOf(nationality);
+                        } catch (IllegalArgumentException e) {
+                            // Try to find a matching ethnicity
+                            for (Ethnicity eValue : Ethnicity.values()) {
+                                if (eValue.name().contains(nationality) || 
+                                    nationality.contains(eValue.name()) ||
+                                    eValue.toString().equalsIgnoreCase(nationality)) {
+                                    ethnicity = eValue;
+                                    break;
+                                }
+                            }
+                            if (ethnicity == Ethnicity.UNKNOWN) {
+                                logger.debug("Could not map nationality '{}' for {} {} at line {}", 
+                                    parts[4], firstName, lastName, lineNumber);
+                            }
+                        }
+                    }
+
+                    // Parse notable works if available (5th column or later)
+                    String notableWorks = "";
+                    if (parts.length > 5 && !parts[5].trim().isEmpty()) {
+                        notableWorks = parts[5].trim()
+                            .replace("  ", " ")  // replace double spaces with single space
+                            .trim();
+                        
+                        logger.debug("Processed notable works for {} {}: {}", 
+                            firstName, lastName, notableWorks);
                     } else {
-                        logger.warn("Invalid actor data format at line {}: {}", lineNumber, line);
+                        // Generate some default works based on actor's name
+                        String defaultWork1 = String.format("Lead role in \"The %s Story\"", lastName);
+                        String defaultWork2 = String.format("Supporting role in \"%s's Journey\"", lastName);
+                        notableWorks = defaultWork1 + ", " + defaultWork2;
+                        logger.debug("Using default notable works for {} {}: {}", 
+                            firstName, lastName, notableWorks);
+                    }
+
+                    // Create and save the actor
+                    try {
+                        // Use factory method to get or create actor instance
+                        Actor actor = Actor.getInstance(
+                            firstName,
+                            lastName,
+                            birthDate,
+                            gender,
+                            ethnicity != null ? ethnicity : Ethnicity.UNKNOWN
+                        );
+                        
+                        // Set notable works if provided
+                        if (!notableWorks.equalsIgnoreCase("N/A")) {
+                            actor.setNotableWorks(notableWorks);
+                        }
+
+                        // Check if actor already exists
+                        if (actorService.findByFullName(firstName, lastName).isPresent()) {
+                            logger.debug("Skipping duplicate actor: {} {}", firstName, lastName);
+                            duplicates++;
+                            logger.trace("Actor already exists in database: {} {}", firstName, lastName);
+                        } else {
+                            actorService.save(actor);
+                            count++;
+                        }
+                    } catch (Exception e) {
+                        logger.error("Error creating actor '{} {}' at line {}: {}", 
+                            firstName, lastName, lineNumber, e.getMessage(), e);
                         errors++;
                     }
                 } catch (Exception e) {

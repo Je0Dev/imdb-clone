@@ -4,6 +4,7 @@ import com.papel.imdb_clone.exceptions.InvalidEntityException;
 
 import java.io.Serial;
 import java.io.Serializable;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.util.regex.Pattern;
 
@@ -16,14 +17,13 @@ public class User implements Serializable {
     @Serial
     private static final long serialVersionUID = 1L;
     private static int nextId = 1;
-
     private int id;
     private String password; // This will store the hashed password
     private String firstName;
     private String lastName;
     private String username;
     private String email;
-
+    private Instant lastActivity;
 
     /**
      * Email pattern to validate email addresses
@@ -56,6 +56,16 @@ public class User implements Serializable {
             throw new IllegalArgumentException("Invalid email format");
         }
         this.email = email.toLowerCase();
+    }
+
+    public User() {
+        this.id = nextId++;
+        this.firstName = "";
+        this.lastName = "";
+        this.username = "";
+        this.email = "";
+        this.lastActivity = Instant.now();
+        this.password = "";
     }
 
     //getters and setters
@@ -91,6 +101,21 @@ public class User implements Serializable {
         return email;
     }
 
+    /**
+     * Gets the timestamp of the user's last activity.
+     *
+     * @return The timestamp of the last activity, or null if never active
+     */
+    public Instant getLastActivity() {
+        return lastActivity;
+    }
+
+    /**
+     * Updates the timestamp of the user's last activity to the current time.
+     */
+    public void setLastActivity(Instant lastActivity) {
+        this.lastActivity = lastActivity;
+    }
 
     public void setUsername(String username) {
         this.username = username;
@@ -138,5 +163,22 @@ public class User implements Serializable {
 
     public boolean isAdmin() {
         return true;
+    }
+
+    // Newly added methods
+    public void setActive(boolean active) {
+        // Implementation for setting user active status
+    }
+
+    public void setLocked(boolean locked) {
+        // Implementation for setting user locked status
+    }
+
+    public void setCreatedAt(Instant createdAt) {
+        // Implementation for setting creation timestamp
+    }
+
+    public void setUpdatedAt(Instant updatedAt) {
+        // Implementation for setting last update timestamp
     }
 }

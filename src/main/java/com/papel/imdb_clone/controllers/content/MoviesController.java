@@ -37,54 +37,101 @@ public class MoviesController extends BaseController {
     public Label itemCountLabel;
     
     private MoviesService moviesService;
+    private Movie selected;
 
     public MoviesController() {
         super();
         NavigationService navigationService = NavigationService.getInstance();
     }
 
+
     /**
-     * Handles the delete movie button click event.
-     * Shows a confirmation dialog and deletes the selected movie if confirmed.
-     *
-     * @param event The action event that triggered this method
+     * Handles the edit movie button click event.
+     * Opens a dialog to edit the selected movie.
+     * 
+     * @param event The action event
      */
     @FXML
-    private void handleDeleteMovie(ActionEvent event) {
-        Movie selectedMovie = movieTable.getSelectionModel().getSelectedItem();
-        logger.info("Selected movie: {}", selectedMovie);
-        if (selectedMovie == null) {
-            showAlert("No Selection", "Please select a movie to delete.");
-            return;
+    private void handleEditMovie(ActionEvent event) {
+        try {
+            // Get the selected movie from the table
+            Movie selectedMovie = movieTable.getSelectionModel().getSelectedItem();
+            
+            if (selectedMovie != null) {
+                // Show the edit dialog for the selected movie
+                if (showMovieEditDialog(selectedMovie)) {
+                    try {
+                        // Save changes if user clicked OK
+                        moviesService.update(selectedMovie);
+                        loadMovies(); // Refresh the table
+                        showSuccess("Success", "Movie updated successfully!");
+                    } catch (Exception e) {
+                        logger.error("Error updating movie", e);
+                        showError("Error", "Failed to update movie: " + e.getMessage());
+                    }
+                }
+            } else {
+                showAlert("No Selection", "Please select a movie to edit.");
+            }
+        } catch (Exception e) {
+            logger.error("Error in handleEditMovie", e);
+            showError("Error", "An error occurred while trying to edit the movie: " + e.getMessage());
         }
+    }
 
-        // Show confirmation dialog
-        Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
-        
-        alert.setTitle("Confirm Deletion");
-        alert.setHeaderText("Delete Movie");
-        alert.setContentText(String.format("Are you sure you want to delete '%s'?\nThis action cannot be undone.",
-            selectedMovie.getTitle()));
+    @FXML
+    private void handleDeleteMovie(ActionEvent event) {
+        try {
+            Movie selectedMovie = movieTable.getSelectionModel().getSelectedItem();
+            logger.info("Selected movie for deletion: {}", selectedMovie);
+            
+            if (selectedMovie == null) {
+                showAlert("No Selection", "Please select a movie to delete.");
+                return;
+            }
 
-        Optional<ButtonType> result = alert.showAndWait();
-        if (result.isPresent() && result.get() == ButtonType.OK) {
+            // Show confirmation dialog
+            boolean confirmDelete = showConfirmationDialog(
+                "Confirm Deletion",
+                String.format("Are you sure you want to delete '%s'?\nThis action cannot be undone.", 
+                    selectedMovie.getTitle())
+            );
+
+            if (!confirmDelete) {
+                logger.debug("User cancelled movie deletion");
+                return;
+            }
+
             try {
                 // Call the service to delete the movie
-                // For example: moviesService.deleteMovie(selectedMovie.getId());
-
-                // Remove from the table
-                movieTable.getItems().remove(selectedMovie);
-
-                showAlert("Success", String.format("Movie '%s' was deleted successfully.",
-                    selectedMovie.getTitle()));
-
-                // Update the item count
-                updateItemCount();
-
+                boolean deleted = moviesService.delete(selectedMovie.getId());
+                
+                if (deleted) {
+                    // Remove from the table and update UI on the JavaFX Application Thread
+                    Platform.runLater(() -> {
+                        try {
+                            allMovies.remove(selectedMovie);
+                            filteredMovies.remove(selectedMovie);
+                            movieTable.refresh();
+                            updateItemCount();
+                            showSuccess("Success", String.format("Movie '%s' was deleted successfully.", 
+                                selectedMovie.getTitle()));
+                            logger.info("Successfully deleted movie: {}", selectedMovie.getTitle());
+                        } catch (Exception e) {
+                            logger.error("Error updating UI after movie deletion", e);
+                            showError("Error", "An error occurred while updating the UI. Please refresh the view.");
+                        }
+                    });
+                } else {
+                    throw new IllegalStateException("Failed to delete movie from the database");
+                }
             } catch (Exception e) {
-                logger.error("Error deleting movie: " + e.getMessage(), e);
-                showAlert("Error", "Failed to delete movie: " + e.getMessage());
+                logger.error("Error deleting movie: {}", e.getMessage(), e);
+                showError("Deletion Failed", "Failed to delete the movie. Please try again later.");
             }
+        } catch (Exception e) {
+            logger.error("Unexpected error in handleDeleteMovie: {}", e.getMessage(), e);
+            showError("Error", "An unexpected error occurred while processing your request.");
         }
     }
 
@@ -101,69 +148,148 @@ public class MoviesController extends BaseController {
      *
      * @param event The action event that triggered this method
      */
+    /**
+     * Handles the rate movie button click event.
+     * Opens a dialog to allow the user to rate the selected movie.
+     *
+     * @param event The action event that triggered this method
+     */
     @FXML
     private void handleRateMovie(ActionEvent event) {
-        Movie selectedMovie = movieTable.getSelectionModel().getSelectedItem();
-        if (selectedMovie == null) {
-            showAlert("No Selection", "Please select a movie to rate.");
-            return;
-        }
-
-        // Create a simple dialog to get the rating
-        TextInputDialog dialog = new TextInputDialog("5.0");
-        dialog.setTitle("Rate Movie");
-        dialog.setHeaderText(String.format("Rate %s (%d) on a scale of 0-10", 
-            selectedMovie.getTitle(), selectedMovie.getReleaseYear()));
-        dialog.setContentText("Rating (0-10):");
-
-        // Show the dialog and process the result
-        dialog.showAndWait().ifPresent(ratingStr -> {
-            try {
-                double rating = Double.parseDouble(ratingStr);
-                if (rating < 0 || rating > 10) {
-                    showAlert("Invalid Rating", "Please enter a rating between 0 and 10");
-                    return;
-                }
-
-                // Get the current user ID
-                int currentUserId = getCurrentUserId();
-                
-                // Save the user's rating
-                selectedMovie.setUserRating(currentUserId, (int) (rating * 2)); // Convert 0-10 to 0-20 for storage
-                
-                // Update the movie in the service
-                moviesService.update(selectedMovie);
-                
-                // Update the UI to reflect the new rating
-                showAlert("Success", String.format("You rated %s: %.1f/10\nNew average rating: %.1f/10",
-                    selectedMovie.getTitle(),
-                    rating,
-                    selectedMovie.getImdbRating()));
-                
-                // Refresh the movie list to show updated ratings
-                loadMovies();
-                
-            } catch (NumberFormatException e) {
-                showAlert("Invalid Input", "Please enter a valid number between 0 and 10");
-            } catch (Exception e) {
-                logger.error("Error rating movie: {}", e.getMessage(), e);
-                showAlert("Error", "Failed to save rating: " + e.getMessage());
+        try {
+            // First check if user is authenticated
+            if (currentUserId <= 0) {
+                showAlert("Authentication Required", "You must be logged in to rate movies.");
+                // Optionally, you could redirect to login here
+                // navigationService.navigateTo("login");
+                return;
             }
-        });
+
+            Movie selectedMovie = movieTable.getSelectionModel().getSelectedItem();
+            if (selectedMovie == null) {
+                showWarning("No Selection", "Please select a movie to rate.");
+                return;
+            }
+
+            // Calculate current user's rating if exists
+            double currentRating = 0.0;
+            try {
+                currentRating = selectedMovie.getUserRating(currentUserId) / 2.0;
+            } catch (Exception e) {
+                logger.debug("No existing rating found for user {} on movie {}", currentUserId, selectedMovie.getTitle());
+            }
+
+            // Create a dialog to get the rating
+            TextInputDialog dialog = new TextInputDialog(String.format("%.1f", currentRating));
+            dialog.setTitle("Rate Movie");
+            dialog.setHeaderText(String.format("Rate '%s' (%d)", 
+                selectedMovie.getTitle(), selectedMovie.getReleaseYear()));
+            dialog.setContentText("Rating (0-10):");
+
+            // Add input validation
+            dialog.getEditor().textProperty().addListener((observable, oldValue, newValue) -> {
+                if (!newValue.matches("\\d*\\.?\\d*")) {
+                    dialog.getEditor().setText(oldValue);
+                } else if (!newValue.isEmpty()) {
+                    try {
+                        double value = Double.parseDouble(newValue);
+                        if (value < 0 || value > 10) {
+                            dialog.getEditor().setText(oldValue);
+                        }
+                    } catch (NumberFormatException e) {
+                        dialog.getEditor().setText(oldValue);
+                    }
+                }
+            });
+
+            // Show the dialog and process the result
+            Optional<String> result = dialog.showAndWait();
+            if (result.isPresent() && !result.get().trim().isEmpty()) {
+                String ratingStr = result.get().trim();
+                try {
+                    double rating = Double.parseDouble(ratingStr);
+                    
+                    // Validate rating range
+                    if (rating < 0 || rating > 10) {
+                        throw new IllegalArgumentException("Rating must be between 0 and 10");
+                    }
+
+                    // Get the current user ID
+                    int currentUserId = getCurrentUserId();
+                    
+                    // Save the user's rating (convert 0-10 to 0-20 for storage)
+                    selectedMovie.setUserRating(currentUserId, (int) (rating * 2));
+                    
+                    // Update the movie in the service
+                    Movie updatedMovie = moviesService.update(selectedMovie);
+                    if (updatedMovie != null) {
+                        // Update the movie in the observable lists on the JavaFX Application Thread
+                        Platform.runLater(() -> {
+                            int index = allMovies.indexOf(selectedMovie);
+                            if (index >= 0) {
+                                allMovies.set(index, updatedMovie);
+                            }
+                            
+                            index = filteredMovies.indexOf(selectedMovie);
+                            if (index >= 0) {
+                                filteredMovies.set(index, updatedMovie);
+                            }
+                            
+                            // Refresh the table to show the updated rating
+                            movieTable.refresh();
+                        });
+                        
+                        // Show success message
+                        showSuccess("Success", String.format("You rated '%s': %.1f/10\nNew average rating: %.1f/10",
+                            updatedMovie.getTitle(),
+                            rating,
+                            updatedMovie.getImdbRating()));
+                        
+                        logger.info("Successfully rated movie '{}' with {}/10", updatedMovie.getTitle(), rating);
+                    } else {
+                        throw new IllegalStateException("Failed to update movie rating");
+                    }
+                    
+                } catch (NumberFormatException e) {
+                    showError("Invalid Input", "Please enter a valid number between 0 and 10");
+                } catch (IllegalArgumentException e) {
+                    showError("Validation Error", e.getMessage());
+                } catch (IllegalStateException e) {
+                    String errorMsg = "Failed to update rating: " + e.getMessage();
+                    logger.error(errorMsg, e);
+                    showError("Update Error", errorMsg);
+                } catch (Exception e) {
+                    String errorMsg = "An unexpected error occurred while saving your rating";
+                    logger.error("{}: {}", errorMsg, e.getMessage(), e);
+                    showError("Error", errorMsg + ". Please try again later.");
+                }
+            }
+        } catch (Exception e) {
+            String errorMsg = "An unexpected error occurred while processing your request";
+            logger.error("{}: {}", errorMsg, e.getMessage(), e);
+            showError("Error", errorMsg + ". Please try again later.");
+        }
     }
 
     /**
      * Gets the ID of the currently authenticated user.
      * 
      * @return The ID of the current user
-     * @throws SecurityException if no user is currently authenticated
+     * @throws IllegalStateException if no user is currently authenticated
+     */
+    /**
+     * Gets the current user's ID.
+     * 
+     * @return the current user's ID
+     * @throws IllegalStateException if no user is currently authenticated or user ID is invalid
      */
     private int getCurrentUserId() {
-        // This is a placeholder implementation that returns a default user ID
-        // return SecurityContext.getCurrentUser().getId();
-        
-        // For now, return a default user ID
-        return 1;
+        if (currentUserId <= 0) {
+            String errorMsg = "No valid user is currently authenticated. User ID: " + currentUserId;
+            logger.error(errorMsg);
+            throw new IllegalStateException(errorMsg);
+        }
+        return currentUserId;
     }
 
     // UI Components
@@ -196,10 +322,11 @@ public class MoviesController extends BaseController {
         }
     }
 
-    // Data
+    // Data and state
     private final ObservableList<Movie> allMovies = FXCollections.observableArrayList();
     private final ObservableList<Movie> filteredMovies = FXCollections.observableArrayList();
     private final ObjectProperty<Movie> selectedMovie = new SimpleObjectProperty<>();
+    private int currentUserId;
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {
@@ -209,6 +336,7 @@ public class MoviesController extends BaseController {
     @Override
     public void initializeController(int currentUserId) throws Exception {
         try {
+            this.currentUserId = currentUserId;
             // Initialize movies service
             this.moviesService = MoviesService.getInstance();
 
@@ -604,35 +732,34 @@ private void setupTableColumns() {
                 return titleMatch || directorMatch || genreMatch;
             }));
         }
-        movieTable.setItems(filteredMovies);
     }
 
     private void sortMovieTable(String sortOption) {
-        switch (sortOption) {
-            case "Title":
-                allMovies.sort(Comparator.comparing(Movie::getTitle));
-                break;
-            case "Director":
-                allMovies.sort(Comparator.comparing(Movie::getDirector));
-                break;
-            case "Year":
-                allMovies.sort(Comparator.comparing(Movie::getYear));
-                break;
-            case "Genre":
-                allMovies.sort((m1, m2) -> {
-                    // Get the first genre's name for each movie, or empty string if no genres
-                    String genre1 = m1.getGenres().isEmpty() ? "" : m1.getGenres().getFirst().name();
-                    String genre2 = m2.getGenres().isEmpty() ? "" : m2.getGenres().getFirst().name();
-                    return genre1.compareTo(genre2);
-                });
-                break;
-            default:
-        }
-    }
+        if (sortOption == null) return;
 
-    @FXML
-    private void handleEditMovie(ActionEvent event) {
-        Movie selected = movieTable.getSelectionModel().getSelectedItem();
+        switch (sortOption) {
+            case "Title (A-Z)":
+                allMovies.sort(Comparator.comparing(Movie::getTitle, String.CASE_INSENSITIVE_ORDER));
+                break;
+            case "Title (Z-A)":
+                allMovies.sort(Comparator.comparing(Movie::getTitle, String.CASE_INSENSITIVE_ORDER).reversed());
+                break;
+            case "Year (Newest First)":
+                allMovies.sort(Comparator.comparingInt(Movie::getYearAsInt).reversed());
+                break;
+            case "Year (Oldest First)":
+                allMovies.sort(Comparator.comparingInt(Movie::getYearAsInt));
+        break;
+    case "Rating (High to Low)":
+        allMovies.sort(Comparator.comparingDouble(Movie::getRating).reversed());
+        break;
+    case "Rating (Low to High)":
+        allMovies.sort(Comparator.comparingDouble(Movie::getRating));
+        break;
+    default:
+        logger.warn("Unknown sort option: {}", sortOption);
+        return;
+}
         if (selected != null) {
             if (showMovieEditDialog(selected)) {
                 try {
@@ -1138,6 +1265,23 @@ private void setupTableColumns() {
 
     }
 
+    /**
+     * Shows a warning dialog with the specified title and message.
+     * This method is thread-safe and can be called from any thread.
+     *
+     * @param title   The title of the warning dialog
+     * @param message The warning message to display
+     */
+    private void showWarning(String title, String message) {
+        Platform.runLater(() -> {
+            Alert alert = new Alert(Alert.AlertType.WARNING);
+            alert.setTitle(title);
+            alert.setHeaderText(null);
+            alert.setContentText(message);
+            alert.showAndWait();
+        });
+    }
+    
     //show information message
     private void showInformation() {
         Alert alert = new Alert(Alert.AlertType.INFORMATION);

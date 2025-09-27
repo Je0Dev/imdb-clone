@@ -4,6 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.Serial;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -14,9 +15,6 @@ import java.util.Map;
  * Provides detailed error information through the AuthErrorType enum.
  */
 public class AuthException extends ValidationException {
-    //serial version uid for object serialization. Serialization is the process of converting an object into a byte stream
-    //so that it can be stored in a file or sent over a network.
-
     @Serial
     private static final long serialVersionUID = 2L;
 
@@ -34,14 +32,7 @@ public class AuthException extends ValidationException {
         this(errorType, message, null, cause);
     }
     
-    public AuthException(AuthErrorType errorType, String message, Map<String, List<String>> fieldErrors) {
-        this(errorType, message, fieldErrors, null);
-    }
-    
-    // Private constructor that doesn't call any overridable methods
-    private AuthException(AuthErrorType errorType, String message, 
-                        Map<String, List<String>> fieldErrors, Throwable cause,
-                        boolean dummy) {
+    public AuthException(AuthErrorType errorType, String message, Map<String, List<String>> fieldErrors, Throwable cause) {
         super(message, 
               errorType != null ? errorType.name() : "AUTH_ERROR", 
               fieldErrors != null ? new HashMap<>(fieldErrors) : null, 
@@ -51,33 +42,19 @@ public class AuthException extends ValidationException {
         this.errorType = errorType != null ? errorType : AuthErrorType.INTERNAL_ERROR;
     }
     
-    // Public factory method to create instances safely
-    public static AuthException create(AuthErrorType errorType, String message, 
-                                     Map<String, List<String>> fieldErrors, Throwable cause) {
-        // Create the exception without calling any overridable methods
-        AuthException ex = new AuthException(errorType, message, fieldErrors, cause, true);
-        
-        // Now that construction is complete, we can call methods
-        ex.addDetail("errorType", ex.errorType.name());
-        logger.error("Authentication error: {}", message, cause);
-        
-        return ex;
-    }
-    
-    // Delegate constructors to the factory method
-    public AuthException(AuthErrorType errorType, String message, 
-                        Map<String, List<String>> fieldErrors, Throwable cause) {
-        this(create(errorType, message, fieldErrors, cause));
-    }
-    
     // Private constructor used by the factory method
-    private AuthException(AuthException other) {
+    public AuthException(AuthException other) {
         super(other.getMessage(), other.getErrorCode(), other.getFieldErrors(), other.getCause());
         this.errorType = other.errorType;
         // Copy details which are not final. This helps in preserving the state of the exception.
-        other.getDetails().forEach(this::addDetail);
+        for (Map.Entry<String, Serializable> entry : other.getDetails().entrySet()) {
+            String key = entry.getKey();
+            Serializable value = entry.getValue();
+            addDetail(key, value);
+        }
     }
 
+    //error
     private String getErrorCode() {
         return errorType.name();
     }
@@ -163,11 +140,16 @@ public class AuthException extends ValidationException {
             if (fieldErrors.isEmpty() && cause == null) {
                 return new AuthException(errorType, message);
             } else if (cause == null) {
-                return new AuthException(errorType, message, fieldErrors);
-            } else {
-                AuthException ex = new AuthException(errorType, message, cause);
+                // Create with field errors but no cause
+                AuthException ex = new AuthException(errorType, message, fieldErrors, null);
                 fieldErrors.forEach((field, errors) -> 
-                    errors.forEach(error -> ex.addDetail(field, error)));
+                    errors.forEach(error -> ex.addFieldError(field, error)));
+                return ex;
+            } else {
+                // Create with both field errors and cause
+                AuthException ex = new AuthException(errorType, message, null, cause);
+                fieldErrors.forEach((field, errors) -> 
+                    errors.forEach(error -> ex.addFieldError(field, error)));
                 return ex;
             }
         }
@@ -193,37 +175,5 @@ public class AuthException extends ValidationException {
         throw updated;
     }
 
-    /**
-     * Enum representing different types of typical authentication errors
-     */
-    public enum AuthErrorType {
-        INVALID_CREDENTIALS("Invalid username or password"),
-        INVALID_PASSWORD("Password does not meet requirements"),
-        PASSWORD_MISMATCH("Passwords do not match"),
-        USER_ALREADY_EXISTS("User with this email already exists"),
-        INTERNAL_ERROR("An internal authentication error occurred"),
-        USERNAME_EXISTS("Username already exists"),
-        EMAIL_EXISTS("Email already registered"),
-        REGISTRATION_FAILED("Registration failed"),
-        INVALID_INPUT("Invalid input provided"),
-        INVALID_EMAIL("Invalid email format");
-        private final String defaultMessage;
-
-        /**
-         * Constructor with default error message
-         * @param defaultMessage The default error message for this error type
-         */
-        AuthErrorType(String defaultMessage) {
-            this.defaultMessage = defaultMessage;
-        }
-
-        /**
-         * Gets the default error message for this error type
-         * @return The default error message
-         */
-        public String getDefaultMessage() {
-            return defaultMessage;
-        }
-
-    }
+    // Using the top-level AuthErrorType enum
 }

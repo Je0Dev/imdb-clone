@@ -146,22 +146,6 @@ public class SeriesService extends BaseContentService<Series> {
         logger.info("Loaded " + contentList.size() + " series from file");
     }
 
-    
-    /**
-     * Escapes commas in strings to prevent CSV parsing issues.
-     * @param input The input string to escape
-     * @return The escaped string
-     */
-    private String escapeCommas(String input) {
-        if (input == null) {
-            return "";
-        }
-        // If the input contains a comma, wrap it in quotes
-        if (input.contains(",")) {
-            return "\"" + input.replace("\"", "\"\"") + "\"";
-        }
-        return input;
-    }
 
     @Override
     protected void initializeSampleData() {

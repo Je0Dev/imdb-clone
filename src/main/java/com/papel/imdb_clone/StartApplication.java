@@ -10,6 +10,7 @@ import javafx.application.Application;
 public class StartApplication {
     private StartApplication() {
         // Private constructor to prevent instantiation
+
     }
 
 
