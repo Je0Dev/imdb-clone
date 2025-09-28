@@ -41,19 +41,10 @@
                     
                     <Button onAction="#showRated" style="-fx-background-color: #9C27B0; -fx-text-fill: #ffffff; -fx-font-size: 16px; -fx-font-weight: bold; -fx-pref-width: 150; -fx-pref-height: 60; -fx-cursor: hand; -fx-background-radius: 5;" text="Rated" />
                     
-                    <Button onAction="#showAdvancedSearch" style="-fx-background-color: #333333; -fx-text-fill: #ffffff; -fx-font-size: 16px; -fx-font-weight: bold; -fx-pref-width: 150; -fx-pref-height: 60; -fx-cursor: hand; -fx-background-radius: 5;" text="Advanced Search" />
+                    <Button onAction="#showAdvancedSearch" style="-fx-background-color: #333333; -fx-text-fill: #ffffff; -fx-font-size: 16px; -fx-font-weight: bold; -fx-pref-width: 150; -fx-pref-height: 60; -fx-cursor: hand; -fx-background-radius: 5;" text="Search" />
                 </HBox>
                 
-                <!-- User Actions -->
-                <HBox style="-fx-spacing: 20; -fx-alignment: center; -fx-padding: 20 0 0 0;">
-                    <Button fx:id="signInButton" onAction="#showLogin" style="-fx-background-color: #2196F3; -fx-text-fill: #ffffff; -fx-font-size: 14px; -fx-font-weight: bold; -fx-padding: 10 20; -fx-cursor: hand; -fx-background-radius: 20;" text="Sign In" />
-                    <Button fx:id="registerButton" onAction="#showRegister" style="-fx-background-color: #4CAF50; -fx-text-fill: #ffffff; -fx-font-size: 14px; -fx-font-weight: bold; -fx-padding: 10 20; -fx-cursor: hand; -fx-background-radius: 20;" text="Register" />
-                </HBox>
-                
-                <!-- Guest Message -->
-                <Label fx:id="guestMessage" text="Please sign in or register to access all features" 
-                       style="-fx-text-fill: #f5c518; -fx-font-size: 14px; -fx-padding: 10 0 0 0;" 
-                       visible="false" />
+                <!-- User Actions (Removed sign-in and register buttons) -->
             </VBox>
         </VBox>
     </center>

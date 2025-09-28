@@ -5,165 +5,172 @@
 2. [Architecture Overview](#architecture-overview)
 3. [Package Structure](#package-structure)
 4. [Core Components](#core-components)
+   - [Authentication System](#authentication-system)
    - [Models](#models)
    - [Controllers](#controllers)
    - [Services](#services)
    - [Repositories](#repositories)
-   - [Utilities](#utilities)
-5. [Data Flow](#data-flow)
-6. [Configuration](#configuration)
-7. [Dependencies](#dependencies)
-8. [Getting Started](#getting-started)
-9. [Troubleshooting](#troubleshooting)
+   - [GUI Components](#gui-components)
+5. [Configuration](#configuration)
+6. [Data Management](#data-management)
+7. [Getting Started](#getting-started)
+8. [Troubleshooting](#troubleshooting)
 
 ## Introduction
 
-The IMDB Clone is a JavaFX-based application that provides functionality similar to IMDB, allowing users to browse and manage information about movies, TV series, actors, and directors. The application features a user-friendly interface for searching, viewing, and managing entertainment content.
+The IMDB Clone is a comprehensive JavaFX-based application that replicates core IMDB functionality, enabling users to browse, search, and manage information about movies, TV series, actors, and directors. 
+The application features a modern, user-friendly interface with a simple authentication system, search functionality, and content management capabilities.
 
 ## Architecture Overview
 
-The application follows a layered architecture with clear separation of concerns:
+The application follows a clean architecture with clear separation of concerns:
 
-- **Presentation Layer**: JavaFX-based GUI components
-- **Business Logic Layer**: Controllers and Services
-- **Data Access Layer**: Repositories and Data Models
-- **Utility Layer**: Helper classes and utilities
+- **Presentation Layer (GUI)**: JavaFX-based UI components and FXML views
+- **Application Layer**: Controllers that handle user input and navigation
+- **Domain Layer**: Business logic and service implementations
+- **Data Access Layer**: Repositories and data models
+- **Infrastructure**: Configuration, utilities, and helper classes
+
+The application uses dependency injection through a custom `ServiceLocator` pattern for better testability and maintainability.
 
 ## Package Structure
 
 ```
 src/main/java/com/papel/imdb_clone/
-├── config/          # Configuration classes
-├── controllers/     # Application controllers
-├── data/            # Data transfer objects
-├── enums/           # Enumerations
-├── exceptions/      # Custom exceptions
-├── gui/             # JavaFX UI components
-├── model/           # Data models
-│   ├── content/     # Content-related models
-│   ├── people/      # People-related models
-│   └── rating/      # Rating and review models
-├── repository/      # Data access layer
-├── service/         # Business logic
-└── util/            # Utility classes
+├── config/                  # Application configuration
+│   └── ApplicationConfig.java  # Main configuration class
+├── controllers/             # Application controllers
+│   └── authentication/      # Authentication controllers
+│       ├── AuthController.java  # Handles login/register logic
+│       └── ...
+├── data/                    # Data transfer objects and management
+│   └── DataManager.java     # Central data management
+├── enums/                   # Enumerations
+├── exceptions/              # Custom exceptions
+│   └── AuthException.java   # Authentication-specific exceptions
+├── gui/                     # JavaFX UI components
+│   └── MovieAppGui.java     # Main application class
+├── model/                   # Data models
+│   ├── content/             # Content-related models
+│   ├── people/              # People-related models
+│   └── rating/              # Rating and review models
+├── repository/              # Data access layer
+├── service/                 # Business logic
+│   ├── validation/          # Validation services
+│   │   └── AuthService.java # Authentication service
+│   └── search/              # Search functionality
+│       └── ServiceLocator.java  # Service locator pattern
+└── util/                    # Utility classes
 ```
 
 ## Core Components
+
+### Authentication System
+
+The authentication system provides secure user management with the following components:
+
+- **AuthController**: Manages user authentication flows (login/register)
+- **AuthService**: Handles validation and business logic for authentication
+- **AuthException**: Custom exception for authentication-related errors
+- **Login/Register Views**: FXML-based UI for user authentication
+
+Key Features:
+- Secure password handling
+- Input validation
+- Session management
+- Error handling and user feedback
 
 ### Models
 
 The application uses a rich domain model to represent its core entities:
 
 #### Content Models
-- **Content**: Base class for all content types
-- **Movie**: Represents a movie with properties like title, release year, etc.
-- **Series**: Represents a TV series with seasons and episodes
+- **Content**: Base class for all content types with common properties
+- **Movie**: Represents a movie with properties like title, release year, and genre
+- **Series**: Manages TV series with seasons and episodes
 - **Season**: Represents a season within a TV series
-- **Episode**: Represents an individual episode within a season
+- **Episode**: Individual episode details including runtime and plot
 
 #### People Models
 - **Person**: Base class for people in the system
-- **Actor**: Represents an actor with roles in movies/series
-- **Director**: Represents a director of movies/series
-- **CrewMember**: Represents other crew members
+- **Actor**: Represents actors with filmography and biography
+- **Director**: Tracks directors and their works
+- **User**: Represents application users with authentication details
 
-#### Rating Models
-- **Rating**: Represents a user's rating of content
-- **Review**: Represents a written review with text and rating
+#### Rating & Review Models
+- **Rating**: Numeric rating with timestamp and user reference
+- **Review**: Detailed review with text content and associated rating
 
 ### Controllers
 
 Controllers handle user input and manage the flow of data between the UI and services:
 
-- **ContentController**: Manages content-related operations
+#### Authentication Controllers
+- **AuthController**: 
+  - `handleLogin()`: Authenticates users
+  - `handleRegister()`: Creates new user accounts
+  - `validateInput()`: Validates user input fields
+
+#### Content Controllers
+- **ContentController**: Base controller for content operations
 - **MovieController**: Handles movie-specific functionality
 - **SeriesController**: Manages TV series operations
 - **PeopleController**: Handles actor and director management
-- **RatingController**: Manages ratings and reviews
+- **RatingController**: Manages ratings and reviews with methods for:
+  - Adding/updating ratings
+  - Submitting reviews
+  - Calculating average ratings
 
 ### Services
 
-Services contain the business logic:
+Services implement the core business logic:
 
-- **ContentService**: Core content management logic
-- **MovieService**: Movie-specific business rules
-- **SeriesService**: Series-specific operations
-- **PeopleService**: People management logic
-- **RatingService**: Rating and review management
-- **SearchService**: Implements search functionality
-- **ImportExportService**: Handles data import/export
+#### Authentication Services
+- **AuthService**:
+  - `authenticateUser()`: Validates user credentials
+  - `registerUser()`: Creates new user accounts
+  - `validatePassword()`: Ensures password meets requirements
+
+#### Content Services
+- **ContentService**: Core content management
+- **MovieService**: Movie-specific operations
+- **SeriesService**: Manages TV series and episodes
+- **PeopleService**: Handles actor/director data
+- **RatingService**: Manages user ratings and reviews
+- **SearchService**: Implements search across all content types
+
+#### Utility Services
+- **ServiceLocator**: Centralized service management
+- **DataManager**: Handles data persistence and retrieval
 
 ### Repositories
 
-Data access layer components:
+Data access layer components that interact with the data store:
 
-- **ContentRepository**: Data access for content
+- **ContentRepository**: Manages content data access
+- **UserRepository**: Handles user data persistence
+- **RatingRepository**: Manages rating and review data
+- **PeopleRepository**: Handles actor/director data access
+
+### GUI Components
+
+#### Main Application
+- **MovieAppGui**: Main application class extending JavaFX Application
+  - `start()`: Initializes the application and shows login screen
+  - `showLoginView()`: Displays login form
+  - `showRegisterView()`: Displays registration form
+  - `showMainApplication()`: Shows main application after login
+
+#### FXML Views
+- **login-view.fxml**: Login form UI
+- **register-view.fxml**: Registration form UI
+- **main-view.fxml**: Main application interface
 - **MovieRepository**: Movie data operations
 - **SeriesRepository**: Series data operations
 - **PeopleRepository**: People data access
 - **RatingRepository**: Rating and review data access
 
 ### Utilities
-
-- **DataValidator**: Validates input data
-- **FileHandler**: Handles file operations
-- **DateUtils**: Date and time utilities
-- **StringUtils**: String manipulation helpers
-
-## Data Flow
-
-1. User interacts with the JavaFX UI
-2. Controllers receive user input
-3. Controllers call appropriate services
-4. Services implement business logic and use repositories
-5. Repositories interact with the data store
-6. Data flows back through the layers to update the UI
-
-## Configuration
-
-The application uses several configuration files:
-
-- `application.properties`: Main configuration file
-- `log4j2.xml`: Logging configuration
-- Data files in `src/main/resources/data/`
-
-## Dependencies
-
-- JavaFX: For the graphical user interface
-- Hibernate: ORM for database operations
-- Log4j2: Logging framework
-- JUnit: For unit testing
-- Maven: Build and dependency management
-
-## Getting Started
-
-1. **Prerequisites**
-   - Java JDK 11 or later
-   - Maven 3.6 or later
-
-2. **Building the Application**
-   ```bash
-   mvn clean install
-   ```
-
-3. **Running the Application**
-   ```bash
-   mvn javafx:run
-   ```
-
-## Troubleshooting
-
-### Common Issues
-
-1. **JavaFX Not Found**
-   - Ensure JavaFX is properly installed and configured
-   - Check that the JavaFX SDK is in your project's module path
-
-2. **Database Connection Issues**
-   - Verify database credentials in `application.properties`
-   - Ensure the database server is running
-
-3. **UI Rendering Problems**
    - Check JavaFX version compatibility
    - Verify that all required CSS files are in the correct location
 

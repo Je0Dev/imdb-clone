@@ -1,23 +1,18 @@
 package com.papel.imdb_clone.config;
 
-import java.io.IOException;
-import java.io.InputStream;
+
 import java.util.Properties;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * Application configuration management class.
  */
 public class ApplicationConfig {
 
-    private static final Logger LOGGER = Logger.getLogger(ApplicationConfig.class.getName()); // Logger for logging
     private static volatile ApplicationConfig instance; // Singleton instance
     private final Properties properties; // Properties for configuration
 
     // Default configuration values
     private static final String DEFAULT_APP_TITLE = "IMDb Clone JavaFX";
-    private static final String APP_PROPERTIES_FILE = "/application.properties";
     private static final String DEFAULT_APP_VERSION = "1.0";
     /**
      * Private constructor to prevent direct instantiation.

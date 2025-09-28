@@ -37,6 +37,8 @@ public class CelebritiesController implements Initializable {
      */
     public CelebritiesController() {
         // No initialization needed
+        logger.info("CelebritiesController initialized");
+        loadCelebrities();
     }
 
     private static final Logger logger = LoggerFactory.getLogger(CelebritiesController.class);
@@ -174,7 +176,7 @@ public class CelebritiesController implements Initializable {
                 return new SimpleStringProperty("N/A");
             });
 
-            // Set up cell value factory for birth date with proper formatting
+            // Set up cell value factory for birthdate with proper formatting
             actorBirthDateColumn.setCellValueFactory(cellData -> {
                 try {
                     if (cellData.getValue() != null && cellData.getValue().getBirthDate() != null) {
@@ -241,22 +243,26 @@ public class CelebritiesController implements Initializable {
                                 List<String> validWorks = notableWorks.stream()
                                         .filter(work -> work != null && !work.trim().isEmpty())
                                         .collect(Collectors.toList());
+                                logger.debug("Notable works for actor {}: {}", actor.getFirstName() + " " + actor.getLastName(), validWorks);
 
                                 // If there are valid works, format them
                                 if (!validWorks.isEmpty()) {
-                                    // Format the notable works as a comma-separated list, limit to 6 items for display
-                                    int maxWorks = Math.min(6, validWorks.size());
+                                    // Format the notable works as a comma-separated list, limit to 4 items for display
+                                    int maxWorks = Math.min(4, validWorks.size());
+                                    // Limit to first 4 works for the tooltip
                                     String worksText = String.join(", ", validWorks.subList(0, maxWorks));
-                                    if (validWorks.size() > 6) {
+                                    if (validWorks.size() > 4) {
                                         // Add ellipsis if there are more than 6 works
-                                        worksText += "...";
+                                        worksText += "..";
                                     }
                                     logger.debug("Notable works for {} {}: {}",
                                             actor.getFirstName(), actor.getLastName(), worksText);
                                     return new SimpleStringProperty(worksText);
                                 }
                             }
-                            return new SimpleStringProperty("-"); // Use dash for empty works
+                            // Log error and show error message
+                            logger.debug("No notable works for {} {}", actor.getFirstName(), actor.getLastName());
+                            return new SimpleStringProperty("No works"); // Use dash for empty works
                         } catch (Exception e) {
                             logger.warn("Error processing notable works for {} {}: {}",
                                     actor.getFirstName(), actor.getLastName(), e.getMessage());
@@ -264,6 +270,7 @@ public class CelebritiesController implements Initializable {
                         }
                     }
                 } catch (Exception e) {
+                    // Log error and show error message
                     logger.error("Unexpected error getting actor notable works: {}", e.getMessage(), e);
                 }
                 return new SimpleStringProperty("-"); // Default fallback
@@ -315,6 +322,7 @@ public class CelebritiesController implements Initializable {
             actorGenderColumn.setSortable(true);
             actorNationalityColumn.setSortable(true);
             actorNotableWorksColumn.setSortable(true);
+            actorNotableWorksColumn.setSortType(TableColumn.SortType.ASCENDING);
 
         } catch (Exception e) {
             logger.error("Error initializing actor table: {}", e.getMessage(), e);
@@ -326,7 +334,7 @@ public class CelebritiesController implements Initializable {
     private void handleGoToHome() {
         try {
             NavigationService.getInstance().navigateTo("/fxml/base/home-view.fxml",
-                    data, (Stage) actorsTable.getScene().getWindow(), "IMDb Clone - Home");
+                    data, (Stage) actorsTable.getScene().getWindow(), "Home");
         } catch (Exception e) {
             logger.error("Error navigating to home: {}", e.getMessage(), e);
             showError("Navigation Error", "Failed to navigate to home: " + e.getMessage());

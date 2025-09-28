@@ -299,9 +299,6 @@ public class MainController extends BorderPane {
      */
     @FXML
     private void showTVShows(ActionEvent event) {
-        if (!checkAuthentication("TV shows view")) {
-            return;
-        }
         navigateToView(event, SERIES_VIEW, "TV Shows");
     }
     
@@ -312,13 +309,9 @@ public class MainController extends BorderPane {
      * @return true if authenticated, false otherwise
      */
     private boolean checkAuthentication(String featureName) {
-        logger.debug("Checking authentication for {} view. Session token: {}", 
-            featureName, sessionToken != null ? sessionToken.substring(0, Math.min(8, sessionToken.length())) + "..." : "null");
-        if (sessionToken == null || authService.getUserFromSession(sessionToken) == null) {
-            logger.warn("Access denied to {} - User not authenticated", featureName);
-            showError("Authentication Required", "Please sign in to access this feature.");
-            return false;
-        }
+        // Allow all users including guests to access all features
+        logger.debug("Access granted to {} view for {}", 
+            featureName, sessionToken != null ? "user" : "guest");
         return true;
     }
     
@@ -338,13 +331,7 @@ public class MainController extends BorderPane {
 
     @FXML
     private void showRated(ActionEvent event) {
-        logger.debug("Checking authentication for rated content. Session token: {}",
-            sessionToken != null ? sessionToken.substring(0, Math.min(8, sessionToken.length())) + "..." : "null");
-        if (sessionToken == null || authService.getUserFromSession(sessionToken) == null) {
-            logger.warn("Access denied to rated content - User not authenticated");
-            showError("Authentication Required", "Please sign in to access this feature.");
-            return;
-        }
+        logger.debug("Navigating to rated content view");
         navigateToView(event, RATED_VIEW, "Your Rated Content");
     }
 
@@ -354,23 +341,26 @@ public class MainController extends BorderPane {
     private void updateAuthUI() {
         boolean isLoggedIn = currentUser != null;
 
-        // Update sign in and register buttons visibility
+        // Hide sign in and register buttons for all users
         if (signInButton != null) {
-            signInButton.setVisible(!isLoggedIn);
-            signInButton.setManaged(!isLoggedIn);
+            signInButton.setVisible(false);
+            signInButton.setManaged(false);
         }
 
         if (registerButton != null) {
-            registerButton.setVisible(!isLoggedIn);
-            registerButton.setManaged(!isLoggedIn);
+            registerButton.setVisible(false);
+            registerButton.setManaged(false);
         }
 
-        // Update user label
+        // Update user label - only show for logged in users
         if (userLabel != null) {
             if (isLoggedIn) {
                 userLabel.setText("Welcome, " + currentUser.getUsername());
+                userLabel.setVisible(true);
+                userLabel.setManaged(true);
             } else {
-                userLabel.setText("Not logged in");
+                userLabel.setVisible(false);
+                userLabel.setManaged(false);
             }
         }
     }
