@@ -8,14 +8,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
-/**
- * In-memory implementation of the CelebritiesRepository interface.
- * This implementation is thread-safe and uses a ConcurrentHashMap for storage.
- */
-/**
- * In-memory implementation of the CelebritiesRepository interface.
- * This implementation is thread-safe and uses a ConcurrentHashMap for storage.
- */
+
 /**
  * Creates a new instance of InMemoryCelebritiesRepository.
  */

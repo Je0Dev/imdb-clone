@@ -41,7 +41,7 @@ public class AuthException extends ValidationException {
         // Directly assign the final field - no method calls on 'this'
         this.errorType = errorType != null ? errorType : AuthErrorType.INTERNAL_ERROR;
     }
-    
+
     // Private constructor used by the factory method
     public AuthException(AuthException other) {
         super(other.getMessage(), other.getErrorCode(), other.getFieldErrors(), other.getCause());
@@ -136,19 +136,19 @@ public class AuthException extends ValidationException {
             if (message == null) {
                 message = errorType.getDefaultMessage();
             }
-            
+
             if (fieldErrors.isEmpty() && cause == null) {
                 return new AuthException(errorType, message);
             } else if (cause == null) {
                 // Create with field errors but no cause
                 AuthException ex = new AuthException(errorType, message, fieldErrors, null);
-                fieldErrors.forEach((field, errors) -> 
+                fieldErrors.forEach((field, errors) ->
                     errors.forEach(error -> ex.addFieldError(field, error)));
                 return ex;
             } else {
                 // Create with both field errors and cause
                 AuthException ex = new AuthException(errorType, message, null, cause);
-                fieldErrors.forEach((field, errors) -> 
+                fieldErrors.forEach((field, errors) ->
                     errors.forEach(error -> ex.addFieldError(field, error)));
                 return ex;
             }
@@ -174,6 +174,4 @@ public class AuthException extends ValidationException {
         
         throw updated;
     }
-
-    // Using the top-level AuthErrorType enum
 }

@@ -2,10 +2,8 @@ package com.papel.imdb_clone.controllers.authentication;
 
 import com.papel.imdb_clone.controllers.BaseController;
 import com.papel.imdb_clone.controllers.MainController;
-import com.papel.imdb_clone.exceptions.AuthException;
 import com.papel.imdb_clone.model.people.User;
 import javafx.scene.Scene;
-import javafx.stage.Window;
 import javafx.stage.Stage;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Label;
@@ -26,32 +24,19 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import com.papel.imdb_clone.exceptions.ValidationException;
-import com.papel.imdb_clone.model.people.User;
 import com.papel.imdb_clone.service.validation.AuthService;
 import com.papel.imdb_clone.service.navigation.NavigationService;
 import com.papel.imdb_clone.service.validation.UserInputValidator;
 import com.papel.imdb_clone.util.UIUtils;
 import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
-import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.Node;
-import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.input.KeyCode;
-import javafx.scene.input.KeyEvent;
-import javafx.scene.layout.StackPane;
-import javafx.stage.Stage;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.io.Serializable;
-import java.net.URL;
 import java.util.*;
-import java.util.List;
-import java.util.Map;
+
 
 /**
  * Controller for handling user authentication including login and registration.
@@ -70,8 +55,6 @@ public class AuthController extends BaseController implements Initializable {
     private transient String sessionToken; //session token for authentication
     private final transient Map<String, Serializable> data; //data to be passed to the next controller
     private Stage stage;
-    private ActionEvent event;
-
     @FXML
     private Button loginButton;
 
@@ -523,11 +506,6 @@ public class AuthController extends BaseController implements Initializable {
     }
 
 
-
-    //successMessage and session token
-    private String successMessage;
-
-
     /**
      * Initializes the controller with the current user ID.
      *
@@ -666,7 +644,6 @@ public class AuthController extends BaseController implements Initializable {
     }
 
 
-
     /**
      * Handles key press events in the registration form.
      * Submits the form when Enter key is pressed.
@@ -683,149 +660,6 @@ public class AuthController extends BaseController implements Initializable {
             logger.error("Error handling key press in registration form: {}", e.getMessage(), e);
             // Don't propagate key event errors to avoid disrupting user experience
         }
-    }
-
-    /**
-     * Handles validation errors by displaying them in the specified label.
-     *
-     * @param e          The validation exception containing error details
-     * @param errorLabel The label to display the error message in
-     */
-    private void handleValidationError(ValidationException e, Label errorLabel) {
-        if (errorLabel == null) {
-            logger.error("Error label is null, cannot display validation error");
-            return;
-        }
-
-        try {
-            StringBuilder errorMessage = new StringBuilder();
-
-            // Handle field errors if they exist
-            if (e.hasFieldErrors()) {
-                e.getFieldErrors().forEach((field, errors) ->
-                        errors.forEach(error -> {
-                            if (error != null) {
-                                errorMessage.append("• ").append(error).append("\n");
-                            }
-                        })
-                );
-            } else if (e.getMessage() != null) {
-                errorMessage.append(e.getMessage());
-            } else {
-                errorMessage.append("A validation error occurred.");
-            }
-
-            final String finalMessage = errorMessage.toString().trim();
-
-            // Update UI on the JavaFX Application Thread
-            Platform.runLater(() -> {
-                errorLabel.setText(finalMessage);
-                errorLabel.setStyle("-fx-text-fill: #d32f2f; -fx-wrap-text: true; -fx-font-weight: bold;");
-                errorLabel.setVisible(true);
-                errorLabel.setManaged(true);
-            });
-
-            logger.warn("Validation error: {}", finalMessage);
-        } catch (Exception ex) {
-            logger.error("Error handling validation error: {}", ex.getMessage(), ex);
-            // Fallback to simple error display
-            Platform.runLater(() -> {
-                errorLabel.setText("An error occurred during validation. Please try again.");
-                errorLabel.setStyle("-fx-text-fill: #d32f2f; -fx-wrap-text: true;");
-                errorLabel.setVisible(true);
-                errorLabel.setManaged(true);
-            });
-        }
-    }
-
-    /**
-     * Handles authentication errors and updates the UI accordingly.
-     *
-     * @param e          The authentication exception that occurred
-     * @param errorLabel The label to display the error message in
-     */
-    private void handleAuthError(AuthException e, Label errorLabel) {
-        if (errorLabel == null) {
-            logger.error("Error label is null, cannot display authentication error");
-            return;
-        }
-
-        try {
-            String errorMessage = e.getMessage();
-
-            // Handle error message
-            if (errorMessage == null || errorMessage.trim().isEmpty()) {
-                errorMessage = e.getErrorType() != null
-                        ? e.getErrorType().getDefaultMessage()
-                        : "An authentication error occurred. Please try again.";
-            }
-
-            final String finalMessage = errorMessage;
-
-            // Update UI on the JavaFX Application Thread
-            Platform.runLater(() -> {
-                errorLabel.setText(finalMessage);
-                errorLabel.setStyle(
-                        "-fx-text-fill: #d32f2f; " +
-                                "-fx-font-weight: bold; " +
-                                "-fx-wrap-text: true; " +
-                                "-fx-padding: 5px;"
-                );
-                errorLabel.setVisible(true);
-                errorLabel.setManaged(true);
-            });
-
-            // Log the error with appropriate level
-            if (e.getErrorType() == com.papel.imdb_clone.exceptions.AuthErrorType.INVALID_CREDENTIALS) {
-                logger.warn("Authentication failed: {}", finalMessage);
-            } else {
-                logger.error("Authentication error: {}", finalMessage, e);
-            }
-        } catch (Exception ex) {
-            logger.error("Error handling authentication error: {}", ex.getMessage(), ex);
-            // Fallback to simple error display
-            Platform.runLater(() -> {
-                errorLabel.setText("An error occurred during authentication. Please try again.");
-                errorLabel.setStyle("-fx-text-fill: #d32f2f; -fx-wrap-text: true;");
-                errorLabel.setVisible(true);
-                errorLabel.setManaged(true);
-            });
-        }
-    }
-
-    /**
-     * Handles unexpected errors by showing an error dialog and logging the details.
-     * This method ensures all UI updates happen on the JavaFX Application Thread.
-     *
-     * @param e       The exception that was thrown
-     * @param context Additional context about where the error occurred (e.g., "login", "registration")
-     */
-    private void handleUnexpectedError(Exception e, String context) {
-        if (e == null) {
-            e = new Exception("Unknown error occurred");
-        }
-
-        String safeContext = (context != null && !context.trim().isEmpty())
-                ? context.trim()
-                : "operation";
-
-        String errorMessage = String.format(
-                "An unexpected error occurred during %s. Please try again.\n\nError: %s",
-                safeContext,
-                e.getMessage() != null ? e.getMessage() : "Unknown error"
-        );
-
-        // Log the full error with stack trace
-        logger.error("Unexpected error during {}: {}", safeContext, e.getMessage(), e);
-
-        // Show error dialog on the JavaFX Application Thread
-        Platform.runLater(() -> {
-            Alert alert = new Alert(Alert.AlertType.ERROR);
-            alert.setTitle("Error");
-            alert.setHeaderText("An error occurred");
-            alert.setContentText(errorMessage);
-            alert.showAndWait();
-        });
     }
 
     /**

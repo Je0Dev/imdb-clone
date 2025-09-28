@@ -1000,15 +1000,6 @@ public class SeriesController extends BaseController {
         }
     }
 
-    @FXML
-    private void handleEditSeries(ActionEvent event) {
-        Series selected = seriesTable.getSelectionModel().getSelectedItem();
-        if (selected != null) {
-            showSeriesEditDialog(selected);
-        } else {
-            showAlert("No Selection", "Please select a series to edit.");
-        }
-    }
 
     @FXML
     private void handleRateSeries(ActionEvent event) {
@@ -1073,17 +1064,6 @@ public class SeriesController extends BaseController {
         } catch (Exception e) {
             logger.error("Error refreshing series", e);
             showError("Error", "Failed to refresh series: " + e.getMessage());
-        }
-    }
-
-    //add functionality here
-    @FXML
-    private void handleManageSeasons(ActionEvent event) {
-        Series selected = seriesTable.getSelectionModel().getSelectedItem();
-        if (selected != null) {
-            showSeasonManagementDialog(selected);
-        } else {
-            showAlert("No Selection", "Please select a series to manage seasons.");
         }
     }
 

@@ -2,7 +2,6 @@ package com.papel.imdb_clone.controllers.content;
 
 import com.papel.imdb_clone.controllers.BaseController;
 import com.papel.imdb_clone.model.content.Content;
-import com.papel.imdb_clone.model.rating.Rating;
 import com.papel.imdb_clone.model.rating.UserRating;
 import com.papel.imdb_clone.service.rating.RatingService;
 import javafx.fxml.FXML;

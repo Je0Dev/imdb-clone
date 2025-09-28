@@ -148,12 +148,6 @@ public class MoviesController extends BaseController {
      *
      * @param event The action event that triggered this method
      */
-    /**
-     * Handles the rate movie button click event.
-     * Opens a dialog to allow the user to rate the selected movie.
-     *
-     * @param event The action event that triggered this method
-     */
     @FXML
     private void handleRateMovie(ActionEvent event) {
         try {
@@ -271,12 +265,6 @@ public class MoviesController extends BaseController {
         }
     }
 
-    /**
-     * Gets the ID of the currently authenticated user.
-     * 
-     * @return The ID of the current user
-     * @throws IllegalStateException if no user is currently authenticated
-     */
     /**
      * Gets the current user's ID.
      * 

@@ -27,7 +27,6 @@ public class ApplicationConfig {
         this.properties = new Properties();
         this.properties.put("app.title", DEFAULT_APP_TITLE);
         this.properties.put("app.version", DEFAULT_APP_VERSION);
-        loadConfiguration();
     }
 
     /**
@@ -50,42 +49,6 @@ public class ApplicationConfig {
         return result;
     }
 
-    /**
-     * Loads configuration from application.properties and system properties.
-     * System properties take precedence over file properties.
-     */
-    private void loadConfiguration() {
-        loadPropertiesFromFile();
-        loadSystemProperties();
-    }
-
-    /**
-     * Loads properties from the application.properties file.
-     * Logs a warning if the file cannot be loaded.
-     */
-    private void loadPropertiesFromFile() {
-        try (InputStream is = getClass().getResourceAsStream(APP_PROPERTIES_FILE)) {
-            if (is != null) {
-                properties.load(is);
-                LOGGER.log(Level.INFO, "Successfully loaded properties from {0}", APP_PROPERTIES_FILE);
-            } else {
-                LOGGER.log(Level.WARNING, "Could not find {0} in the classpath", APP_PROPERTIES_FILE);
-            }
-        } catch (IOException e) {
-            LOGGER.log(Level.SEVERE, "Error loading properties from " + APP_PROPERTIES_FILE, e);
-        }
-    }
-
-    /**
-     * Loads system properties, which will override any existing properties
-     * with the same keys.
-     */
-    private void loadSystemProperties() {
-        properties.putAll(System.getProperties());
-        if (LOGGER.isLoggable(Level.FINER)) {
-            LOGGER.finer("System properties loaded and merged with existing properties");
-        }
-    }
 
     /**
      * Gets the application title from configuration.
